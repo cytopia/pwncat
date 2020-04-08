@@ -1,0 +1,40 @@
+---
+
+###
+### Lints all generic and json files in the whole git repository
+###
+
+name: building
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+      matrix:
+        version:
+          - '2.7'
+          - '3.6'
+          - '3.7'
+          - '3.8'
+        target:
+          - build
+          - dist
+
+    name: "[${{ matrix.version }}] ${{ matrix.target }}"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@master
+
+      - name: Build
+        run: |
+          make ${target} VERSION=${version}
+        env:
+          target: ${{ matrix.target }}
+          version: ${{ matrix.version }}

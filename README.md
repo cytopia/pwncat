@@ -1,4 +1,4 @@
-# netcat.py
+# netcat
 
 [![](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/pypi/v/netcat)](https://pypi.org/project/netcat/)
@@ -10,6 +10,7 @@
 
 [![Build Status](https://github.com/cytopia/netcat/workflows/linting/badge.svg)](https://github.com/cytopia/netcat/actions?workflow=linting)
 [![Build Status](https://github.com/cytopia/netcat/workflows/building/badge.svg)](https://github.com/cytopia/netcat/actions?workflow=building)
+[![Build Status](https://github.com/cytopia/netcat/workflows/testing/badge.svg)](https://github.com/cytopia/netcat/actions?workflow=testing)
 
 
 Dependency-less Python 2 and Python 3 compatible implementation of netcat which works on 32bit and 64bit systems to easily pivot your target.
@@ -17,6 +18,11 @@ Dependency-less Python 2 and Python 3 compatible implementation of netcat which 
 **Motivation**
 
 To have a single tool for older, newer, 32bit and 64bit machines with relevant options (`-e`. `-L` and `-R`) to create bind shells, local and remote port-forwards.
+
+
+**Todo**
+
+The options `e`, `-n`, `-L`, and `-R` are still under development. See [Usage](#computer-usage) for other available options.
 
 
 ## :tada: Install
@@ -110,6 +116,11 @@ examples:
   Remote forward: Forward local port to remote server
     netcat.py -R 127.0.0.1:3306 example.com 4444
 ```
+
+
+## :octocat: Contributing
+
+See **[Contributing guidelines](CONTRIBUTING.md)** to help to improve this project.
 
 
 ## :lock: [cytopia](https://github.com/cytopia) sec tools
