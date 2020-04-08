@@ -495,6 +495,15 @@ for ward all traffic from the specified value for -R/--remote.""",
     )
     args = parser.parse_args()
 
+    # TODO: Exit on unimplemented features
+    if args.exec is not None or args.local is not None or args.remote is not None:
+        parser.print_usage()
+        print(
+            "%s: error: -e/--cmd, -L/--local and -R/--remote are not yet implemented" % (NAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     # Check mutually exclive arguments
     if args.exec is not None and (args.local is not None or args.remote is not None):
         parser.print_usage()
