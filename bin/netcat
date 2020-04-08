@@ -21,7 +21,7 @@ UDP_CLIENT_ADDR = None
 UDP_CLIENT_PORT = None
 
 NAME = os.path.basename(sys.argv[0])
-VERSION = "0.1.0-alpha"
+VERSION = "0.0.1-alpha"
 
 # -------------------------------------------------------------------------------------------------
 # HELPER FUNCTIONS

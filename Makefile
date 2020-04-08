@@ -5,7 +5,7 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint test pycodestyle pydocstyle black dist sdist bdist build checkbuild deploy autoformat clean
+.PHONY: help lint test pycodestyle pydocstyle black version dist sdist bdist build checkbuild deploy autoformat clean
 
 
 VERSION = 2.7
@@ -33,7 +33,7 @@ help:
 # Lint Targets
 # -------------------------------------------------------------------------------------------------
 
-lint: pycodestyle pydocstyle black
+lint: pycodestyle pydocstyle black version
 
 pycodestyle:
 	docker run --rm -v $(PWD):/data cytopia/pycodestyle --show-source --show-pep8 $(BINPATH)$(BINNAME)
@@ -43,6 +43,13 @@ pydocstyle:
 
 black:
 	docker run --rm -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
+
+version:
+	@if [ "$$(grep version= setup.py | awk -F'"' '{print $$2}')" != "$$(grep 'VERSION ' bin/netcat | awk -F'"' '{print $$2}')" ]; then \
+		echo "Version mismatch in setup.py and bin/netcat"; \
+		exit 1; \
+	fi
+
 
 
 # -------------------------------------------------------------------------------------------------
