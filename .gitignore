@@ -1,0 +1,6 @@
+netcat.egg-info/
+netcat.egg-info/
+build/
+dist/
+tests/output/*
+!.keepme
