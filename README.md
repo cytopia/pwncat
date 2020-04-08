@@ -10,6 +10,7 @@
 
 [![Build Status](https://github.com/cytopia/netcat/workflows/linting/badge.svg)](https://github.com/cytopia/netcat/actions?workflow=linting)
 [![Build Status](https://github.com/cytopia/netcat/workflows/building/badge.svg)](https://github.com/cytopia/netcat/actions?workflow=building)
+[![Build Status](https://github.com/cytopia/netcat/workflows/testing/badge.svg)](https://github.com/cytopia/netcat/actions?workflow=testing)
 
 
 Dependency-less Python 2 and Python 3 compatible implementation of netcat which works on 32bit and 64bit systems to easily pivot your target.
