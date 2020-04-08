@@ -20,6 +20,11 @@ Dependency-less Python 2 and Python 3 compatible implementation of netcat which 
 To have a single tool for older, newer, 32bit and 64bit machines with relevant options (`-e`. `-L` and `-R`) to create bind shells, local and remote port-forwards.
 
 
+**Todo**
+
+The options `e`, `-n`, `-L`, and `-R` are still under development. See [Usage](#computer-usage) for other available options.
+
+
 ## :tada: Install
 ```bash
 pip install netcat
