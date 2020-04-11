@@ -1,5 +1,13 @@
 # netcat
 
+**[Install](#tada-install)** |
+**[TL;DR](#coffee-tldr)** |
+**[Usage](#computer-usage)** |
+**[cytopia sec tools](#lock-cytopia-sec-tools)** |
+**[Contributing](#octocat-contributing)** |
+**[Disclaimer](#exclamation-disclaimer)** |
+**[License](#page_facing_up-license)**
+
 [![](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/pypi/v/netcat)](https://pypi.org/project/netcat/)
 [![PyPI - Status](https://img.shields.io/pypi/status/netcat)](https://pypi.org/project/netcat/)
@@ -118,26 +126,28 @@ examples:
 ```
 
 
-## :octocat: Contributing
-
-See **[Contributing guidelines](CONTRIBUTING.md)** to help to improve this project.
-
-
 ## :lock: [cytopia](https://github.com/cytopia) sec tools
 
-| Tool             | Category             | Language   | Description |
-|------------------|----------------------|------------|-------------|
-| [smtp-user-enum] | Enumeration          | Python 2+3 | SMTP users enumerator |
-| [urlbuster]      | Enumeration          | Python 2+3 | Mutable web directory fuzzer |
-| [netcat]         | Pivoting             | Python 2+3 | Cross-platform netcat |
-| [badchars]       | Reverse Engineering  | Python 2+3 | Badchar generator |
-| [fuzza]          | Reverse Engineering  | Python 2+3 | TCP fuzzing tool |
+Below is a list of other sec tools I am maintaining.
+
+| Tool                 | Category             | Language   | Description |
+|----------------------|----------------------|------------|-------------|
+| **[smtp-user-enum]** | Enumeration          | Python 2+3 | SMTP users enumerator |
+| **[urlbuster]**      | Enumeration          | Python 2+3 | Mutable web directory fuzzer |
+| **[netcat]**         | Pivoting             | Python 2+3 | Cross-platform netcat |
+| **[badchars]**       | Reverse Engineering  | Python 2+3 | Badchar generator |
+| **[fuzza]**          | Reverse Engineering  | Python 2+3 | TCP fuzzing tool |
 
 [netcat]: https://github.com/cytopia/netcat
 [smtp-user-enum]: https://github.com/cytopia/smtp-user-enum
 [urlbuster]: https://github.com/cytopia/urlbuster
 [badchars]: https://github.com/cytopia/badchars
 [fuzza]: https://github.com/cytopia/fuzza
+
+
+## :octocat: Contributing
+
+See **[Contributing guidelines](CONTRIBUTING.md)** to help to improve this project.
 
 
 ## :exclamation: Disclaimer
