@@ -128,19 +128,23 @@ examples:
 
 ## :lock: [cytopia](https://github.com/cytopia) sec tools
 
-Below is a list of other sec tools I am maintaining.
+Below is a list of sec tools and docs I am maintaining.
 
-| Tool                 | Category             | Language   | Description |
+| Name                 | Category             | Language   | Description |
 |----------------------|----------------------|------------|-------------|
+| **[offsec]**         | Documentation        | Markdown   | Offsec checklist, tools and examples |
+| **[header-fuzz]**    | Enumeration          | Bash       | Fuzz HTTP headers |
 | **[smtp-user-enum]** | Enumeration          | Python 2+3 | SMTP users enumerator |
 | **[urlbuster]**      | Enumeration          | Python 2+3 | Mutable web directory fuzzer |
 | **[netcat]**         | Pivoting             | Python 2+3 | Cross-platform netcat |
 | **[badchars]**       | Reverse Engineering  | Python 2+3 | Badchar generator |
 | **[fuzza]**          | Reverse Engineering  | Python 2+3 | TCP fuzzing tool |
 
-[netcat]: https://github.com/cytopia/netcat
+[offsec]: https://github.com/cytopia/offsec
+[header-fuzz]: https://github.com/cytopia/header-fuzz
 [smtp-user-enum]: https://github.com/cytopia/smtp-user-enum
 [urlbuster]: https://github.com/cytopia/urlbuster
+[netcat]: https://github.com/cytopia/netcat
 [badchars]: https://github.com/cytopia/badchars
 [fuzza]: https://github.com/cytopia/fuzza
 
