@@ -81,8 +81,11 @@ class AbstractSocket(object):
         "nodns": False,  # Do not resolve hostnames
         "reinit": False,  # False (never), True (indefinite) or int for how many times to reinit
         "reconn": False,  # False (never), True (indefinite) or int for how many times to reconnect
+        "reinit_robin": [],  # Ports to round-robin during failed init phase
+        "reconn_robin": [],  # Ports to round-robin during failed phase (after 1st succ init)
         "reinit_wait": 0,  # Time in seconds to wait between reinits
         "reconn_wait": 0,  # Time in seconds to wait between reconnects
+        "udp_ping_intvl": False  # Interval in sec for UDP client to ping server
     }
 
     # In case the server is running in UDP mode,
@@ -113,15 +116,25 @@ class AbstractSocket(object):
         if "udp" in options:
             self.options["udp"] = options["udp"]
         if "bufsize" in options:
-            self.options[".bufsize"] = options["bufsize"]
+            self.options["bufsize"] = options["bufsize"]
         if "backlog" in options:
             self.options["backlog"] = options["backlog"]
         if "nodns" in options:
             self.options["nodns"] = options["nodns"]
+        if "reinit" in options:
+            self.options["reinit"] = options["reinit"]
         if "reconn" in options:
             self.options["reconn"] = options["reconn"]
+        if "reinit_robin" in options:
+            self.options["reinit_robin"] = options["reinit_robin"]
+        if "reconn_robin" in options:
+            self.options["reconn_robin"] = options["reconn_robin"]
+        if "reinit_wait" in options:
+            self.options["reinit_wait"] = options["reinit_wait"]
         if "reconn_wait" in options:
             self.options["reconn_wait"] = options["reconn_wait"]
+        if "udp_ping_intvl" in options:
+            self.options["udp_ping_intvl"] = options["udp_ping_intvl"]
 
         # Register destructor
         atexit.register(self.__exit__)
@@ -713,7 +726,7 @@ def _args_check_port(value):
     intvalue = int(value)
 
     if intvalue < min_port or intvalue > max_port:
-        raise argparse.ArgumentTypeError("%s is an invalid port number." % value)
+        raise argparse.ArgumentTypeError("%s is an invalid port number" % value)
     return intvalue
 
 
@@ -742,12 +755,30 @@ def _args_check_reconn(value):
     return intvalue
 
 
-def _args_check_reinit_robin(value):
-    pass
+def _args_check_robin_ports(value):
+    """Check reinit-robin argument for comma separated string or range."""
+    mcomma = re.search(r"^[0-9]+(,([0-9]+))*$", value)
+    mrange = re.search(r"^[0-9]+\-[0-9]+$", value)
 
+    if mcomma is None:
+        if mrange is None:
+            raise argparse.ArgumentTypeError("%s is not a valid port specifier" % value)
 
-def _args_check_reconn_robin(value):
-    pass
+    if mcomma:
+        ports = mcomma.group(0).split(",")
+        for port in ports:
+            _args_check_port(port)
+        return ports
+
+    if mrange:
+        ranges = mrange.group(0).split("-")
+        if int(ranges[0]) >= (int(ranges[1])+1):
+            raise argparse.ArgumentTypeError("Left side of range must be smaller or equal than right side.")
+        ports = []
+        for port in range(int(ranges[0]), int(ranges[1])+1):
+            _args_check_port(port)
+            ports.append(port)
+        return ports
 
 
 def get_args():
@@ -862,7 +893,7 @@ decrease drastically if you use more than three -v.""",
     advanced.add_argument(
         "--reinit",
         metavar="x",
-        default=None,
+        default=False,
         type=_args_check_reinit,
         help="""Listen mode (TCP only):
 If the server is unable to bind or accept clients, it
@@ -882,7 +913,7 @@ Same as connect mode.
     advanced.add_argument(
         "--reconn",
         metavar="x",
-        default=None,
+        default=False,
         type=_args_check_reconn,
         help="""Listen mode (TCP only):
 If the client has hung up, the server will re-accept a
@@ -900,8 +931,8 @@ This might be handy for reverse shells ;-)
     advanced.add_argument(
         "--reinit-robin",
         metavar="port",
-        default=None,
-        type=_args_check_reinit_robin,
+        default=[],
+        type=_args_check_robin_ports,
         help="""Connect mode (TCP only):
 If the client does multiple initial connections to a
 remote endpoint (via --reinit), this option instructs it
@@ -920,8 +951,8 @@ Ensure to have enough listeners at the remote endpoint.
     advanced.add_argument(
         "--reconn-robin",
         metavar="port",
-        default=None,
-        type=_args_check_reconn_robin,
+        default=[],
+        type=_args_check_robin_ports,
         help="""Connect mode (TCP only):
 If the remote endpoint is gone after initial successful
 connection, and the the client is set to reconnect with
@@ -953,8 +984,8 @@ block the outbound port.
     advanced.add_argument(
         "--udp-ping-intvl",
         metavar="s",
-        default=None,
-        type=_args_check_reinit_robin,
+        default=False,
+        type=int,
         help="""Connect mode (UDP only):
 As UDP is stateless, a client must first connect to a
 server before the server can communicate with it.
@@ -1042,14 +1073,16 @@ def main():
     # Set netcat options
     net_opts = {
         "udp": args.udp,
-        "nodns": args.nodns,
         "bufsize": 1024,
         "backlog": 0,
-        "reinit": False,
-        "reconn": False,
-        "reinit_wait": 0,
-        "reconn_wait": 0,
-        "udp_ping_intvl": 0,  # only makes sense for udp client and only for rev-shell (0:off)
+        "nodns": args.nodns,
+        "reinit": args.reinit,
+        "reconn": args.reconn,
+        "reinit_robin": args.reinit_robin,
+        "reconn_robin": args.reconn_robin,
+        "reinit_wait": args.reinit_wait,
+        "reconn_wait": args.reconn_wait,
+        "udp_ping_intvl": args.udp_ping_intvl,  # only for udp client and only for rev-shell (0:off)
     }
 
     # Initialize logger
