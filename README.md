@@ -5,8 +5,8 @@
 **[Features](#star-features)** |
 **[Documentation](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
-**[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Examples](#bulb-examples)** |
+**[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Contributing](#octocat-contributing)** |
 **[Disclaimer](#exclamation-disclaimer)** |
 **[License](#page_facing_up-license)**
@@ -24,7 +24,7 @@
 [![Build Status](https://github.com/cytopia/pwncat/workflows/testing/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=testing)
 
 
-> #### Netcat on steroids with FW and IPS evasion, bind and reverse shell, local and remote port-forward.
+> #### Netcat on steroids with Firewall and IPS evasion, bind and reverse shell, local and remote port-forward.
 
 Dependency-less Python 2 and Python 3 compatible implementation of netcat which works on 32bit and 64bit systems to easily pivot your target.
 
