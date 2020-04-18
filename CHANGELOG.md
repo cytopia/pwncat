@@ -9,6 +9,7 @@
 #### Fixed
 - Hardened Python 2/3 string compatibility
 - Checking against mutually exclusive arguments
+- Fix crash while checking for Mac newlines `\r`
 
 #### Added
 - Editorconfig

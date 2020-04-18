@@ -601,7 +601,7 @@ class NetcatModuleOutput(AbstractNetcatModule):
         """Print received data to stdout."""
         if data.endswith("\r\n"):
             data = data[:-2]
-        elif data.endswith("\n") or data.endsith("\r"):
+        elif data.endswith("\n") or data.endswith("\r"):
             data = data[:-1]
         print(data)
 
@@ -1144,8 +1144,8 @@ def main():
         "bufsize": 1024,
         "backlog": 0,
         "nodns": args.nodns,
-        "reinit": args.reinit,
-        "reconn": args.reconn,
+        "reinit": True if args.reinit == 0 else args.reinit,
+        "reconn": True if args.reconn == 0 else args.reconn,
         "reinit_robin": args.reinit_robin,
         "reconn_robin": args.reconn_robin,
         "reinit_wait": args.reinit_wait,
