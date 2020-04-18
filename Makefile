@@ -5,12 +5,15 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint test pycodestyle pydocstyle black version docs dist sdist bdist build checkbuild deploy autoformat clean
+.PHONY: help lint test pycodestyle pydocstyle black version files docs dist sdist bdist build checkbuild deploy autoformat clean
 
 
 VERSION = 2.7
 BINPATH = bin/
 BINNAME = pwncat
+
+FL_VERSION = 0.3
+FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html
 
 
 # -------------------------------------------------------------------------------------------------
@@ -45,7 +48,8 @@ help:
 # Lint Targets
 # -------------------------------------------------------------------------------------------------
 
-lint: pycodestyle pydocstyle black version
+lint: pycodestyle pydocstyle black version files
+
 
 pycodestyle:
 	@echo "--------------------------------------------------------------------------------"
@@ -73,6 +77,24 @@ version:
 		echo "Version mismatch in setup.py and $(BINPATH)$(BINNAME)"; \
 		exit 1; \
 	fi
+
+lint-files:
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Lint files                                                           #"
+	@echo "# -------------------------------------------------------------------- #"
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-cr --text --ignore '$(FL_IGNORES)' --path .
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-crlf --text --ignore '$(FL_IGNORES)' --path .
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-trailing-single-newline --text --ignore '$(FL_IGNORES)' --path .
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-trailing-space --text --ignore '$(FL_IGNORES)' --path .
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-utf8 --text --ignore '$(FL_IGNORES)' --path .
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-utf8-bom --text --ignore '$(FL_IGNORES)' --path .
+
+lint-docs:
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Lint docs                                                            #"
+	@echo "# -------------------------------------------------------------------- #"
+	@$(MAKE) --no-print-directory docs
+	git diff --quiet || { echo "Build Changes"; git diff|cat; git status; false; }
 
 
 # -------------------------------------------------------------------------------------------------

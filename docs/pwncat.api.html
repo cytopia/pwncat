@@ -1182,7 +1182,7 @@ class AbstractNetcatModule:
         while False:
             yield None
 
-    @ abstractmethod
+    @abstractmethod
     def output_callback(self, data):
         """Implement a callback which processes the input into some output."""
         print(data)
@@ -1203,14 +1203,14 @@ class AbstractSocket(object):
     role = None  # Must be 'server' or 'client'
 
     options = {
-        'udp': False,      # Is TCP or UDP server?
-        'bufsize': 1024,   # Receive buffer size
-        'backlog': 0,      # Listen backlog
-        'nodns': False,    # Do not resolve hostnames
-        'reinit': False,   # False (never), True (indefinite) or int for how many times to reinit
-        'reconn': False,   # False (never), True (indefinite) or int for how many times to reconnect
-        'reinit_wait': 0,  # Time in seconds to wait between reinits
-        'reconn_wait': 0,  # Time in seconds to wait between reconnects
+        "udp": False,  # Is TCP or UDP server?
+        "bufsize": 1024,  # Receive buffer size
+        "backlog": 0,  # Listen backlog
+        "nodns": False,  # Do not resolve hostnames
+        "reinit": False,  # False (never), True (indefinite) or int for how many times to reinit
+        "reconn": False,  # False (never), True (indefinite) or int for how many times to reconnect
+        "reinit_wait": 0,  # Time in seconds to wait between reinits
+        "reconn_wait": 0,  # Time in seconds to wait between reconnects
     }
 
     # In case the server is running in UDP mode,
@@ -1236,18 +1236,18 @@ class AbstractSocket(object):
 
         self.role = role
 
-        if 'udp' in options:
-            self.options['udp'] = options['udp']
-        if 'bufsize' in options:
-            self.options['.bufsize'] = options['bufsize']
-        if 'backlog' in options:
-            self.options['backlog'] = options['backlog']
-        if 'nodns' in options:
-            self.options['nodns'] = options['nodns']
-        if 'reconn' in options:
-            self.options['reconn'] = options['reconn']
-        if 'reconn_wait' in options:
-            self.options['reconn_wait'] = options['reconn_wait']
+        if "udp" in options:
+            self.options["udp"] = options["udp"]
+        if "bufsize" in options:
+            self.options[".bufsize"] = options["bufsize"]
+        if "backlog" in options:
+            self.options["backlog"] = options["backlog"]
+        if "nodns" in options:
+            self.options["nodns"] = options["nodns"]
+        if "reconn" in options:
+            self.options["reconn"] = options["reconn"]
+        if "reconn_wait" in options:
+            self.options["reconn_wait"] = options["reconn_wait"]
 
         self.log = logger
         # Register destructor
@@ -1288,23 +1288,29 @@ class AbstractSocket(object):
         assert self.role == "server", "Only the role 'server' can accept connections."
 
         # TODO: This is currently not implemented for UDP
-        if self.options['udp']:
+        if self.options["udp"]:
             return False
 
         # [NO] Never re-accept
-        if type(self.options['reconn']) is bool and not self.options['reconn']:
+        if type(self.options["reconn"]) is bool and not self.options["reconn"]:
             self.log.info("No automatic re-accept specified. Shutting down.")
             return False
         # [YES] Always re-accept indefinitely
-        if type(self.options['reconn']) is bool and self.options['reconn']:
-            self.log.info("Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"]))
+        if type(self.options["reconn"]) is bool and self.options["reconn"]:
+            self.log.info(
+                "Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"])
+            )
             time.sleep(self.options["reconn_wait"])
             self.accept()
             return True
         # [YES] Re-accept x many times
         if self.options["reconn"] > 0:
-            self.log.info("Re-accepting in {} sec ({} more times left)".format(self.options["reconn_wait"], self.options['reconn']))
-            self.options['reconn'] -= 1
+            self.log.info(
+                "Re-accepting in {} sec ({} more times left)".format(
+                    self.options["reconn_wait"], self.options["reconn"]
+                )
+            )
+            self.options["reconn"] -= 1
             time.sleep(self.options["reconn_wait"])
             self.accept()
             return True
@@ -1317,23 +1323,29 @@ class AbstractSocket(object):
         assert self.role == "client", "Only the role 'client' can re-connect."
 
         # TODO: This is currently not implemented for UDP
-        if self.options['udp']:
+        if self.options["udp"]:
             return False
 
         # [NO] Never re-connect
-        if type(self.options['reconn']) is bool and not self.options['reconn']:
+        if type(self.options["reconn"]) is bool and not self.options["reconn"]:
             self.log.info("No automatic reconnect specified. Shutting down.")
             return False
         # [YES] Always re-connect indefinitely
-        if type(self.options['reconn']) is bool and self.options['reconn']:
-            self.log.info("Reconnecting in {} sec (indefinitely)".format(self.options["reconn_wait"]))
+        if type(self.options["reconn"]) is bool and self.options["reconn"]:
+            self.log.info(
+                "Reconnecting in {} sec (indefinitely)".format(self.options["reconn_wait"])
+            )
             time.sleep(self.options["reconn_wait"])
             self.__reconnect()
             return True
         # [YES] Re-connect x many times
         if self.options["reconn"] > 0:
-            self.log.info("Reconnecting in {} sec ({} more times left)".format(self.options["reconn_wait"], self.options['reconn']))
-            self.options['reconn'] -= 1
+            self.log.info(
+                "Reconnecting in {} sec ({} more times left)".format(
+                    self.options["reconn_wait"], self.options["reconn"]
+                )
+            )
+            self.options["reconn"] -= 1
             time.sleep(self.options["reconn_wait"])
             self.__reconnect()
             return True
@@ -1375,7 +1387,7 @@ class AbstractSocket(object):
     def create_socket(self):
         """Create TCP or UDP socket."""
         try:
-            if self.options['udp']:
+            if self.options["udp"]:
                 self.log.debug("Creating UDP socket")
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             else:
@@ -1397,8 +1409,8 @@ class AbstractSocket(object):
     def listen(self):
         """Listen for connections made to the socket."""
         try:
-            self.log.debug("Listening with backlog={}".format(self.options['backlog']))
-            self.sock.listen(self.options['backlog'])
+            self.log.debug("Listening with backlog={}".format(self.options["backlog"]))
+            self.sock.listen(self.options["backlog"])
         except socket.error as error:
             self.log.error("Listening failed: {}".format(error))
             sys.exit(1)
@@ -1420,7 +1432,9 @@ class AbstractSocket(object):
             self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
             self.sock.connect((self.remote_addr, self.remote_port))
         except socket.error as error:
-            self.log.error("Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error))
+            self.log.error(
+                "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
+            )
             sys.exit(1)
 
     # ------------------------------------------------------------------------------
@@ -1430,7 +1444,7 @@ class AbstractSocket(object):
         """Send data."""
         # In case of sending data back to an udp client we need to wait
         # until the client has first connected and told us its addr/port
-        if self.options['udp'] and self.udp_client_addr is None and self.udp_client_port is None:
+        if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
             self.log.info("Waiting for UDP client to connect")
             while self.udp_client_addr is None and self.udp_client_port is None:
                 pass
@@ -1448,7 +1462,7 @@ class AbstractSocket(object):
                 return
             try:
                 self.log.trace("Trying to send: {}".format(data))
-                if self.options['udp']:
+                if self.options["udp"]:
                     send += self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
                 else:
                     send += self.conn.send(data)
@@ -1466,18 +1480,22 @@ class AbstractSocket(object):
                 self.log.error("Socket is gone")
                 return
             try:
-                self.log.trace("Waiting to receive data (bufsize={})...".format(self.options['bufsize']))
-                (byte, addr) = self.conn.recvfrom(self.options['bufsize'])
-                data = (byte)
-                #data = self.b2str(byte)
+                self.log.trace(
+                    "Waiting to receive data (bufsize={})...".format(self.options["bufsize"])
+                )
+                (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
+                data = byte
+                # data = self.b2str(byte)
                 self.log.trace("Received: {}".format(data))
 
                 # If we're receiving data from a UDP client
                 # we can firstly/finally set its addr/port in order
                 # to send data back to it (see send() function)
-                if self.options['udp']:
+                if self.options["udp"]:
                     self.udp_client_addr, self.udp_client_port = addr
-                    self.log.info("Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port))
+                    self.log.info(
+                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
+                    )
 
             except socket.error as error:
                 self.log.error("Receive Error: {}".format(error))
@@ -1524,7 +1542,7 @@ class Logger(object):
         """Log error messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[ERROR] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         else:
@@ -1534,7 +1552,7 @@ class Logger(object):
         """Log warning messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[WARN]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         elif self.verbosity > 0:
@@ -1544,7 +1562,7 @@ class Logger(object):
         """Log info messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[INFO]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         elif self.verbosity > 1:
@@ -1554,7 +1572,7 @@ class Logger(object):
         """Log debug messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[DEBUG] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         elif self.verbosity > 2:
@@ -1564,7 +1582,7 @@ class Logger(object):
         """Log trace messages."""
         if self.verbosity > 3:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[TRACE] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
 
@@ -1603,6 +1621,7 @@ class Runner(object):
 
     def run(self):
         """Run threaded NetCat."""
+
         def receiver():
             """Receive data from a socket and process it with a callback.
 
@@ -1661,8 +1680,8 @@ class NetcatModuleOutput(AbstractNetcatModule):
     def __init__(self, logger, options={}):
         """Set specific options for this module."""
         self.log = logger
-        if 'linefeed' in options:
-            self.linefeed = options['linefeed']
+        if "linefeed" in options:
+            self.linefeed = options["linefeed"]
 
     # ------------------------------------------------------------------------------
     # Public Functions
@@ -1692,13 +1711,15 @@ class NetcatModuleCommand(AbstractNetcatModule):
     def __init__(self, logger, options={}):
         """Set specific options for this module."""
         self.log = logger
-        assert 'executable' in options
+        assert "executable" in options
         self.log.debug("Setting '{}' as executable".format(options["executable"]))
-        self.executable = options['executable']
+        self.executable = options["executable"]
 
         # Open executable to wait for commands
         env = os.environ.copy()
-        self.p = Popen(self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env)
+        self.p = Popen(
+            self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env
+        )
         # Define destructor
         atexit.register(self.__exit__)
 
@@ -1744,7 +1765,7 @@ class NetcatServer(AbstractSocket):
         addr = self.gethostbyname(host)
         self.create_socket()
         self.bind(addr, port)
-        if self.options['udp']:
+        if self.options["udp"]:
             self.conn = self.sock
             self.log.info("Waiting on {}:{} (UDP)".format(addr, port))
         else:
@@ -1767,7 +1788,7 @@ class NetcatClient(AbstractSocket):
         addr = self.gethostbyname(host)
         self.create_socket()
         self.conn = self.sock
-        if self.options['udp']:
+        if self.options["udp"]:
             self.udp_client_addr = addr
             self.udp_client_port = port
         else:
@@ -1780,15 +1801,11 @@ class NetcatClient(AbstractSocket):
 # COMMAND LINE ARGUMENTS
 # -------------------------------------------------------------------------------------------------
 
+
 def get_version():
     """Return version information."""
     return """%(prog)s: Version %(version)s (%(url)s) by %(author)s""" % (
-        {
-            "prog": APPNAME,
-            "version": VERSION,
-            "url": APPREPO,
-            "author": "cytopia",
-        }
+        {"prog": APPNAME, "version": VERSION, "url": APPREPO, "author": "cytopia"}
     )
 
 
@@ -1880,7 +1897,11 @@ Start server and listen for incoming connections.
 """,
     )
     mode.add_argument(
-            "-z", "--zero", action="store_true", default=False, help="""[Zero-I/0 mode]:
+        "-z",
+        "--zero",
+        action="store_true",
+        default=False,
+        help="""[Zero-I/0 mode]:
 Connect to a remote endpoint and report status only.
 
 """,
@@ -1896,7 +1917,8 @@ forwarded to. %(prog)s will listen locally
 (specified by hostname and port) and forward all
 traffic to the specified value for -L/--local.
 
-""" % ({"prog": APPNAME}),
+"""
+        % ({"prog": APPNAME}),
     )
     mode.add_argument(
         "-R",
@@ -1908,7 +1930,8 @@ Specify local <addr>:<port> from which traffic should be
 forwarded from. %(prog)s will connect remotely
 (specified by hostname and port) and for ward all
 traffic from the specified value for -R/--remote.
-""" % ({"prog": APPNAME}),
+"""
+        % ({"prog": APPNAME}),
     )
 
     optional.add_argument(
@@ -1919,7 +1942,11 @@ traffic from the specified value for -R/--remote.
         help="Execute shell command. Only for connect or listen mode.",
     )
     optional.add_argument(
-        "-C", "--crlf", action="store_true", default=False, help="Send CRLF line-endings in connect mode (default: LF)",
+        "-C",
+        "--crlf",
+        action="store_true",
+        default=False,
+        help="Send CRLF line-endings in connect mode (default: LF)",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
@@ -1952,7 +1979,8 @@ Use 0 to retry endlessly. (default: don't)
 Zero-I/O mode (TCP only):
 Same as connect mode.
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reconn",
         metavar="x",
@@ -1969,7 +1997,8 @@ to it x many times before giving up. Use 0 to reconnect
 endlessy. (default: don't)
 This might be handy for reverse shells ;-)
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reinit-robin",
         metavar="port",
@@ -1988,7 +2017,8 @@ This helps to evade EGRESS firewalls for reverse shells
 Use with -z/--zero to probe outbound allowed ports.
 Ensure to have enough listeners at the remote endpoint.
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reconn-robin",
         metavar="port",
@@ -2006,20 +2036,21 @@ This help your reverse shell to evade intrusion
 detection systems that will cut your connection and
 block the outbound port.
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reinit-wait",
         metavar="s",
         default=1,
         type=int,
-        help="Wait x seconds between re-inits. (default: 1)\n\n"
+        help="Wait x seconds between re-inits. (default: 1)\n\n",
     )
     advanced.add_argument(
         "--reconn-wait",
         metavar="s",
         default=1,
         type=int,
-        help="Wait x seconds between re-connects. (default: 1)\n\n"
+        help="Wait x seconds between re-connects. (default: 1)\n\n",
     )
     advanced.add_argument(
         "--udp-ping-intvl",
@@ -2037,7 +2068,8 @@ This option instructs the UDP client to send a single
 newline every s seconds. By not only doing it once,
 but in intervals, you can also maintain a connection
 if you restart your listening server.
-""")
+""",
+    )
     misc.add_argument("-h", "--help", action="help", help="Show this help message and exit")
     misc.add_argument(
         "-V",
@@ -2061,7 +2093,8 @@ if you restart your listening server.
     if args["exec"] is not None and (args.local is not None or args.remote is not None):
         parser.print_usage()
         print(
-            "%s: error: -e/--exec cannot be used together with -L/--local or -R/--remote" % (APPNAME),
+            "%s: error: -e/--exec cannot be used together with -L/--local or -R/--remote"
+            % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -2085,7 +2118,8 @@ if you restart your listening server.
     if args.hostname is None and (not args.listen and args.local is None):
         parser.print_usage()
         print(
-            "%s: error: the following arguments are required: hostname" % (APPNAME), file=sys.stderr,
+            "%s: error: the following arguments are required: hostname" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -2109,15 +2143,15 @@ def main():
 
     # Set netcat options
     net_opts = {
-        'udp': args.udp,
-        'nodns': args.nodns,
-        'bufsize': 1024,
-        'backlog': 0,
-        'reinit': False,
-        'reconn': False,
-        'reinit_wait': 0,
-        'reconn_wait': 0,
-        'udp_ping_intvl': 0  # only makes sense for udp client and only for rev-shell (0:off)
+        "udp": args.udp,
+        "nodns": args.nodns,
+        "bufsize": 1024,
+        "backlog": 0,
+        "reinit": False,
+        "reconn": False,
+        "reinit_wait": 0,
+        "reconn_wait": 0,
+        "udp_ping_intvl": 0,  # only makes sense for udp client and only for rev-shell (0:off)
     }
 
     # Initialize logger
@@ -2257,7 +2291,11 @@ Start server and listen for incoming connections.
 """,
     )
     mode.add_argument(
-            "-z", "--zero", action="store_true", default=False, help="""[Zero-I/0 mode]:
+        "-z",
+        "--zero",
+        action="store_true",
+        default=False,
+        help="""[Zero-I/0 mode]:
 Connect to a remote endpoint and report status only.
 
 """,
@@ -2273,7 +2311,8 @@ forwarded to. %(prog)s will listen locally
 (specified by hostname and port) and forward all
 traffic to the specified value for -L/--local.
 
-""" % ({"prog": APPNAME}),
+"""
+        % ({"prog": APPNAME}),
     )
     mode.add_argument(
         "-R",
@@ -2285,7 +2324,8 @@ Specify local <addr>:<port> from which traffic should be
 forwarded from. %(prog)s will connect remotely
 (specified by hostname and port) and for ward all
 traffic from the specified value for -R/--remote.
-""" % ({"prog": APPNAME}),
+"""
+        % ({"prog": APPNAME}),
     )
 
     optional.add_argument(
@@ -2296,7 +2336,11 @@ traffic from the specified value for -R/--remote.
         help="Execute shell command. Only for connect or listen mode.",
     )
     optional.add_argument(
-        "-C", "--crlf", action="store_true", default=False, help="Send CRLF line-endings in connect mode (default: LF)",
+        "-C",
+        "--crlf",
+        action="store_true",
+        default=False,
+        help="Send CRLF line-endings in connect mode (default: LF)",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
@@ -2329,7 +2373,8 @@ Use 0 to retry endlessly. (default: don't)
 Zero-I/O mode (TCP only):
 Same as connect mode.
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reconn",
         metavar="x",
@@ -2346,7 +2391,8 @@ to it x many times before giving up. Use 0 to reconnect
 endlessy. (default: don't)
 This might be handy for reverse shells ;-)
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reinit-robin",
         metavar="port",
@@ -2365,7 +2411,8 @@ This helps to evade EGRESS firewalls for reverse shells
 Use with -z/--zero to probe outbound allowed ports.
 Ensure to have enough listeners at the remote endpoint.
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reconn-robin",
         metavar="port",
@@ -2383,20 +2430,21 @@ This help your reverse shell to evade intrusion
 detection systems that will cut your connection and
 block the outbound port.
 
-""")
+""",
+    )
     advanced.add_argument(
         "--reinit-wait",
         metavar="s",
         default=1,
         type=int,
-        help="Wait x seconds between re-inits. (default: 1)\n\n"
+        help="Wait x seconds between re-inits. (default: 1)\n\n",
     )
     advanced.add_argument(
         "--reconn-wait",
         metavar="s",
         default=1,
         type=int,
-        help="Wait x seconds between re-connects. (default: 1)\n\n"
+        help="Wait x seconds between re-connects. (default: 1)\n\n",
     )
     advanced.add_argument(
         "--udp-ping-intvl",
@@ -2414,7 +2462,8 @@ This option instructs the UDP client to send a single
 newline every s seconds. By not only doing it once,
 but in intervals, you can also maintain a connection
 if you restart your listening server.
-""")
+""",
+    )
     misc.add_argument("-h", "--help", action="help", help="Show this help message and exit")
     misc.add_argument(
         "-V",
@@ -2438,7 +2487,8 @@ if you restart your listening server.
     if args["exec"] is not None and (args.local is not None or args.remote is not None):
         parser.print_usage()
         print(
-            "%s: error: -e/--exec cannot be used together with -L/--local or -R/--remote" % (APPNAME),
+            "%s: error: -e/--exec cannot be used together with -L/--local or -R/--remote"
+            % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -2462,7 +2512,8 @@ if you restart your listening server.
     if args.hostname is None and (not args.listen and args.local is None):
         parser.print_usage()
         print(
-            "%s: error: the following arguments are required: hostname" % (APPNAME), file=sys.stderr,
+            "%s: error: the following arguments are required: hostname" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -2489,12 +2540,7 @@ if you restart your listening server.
     <pre><code>def get_version():
     """Return version information."""
     return """%(prog)s: Version %(version)s (%(url)s) by %(author)s""" % (
-        {
-            "prog": APPNAME,
-            "version": VERSION,
-            "url": APPREPO,
-            "author": "cytopia",
-        }
+        {"prog": APPNAME, "version": VERSION, "url": APPREPO, "author": "cytopia"}
     )
 </code></pre>
   </div>
@@ -2529,15 +2575,15 @@ if you restart your listening server.
 
     # Set netcat options
     net_opts = {
-        'udp': args.udp,
-        'nodns': args.nodns,
-        'bufsize': 1024,
-        'backlog': 0,
-        'reinit': False,
-        'reconn': False,
-        'reinit_wait': 0,
-        'reconn_wait': 0,
-        'udp_ping_intvl': 0  # only makes sense for udp client and only for rev-shell (0:off)
+        "udp": args.udp,
+        "nodns": args.nodns,
+        "bufsize": 1024,
+        "backlog": 0,
+        "reinit": False,
+        "reconn": False,
+        "reinit_wait": 0,
+        "reconn_wait": 0,
+        "udp_ping_intvl": 0,  # only makes sense for udp client and only for rev-shell (0:off)
     }
 
     # Initialize logger
@@ -2618,7 +2664,7 @@ which could be output to stdout, send it to the shell or to a socket.</p></div>
         while False:
             yield None
 
-    @ abstractmethod
+    @abstractmethod
     def output_callback(self, data):
         """Implement a callback which processes the input into some output."""
         print(data)
@@ -2694,7 +2740,7 @@ def input_generator(self):
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatModule.output_callback', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.AbstractNetcatModule.output_callback" class="source">
-    <pre><code>@ abstractmethod
+    <pre><code>@abstractmethod
 def output_callback(self, data):
     """Implement a callback which processes the input into some output."""
     print(data)
@@ -2727,14 +2773,14 @@ def output_callback(self, data):
     role = None  # Must be 'server' or 'client'
 
     options = {
-        'udp': False,      # Is TCP or UDP server?
-        'bufsize': 1024,   # Receive buffer size
-        'backlog': 0,      # Listen backlog
-        'nodns': False,    # Do not resolve hostnames
-        'reinit': False,   # False (never), True (indefinite) or int for how many times to reinit
-        'reconn': False,   # False (never), True (indefinite) or int for how many times to reconnect
-        'reinit_wait': 0,  # Time in seconds to wait between reinits
-        'reconn_wait': 0,  # Time in seconds to wait between reconnects
+        "udp": False,  # Is TCP or UDP server?
+        "bufsize": 1024,  # Receive buffer size
+        "backlog": 0,  # Listen backlog
+        "nodns": False,  # Do not resolve hostnames
+        "reinit": False,  # False (never), True (indefinite) or int for how many times to reinit
+        "reconn": False,  # False (never), True (indefinite) or int for how many times to reconnect
+        "reinit_wait": 0,  # Time in seconds to wait between reinits
+        "reconn_wait": 0,  # Time in seconds to wait between reconnects
     }
 
     # In case the server is running in UDP mode,
@@ -2760,18 +2806,18 @@ def output_callback(self, data):
 
         self.role = role
 
-        if 'udp' in options:
-            self.options['udp'] = options['udp']
-        if 'bufsize' in options:
-            self.options['.bufsize'] = options['bufsize']
-        if 'backlog' in options:
-            self.options['backlog'] = options['backlog']
-        if 'nodns' in options:
-            self.options['nodns'] = options['nodns']
-        if 'reconn' in options:
-            self.options['reconn'] = options['reconn']
-        if 'reconn_wait' in options:
-            self.options['reconn_wait'] = options['reconn_wait']
+        if "udp" in options:
+            self.options["udp"] = options["udp"]
+        if "bufsize" in options:
+            self.options[".bufsize"] = options["bufsize"]
+        if "backlog" in options:
+            self.options["backlog"] = options["backlog"]
+        if "nodns" in options:
+            self.options["nodns"] = options["nodns"]
+        if "reconn" in options:
+            self.options["reconn"] = options["reconn"]
+        if "reconn_wait" in options:
+            self.options["reconn_wait"] = options["reconn_wait"]
 
         self.log = logger
         # Register destructor
@@ -2812,23 +2858,29 @@ def output_callback(self, data):
         assert self.role == "server", "Only the role 'server' can accept connections."
 
         # TODO: This is currently not implemented for UDP
-        if self.options['udp']:
+        if self.options["udp"]:
             return False
 
         # [NO] Never re-accept
-        if type(self.options['reconn']) is bool and not self.options['reconn']:
+        if type(self.options["reconn"]) is bool and not self.options["reconn"]:
             self.log.info("No automatic re-accept specified. Shutting down.")
             return False
         # [YES] Always re-accept indefinitely
-        if type(self.options['reconn']) is bool and self.options['reconn']:
-            self.log.info("Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"]))
+        if type(self.options["reconn"]) is bool and self.options["reconn"]:
+            self.log.info(
+                "Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"])
+            )
             time.sleep(self.options["reconn_wait"])
             self.accept()
             return True
         # [YES] Re-accept x many times
         if self.options["reconn"] > 0:
-            self.log.info("Re-accepting in {} sec ({} more times left)".format(self.options["reconn_wait"], self.options['reconn']))
-            self.options['reconn'] -= 1
+            self.log.info(
+                "Re-accepting in {} sec ({} more times left)".format(
+                    self.options["reconn_wait"], self.options["reconn"]
+                )
+            )
+            self.options["reconn"] -= 1
             time.sleep(self.options["reconn_wait"])
             self.accept()
             return True
@@ -2841,23 +2893,29 @@ def output_callback(self, data):
         assert self.role == "client", "Only the role 'client' can re-connect."
 
         # TODO: This is currently not implemented for UDP
-        if self.options['udp']:
+        if self.options["udp"]:
             return False
 
         # [NO] Never re-connect
-        if type(self.options['reconn']) is bool and not self.options['reconn']:
+        if type(self.options["reconn"]) is bool and not self.options["reconn"]:
             self.log.info("No automatic reconnect specified. Shutting down.")
             return False
         # [YES] Always re-connect indefinitely
-        if type(self.options['reconn']) is bool and self.options['reconn']:
-            self.log.info("Reconnecting in {} sec (indefinitely)".format(self.options["reconn_wait"]))
+        if type(self.options["reconn"]) is bool and self.options["reconn"]:
+            self.log.info(
+                "Reconnecting in {} sec (indefinitely)".format(self.options["reconn_wait"])
+            )
             time.sleep(self.options["reconn_wait"])
             self.__reconnect()
             return True
         # [YES] Re-connect x many times
         if self.options["reconn"] > 0:
-            self.log.info("Reconnecting in {} sec ({} more times left)".format(self.options["reconn_wait"], self.options['reconn']))
-            self.options['reconn'] -= 1
+            self.log.info(
+                "Reconnecting in {} sec ({} more times left)".format(
+                    self.options["reconn_wait"], self.options["reconn"]
+                )
+            )
+            self.options["reconn"] -= 1
             time.sleep(self.options["reconn_wait"])
             self.__reconnect()
             return True
@@ -2899,7 +2957,7 @@ def output_callback(self, data):
     def create_socket(self):
         """Create TCP or UDP socket."""
         try:
-            if self.options['udp']:
+            if self.options["udp"]:
                 self.log.debug("Creating UDP socket")
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             else:
@@ -2921,8 +2979,8 @@ def output_callback(self, data):
     def listen(self):
         """Listen for connections made to the socket."""
         try:
-            self.log.debug("Listening with backlog={}".format(self.options['backlog']))
-            self.sock.listen(self.options['backlog'])
+            self.log.debug("Listening with backlog={}".format(self.options["backlog"]))
+            self.sock.listen(self.options["backlog"])
         except socket.error as error:
             self.log.error("Listening failed: {}".format(error))
             sys.exit(1)
@@ -2944,7 +3002,9 @@ def output_callback(self, data):
             self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
             self.sock.connect((self.remote_addr, self.remote_port))
         except socket.error as error:
-            self.log.error("Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error))
+            self.log.error(
+                "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
+            )
             sys.exit(1)
 
     # ------------------------------------------------------------------------------
@@ -2954,7 +3014,7 @@ def output_callback(self, data):
         """Send data."""
         # In case of sending data back to an udp client we need to wait
         # until the client has first connected and told us its addr/port
-        if self.options['udp'] and self.udp_client_addr is None and self.udp_client_port is None:
+        if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
             self.log.info("Waiting for UDP client to connect")
             while self.udp_client_addr is None and self.udp_client_port is None:
                 pass
@@ -2972,7 +3032,7 @@ def output_callback(self, data):
                 return
             try:
                 self.log.trace("Trying to send: {}".format(data))
-                if self.options['udp']:
+                if self.options["udp"]:
                     send += self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
                 else:
                     send += self.conn.send(data)
@@ -2990,18 +3050,22 @@ def output_callback(self, data):
                 self.log.error("Socket is gone")
                 return
             try:
-                self.log.trace("Waiting to receive data (bufsize={})...".format(self.options['bufsize']))
-                (byte, addr) = self.conn.recvfrom(self.options['bufsize'])
-                data = (byte)
-                #data = self.b2str(byte)
+                self.log.trace(
+                    "Waiting to receive data (bufsize={})...".format(self.options["bufsize"])
+                )
+                (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
+                data = byte
+                # data = self.b2str(byte)
                 self.log.trace("Received: {}".format(data))
 
                 # If we're receiving data from a UDP client
                 # we can firstly/finally set its addr/port in order
                 # to send data back to it (see send() function)
-                if self.options['udp']:
+                if self.options["udp"]:
                     self.udp_client_addr, self.udp_client_port = addr
-                    self.log.info("Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port))
+                    self.log.info(
+                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
+                    )
 
             except socket.error as error:
                 self.log.error("Receive Error: {}".format(error))
@@ -3119,18 +3183,18 @@ def output_callback(self, data):
     assert type(self) is not AbstractSocket, "AbstractSocket cannot be instantiated directly."
     assert role in ["server", "client"], "The role must be 'server' or 'client'."
     self.role = role
-    if 'udp' in options:
-        self.options['udp'] = options['udp']
-    if 'bufsize' in options:
-        self.options['.bufsize'] = options['bufsize']
-    if 'backlog' in options:
-        self.options['backlog'] = options['backlog']
-    if 'nodns' in options:
-        self.options['nodns'] = options['nodns']
-    if 'reconn' in options:
-        self.options['reconn'] = options['reconn']
-    if 'reconn_wait' in options:
-        self.options['reconn_wait'] = options['reconn_wait']
+    if "udp" in options:
+        self.options["udp"] = options["udp"]
+    if "bufsize" in options:
+        self.options[".bufsize"] = options["bufsize"]
+    if "backlog" in options:
+        self.options["backlog"] = options["backlog"]
+    if "nodns" in options:
+        self.options["nodns"] = options["nodns"]
+    if "reconn" in options:
+        self.options["reconn"] = options["reconn"]
+    if "reconn_wait" in options:
+        self.options["reconn_wait"] = options["reconn_wait"]
     self.log = logger
     # Register destructor
     atexit.register(self.__exit__)
@@ -3248,7 +3312,9 @@ def output_callback(self, data):
         self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
         self.sock.connect((self.remote_addr, self.remote_port))
     except socket.error as error:
-        self.log.error("Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error))
+        self.log.error(
+            "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
+        )
         sys.exit(1)
 </code></pre>
   </div>
@@ -3272,7 +3338,7 @@ def output_callback(self, data):
     <pre><code>def create_socket(self):
     """Create TCP or UDP socket."""
     try:
-        if self.options['udp']:
+        if self.options["udp"]:
             self.log.debug("Creating UDP socket")
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
@@ -3334,8 +3400,8 @@ def output_callback(self, data):
     <pre><code>def listen(self):
     """Listen for connections made to the socket."""
     try:
-        self.log.debug("Listening with backlog={}".format(self.options['backlog']))
-        self.sock.listen(self.options['backlog'])
+        self.log.debug("Listening with backlog={}".format(self.options["backlog"]))
+        self.sock.listen(self.options["backlog"])
     except socket.error as error:
         self.log.error("Listening failed: {}".format(error))
         sys.exit(1)
@@ -3365,17 +3431,21 @@ def output_callback(self, data):
             self.log.error("Socket is gone")
             return
         try:
-            self.log.trace("Waiting to receive data (bufsize={})...".format(self.options['bufsize']))
-            (byte, addr) = self.conn.recvfrom(self.options['bufsize'])
-            data = (byte)
-            #data = self.b2str(byte)
+            self.log.trace(
+                "Waiting to receive data (bufsize={})...".format(self.options["bufsize"])
+            )
+            (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
+            data = byte
+            # data = self.b2str(byte)
             self.log.trace("Received: {}".format(data))
             # If we're receiving data from a UDP client
             # we can firstly/finally set its addr/port in order
             # to send data back to it (see send() function)
-            if self.options['udp']:
+            if self.options["udp"]:
                 self.udp_client_addr, self.udp_client_port = addr
-                self.log.info("Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port))
+                self.log.info(
+                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
+                )
         except socket.error as error:
             self.log.error("Receive Error: {}".format(error))
             sys.exit(1)
@@ -3412,7 +3482,7 @@ def output_callback(self, data):
     """Send data."""
     # In case of sending data back to an udp client we need to wait
     # until the client has first connected and told us its addr/port
-    if self.options['udp'] and self.udp_client_addr is None and self.udp_client_port is None:
+    if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
         self.log.info("Waiting for UDP client to connect")
         while self.udp_client_addr is None and self.udp_client_port is None:
             pass
@@ -3429,7 +3499,7 @@ def output_callback(self, data):
             return
         try:
             self.log.trace("Trying to send: {}".format(data))
-            if self.options['udp']:
+            if self.options["udp"]:
                 send += self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
             else:
                 send += self.conn.send(data)
@@ -3502,7 +3572,7 @@ def output_callback(self, data):
         """Log error messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[ERROR] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         else:
@@ -3512,7 +3582,7 @@ def output_callback(self, data):
         """Log warning messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[WARN]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         elif self.verbosity > 0:
@@ -3522,7 +3592,7 @@ def output_callback(self, data):
         """Log info messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[INFO]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         elif self.verbosity > 1:
@@ -3532,7 +3602,7 @@ def output_callback(self, data):
         """Log debug messages."""
         if self.verbosity > 2:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[DEBUG] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
         elif self.verbosity > 2:
@@ -3542,7 +3612,7 @@ def output_callback(self, data):
         """Log trace messages."""
         if self.verbosity > 3:
             _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals['self'].__class__.__name__
+            cls = _stack[0].f_locals["self"].__class__.__name__
             fnc = _stack[3]
             print("[TRACE] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
 </code></pre>
@@ -3608,7 +3678,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     """Log debug messages."""
     if self.verbosity > 2:
         _stack = inspect.stack()[1]
-        cls = _stack[0].f_locals['self'].__class__.__name__
+        cls = _stack[0].f_locals["self"].__class__.__name__
         fnc = _stack[3]
         print("[DEBUG] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
     elif self.verbosity > 2:
@@ -3636,7 +3706,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     """Log error messages."""
     if self.verbosity > 2:
         _stack = inspect.stack()[1]
-        cls = _stack[0].f_locals['self'].__class__.__name__
+        cls = _stack[0].f_locals["self"].__class__.__name__
         fnc = _stack[3]
         print("[ERROR] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
     else:
@@ -3664,7 +3734,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     """Log info messages."""
     if self.verbosity > 2:
         _stack = inspect.stack()[1]
-        cls = _stack[0].f_locals['self'].__class__.__name__
+        cls = _stack[0].f_locals["self"].__class__.__name__
         fnc = _stack[3]
         print("[INFO]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
     elif self.verbosity > 1:
@@ -3692,7 +3762,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     """Log trace messages."""
     if self.verbosity > 3:
         _stack = inspect.stack()[1]
-        cls = _stack[0].f_locals['self'].__class__.__name__
+        cls = _stack[0].f_locals["self"].__class__.__name__
         fnc = _stack[3]
         print("[TRACE] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
 </code></pre>
@@ -3718,7 +3788,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     """Log warning messages."""
     if self.verbosity > 2:
         _stack = inspect.stack()[1]
-        cls = _stack[0].f_locals['self'].__class__.__name__
+        cls = _stack[0].f_locals["self"].__class__.__name__
         fnc = _stack[3]
         print("[WARN]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
     elif self.verbosity > 0:
@@ -3762,7 +3832,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
         addr = self.gethostbyname(host)
         self.create_socket()
         self.conn = self.sock
-        if self.options['udp']:
+        if self.options["udp"]:
             self.udp_client_addr = addr
             self.udp_client_port = port
         else:
@@ -3863,7 +3933,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     addr = self.gethostbyname(host)
     self.create_socket()
     self.conn = self.sock
-    if self.options['udp']:
+    if self.options["udp"]:
         self.udp_client_addr = addr
         self.udp_client_port = port
     else:
@@ -3984,7 +4054,9 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
         self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
         self.sock.connect((self.remote_addr, self.remote_port))
     except socket.error as error:
-        self.log.error("Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error))
+        self.log.error(
+            "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
+        )
         sys.exit(1)
 </code></pre>
   </div>
@@ -4008,7 +4080,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     <pre><code>def create_socket(self):
     """Create TCP or UDP socket."""
     try:
-        if self.options['udp']:
+        if self.options["udp"]:
             self.log.debug("Creating UDP socket")
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
@@ -4070,8 +4142,8 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     <pre><code>def listen(self):
     """Listen for connections made to the socket."""
     try:
-        self.log.debug("Listening with backlog={}".format(self.options['backlog']))
-        self.sock.listen(self.options['backlog'])
+        self.log.debug("Listening with backlog={}".format(self.options["backlog"]))
+        self.sock.listen(self.options["backlog"])
     except socket.error as error:
         self.log.error("Listening failed: {}".format(error))
         sys.exit(1)
@@ -4101,17 +4173,21 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
             self.log.error("Socket is gone")
             return
         try:
-            self.log.trace("Waiting to receive data (bufsize={})...".format(self.options['bufsize']))
-            (byte, addr) = self.conn.recvfrom(self.options['bufsize'])
-            data = (byte)
-            #data = self.b2str(byte)
+            self.log.trace(
+                "Waiting to receive data (bufsize={})...".format(self.options["bufsize"])
+            )
+            (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
+            data = byte
+            # data = self.b2str(byte)
             self.log.trace("Received: {}".format(data))
             # If we're receiving data from a UDP client
             # we can firstly/finally set its addr/port in order
             # to send data back to it (see send() function)
-            if self.options['udp']:
+            if self.options["udp"]:
                 self.udp_client_addr, self.udp_client_port = addr
-                self.log.info("Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port))
+                self.log.info(
+                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
+                )
         except socket.error as error:
             self.log.error("Receive Error: {}".format(error))
             sys.exit(1)
@@ -4148,7 +4224,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     """Send data."""
     # In case of sending data back to an udp client we need to wait
     # until the client has first connected and told us its addr/port
-    if self.options['udp'] and self.udp_client_addr is None and self.udp_client_port is None:
+    if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
         self.log.info("Waiting for UDP client to connect")
         while self.udp_client_addr is None and self.udp_client_port is None:
             pass
@@ -4165,7 +4241,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
             return
         try:
             self.log.trace("Trying to send: {}".format(data))
-            if self.options['udp']:
+            if self.options["udp"]:
                 send += self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
             else:
                 send += self.conn.send(data)
@@ -4214,13 +4290,15 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     def __init__(self, logger, options={}):
         """Set specific options for this module."""
         self.log = logger
-        assert 'executable' in options
+        assert "executable" in options
         self.log.debug("Setting '{}' as executable".format(options["executable"]))
-        self.executable = options['executable']
+        self.executable = options["executable"]
 
         # Open executable to wait for commands
         env = os.environ.copy()
-        self.p = Popen(self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env)
+        self.p = Popen(
+            self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env
+        )
         # Define destructor
         atexit.register(self.__exit__)
 
@@ -4290,12 +4368,14 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     <pre><code>def __init__(self, logger, options={}):
     """Set specific options for this module."""
     self.log = logger
-    assert 'executable' in options
+    assert "executable" in options
     self.log.debug("Setting '{}' as executable".format(options["executable"]))
-    self.executable = options['executable']
+    self.executable = options["executable"]
     # Open executable to wait for commands
     env = os.environ.copy()
-    self.p = Popen(self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env)
+    self.p = Popen(
+        self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env
+    )
     # Define destructor
     atexit.register(self.__exit__)
 </code></pre>
@@ -4412,8 +4492,8 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     def __init__(self, logger, options={}):
         """Set specific options for this module."""
         self.log = logger
-        if 'linefeed' in options:
-            self.linefeed = options['linefeed']
+        if "linefeed" in options:
+            self.linefeed = options["linefeed"]
 
     # ------------------------------------------------------------------------------
     # Public Functions
@@ -4467,8 +4547,8 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     <pre><code>def __init__(self, logger, options={}):
     """Set specific options for this module."""
     self.log = logger
-    if 'linefeed' in options:
-        self.linefeed = options['linefeed']
+    if "linefeed" in options:
+        self.linefeed = options["linefeed"]
 </code></pre>
   </div>
 </div>
@@ -4554,7 +4634,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
         addr = self.gethostbyname(host)
         self.create_socket()
         self.bind(addr, port)
-        if self.options['udp']:
+        if self.options["udp"]:
             self.conn = self.sock
             self.log.info("Waiting on {}:{} (UDP)".format(addr, port))
         else:
@@ -4669,7 +4749,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     addr = self.gethostbyname(host)
     self.create_socket()
     self.bind(addr, port)
-    if self.options['udp']:
+    if self.options["udp"]:
         self.conn = self.sock
         self.log.info("Waiting on {}:{} (UDP)".format(addr, port))
     else:
@@ -4790,7 +4870,9 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
         self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
         self.sock.connect((self.remote_addr, self.remote_port))
     except socket.error as error:
-        self.log.error("Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error))
+        self.log.error(
+            "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
+        )
         sys.exit(1)
 </code></pre>
   </div>
@@ -4814,7 +4896,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     <pre><code>def create_socket(self):
     """Create TCP or UDP socket."""
     try:
-        if self.options['udp']:
+        if self.options["udp"]:
             self.log.debug("Creating UDP socket")
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
@@ -4876,8 +4958,8 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     <pre><code>def listen(self):
     """Listen for connections made to the socket."""
     try:
-        self.log.debug("Listening with backlog={}".format(self.options['backlog']))
-        self.sock.listen(self.options['backlog'])
+        self.log.debug("Listening with backlog={}".format(self.options["backlog"]))
+        self.sock.listen(self.options["backlog"])
     except socket.error as error:
         self.log.error("Listening failed: {}".format(error))
         sys.exit(1)
@@ -4907,17 +4989,21 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
             self.log.error("Socket is gone")
             return
         try:
-            self.log.trace("Waiting to receive data (bufsize={})...".format(self.options['bufsize']))
-            (byte, addr) = self.conn.recvfrom(self.options['bufsize'])
-            data = (byte)
-            #data = self.b2str(byte)
+            self.log.trace(
+                "Waiting to receive data (bufsize={})...".format(self.options["bufsize"])
+            )
+            (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
+            data = byte
+            # data = self.b2str(byte)
             self.log.trace("Received: {}".format(data))
             # If we're receiving data from a UDP client
             # we can firstly/finally set its addr/port in order
             # to send data back to it (see send() function)
-            if self.options['udp']:
+            if self.options["udp"]:
                 self.udp_client_addr, self.udp_client_port = addr
-                self.log.info("Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port))
+                self.log.info(
+                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
+                )
         except socket.error as error:
             self.log.error("Receive Error: {}".format(error))
             sys.exit(1)
@@ -4954,7 +5040,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
     """Send data."""
     # In case of sending data back to an udp client we need to wait
     # until the client has first connected and told us its addr/port
-    if self.options['udp'] and self.udp_client_addr is None and self.udp_client_port is None:
+    if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
         self.log.info("Waiting for UDP client to connect")
         while self.udp_client_addr is None and self.udp_client_port is None:
             pass
@@ -4971,7 +5057,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
             return
         try:
             self.log.trace("Trying to send: {}".format(data))
-            if self.options['udp']:
+            if self.options["udp"]:
                 send += self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
             else:
                 send += self.conn.send(data)
@@ -5029,6 +5115,7 @@ verbosity == 4: Log errors, warnings, info, debug, trace, class/func names</p></
 
     def run(self):
         """Run threaded NetCat."""
+
         def receiver():
             """Receive data from a socket and process it with a callback.
 
