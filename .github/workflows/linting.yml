@@ -25,6 +25,7 @@ jobs:
           - version
           - lint-files
           - lint-docs
+          - lint-usage
 
     name: "[ ${{ matrix.target }} ]"
     steps:

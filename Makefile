@@ -5,7 +5,7 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint test pycodestyle pydocstyle black version files docs dist sdist bdist build checkbuild deploy autoformat clean
+.PHONY: help lint test pycodestyle pydocstyle black version lint-files lint-docs lint-usage docs dist sdist bdist build checkbuild deploy autoformat clean
 
 
 VERSION = 2.7
@@ -51,39 +51,39 @@ help:
 # Lint Targets
 # -------------------------------------------------------------------------------------------------
 
-lint: pycodestyle pydocstyle black version files
+lint: pycodestyle pydocstyle black version lint-files lint-docs lint-usage
 
 
 pycodestyle:
-	@echo "--------------------------------------------------------------------------------"
-	@echo " Check pydocstyle"
-	@echo "--------------------------------------------------------------------------------"
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Check pydocstyle"
+	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm -v $(PWD):/data cytopia/pycodestyle --show-source --show-pep8 $(BINPATH)$(BINNAME)
 
 pydocstyle:
-	@echo "--------------------------------------------------------------------------------"
-	@echo " Check pycodestyle"
-	@echo "--------------------------------------------------------------------------------"
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Check pycodestyle"
+	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm -v $(PWD):/data cytopia/pydocstyle $(BINPATH)$(BINNAME)
 
 black:
-	@echo "--------------------------------------------------------------------------------"
-	@echo " Check Python Black"
-	@echo "--------------------------------------------------------------------------------"
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Check Python Black"
+	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
 
 version:
-	@echo "--------------------------------------------------------------------------------"
-	@echo " Check version config"
-	@echo "--------------------------------------------------------------------------------"
-	@if [ "$$(grep version= setup.py | awk -F'"' '{print $$2}')" != "$$(grep 'VERSION ' $(BINPATH)$(BINNAME) | awk -F'"' '{print $$2}')" ]; then \
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Check version config"
+	@echo "# -------------------------------------------------------------------- #"
+	if [ "$$(grep version= setup.py | awk -F'"' '{print $$2}')" != "$$(grep 'VERSION ' $(BINPATH)$(BINNAME) | awk -F'"' '{print $$2}')" ]; then \
 		echo "Version mismatch in setup.py and $(BINPATH)$(BINNAME)"; \
 		exit 1; \
 	fi
 
 lint-files:
-	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Lint files                                                           #"
+	@echo "# --------------------------------------------------------------------"
+	@echo "# Lint files"
 	@echo "# -------------------------------------------------------------------- #"
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-cr --text --ignore '$(FL_IGNORES)' --path .
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-crlf --text --ignore '$(FL_IGNORES)' --path .
@@ -94,10 +94,19 @@ lint-files:
 
 lint-docs:
 	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Lint docs                                                            #"
+	@echo "# Lint docs"
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory docs
 	git diff --quiet || { echo "Build Changes"; git diff|cat; git status; false; }
+
+lint-usage: SHELL := /bin/bash
+lint-usage:
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Lint usage"
+	@echo "# -------------------------------------------------------------------- #"
+	diff --ignore-trailing-space \
+		<($(BINPATH)$(BINNAME) -h) \
+		<(cat README.md | grep -E -A 10000 'usage:[[:space:]]' | grep -E -B 10000 '^[[:space:]]+\-V')
 
 
 # -------------------------------------------------------------------------------------------------
