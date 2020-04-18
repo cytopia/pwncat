@@ -5,28 +5,40 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint test pycodestyle pydocstyle black version dist sdist bdist build checkbuild deploy autoformat clean
+.PHONY: help lint test pycodestyle pydocstyle black version docs dist sdist bdist build checkbuild deploy autoformat clean
 
 
 VERSION = 2.7
 BINPATH = bin/
-BINNAME = netcat
+BINNAME = pwncat
 
 
 # -------------------------------------------------------------------------------------------------
 # Default Target
 # -------------------------------------------------------------------------------------------------
 help:
+	@echo " ██▓███   █     █░ ███▄    █  ▄████▄   ▄▄▄      ▄▄▄█████▓"
+	@echo "▓██░  ██▒▓█░ █ ░█░ ██ ▀█   █ ▒██▀ ▀█  ▒████▄    ▓  ██▒ ▓▒"
+	@echo "▓██░ ██▓▒▒█░ █ ░█ ▓██  ▀█ ██▒▒▓█    ▄ ▒██  ▀█▄  ▒ ▓██░ ▒░"
+	@echo "▒██▄█▓▒ ▒░█░ █ ░█ ▓██▒  ▐▌██▒▒▓▓▄ ▄██▒░██▄▄▄▄██ ░ ▓██▓ ░ "
+	@echo "▒██▒ ░  ░░░██▒██▓ ▒██░   ▓██░▒ ▓███▀ ░ ▓█   ▓██▒  ▒██▒ ░ "
+	@echo "▒▓▒░ ░  ░░ ▓░▒ ▒  ░ ▒░   ▒ ▒ ░ ░▒ ▒  ░ ▒▒   ▓▒█░  ▒ ░░   "
+	@echo "░▒ ░       ▒ ░ ░  ░ ░░   ░ ▒░  ░  ▒     ▒   ▒▒ ░    ░    "
+	@echo "░░         ░   ░     ░   ░ ░ ░          ░   ▒     ░      "
+	@echo "             ░             ░ ░ ░            ░  ░         "
+	@echo "                             ░                           "
+	@echo
 	@echo "lint             Lint source code"
-	@echo "test             Test source code"
+	@echo "test             Run integration tests"
 	@echo "autoformat       Autoformat code according to Python black"
-	@echo "install          Install (requires sudo or root)"
-	@echo "uninstall        Uninstall (requires sudo or root)"
+	@echo
+	@echo "docs             Generate docs"
+	@echo
 	@echo "build            Build Python package"
 	@echo "dist             Create source and binary distribution"
 	@echo "sdist            Create source distribution"
 	@echo "bdist            Create binary distribution"
-	@echo "clean            Build"
+	@echo "clean            Clean the Build"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -36,20 +48,31 @@ help:
 lint: pycodestyle pydocstyle black version
 
 pycodestyle:
+	@echo "--------------------------------------------------------------------------------"
+	@echo " Check pydocstyle"
+	@echo "--------------------------------------------------------------------------------"
 	docker run --rm -v $(PWD):/data cytopia/pycodestyle --show-source --show-pep8 $(BINPATH)$(BINNAME)
 
 pydocstyle:
+	@echo "--------------------------------------------------------------------------------"
+	@echo " Check pycodestyle"
+	@echo "--------------------------------------------------------------------------------"
 	docker run --rm -v $(PWD):/data cytopia/pydocstyle $(BINPATH)$(BINNAME)
 
 black:
+	@echo "--------------------------------------------------------------------------------"
+	@echo " Check Python Black"
+	@echo "--------------------------------------------------------------------------------"
 	docker run --rm -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
 
 version:
-	@if [ "$$(grep version= setup.py | awk -F'"' '{print $$2}')" != "$$(grep 'VERSION ' bin/netcat | awk -F'"' '{print $$2}')" ]; then \
-		echo "Version mismatch in setup.py and bin/netcat"; \
+	@echo "--------------------------------------------------------------------------------"
+	@echo " Check version config"
+	@echo "--------------------------------------------------------------------------------"
+	@if [ "$$(grep version= setup.py | awk -F'"' '{print $$2}')" != "$$(grep 'VERSION ' $(BINPATH)$(BINNAME) | awk -F'"' '{print $$2}')" ]; then \
+		echo "Version mismatch in setup.py and $(BINPATH)$(BINNAME)"; \
 		exit 1; \
 	fi
-
 
 
 # -------------------------------------------------------------------------------------------------
@@ -58,6 +81,14 @@ version:
 
 test:
 	@echo "noop"
+
+
+# -------------------------------------------------------------------------------------------------
+# Documentation
+# -------------------------------------------------------------------------------------------------
+docs:
+	pdoc --overwrite --external-links --html --html-dir docs/ $(BINPATH)$(BINNAME) $(BINNAME) && \
+	mv docs/$(BINNAME).m.html docs/$(BINNAME).api.html
 
 
 # -------------------------------------------------------------------------------------------------

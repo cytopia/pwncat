@@ -1,6 +1,8 @@
-netcat.egg-info/
-netcat.egg-info/
+pwncat.egg-info/
+pwncat.egg-info/
 build/
 dist/
 tests/output/*
 !.keepme
+__pycache__
+*.pyc
