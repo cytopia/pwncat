@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.5-alpha
+
+#### Added
+- Feature: Local port forward (`-L`)
+
+
 ## Release 0.0.4-alpha
 
 #### Added
