@@ -131,7 +131,7 @@ usage: pwncat [-Cnuv] [-e cmd] hostname port
 
 Enhanced and comptaible Netcat implementation written in Python (2 and 3) with
 connect, zero-i/o, listen and forward modes and techniques to detect and evade
-firewalls and intrusion detection systems.
+firewalls and intrusion prevention systems.
 
 positional arguments:
   hostname              Address to listen, forward or connect to
@@ -214,7 +214,7 @@ advanced arguments:
                         Set --reconn to at least the number of ports to probe +1
                         Set --reconn-wait to 0
                         This help your reverse shell to evade intrusion
-                        detection systems that will cut your connection and
+                        prevention systems that will cut your connection and
                         block the outbound port.
 
   --reinit-wait s       Wait x seconds between re-inits. (default: 1)

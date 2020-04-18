@@ -22,7 +22,7 @@ import time
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.2-alpha"
+VERSION = "0.0.3-alpha"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ class AbstractNetcatModule:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __init__(self, logger, options={}):
+    def __init__(self, logger, encoder, options={}):
         """Set specific options for this module."""
         pass
 
@@ -81,8 +81,11 @@ class AbstractSocket(object):
         "nodns": False,  # Do not resolve hostnames
         "reinit": False,  # False (never), True (indefinite) or int for how many times to reinit
         "reconn": False,  # False (never), True (indefinite) or int for how many times to reconnect
+        "reinit_robin": [],  # Ports to round-robin during failed init phase
+        "reconn_robin": [],  # Ports to round-robin during failed phase (after 1st succ init)
         "reinit_wait": 0,  # Time in seconds to wait between reinits
         "reconn_wait": 0,  # Time in seconds to wait between reconnects
+        "udp_ping_intvl": False,  # Interval in sec for UDP client to ping server
     }
 
     # In case the server is running in UDP mode,
@@ -101,27 +104,38 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, role, options={}):
+    def __init__(self, logger, encoder, role, options={}):
         """Constructor."""
         assert type(self) is not AbstractSocket, "AbstractSocket cannot be instantiated directly."
         assert role in ["server", "client"], "The role must be 'server' or 'client'."
 
+        self.log = logger
+        self.enc = encoder
         self.role = role
 
         if "udp" in options:
             self.options["udp"] = options["udp"]
         if "bufsize" in options:
-            self.options[".bufsize"] = options["bufsize"]
+            self.options["bufsize"] = options["bufsize"]
         if "backlog" in options:
             self.options["backlog"] = options["backlog"]
         if "nodns" in options:
             self.options["nodns"] = options["nodns"]
+        if "reinit" in options:
+            self.options["reinit"] = options["reinit"]
         if "reconn" in options:
             self.options["reconn"] = options["reconn"]
+        if "reinit_robin" in options:
+            self.options["reinit_robin"] = options["reinit_robin"]
+        if "reconn_robin" in options:
+            self.options["reconn_robin"] = options["reconn_robin"]
+        if "reinit_wait" in options:
+            self.options["reinit_wait"] = options["reinit_wait"]
         if "reconn_wait" in options:
             self.options["reconn_wait"] = options["reconn_wait"]
+        if "udp_ping_intvl" in options:
+            self.options["udp_ping_intvl"] = options["udp_ping_intvl"]
 
-        self.log = logger
         # Register destructor
         atexit.register(self.__exit__)
 
@@ -153,15 +167,17 @@ class AbstractSocket(object):
         self.__close_socket(self.sock)
         self.create_socket()
         self.conn = self.sock
-        self.connect()
+        if not self.connect():
+            self.__reconnect_to_server()
 
     def __reaccept_from_client(self):
         """Ensure the server is able to accept clients again, after current client has left."""
+        # Only for server
         assert self.role == "server", "Only the role 'server' can accept connections."
+        # Do not re-accept for UDP
+        assert not self.options["udp"], "This should have been caught during arg check."
 
-        # TODO: This is currently not implemented for UDP
-        if self.options["udp"]:
-            return False
+        print(self.options)
 
         # [NO] Never re-accept
         if type(self.options["reconn"]) is bool and not self.options["reconn"]:
@@ -192,11 +208,10 @@ class AbstractSocket(object):
 
     def __reconnect_to_server(self):
         """Ensure the client re-connects to the remote server, if the remote server hang up."""
+        # Only for Clients
         assert self.role == "client", "Only the role 'client' can re-connect."
-
-        # TODO: This is currently not implemented for UDP
-        if self.options["udp"]:
-            return False
+        # Do not re-connect with UDP
+        assert not self.options["udp"], "This should have been caught during arg check."
 
         # [NO] Never re-connect
         if type(self.options["reconn"]) is bool and not self.options["reconn"]:
@@ -228,21 +243,6 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Helper Functions
     # ------------------------------------------------------------------------------
-    def b2str(self, data):
-        """Convert bytes into string type."""
-        try:
-            return data.decode("utf-8")
-        except UnicodeDecodeError:
-            pass
-        try:
-            return data.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            pass
-        try:
-            return data.decode("ascii")
-        except UnicodeDecodeError:
-            return data.decode("latin-1")
-
     def gethostbyname(self, host):
         """Translate hostname into IP address."""
         if self.options["nodns"]:
@@ -303,11 +303,12 @@ class AbstractSocket(object):
         try:
             self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
             self.sock.connect((self.remote_addr, self.remote_port))
+            return True
         except socket.error as error:
             self.log.error(
                 "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
             )
-            sys.exit(1)
+            return False
 
     # ------------------------------------------------------------------------------
     # Send / Receive Functions
@@ -321,12 +322,10 @@ class AbstractSocket(object):
             while self.udp_client_addr is None and self.udp_client_port is None:
                 pass
 
-        size = len(data)
-        try:
-            data = data.encode()  # TODO: check python2 and check with pty.spawn()
-        except AttributeError:
-            pass
         send = 0
+        size = len(data)
+        data = self.enc.encode(data)
+        assert size == len(data), "Encoding messed up string length, might need to do len() after."
         # Loop until all bytes have been send
         while send < size:
             if self.conn is None:
@@ -357,7 +356,7 @@ class AbstractSocket(object):
                 )
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
                 data = byte
-                # data = self.b2str(byte)
+                data = self.enc.decode(byte)
                 self.log.trace("Received: {}".format(data))
 
                 # If we're receiving data from a UDP client
@@ -384,6 +383,41 @@ class AbstractSocket(object):
                         sys.exit(0)
 
             yield data
+
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: StringEncoder
+# -------------------------------------------------------------------------------------------------
+class StringEncoder(object):
+    """
+    Takes care about Python 2/3 string encoding/decoding.
+
+    This allows to parse all string/byte values internally between all
+    classes or functions as strings to keep full Python 2/3 compat.
+    """
+
+    # https://stackoverflow.com/questions/606191/27527728#27527728
+    codec = "cp437"
+
+    def __init__(self, logger):
+        self.log = logger
+        self.py3 = sys.version_info >= (3, 0)
+
+    def encode(self, data):
+        """Convert string into a byte type for Python3."""
+        if self.py3:
+            self.log.trace("Encoding: {}".format(data))
+            data = data.encode("cp437")
+            self.log.trace("Encoded: {}".format(data))
+        return data
+
+    def decode(self, data):
+        """Convert bytes into a string type for Python3."""
+        if self.py3:
+            self.log.trace("Decoding: {}".format(data))
+            data = data.decode("cp437")
+            self.log.trace("Decoded: {}".format(data))
+        return data
 
 
 # -------------------------------------------------------------------------------------------------
@@ -549,9 +583,10 @@ class NetcatModuleOutput(AbstractNetcatModule):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, options={}):
+    def __init__(self, logger, encoder, options={}):
         """Set specific options for this module."""
         self.log = logger
+        self.enc = encoder
         if "linefeed" in options:
             self.linefeed = options["linefeed"]
 
@@ -566,6 +601,10 @@ class NetcatModuleOutput(AbstractNetcatModule):
 
     def output_callback(self, data):
         """Print received data to stdout."""
+        if data.endswith("\r\n"):
+            data = data[:-2]
+        elif data.endswith("\n") or data.endswith("\r"):
+            data = data[:-1]
         print(data)
 
 
@@ -580,9 +619,10 @@ class NetcatModuleCommand(AbstractNetcatModule):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, options={}):
+    def __init__(self, logger, encoder, options={}):
         """Set specific options for this module."""
         self.log = logger
+        self.enc = encoder
         assert "executable" in options
         self.log.debug("Setting '{}' as executable".format(options["executable"]))
         self.executable = options["executable"]
@@ -604,12 +644,11 @@ class NetcatModuleCommand(AbstractNetcatModule):
     # Public Functions
     # ------------------------------------------------------------------------------
     def input_generator(self):
-        """Constantly ask for user input."""
+        """Constantly ask for input."""
         while True:
             self.log.trace("Reading command output")
-            data = self.p.stdout.readline()  # Much better performance, than read(1)
-            # data = self.p.stdout.read(1024)
-            # data = p.stdout.read(1).decode("utf-8")
+            data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
+            data = self.enc.decode(data)
             self.log.trace("Command output: {}".format(data))
             if not data:
                 self.log.error("No program output received")
@@ -618,6 +657,7 @@ class NetcatModuleCommand(AbstractNetcatModule):
 
     def output_callback(self, data):
         """Send data received to stdin (command input)."""
+        data = self.enc.encode(data)
         self.log.trace("Appending to stdin: {}".format(data))
         self.p.stdin.write(data)
         self.p.stdin.flush()
@@ -629,9 +669,9 @@ class NetcatModuleCommand(AbstractNetcatModule):
 class NetcatServer(AbstractSocket):
     """Netcat Server implementation."""
 
-    def __init__(self, logger, host, port, options={}):
+    def __init__(self, logger, encoder, host, port, options={}):
         """Construct a listening server."""
-        super(NetcatServer, self).__init__(logger, "server", options)
+        super(NetcatServer, self).__init__(logger, encoder, "server", options)
 
         # Setup server
         addr = self.gethostbyname(host)
@@ -652,9 +692,9 @@ class NetcatServer(AbstractSocket):
 class NetcatClient(AbstractSocket):
     """Netcat Client implementation."""
 
-    def __init__(self, logger, host, port, options={}):
+    def __init__(self, logger, encoder, host, port, options={}):
         """Construct a connecting clientt."""
-        super(NetcatClient, self).__init__(logger, "client", options)
+        super(NetcatClient, self).__init__(logger, encoder, "client", options)
 
         # Setup client
         addr = self.gethostbyname(host)
@@ -666,7 +706,8 @@ class NetcatClient(AbstractSocket):
         else:
             self.remote_addr = addr
             self.remote_port = port
-            self.connect()
+            if not self.connect():
+                sys.exit(1)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -688,7 +729,7 @@ def _args_check_port(value):
     intvalue = int(value)
 
     if intvalue < min_port or intvalue > max_port:
-        raise argparse.ArgumentTypeError("%s is an invalid port number." % value)
+        raise argparse.ArgumentTypeError("%s is an invalid port number" % value)
     return intvalue
 
 
@@ -717,12 +758,123 @@ def _args_check_reconn(value):
     return intvalue
 
 
-def _args_check_reinit_robin(value):
-    pass
+def _args_check_robin_ports(value):
+    """Check reinit-robin argument for comma separated string or range."""
+    mcomma = re.search(r"^[0-9]+(,([0-9]+))*$", value)
+    mrange = re.search(r"^[0-9]+\-[0-9]+$", value)
+
+    if mcomma is None:
+        if mrange is None:
+            raise argparse.ArgumentTypeError("%s is not a valid port specifier" % value)
+
+    if mcomma:
+        ports = mcomma.group(0).split(",")
+        for port in ports:
+            _args_check_port(port)
+        return ports
+
+    if mrange:
+        ranges = mrange.group(0).split("-")
+        if int(ranges[0]) >= (int(ranges[1]) + 1):
+            raise argparse.ArgumentTypeError(
+                "Left side of range must be smaller or equal than right side."
+            )
+        ports = []
+        for port in range(int(ranges[0]), int(ranges[1]) + 1):
+            _args_check_port(port)
+            ports.append(port)
+        return ports
 
 
-def _args_check_reconn_robin(value):
-    pass
+def _args_check_mutually_exclusive(parser, args):
+    """Check mutually exclusive arguments."""
+
+    # [MODE] --listen
+    if args.listen and (args.zero or args.local or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: -l/--listen mutually exclusive with -z/-zero, -L/--local or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODE] --zero
+    if args.zero and (args.listen or args.local or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: -z/--zero mutually exclusive with -l/--listen, -L/--local or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODE --local
+    if args.local and (args.listen or args.zero or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: -L/--local mutually exclusive with -l/--listen, -z/--zero or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODE] --remote
+    if args.remote and (args.listen or args.zero or args.local):
+        parser.print_usage()
+        print(
+            "%s: error: -R/--remote mutually exclusive with -l/--listen, -z/--zero or -L/--local"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODULE] --exec
+    if args.cmd and (args.local or args.remote or args.zero):
+        parser.print_usage()
+        print(
+            "%s: error: -e/--exec mutually exclusive with -L/--local, -R/-remote or -z/--zero"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [OPTIONS] --udp
+    if args.udp and args.zero:
+        parser.print_usage()
+        print(
+            "%s: error: -u/--udp mutually exclusive with -z/--zero" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --reinit
+    if args.reinit is not False and (args.udp or args.local or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: --reinit mutually exclusive with -u/--udp, -L/--local or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --reconn
+    if args.reconn is not False and (args.udp or args.local or args.remote or args.zero):
+        parser.print_usage()
+        print(
+            "%s: error: --reinit mutually excl. with -u/--udp, -L/--local -R/--remote or -z/--zero"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --udp-ping-interval
+    if args.udp_ping_intvl and not args.udp:
+        parser.print_usage()
+        print(
+            "%s: error: --udp-ping-intvl mutually exclusive with -u/--udp" % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def get_args():
@@ -742,7 +894,7 @@ def get_args():
         description="""
 Enhanced and comptaible Netcat implementation written in Python (2 and 3) with
 connect, zero-i/o, listen and forward modes and techniques to detect and evade
-firewalls and intrusion detection systems.""",
+firewalls and intrusion prevention systems.""",
     )
 
     positional = parser.add_argument_group("positional arguments")
@@ -782,6 +934,7 @@ Connect to a remote endpoint and report status only.
         "-L",
         "--local",
         metavar="addr:port",
+        default=False,
         type=_args_check_forwards,
         help="""[Local forward mode]:
 Specify local <addr>:<port> to which traffic should be
@@ -796,6 +949,7 @@ traffic to the specified value for -L/--local.
         "-R",
         "--remote",
         metavar="addr:port",
+        default=False,
         type=_args_check_forwards,
         help="""[Remote forward mode]:
 Specify local <addr>:<port> from which traffic should be
@@ -810,6 +964,8 @@ traffic from the specified value for -R/--remote.
         "-e",
         "--exec",
         metavar="cmd",
+        dest="cmd",
+        default=False,
         type=str,
         help="Execute shell command. Only for connect or listen mode.",
     )
@@ -836,7 +992,7 @@ decrease drastically if you use more than three -v.""",
     advanced.add_argument(
         "--reinit",
         metavar="x",
-        default=None,
+        default=False,
         type=_args_check_reinit,
         help="""Listen mode (TCP only):
 If the server is unable to bind or accept clients, it
@@ -856,7 +1012,7 @@ Same as connect mode.
     advanced.add_argument(
         "--reconn",
         metavar="x",
-        default=None,
+        default=False,
         type=_args_check_reconn,
         help="""Listen mode (TCP only):
 If the client has hung up, the server will re-accept a
@@ -874,8 +1030,8 @@ This might be handy for reverse shells ;-)
     advanced.add_argument(
         "--reinit-robin",
         metavar="port",
-        default=None,
-        type=_args_check_reinit_robin,
+        default=[],
+        type=_args_check_robin_ports,
         help="""Connect mode (TCP only):
 If the client does multiple initial connections to a
 remote endpoint (via --reinit), this option instructs it
@@ -894,8 +1050,8 @@ Ensure to have enough listeners at the remote endpoint.
     advanced.add_argument(
         "--reconn-robin",
         metavar="port",
-        default=None,
-        type=_args_check_reconn_robin,
+        default=[],
+        type=_args_check_robin_ports,
         help="""Connect mode (TCP only):
 If the remote endpoint is gone after initial successful
 connection, and the the client is set to reconnect with
@@ -905,7 +1061,7 @@ reached.
 Set --reconn to at least the number of ports to probe +1
 Set --reconn-wait to 0
 This help your reverse shell to evade intrusion
-detection systems that will cut your connection and
+prevention systems that will cut your connection and
 block the outbound port.
 
 """,
@@ -927,8 +1083,8 @@ block the outbound port.
     advanced.add_argument(
         "--udp-ping-intvl",
         metavar="s",
-        default=None,
-        type=_args_check_reinit_robin,
+        default=False,
+        type=int,
         help="""Connect mode (UDP only):
 As UDP is stateless, a client must first connect to a
 server before the server can communicate with it.
@@ -950,47 +1106,18 @@ if you restart your listening server.
         version=get_version(),
         help="Show version information and exit",
     )
+
+    # Retrieve arguments
     args = parser.parse_args()
 
+    # Check mutually exclive arguments
+    _args_check_mutually_exclusive(parser, args)
+
     # TODO: Exit on unimplemented features
-    if args.local is not None or args.remote is not None:
+    if args.local or args.remote:
         parser.print_usage()
         print(
             "%s: error: -L/--local and -R/--remote are not yet implemented" % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # Check mutually exclive arguments
-    if args["exec"] is not None and (args.local is not None or args.remote is not None):
-        parser.print_usage()
-        print(
-            "%s: error: -e/--exec cannot be used together with -L/--local or -R/--remote"
-            % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    if args.listen and (args.local is not None or args.remote is not None):
-        parser.print_usage()
-        print(
-            "%s: error: -l/--listen cannot be used together with -L/--local or -R/--remote"
-            % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    if args.local is not None and args.remote is not None:
-        parser.print_usage()
-        print(
-            "%s: error: -L/--local cannot be used together with -R/--remote" % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # Required arguments
-    if args.hostname is None and (not args.listen and args.local is None):
-        parser.print_usage()
-        print(
-            "%s: error: the following arguments are required: hostname" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -1016,31 +1143,36 @@ def main():
     # Set netcat options
     net_opts = {
         "udp": args.udp,
-        "nodns": args.nodns,
         "bufsize": 1024,
         "backlog": 0,
-        "reinit": False,
-        "reconn": False,
-        "reinit_wait": 0,
-        "reconn_wait": 0,
-        "udp_ping_intvl": 0,  # only makes sense for udp client and only for rev-shell (0:off)
+        "nodns": args.nodns,
+        "reinit": True if (type(args.reinit) is int and args.reinit == 0) else args.reinit,
+        "reconn": True if (type(args.reconn) is int and args.reconn == 0) else args.reconn,
+        "reinit_robin": args.reinit_robin,
+        "reconn_robin": args.reconn_robin,
+        "reinit_wait": args.reinit_wait,
+        "reconn_wait": args.reconn_wait,
+        "udp_ping_intvl": args.udp_ping_intvl,  # only for udp client and only for rev-shell (0:off)
     }
 
     # Initialize logger
     logger = Logger(args.verbose)
 
+    # Initialize encoder
+    encoder = StringEncoder(logger)
+
     # Use command modulde
-    if args["exec"] is not None:
-        module_opts = {"executable": args["exec"]}
-        mod = NetcatModuleCommand(logger, module_opts)
+    if args.cmd:
+        module_opts = {"executable": args.cmd}
+        mod = NetcatModuleCommand(logger, encoder, module_opts)
     # Use output module
     else:
         module_opts = {"linefeed": "\r\n" if args.crlf else "\n"}
-        mod = NetcatModuleOutput(logger, module_opts)
+        mod = NetcatModuleOutput(logger, encoder, module_opts)
 
     # Run server
     if args.listen:
-        net = NetcatServer(logger, host, port, net_opts)
+        net = NetcatServer(logger, encoder, host, port, net_opts)
         run = Runner(logger)
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
@@ -1049,7 +1181,7 @@ def main():
         run.run()
     # Run client
     else:
-        net = NetcatClient(logger, host, port, net_opts)
+        net = NetcatClient(logger, encoder, host, port, net_opts)
         run = Runner(logger)
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
