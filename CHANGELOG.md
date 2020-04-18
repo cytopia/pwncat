@@ -14,6 +14,7 @@
 #### Added
 - Editorconfig
 - Feature: Re-connect/Re-listen on connection abort (`--reconn`)
+- Feature: Re-connect/Re-listen on connection abort (`--reconn-wait`)
 
 
 ## Release 0.0.2-alpha
