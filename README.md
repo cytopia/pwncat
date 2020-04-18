@@ -30,7 +30,7 @@ To have a single tool for older, newer, 32bit and 64bit machines with relevant o
 
 **Todo**
 
-The options `e`, `-n`, `-L`, and `-R` are still under development. See [Usage](#computer-usage) for other available options.
+The options `-L`, and `-R` are still under development. See [Usage](#computer-usage) for other available options.
 
 
 ## :tada: Install
