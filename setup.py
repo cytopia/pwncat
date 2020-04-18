@@ -5,18 +5,18 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="netcat",
-    version="0.0.1-alpha",
+    name="pwncat",
+    version="0.0.2-alpha",
     description="Netcat with cmd exec, connect, listen and (local/remote) port-forwarding modes.",
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="cytopia",
     author_email="cytopia@everythingcli.org",
-    url="https://github.com/cytopia/netcat",
+    url="https://github.com/cytopia/pwncat",
     install_requires=[],
     scripts=[
-        "bin/netcat"
+        "bin/pwncat"
     ],
     classifiers=[
         # https://pypi.org/classifiers/

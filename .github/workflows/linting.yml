@@ -23,6 +23,8 @@ jobs:
           - pydocstyle
           - black
           - version
+          - lint-files
+          - lint-docs
 
     name: "[ ${{ matrix.target }} ]"
     steps:
