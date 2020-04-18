@@ -85,7 +85,7 @@ class AbstractSocket(object):
         "reconn_robin": [],  # Ports to round-robin during failed phase (after 1st succ init)
         "reinit_wait": 0,  # Time in seconds to wait between reinits
         "reconn_wait": 0,  # Time in seconds to wait between reconnects
-        "udp_ping_intvl": False  # Interval in sec for UDP client to ping server
+        "udp_ping_intvl": False,  # Interval in sec for UDP client to ping server
     }
 
     # In case the server is running in UDP mode,
@@ -772,10 +772,12 @@ def _args_check_robin_ports(value):
 
     if mrange:
         ranges = mrange.group(0).split("-")
-        if int(ranges[0]) >= (int(ranges[1])+1):
-            raise argparse.ArgumentTypeError("Left side of range must be smaller or equal than right side.")
+        if int(ranges[0]) >= (int(ranges[1]) + 1):
+            raise argparse.ArgumentTypeError(
+                "Left side of range must be smaller or equal than right side."
+            )
         ports = []
-        for port in range(int(ranges[0]), int(ranges[1])+1):
+        for port in range(int(ranges[0]), int(ranges[1]) + 1):
             _args_check_port(port)
             ports.append(port)
         return ports
