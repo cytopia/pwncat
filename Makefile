@@ -15,6 +15,9 @@ BINNAME = pwncat
 FL_VERSION = 0.3
 FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html
 
+UID := $(shell id -u)
+GID := $(shell id -g)
+
 
 # -------------------------------------------------------------------------------------------------
 # Default Target
@@ -109,8 +112,11 @@ test:
 # Documentation
 # -------------------------------------------------------------------------------------------------
 docs:
-	pdoc --overwrite --external-links --html --html-dir docs/ $(BINPATH)$(BINNAME) $(BINNAME) && \
-	mv docs/$(BINNAME).m.html docs/$(BINNAME).api.html
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
+		pip install pdoc \
+		&& pdoc --overwrite --external-links --html --html-dir docs/ $(BINPATH)/$(BINNAME) $(BINNAME) \
+		&& mv docs/$(BINNAME).m.html docs/$(BINNAME).api.html \
+		&& chown $${UID}:$${GID} docs/$(BINNAME).api.html'
 
 
 # -------------------------------------------------------------------------------------------------
