@@ -2,6 +2,7 @@
 
 **[Install](#tada-install)** |
 **[TL;DR](#coffee-tldr)** |
+**[Features](#star-features)** |
 **[Documentation](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
 **[cytopia sec tools](#lock-cytopia-sec-tools)** |
@@ -71,15 +72,35 @@ pwncat -R 127.0.0.1:3306 example.com 4444
 ```
 
 
+## :star: Features
+
+`pwncat` has many features, below is only a list of outstanding characteristics.
+
+| Feature        | Description |
+|----------------|-------------|
+| Bind shell     | Create bind shells |
+| Reverse shell  | Create reverse shells |
+| Proxy          | Local and remote port forwards without SSH |
+| Ctrl+c protect | Reverse shell can reconnect if you accidentally hit Ctrl+c |
+| Detect Egress  | Scan and report open egress ports on the target |
+| Evade FW       | Evade egress firewalls by round-robin outgoing ports |
+| Evade IPS      | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts |
+| UDP rev shell  | Try this with the traditional `netcat` |
+| TCP / UDP      | Full TCP and UDP support |
+| Python 2+3     | Works with Python 2 and Python 3 |
+| Cross OS       | Should work on Linux, MacOS and Windows as long as Python is available |
+| Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
+
+
 ## :dizzy: Upgrade your shell
 
 When connected to a remote or bind shell you'll notice that no interactive commands will work and
-accidentally hitting <kbd>ctrl</kbd>+<kbd>c</kbd> will terminate your connection.
+accidentally hitting <kbd>Ctrl</kbd>+<kbd>c</kbd> will terminate your connection.
 To fix this, you'll need to attach it to a TTY. Here's how:
 ```bash
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 ```
-<kbd>ctrl</kbd>+<kbd>z</kbd>
+<kbd>Ctrl</kbd>+<kbd>z</kbd>
 ```bash
 stty size
 stty echo -raw
