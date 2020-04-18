@@ -22,7 +22,7 @@ import time
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.4-alpha"
+VERSION = "0.0.5-alpha"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1158,7 +1158,7 @@ if you restart your listening server.
     _args_check_mutually_exclusive(parser, args)
 
     # TODO: Exit on unimplemented features
-    if args.local or args.remote:
+    if args.remote:
         parser.print_usage()
         print(
             "%s: error: -L/--local and -R/--remote are not yet implemented" % (APPNAME),
@@ -1175,14 +1175,8 @@ if you restart your listening server.
 def main():
     """Run the program."""
     args = get_args()
-
     host = args.hostname if args.hostname is not None else "0.0.0.0"
     port = args.port
-
-    # TODO: :-)
-    # * Retry feature for reverse shell
-    # * Reconnect at different ports (round robin)
-    # * Make binaries for windows!!!
 
     # Set netcat options
     net_opts = {
@@ -1198,13 +1192,10 @@ def main():
         "reconn_wait": args.reconn_wait,
         "udp_ping_intvl": args.udp_ping_intvl,  # only for udp client and only for rev-shell (0:off)
     }
-
     # Initialize logger
     logger = Logger(args.verbose)
-
     # Initialize encoder
     encoder = StringEncoder(logger)
-
     # Use command modulde
     if args.cmd:
         module_opts = {"executable": args.cmd}
@@ -1214,6 +1205,29 @@ def main():
         module_opts = {"linefeed": "\r\n" if args.crlf else "\n"}
         mod = NetcatModuleOutput(logger, encoder, module_opts)
 
+    # Run local port-forward
+    # -> listen locally and forward traffic to remote (connect)
+    if args.local:
+        # Create listen and client instances
+        lhost = args.local.split(":")[0]
+        lport = int(args.local.split(":")[1])
+        net_srv = NetcatServer(logger, encoder, lhost, lport, net_opts)
+        net_cli = NetcatClient(logger, encoder, host, port, net_opts)
+
+        # Create Runner (the set_* funcs below are brainfuck and took me 1 hour to figure it out)
+        run = Runner(logger)
+
+        # [srv] User-Client connects here, sends data and the Server takes it as input
+        run.set_recv_generator(net_srv.receive)
+        # [cli] Runner parses data from Server on to Proxy-Client, which sends/connect it further
+        run.set_output_callback(net_cli.send)
+        # [cli] Proxy-Client waits for response and receives data back
+        run.set_input_generator(net_cli.receive)
+        # [srv] Runner parses data from Proxy-Client onto Server, which sends/back to User-Client
+        run.set_send_callback(net_srv.send)
+
+        # And finally run
+        run.run()
     # Run server
     if args.listen:
         net = NetcatServer(logger, encoder, host, port, net_opts)
