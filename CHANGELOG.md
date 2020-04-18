@@ -13,6 +13,7 @@
 
 #### Added
 - Editorconfig
+- Feature: Re-connect/Re-listen on connection abort (`--reconn`)
 
 
 ## Release 0.0.2-alpha

@@ -167,15 +167,17 @@ class AbstractSocket(object):
         self.__close_socket(self.sock)
         self.create_socket()
         self.conn = self.sock
-        self.connect()
+        if not self.connect():
+            self.__reconnect_to_server()
 
     def __reaccept_from_client(self):
         """Ensure the server is able to accept clients again, after current client has left."""
+        # Only for server
         assert self.role == "server", "Only the role 'server' can accept connections."
+        # Do not re-accept for UDP
+        assert not self.options["udp"], "This should have been caught during arg check."
 
-        # TODO: This is currently not implemented for UDP
-        if self.options["udp"]:
-            return False
+        print(self.options)
 
         # [NO] Never re-accept
         if type(self.options["reconn"]) is bool and not self.options["reconn"]:
@@ -206,11 +208,10 @@ class AbstractSocket(object):
 
     def __reconnect_to_server(self):
         """Ensure the client re-connects to the remote server, if the remote server hang up."""
+        # Only for Clients
         assert self.role == "client", "Only the role 'client' can re-connect."
-
-        # TODO: This is currently not implemented for UDP
-        if self.options["udp"]:
-            return False
+        # Do not re-connect with UDP
+        assert not self.options["udp"], "This should have been caught during arg check."
 
         # [NO] Never re-connect
         if type(self.options["reconn"]) is bool and not self.options["reconn"]:
@@ -302,11 +303,12 @@ class AbstractSocket(object):
         try:
             self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
             self.sock.connect((self.remote_addr, self.remote_port))
+            return True
         except socket.error as error:
             self.log.error(
                 "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
             )
-            sys.exit(1)
+            return False
 
     # ------------------------------------------------------------------------------
     # Send / Receive Functions
@@ -704,7 +706,8 @@ class NetcatClient(AbstractSocket):
         else:
             self.remote_addr = addr
             self.remote_port = port
-            self.connect()
+            if not self.connect():
+                sys.exit(1)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -872,7 +875,6 @@ def _args_check_mutually_exclusive(parser, args):
             file=sys.stderr,
         )
         sys.exit(1)
-        pass
 
 
 def get_args():
@@ -1144,8 +1146,8 @@ def main():
         "bufsize": 1024,
         "backlog": 0,
         "nodns": args.nodns,
-        "reinit": True if args.reinit == 0 else args.reinit,
-        "reconn": True if args.reconn == 0 else args.reconn,
+        "reinit": True if (type(args.reinit) is int and args.reinit == 0) else args.reinit,
+        "reconn": True if (type(args.reconn) is int and args.reconn == 0) else args.reconn,
         "reinit_robin": args.reinit_robin,
         "reconn_robin": args.reconn_robin,
         "reinit_wait": args.reinit_wait,
