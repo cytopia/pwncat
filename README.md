@@ -71,6 +71,26 @@ pwncat -R 127.0.0.1:3306 example.com 4444
 ```
 
 
+## :dizzy: Upgrade your shell
+
+When connected to a remote or bind shell you'll notice that no interactive commands will work and
+accidentally hitting <kbd>ctrl</kbd>+<kbd>c</kbd> will terminate your connection.
+To fix this, you'll need to attach it to a TTY. Here's how:
+```bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+```
+<kbd>ctrl</kbd>+<kbd>z</kbd>
+```bash
+stty size
+stty echo -raw
+fg
+reset
+export SHELL=bash
+export TERM=xterm
+stty rows <num> columns <num>   # values found above by 'stty size'
+```
+
+
 ## :closed_book: Documentation
 
 Documentation will evolve over time. Currently only API documentation is available here:
