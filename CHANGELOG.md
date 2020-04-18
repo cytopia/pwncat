@@ -9,6 +9,7 @@
 #### Added
 - Feature: Execute shell commands (`-e/--exec`)
 - Feature: Skip DNS resolution (`-n/--nodns`)
+- Documentation: API docs
 
 #### Changed
 - Renamed project from netcat to pwncat

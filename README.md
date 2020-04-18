@@ -2,6 +2,7 @@
 
 **[Install](#tada-install)** |
 **[TL;DR](#coffee-tldr)** |
+**[Documentation](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
 **[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Contributing](#octocat-contributing)** |
@@ -68,6 +69,12 @@ pwncat -L 127.0.0.1:3306 192.168.0.1 3306
 # Remote port-forwarding to evade firewalls
 pwncat -R 127.0.0.1:3306 example.com 4444
 ```
+
+
+## :closed_book: Documentation
+
+Documentation will evolve over time. Currently only API documentation is available here:
+https://cytopia.github.io/pwncat/pwncat.api.html
 
 
 ## :computer: Usage
