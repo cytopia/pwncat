@@ -22,7 +22,7 @@ import time
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.3-alpha"
+VERSION = "0.0.4-alpha"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -362,9 +362,20 @@ class AbstractSocket(object):
                 # to send data back to it (see send() function)
                 if self.options["udp"]:
                     self.udp_client_addr, self.udp_client_port = addr
-                    self.log.info(
-                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                    )
+                    # Avoid the noise on UDP connections to spam on every send
+                    if self.udp_client_addr is None or self.udp_client_port is None:
+                        self.log.info(
+                            "Client connected: {}:{}".format(
+                                self.udp_client_addr, self.udp_client_port
+                            )
+                        )
+                    # Find for debug
+                    else:
+                        self.log.debug(
+                            "Client connected: {}:{}".format(
+                                self.udp_client_addr, self.udp_client_port
+                            )
+                        )
 
             except socket.error as error:
                 self.log.error("Receive Error: {}".format(error))
@@ -523,8 +534,20 @@ class Runner(object):
         """Set the callback for outputting data to stdin/stdout."""
         self.output_callback = func
 
+    def set_time_action(self, intvl, func, *args, **kwargs):
+        """Set a function that should be called periodically."""
+        self.timed_action_intvl = intvl
+        self.timed_action_func = func
+        self.timed_action_args = args
+        self.timed_action_kwargs = kwargs
+
     def run(self):
         """Run threaded NetCat."""
+
+        assert hasattr(self, "recv_generator"), "Error, recv_generator not set"
+        assert hasattr(self, "input_generator"), "Error, input_generator not set"
+        assert hasattr(self, "send_callback"), "Error, send_callback not set"
+        assert hasattr(self, "output_callback"), "Error, output_callback not set"
 
         def receiver():
             """Receive data from a socket and process it with a callback.
@@ -550,6 +573,20 @@ class Runner(object):
                     self.log.trace("[Thread] sender received: {}".format(data))
                     self.send_callback(data)
 
+        def timer():
+            """Execute periodic tasks by an optional provided time_action."""
+            self.log.debug(
+                "Ready for timed action every {} seconds".format(self.timed_action_intvl)
+            )
+            time_last = int(time.time())
+            while True:
+                time_now = int(time.time())
+                if time_now > time_last + self.timed_action_intvl:
+                    self.log.debug("[{}] Executing timed function".format(time_now))
+                    self.timed_action_func(*self.timed_action_args, **self.timed_action_kwargs)
+                    time_last = time_now  # Reset previous time
+                time.sleep(1)
+
         # Start sending and receiving threads
         tr = threading.Thread(target=receiver)
         ts = threading.Thread(target=sender)
@@ -562,12 +599,21 @@ class Runner(object):
         ts.start()
         self.log.trace("Sending thread started")
 
+        if hasattr(self, "timed_action_intvl"):
+            tt = threading.Thread(target=timer)
+            tt.daemon = True
+            tt.start()
+            self.log.trace("Timer thread started")
+
         # Cleanup the main program
         while True:
             if not tr.is_alive():
                 sys.exit(0)
             if not ts.is_alive():
                 sys.exit(0)
+            if hasattr(self, "time_action_intvl"):
+                if not tt.is_alive():
+                    sys.exit(0)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1185,6 +1231,8 @@ def main():
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
         run.set_output_callback(mod.output_callback)
+        if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
+            run.set_time_action(args.udp_ping_intvl, net.send, "\x00")
         run.run()
 
 

