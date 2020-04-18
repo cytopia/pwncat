@@ -783,6 +783,98 @@ def _args_check_robin_ports(value):
         return ports
 
 
+def _args_check_mutually_exclusive(parser, args):
+    """Check mutually exclusive arguments."""
+
+    # [MODE] --listen
+    if args.listen and (args.zero or args.local or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: -l/--listen mutually exclusive with -z/-zero, -L/--local or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODE] --zero
+    if args.zero and (args.listen or args.local or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: -z/--zero mutually exclusive with -l/--listen, -L/--local or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODE --local
+    if args.local and (args.listen or args.zero or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: -L/--local mutually exclusive with -l/--listen, -z/--zero or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODE] --remote
+    if args.remote and (args.listen or args.zero or args.local):
+        parser.print_usage()
+        print(
+            "%s: error: -R/--remote mutually exclusive with -l/--listen, -z/--zero or -L/--local"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODULE] --exec
+    if args.cmd and (args.local or args.remote or args.zero):
+        parser.print_usage()
+        print(
+            "%s: error: -e/--exec mutually exclusive with -L/--local, -R/-remote or -z/--zero"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [OPTIONS] --udp
+    if args.udp and args.zero:
+        parser.print_usage()
+        print(
+            "%s: error: -u/--udp mutually exclusive with -z/--zero" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --reinit
+    if args.reinit is not False and (args.udp or args.local or args.remote):
+        parser.print_usage()
+        print(
+            "%s: error: --reinit mutually exclusive with -u/--udp, -L/--local or -R/--remote"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --reconn
+    if args.reconn is not False and (args.udp or args.local or args.remote or args.zero):
+        parser.print_usage()
+        print(
+            "%s: error: --reinit mutually excl. with -u/--udp, -L/--local -R/--remote or -z/--zero"
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --udp-ping-interval
+    if args.udp_ping_intvl and not args.udp:
+        parser.print_usage()
+        print(
+            "%s: error: --udp-ping-intvl mutually exclusive with -u/--udp" % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+        pass
+
+
 def get_args():
     """Retrieve command line arguments."""
     parser = argparse.ArgumentParser(
@@ -840,6 +932,7 @@ Connect to a remote endpoint and report status only.
         "-L",
         "--local",
         metavar="addr:port",
+        default=False,
         type=_args_check_forwards,
         help="""[Local forward mode]:
 Specify local <addr>:<port> to which traffic should be
@@ -854,6 +947,7 @@ traffic to the specified value for -L/--local.
         "-R",
         "--remote",
         metavar="addr:port",
+        default=False,
         type=_args_check_forwards,
         help="""[Remote forward mode]:
 Specify local <addr>:<port> from which traffic should be
@@ -869,6 +963,7 @@ traffic from the specified value for -R/--remote.
         "--exec",
         metavar="cmd",
         dest="cmd",
+        default=False,
         type=str,
         help="Execute shell command. Only for connect or listen mode.",
     )
@@ -1009,47 +1104,18 @@ if you restart your listening server.
         version=get_version(),
         help="Show version information and exit",
     )
+
+    # Retrieve arguments
     args = parser.parse_args()
 
+    # Check mutually exclive arguments
+    _args_check_mutually_exclusive(parser, args)
+
     # TODO: Exit on unimplemented features
-    if args.local is not None or args.remote is not None:
+    if args.local or args.remote:
         parser.print_usage()
         print(
             "%s: error: -L/--local and -R/--remote are not yet implemented" % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # Check mutually exclive arguments
-    if args.cmd is not None and (args.local is not None or args.remote is not None):
-        parser.print_usage()
-        print(
-            "%s: error: -e/--exec cannot be used together with -L/--local or -R/--remote"
-            % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    if args.listen and (args.local is not None or args.remote is not None):
-        parser.print_usage()
-        print(
-            "%s: error: -l/--listen cannot be used together with -L/--local or -R/--remote"
-            % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    if args.local is not None and args.remote is not None:
-        parser.print_usage()
-        print(
-            "%s: error: -L/--local cannot be used together with -R/--remote" % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # Required arguments
-    if args.hostname is None and (not args.listen and args.local is None):
-        parser.print_usage()
-        print(
-            "%s: error: the following arguments are required: hostname" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -1094,7 +1160,7 @@ def main():
     encoder = StringEncoder(logger)
 
     # Use command modulde
-    if args.cmd is not None:
+    if args.cmd:
         module_opts = {"executable": args.cmd}
         mod = NetcatModuleCommand(logger, encoder, module_opts)
     # Use output module

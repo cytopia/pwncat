@@ -8,6 +8,7 @@
 
 #### Fixed
 - Hardened Python 2/3 string compatibility
+- Checking against mutually exclusive arguments
 
 #### Added
 - Editorconfig
