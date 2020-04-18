@@ -5,8 +5,8 @@
 **[Features](#star-features)** |
 **[Documentation](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
-**[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Examples](#bulb-examples)** |
+**[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Contributing](#octocat-contributing)** |
 **[Disclaimer](#exclamation-disclaimer)** |
 **[License](#page_facing_up-license)**
@@ -24,18 +24,24 @@
 [![Build Status](https://github.com/cytopia/pwncat/workflows/testing/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=testing)
 
 
-> #### Netcat on steroids with FW and IPS evasion, bind and reverse shell, local and remote port-forward.
-
-Dependency-less Python 2 and Python 3 compatible implementation of netcat which works on 32bit and 64bit systems to easily pivot your target.
-
-**Motivation**
-
-To have a single tool for older, newer, 32bit and 64bit machines with relevant options (`-e`. `-L` and `-R`) to create bind shells, local and remote port-forwards.
+> &nbsp;
+> #### Netcat on steroids with Firewall and IPS evasion, bind and reverse shell, local and remote port-forward.
+> &nbsp;
 
 
-**Todo**
+### Motivation
 
-The options `-L`, and `-R` are still under development. See [Usage](#computer-usage) for other available options.
+Ever accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> on your reverse shell and it was gone for good?
+Ever waited forever for your client to connect back to you, because the Firewall didn't let it out?
+Ever had a connection loss because an IPS closed suspicious ports?
+Ever were in need of port-forwarding, but you didn't have SSH access?<br/>
+> **This one got you covered.**
+
+Apart from that the current features of `nc`, `ncat` or `socat` just didn't feed my needs and I also wanted to have a single
+tool that works on older and newer machines (hence Python 2+3 compat). Most importantly I wanted to have it in a language that I can understand and provide my own features with.
+(Wait for it, binary releases for Linux, MacOS and Windows will come shortly).
+
+The options `-L`, and `-R` are still under development. See [Roadmap](https://github.com/cytopia/pwncat/issues/2) and [Changelog](CHANGELOG.md) for details.
 
 
 ## :tada: Install
