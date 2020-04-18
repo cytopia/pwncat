@@ -44,7 +44,7 @@ class AbstractNetcatModule:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __init__(self, logger, options={}):
+    def __init__(self, logger, encoder, options={}):
         """Set specific options for this module."""
         pass
 
@@ -101,11 +101,13 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, role, options={}):
+    def __init__(self, logger, encoder, role, options={}):
         """Constructor."""
         assert type(self) is not AbstractSocket, "AbstractSocket cannot be instantiated directly."
         assert role in ["server", "client"], "The role must be 'server' or 'client'."
 
+        self.log = logger
+        self.enc = encoder
         self.role = role
 
         if "udp" in options:
@@ -121,7 +123,6 @@ class AbstractSocket(object):
         if "reconn_wait" in options:
             self.options["reconn_wait"] = options["reconn_wait"]
 
-        self.log = logger
         # Register destructor
         atexit.register(self.__exit__)
 
@@ -228,21 +229,6 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Helper Functions
     # ------------------------------------------------------------------------------
-    def b2str(self, data):
-        """Convert bytes into string type."""
-        try:
-            return data.decode("utf-8")
-        except UnicodeDecodeError:
-            pass
-        try:
-            return data.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            pass
-        try:
-            return data.decode("ascii")
-        except UnicodeDecodeError:
-            return data.decode("latin-1")
-
     def gethostbyname(self, host):
         """Translate hostname into IP address."""
         if self.options["nodns"]:
@@ -321,12 +307,10 @@ class AbstractSocket(object):
             while self.udp_client_addr is None and self.udp_client_port is None:
                 pass
 
-        size = len(data)
-        try:
-            data = data.encode()  # TODO: check python2 and check with pty.spawn()
-        except AttributeError:
-            pass
         send = 0
+        size = len(data)
+        data = self.enc.encode(data)
+        assert size == len(data), "Encoding messed up string length, might need to do len() after."
         # Loop until all bytes have been send
         while send < size:
             if self.conn is None:
@@ -357,7 +341,7 @@ class AbstractSocket(object):
                 )
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
                 data = byte
-                # data = self.b2str(byte)
+                data = self.enc.decode(byte)
                 self.log.trace("Received: {}".format(data))
 
                 # If we're receiving data from a UDP client
@@ -384,6 +368,41 @@ class AbstractSocket(object):
                         sys.exit(0)
 
             yield data
+
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: StringEncoder
+# -------------------------------------------------------------------------------------------------
+class StringEncoder(object):
+    """
+    Takes care about Python 2/3 string encoding/decoding.
+
+    This allows to parse all string/byte values internally between all
+    classes or functions as strings to keep full Python 2/3 compat.
+    """
+
+    # https://stackoverflow.com/questions/606191/27527728#27527728
+    codec = "cp437"
+
+    def __init__(self, logger):
+        self.log = logger
+        self.py3 = sys.version_info >= (3, 0)
+
+    def encode(self, data):
+        """Convert string into a byte type for Python3."""
+        if self.py3:
+            self.log.trace("Encoding: {}".format(data))
+            data = data.encode("cp437")
+            self.log.trace("Encoded: {}".format(data))
+        return data
+
+    def decode(self, data):
+        """Convert bytes into a string type for Python3."""
+        if self.py3:
+            self.log.trace("Decoding: {}".format(data))
+            data = data.decode("cp437")
+            self.log.trace("Decoded: {}".format(data))
+        return data
 
 
 # -------------------------------------------------------------------------------------------------
@@ -549,9 +568,10 @@ class NetcatModuleOutput(AbstractNetcatModule):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, options={}):
+    def __init__(self, logger, encoder, options={}):
         """Set specific options for this module."""
         self.log = logger
+        self.enc = encoder
         if "linefeed" in options:
             self.linefeed = options["linefeed"]
 
@@ -566,6 +586,10 @@ class NetcatModuleOutput(AbstractNetcatModule):
 
     def output_callback(self, data):
         """Print received data to stdout."""
+        if data.endswith("\r\n"):
+            data = data[:-2]
+        elif data.endswith("\n") or data.endsith("\r"):
+            data = data[:-1]
         print(data)
 
 
@@ -580,9 +604,10 @@ class NetcatModuleCommand(AbstractNetcatModule):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, options={}):
+    def __init__(self, logger, encoder, options={}):
         """Set specific options for this module."""
         self.log = logger
+        self.enc = encoder
         assert "executable" in options
         self.log.debug("Setting '{}' as executable".format(options["executable"]))
         self.executable = options["executable"]
@@ -604,12 +629,11 @@ class NetcatModuleCommand(AbstractNetcatModule):
     # Public Functions
     # ------------------------------------------------------------------------------
     def input_generator(self):
-        """Constantly ask for user input."""
+        """Constantly ask for input."""
         while True:
             self.log.trace("Reading command output")
-            data = self.p.stdout.readline()  # Much better performance, than read(1)
-            # data = self.p.stdout.read(1024)
-            # data = p.stdout.read(1).decode("utf-8")
+            data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
+            data = self.enc.decode(data)
             self.log.trace("Command output: {}".format(data))
             if not data:
                 self.log.error("No program output received")
@@ -618,6 +642,7 @@ class NetcatModuleCommand(AbstractNetcatModule):
 
     def output_callback(self, data):
         """Send data received to stdin (command input)."""
+        data = self.enc.encode(data)
         self.log.trace("Appending to stdin: {}".format(data))
         self.p.stdin.write(data)
         self.p.stdin.flush()
@@ -629,9 +654,9 @@ class NetcatModuleCommand(AbstractNetcatModule):
 class NetcatServer(AbstractSocket):
     """Netcat Server implementation."""
 
-    def __init__(self, logger, host, port, options={}):
+    def __init__(self, logger, encoder, host, port, options={}):
         """Construct a listening server."""
-        super(NetcatServer, self).__init__(logger, "server", options)
+        super(NetcatServer, self).__init__(logger, encoder, "server", options)
 
         # Setup server
         addr = self.gethostbyname(host)
@@ -652,9 +677,9 @@ class NetcatServer(AbstractSocket):
 class NetcatClient(AbstractSocket):
     """Netcat Client implementation."""
 
-    def __init__(self, logger, host, port, options={}):
+    def __init__(self, logger, encoder, host, port, options={}):
         """Construct a connecting clientt."""
-        super(NetcatClient, self).__init__(logger, "client", options)
+        super(NetcatClient, self).__init__(logger, encoder, "client", options)
 
         # Setup client
         addr = self.gethostbyname(host)
@@ -810,6 +835,7 @@ traffic from the specified value for -R/--remote.
         "-e",
         "--exec",
         metavar="cmd",
+        dest="cmd",
         type=str,
         help="Execute shell command. Only for connect or listen mode.",
     )
@@ -962,7 +988,7 @@ if you restart your listening server.
         sys.exit(1)
 
     # Check mutually exclive arguments
-    if args["exec"] is not None and (args.local is not None or args.remote is not None):
+    if args.cmd is not None and (args.local is not None or args.remote is not None):
         parser.print_usage()
         print(
             "%s: error: -e/--exec cannot be used together with -L/--local or -R/--remote"
@@ -1029,18 +1055,21 @@ def main():
     # Initialize logger
     logger = Logger(args.verbose)
 
+    # Initialize encoder
+    encoder = StringEncoder(logger)
+
     # Use command modulde
-    if args["exec"] is not None:
-        module_opts = {"executable": args["exec"]}
-        mod = NetcatModuleCommand(logger, module_opts)
+    if args.cmd is not None:
+        module_opts = {"executable": args.cmd}
+        mod = NetcatModuleCommand(logger, encoder, module_opts)
     # Use output module
     else:
         module_opts = {"linefeed": "\r\n" if args.crlf else "\n"}
-        mod = NetcatModuleOutput(logger, module_opts)
+        mod = NetcatModuleOutput(logger, encoder, module_opts)
 
     # Run server
     if args.listen:
-        net = NetcatServer(logger, host, port, net_opts)
+        net = NetcatServer(logger, encoder, host, port, net_opts)
         run = Runner(logger)
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
@@ -1049,7 +1078,7 @@ def main():
         run.run()
     # Run client
     else:
-        net = NetcatClient(logger, host, port, net_opts)
+        net = NetcatClient(logger, encoder, host, port, net_opts)
         run = Runner(logger)
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)

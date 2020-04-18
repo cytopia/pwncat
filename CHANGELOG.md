@@ -6,6 +6,9 @@
 
 ## Release 0.0.3-alpha
 
+#### Fixed
+- Hardened Python 2/3 string compatibility
+
 #### Added
 - Editorconfig
 
