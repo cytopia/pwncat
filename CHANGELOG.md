@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.3-alpha
+
+#### Added
+- Editorconfig
+
+
 ## Release 0.0.2-alpha
 
 #### Added
