@@ -177,8 +177,6 @@ class AbstractSocket(object):
         # Do not re-accept for UDP
         assert not self.options["udp"], "This should have been caught during arg check."
 
-        print(self.options)
-
         # [NO] Never re-accept
         if type(self.options["reconn"]) is bool and not self.options["reconn"]:
             self.log.info("No automatic re-accept specified. Shutting down.")
