@@ -7,9 +7,10 @@ endif
 # -------------------------------------------------------------------------------------------------
 .PHONY: help lint test pycodestyle pydocstyle black version lint-files lint-docs lint-usage docs dist sdist bdist build checkbuild deploy autoformat clean
 
-
 VERSION = 2.7
 BINPATH = bin/
+MANPATH = man/
+DOCPATH = docs/
 BINNAME = pwncat
 
 FL_VERSION = 0.3
@@ -38,6 +39,7 @@ help:
 	@echo "test             Run integration tests"
 	@echo "autoformat       Autoformat code according to Python black"
 	@echo
+	@echo "man              Generate man page"
 	@echo "docs             Generate docs"
 	@echo
 	@echo "build            Build Python package"
@@ -92,6 +94,13 @@ lint-files:
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-utf8 --text --ignore '$(FL_IGNORES)' --path .
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-utf8-bom --text --ignore '$(FL_IGNORES)' --path .
 
+lint-man:
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Lint man page"
+	@echo "# -------------------------------------------------------------------- #"
+	@$(MAKE) --no-print-directory man
+	git diff --quiet || { echo "Build Changes"; git diff|cat; git status; false; }
+
 lint-docs:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Lint docs"
@@ -120,12 +129,19 @@ test:
 # -------------------------------------------------------------------------------------------------
 # Documentation
 # -------------------------------------------------------------------------------------------------
+.PHONY: man
+man: $(BINPATH)$(BINNAME)
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
+		apk add help2man \
+		&& help2man -n $(BINNAME) -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
+		&& chown $${UID}:$${GID} $(MANPATH)$(BINNAME).1'
+
 docs:
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		pip install pdoc \
-		&& pdoc --overwrite --external-links --html --html-dir docs/ $(BINPATH)/$(BINNAME) $(BINNAME) \
-		&& mv docs/$(BINNAME).m.html docs/$(BINNAME).api.html \
-		&& chown $${UID}:$${GID} docs/$(BINNAME).api.html'
+		&& pdoc --overwrite --external-links --html --html-dir $(DOCPATH) $(BINPATH)$(BINNAME) $(BINNAME) \
+		&& mv $(DOCPATH)$(BINNAME).m.html $(DOCPATH)$(BINNAME).api.html \
+		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).api.html'
 
 
 # -------------------------------------------------------------------------------------------------

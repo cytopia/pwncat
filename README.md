@@ -135,8 +135,10 @@ stty rows <num> columns <num>   # values found above by 'stty size'
 
 ## :closed_book: Documentation
 
-Documentation will evolve over time. Currently only API documentation is available here:
-https://cytopia.github.io/pwncat/pwncat.api.html
+Documentation will evolve over time.
+
+* API docs can be found here: [pwncat.api.html](https://cytopia.github.io/pwncat/pwncat.api.html)
+* Man page can be found here: [pwncat.1](man/pwncat.1)
 
 
 ## :computer: Usage
