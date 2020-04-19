@@ -11,8 +11,8 @@ BINARY="${SCRIPTPATH}/../bin/pwncat"
 ###
 ### 2 or 3
 ###
-PYTHON="${1}"
-python${PYTHON} -V
+PYTHON="python${1}"
+${PYTHON} -V
 
 # -------------------------------------------------------------------------------------------------
 # ENTRYPOINT
@@ -24,7 +24,7 @@ run() {
 	stderr="$(mktemp)"
 	ret=0
 
-	command="echo 'HEAD /' | python${PYTHON} ${BINARY} ${verbosity} www.google.de 80 > ${stdout} 2> ${stderr}"
+	command="echo 'HEAD /' | ${PYTHON} ${BINARY} ${verbosity} www.google.de 80 > ${stdout} 2> ${stderr}"
 
 	echo "################################################################################"
 	echo "################################################################################"

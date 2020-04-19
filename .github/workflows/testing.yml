@@ -30,10 +30,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.version }}
       - name: Test
+        shell: bash
         run: |
-          make ${target} VERSION=${version}
+          make ${target}
         env:
           target: ${{ matrix.target }}
           version: ${{ matrix.version }}
