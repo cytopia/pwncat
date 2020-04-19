@@ -70,21 +70,23 @@ run() {
 	fi
 }
 
+RUNS="100"
+for i in $(seq "${RUNS}"); do
+	VERBOSITY=""
+	run "${VERBOSITY}"
 
-VERBOSITY=""
-run "${VERBOSITY}"
+	VERBOSITY="-v"
+	run "${VERBOSITY}"
 
-VERBOSITY="-v"
-run "${VERBOSITY}"
+	VERBOSITY="-vv"
+	run "${VERBOSITY}"
 
-VERBOSITY="-vv"
-run "${VERBOSITY}"
+	VERBOSITY="-vvv"
+	run "${VERBOSITY}"
 
-VERBOSITY="-vvv"
-run "${VERBOSITY}"
+	VERBOSITY="-vvvv"
+	run "${VERBOSITY}"
 
-VERBOSITY="-vvvv"
-run "${VERBOSITY}"
-
-VERBOSITY="-vvvvv"
-run "${VERBOSITY}"
+	VERBOSITY="-vvvvv"
+	run "${VERBOSITY}"
+done
