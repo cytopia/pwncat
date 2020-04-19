@@ -19,22 +19,40 @@ jobs:
       fail-fast: False
       matrix:
         target:
-          - pycodestyle
-          - pydocstyle
-          - black
-          - version
-          - lint-files
-          - lint-man
-          - lint-docs
-          - lint-usage
-
+          - Linting
     name: "[ ${{ matrix.target }} ]"
     steps:
       - name: Checkout repository
         uses: actions/checkout@master
 
-      - name: Lint
+      - name: Lint files
         run: |
-          make ${target}
-        env:
-          target: ${{ matrix.target }}
+          make lint-files
+
+      - name: Python Black
+        run: |
+          make black
+
+      - name: PyCodeStyle
+        run: |
+          make pycodestyle
+
+      - name: PyDocStyle
+        run: |
+          make pydocstyle
+
+      - name: Check consistent version
+        run: |
+          make version
+
+      - name: Check consistent Usage in Readme
+        run: |
+          make lint-usage
+
+      - name: Check up-to-date man page
+        run: |
+          make lint-man
+
+      - name: Check up-to-date docs
+        run: |
+          make lint-docs
