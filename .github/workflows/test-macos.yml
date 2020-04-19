@@ -1,6 +1,6 @@
 ---
 
-name: testing
+name: MacOS
 on:
   pull_request:
   push:
@@ -10,11 +10,10 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
         version:
           - 2.7
           - 3.6
@@ -23,7 +22,7 @@ jobs:
         target:
           - test
 
-    name: "[${{ matrix.os }} [${{ matrix.version}}] ${{ matrix.target }}"
+    name: "[${{ matrix.version}}] ${{ matrix.target }}"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
