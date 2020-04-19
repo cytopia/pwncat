@@ -24,6 +24,7 @@ jobs:
           - black
           - version
           - lint-files
+          - lint-man
           - lint-docs
           - lint-usage
 
