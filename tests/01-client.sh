@@ -36,23 +36,32 @@ run() {
 	echo
 	echo
 	if ! eval "${command}"; then
-		echo "Failed to execute eval command"
+		echo "Failed to execute eval command."
 		ret=1
 	fi
 
 	echo "# ----------------------------------------------------------"
 	echo "# STDOUT"
 	echo "# ----------------------------------------------------------"
+	echo "#### BEGIN ####"
 	cat "${stdout}"
+	echo "#### END ####"
 	echo
 
 	echo "# ----------------------------------------------------------"
 	echo "# STDERR"
 	echo "# ----------------------------------------------------------"
+	echo "#### BEGIN ####"
 	cat "${stderr}"
+	echo "#### END ####"
 	echo
 
-	if grep -Ei 'Traceback|Exception' "${stderr}" >/dev/null; then
+	if grep -Ei 'Traceback|Exception|Error' "${stderr}" >/dev/null; then
+		echo "########## [ERROR] ########## STDERR HAS ERRORS ########## [ERROR] ##########"
+		ret=1
+	fi
+	if ! grep -Ei '^HTTP' "${stdout}" >/dev/null; then
+		echo "########## [ERROR] ########## STDOUT HAS NO DATA ########## [ERROR] ##########"
 		ret=1
 	fi
 
