@@ -2,7 +2,6 @@
 """Python netcat implementation."""
 
 from __future__ import print_function
-from builtins import input
 from abc import ABCMeta, abstractmethod
 from subprocess import Popen, PIPE
 import argparse
@@ -631,6 +630,8 @@ class NetcatModuleOutput(AbstractNetcatModule):
         """Set specific options for this module."""
         self.log = logger
         self.enc = encoder
+        self.py3 = sys.version_info >= (3, 0)
+
         if "linefeed" in options:
             self.linefeed = options["linefeed"]
 
@@ -640,7 +641,14 @@ class NetcatModuleOutput(AbstractNetcatModule):
     def input_generator(self):
         """Constantly ask for user input."""
         while True:
-            data = input()
+            # https://stackoverflow.com/questions/1450393/#38670261
+            try:
+                if self.py3:
+                    data = input()
+                else:
+                    data = raw_input()
+            except EOFError:
+                pass
             yield data + self.linefeed
 
     def output_callback(self, data):
