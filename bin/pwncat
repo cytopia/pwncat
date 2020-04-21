@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 """Python netcat implementation."""
 
+#
+# TODO: where to use sys.stdout.flush ??
+#
+# Behaviour Server
+# 1. (tty and non-tty mode) TCP Server should always quit if client disconnects
+# 2. (tty and non-tty mode) TCP Server should always quit if connection is gone/broken
+# 3. (tty and non-tty mode) UDP Will always stay open (can't determine if connection is gone)
+#
+#
+# Behaviour Client
+# 1. (tty and non-tty mode) Client will always stay open until manually quit
+##
+
 from __future__ import print_function
 from abc import ABCMeta, abstractmethod
 from subprocess import Popen, PIPE
@@ -15,6 +28,14 @@ import sys
 import threading
 import time
 
+# Python 2 + Python 3 support
+ABC = ABCMeta('ABC', (object,), {'__slots__': ()})
+
+# TODO: Find windows import
+if os.name != 'nt':
+    import select
+
+
 # TODO: Use bundled logger 'import logging'
 
 
@@ -26,11 +47,16 @@ APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
 VERSION = "0.0.5-alpha"
 
+# Global variable to be used within threads to determine
+# if they should exit or not.
+# TODO: check if this is best-practice
+THREAD_TERMINATE = False
+
 
 # -------------------------------------------------------------------------------------------------
 # ABSTRACT CLASS: AbstractNetcatModule
 # -------------------------------------------------------------------------------------------------
-class AbstractNetcatModule:
+class AbstractNetcatModule(ABC):
     """
     Abstract class to for netcat modules.
 
@@ -60,6 +86,10 @@ class AbstractNetcatModule:
     def output_callback(self, data):
         """Implement a callback which processes the input into some output."""
         print(data)
+
+    @abstractmethod
+    def stop(self):
+        """Implement a stop method, which exits the instance."""
 
 
 # -------------------------------------------------------------------------------------------------
@@ -189,6 +219,7 @@ class AbstractSocket(object):
                 "Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"])
             )
             time.sleep(self.options["reconn_wait"])
+            self.__close_socket(self.conn)
             self.accept()
             return True
         # [YES] Re-accept x many times
@@ -200,6 +231,7 @@ class AbstractSocket(object):
             )
             self.options["reconn"] -= 1
             time.sleep(self.options["reconn_wait"])
+            self.__close_socket(self.conn)
             self.accept()
             return True
         # [NO] Re-accept count is used up
@@ -343,39 +375,71 @@ class AbstractSocket(object):
                     send += curr
                 if curr == 0:
                     self.log.error("No bytes send during loop round.")
+                    return
                 else:
                     self.log.trace("Send {} bytes".format(curr))
                 # Remove 'curr' many bytes from data for the next round
                 data = data[curr:]
             except socket.error as error:
                 if error.errno == socket.errno.EPIPE:
-                    print("Remote has disconnected.")
+                    self.log.error("Socket error({}): {}".format(error.errno, error))
                     return
                 else:
+                    # Most likely nothing to see here... ??
+                    # FIXME: TODO: Need to re-accepd new client
                     self.log.error("Socket Error: {}".format(error))
-                    return
+                    if self.role == "server":
+                        if not self.__reaccept_from_client():
+                            self.log.warning("Shutdown")
+                            return
+                    return  # TODO: Do we need this?
             except (OSError) as error:
                 self.log.error("Socket OS Error: {}".format(error))
                 return
 
     def receive(self):
         """Generate received data endlessly by yielding it."""
+        # TODO: Set this somewhere configurable
+        self.conn.settimeout(0.2)
+        retry_before_terminate = 2
+        count_before_terminate = 0
         while True:
+
             if self.conn is None:
                 self.log.error("Socket is gone")
-                exit(1)  # TODO: Can I catch this better?
+                return
 
-            self.log.trace("Receiving data (bufsize={})...".format(self.options["bufsize"]))
+            # self.log.trace("Receiving data (bufsize={})...".format(self.options["bufsize"]))
             try:
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
+            except socket.timeout:
+                if THREAD_TERMINATE:
+                    if count_before_terminate < retry_before_terminate:
+                        count_before_terminate += 1
+                        continue
+                    return
+                continue
             except socket.error as error:
                 self.log.error("Socket Receive Error: {}".format(error))
-                exit(1)  # TODO: Can I catch this better?
+                return
             except AttributeError as error:
                 self.log.error("Attribute Receive Error: {}".format(error))
-                exit(1)  # TODO: Can I catch this better?
+                return
 
             data = byte
+
+            if not data:
+                # Upstream (server or client) is gone. Do we reconnect or quit?
+                self.log.warning("Upstream connection is gone")
+                if self.role == "server":
+                    if not self.__reaccept_from_client():
+                        self.log.warning("Shutdown-1")
+                        return
+                if self.role == "client":
+                    if not self.__reconnect_to_server():
+                        self.log.warning("Shutdown-2")
+                        return
+
             data = self.enc.decode(byte)
             self.log.trace("Received: {}".format(data))
 
@@ -394,16 +458,6 @@ class AbstractSocket(object):
                     self.log.debug(
                         "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
                     )
-
-            if not data:
-                # Upstream (server or client) is gone. Do we reconnect or quit?
-                self.log.warning("Upstream connection is gone")
-                if self.role == "server":
-                    if not self.__reaccept_from_client():
-                        sys.exit(0)
-                if self.role == "client":
-                    if not self.__reconnect_to_server():
-                        sys.exit(0)
 
             yield data
 
@@ -429,17 +483,17 @@ class StringEncoder(object):
     def encode(self, data):
         """Convert string into a byte type for Python3."""
         if self.py3:
-            self.log.trace("Encoding: {}".format(data))
+            # self.log.trace("Encoding: {}".format(data))
             data = data.encode("cp437")
-            self.log.trace("Encoded: {}".format(data))
+            # self.log.trace("Encoded: {}".format(data))
         return data
 
     def decode(self, data):
         """Convert bytes into a string type for Python3."""
         if self.py3:
-            self.log.trace("Decoding: {}".format(data))
+            # self.log.trace("Decoding: {}".format(data))
             data = data.decode("cp437")
-            self.log.trace("Decoded: {}".format(data))
+            # self.log.trace("Decoded: {}".format(data))
         return data
 
 
@@ -520,10 +574,20 @@ class Logger(object):
     def trace(self, message):
         """Log trace messages."""
         if self.verbosity > 3:
-            _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals["self"].__class__.__name__
-            fnc = _stack[3]
-            print("[TRACE] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
+            stack = inspect.stack()
+            prev = ""
+            # if len(stack) > 2:
+            #     _stack2 = stack[2]
+            #     if "self" in _stack2[0].f_locals:
+            #         cls2 = _stack2[0].f_locals["self"].__class__.__name__
+            #     else:
+            #         cls2 = ''
+            #     fnc2 = _stack2[3]
+            #     prev = "{}.{}() -> ".format(cls2, fnc2)
+            _stack1 = stack[1]
+            cls1 = _stack1[0].f_locals["self"].__class__.__name__
+            fnc1 = _stack1[3]
+            print("[TRACE] %s%s.%s(): %s" % (prev, cls1, fnc1, repr(message)), file=sys.stderr)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -538,18 +602,6 @@ class Runner(object):
     def __init__(self, logger):
         """Constructor."""
         self.log = logger
-        # Register destructor
-        atexit.register(self.__exit__)
-
-    def __exit__(self):
-        """Destructor."""
-        if hasattr(self, "tt"):
-            self.log.trace("Joining Thread-Time")
-            # self.tt.join()
-        self.log.trace("Joining Thread-Send")
-        # self.ts.join()
-        self.log.trace("Joining Thread-Recv")
-        # self.tr.join()
 
     # ------------------------------------------------------------------------------
     # Public Functions
@@ -570,6 +622,12 @@ class Runner(object):
         """Set the callback for outputting data to stdin/stdout."""
         self.output_callback = func
 
+    def set_revc_generator_stop_function(self, func):
+        self.recv_generator_stop_fn = func
+
+    def set_input_generator_stop_function(self, func):
+        self.input_generator_stop_fn = func
+
     def set_timed_action(self, intvl, func, *args, **kwargs):
         """Set a function that should be called periodically."""
         self.timed_action_intvl = intvl
@@ -579,6 +637,7 @@ class Runner(object):
 
     def run(self):
         """Run threaded NetCat."""
+        global THREAD_TERMINATE
 
         assert hasattr(self, "recv_generator"), "Error, recv_generator not set"
         assert hasattr(self, "input_generator"), "Error, input_generator not set"
@@ -595,6 +654,7 @@ class Runner(object):
             for data in self.recv_generator():
                 self.log.trace("[Thread-Recv] recv_generator() received: {}".format(data))
                 self.output_callback(data)
+            self.log.trace("[Thread-Recv] STOP")
 
         def sender():
             """Receive data from user-input/command-output and process it with a callback.
@@ -603,15 +663,10 @@ class Runner(object):
             callback: Must be a callback to send this data to a socket.
             """
             self.log.trace("[Thread-Send] START")
-            count = 0
-            while True:
-                count += 1
-                self.log.trace("[Thread-Send] round: {}".format(count))
-                for data in self.input_generator():
-                    if data:
-                        self.send_callback(data)
-                    else:
-                        time.sleep(0.1)  # This fixes some thread erors
+            for data in self.input_generator():
+                self.log.trace("[Thread-Send] received via input_generator(): {}".format(data))
+                self.send_callback(data)
+            self.log.trace("[Thread-Send] STOP")
 
         def timer():
             """Execute periodic tasks by an optional provided time_action."""
@@ -632,10 +687,11 @@ class Runner(object):
         self.tr = threading.Thread(target=receiver, name="Thread-Recv")
         self.ts = threading.Thread(target=sender, name="Thread-Send")
         # If the main thread kills, this thread will be killed too.
-        self.tr.daemon = True
-        self.ts.daemon = True
+        self.tr.daemon = False  # No daemon, wait for each other (e.g.: data received
+        self.ts.daemon = False  # should also be outputted)
         # Start threads
         self.tr.start()
+        time.sleep(0.1)
         self.ts.start()
 
         if hasattr(self, "timed_action_intvl"):
@@ -646,21 +702,36 @@ class Runner(object):
         # Cleanup the main program
         while True:
             if not self.tr.is_alive():
+                self.log.trace("Setting THREAD_TERMINATE=True from Thread-Recv death")
+                self.log.trace("Waiting for Thread-Send to finish")
+                time.sleep(0.1)
+                THREAD_TERMINATE = True
+                self.input_generator_stop_fn()
+                self.ts.join()
                 sys.exit(0)
             if not self.ts.is_alive():
+                self.log.trace("Setting THREAD_TERMINATE=True from Thread-Send death")
+                self.log.trace("Waiting for Thread-Recv to finish")
+                time.sleep(0.1)
+                THREAD_TERMINATE = True
+                self.recv_generator_stop_fn()
+                self.tr.join()
                 sys.exit(0)
-            if hasattr(self, "tt"):
-                if not self.tt.is_alive():
-                    sys.exit(0)
+            # if hasattr(self, "tt"):
+            #     if not self.tt.is_alive():
+            #         sys.exit(0)
+            # time.sleep(0.1)
 
 
 # -------------------------------------------------------------------------------------------------
 # CLASS: NetcatModuleOutput (Module for: user-input -> send -> receive -> output)
 # -------------------------------------------------------------------------------------------------
+# FIXED: THIS IS CHECKED AND WORKS AS EXPECTED (TODO: remove this comment)
 class NetcatModuleOutput(AbstractNetcatModule):
     """Implement basic chat module functionality."""
 
     linefeed = "\n"
+    quit_on_eof = True
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -669,63 +740,87 @@ class NetcatModuleOutput(AbstractNetcatModule):
         """Set specific options for this module."""
         self.log = logger
         self.enc = encoder
+
+        # Two things to consider for this Module:
         self.py3 = sys.version_info >= (3, 0)
+        self.tty = sys.stdin.isatty()
 
         if "linefeed" in options:
             self.linefeed = options["linefeed"]
+        if "quit_on_eof" in options:
+            self.quit_on_eof = options["quit_on_eof"]
 
     # ------------------------------------------------------------------------------
     # Private Functions
     # ------------------------------------------------------------------------------
     def __use_linefeeds(self, data):
         """Ensure the user input has the desired linefeeds --crlf or not."""
-        self.log.trace("Data before processing linefeeds: {}".format(data))
         if data.endswith("\r\n"):
             data = data[:-2]
         elif data.endswith("\n") or data.endswith("\r"):
             data = data[:-1]
         data += self.linefeed
-        self.log.trace("Data after processing linefeeds: {}".format(data))
         return data
+
+    def __set_input_timeout(self, timeout=0.1):
+        """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
+        i, o, e = select.select([sys.stdin], [], [], timeout)
+        if not i:
+            raise BaseException("timed out")
 
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
+    def stop(self):
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace("[NetcatOutputCommand] pass was raised by stop() function")
+        pass
+
     def input_generator(self):
         """Constantly ask for user input."""
         # https://stackoverflow.com/questions/1450393/#38670261
-
-        # Works for Python3:
-        # 1. interactive user input
-        # 2. echo "data" | pwncat
-        # FIXME: The second one sometimes results in:
-        #     Fatal Python error: could not acquire lock for <_io.BufferedWriter name='<stdout>'>
-        #     at interpreter shutdown, possibly due to daemon threads
-        if self.py3:
-            for line in sys.stdin:
-                line = self.__use_linefeeds(line)
-                self.log.trace("yielding from sys.stdin: {}".format(line))
-                yield line
-
-        # Works for Python2 with
-        # 1. Interactive user input
-        # 2. echo "data" | pwncat
-        else:
-            while True:
+        # Works for Python2 and Python3
+        # sys.stdin.readline()
+        # 1. User input: returns on newline
+        # 2. Pipe input: returns on completion
+        # TODO: This is a blocking function in case of user input and the thread
+        #       might need to be informed to exit this function
+        while True:
+            # while True: line = sys.stdin.readline() <- reads a whole line (faster)
+            # for line in sys.stdin.readlin():        <- reads one byte at a time
+            try:
+                self.__set_input_timeout(timeout=0.3)
                 line = sys.stdin.readline()
-                if line:
-                    line = self.__use_linefeeds(line)
-                    self.log.trace("sys.stdin.readline(): {}".format(line))
-                    yield line
-                else:
-                    self.log.trace("sys.stdin.readline(): Received empty input")
-                    sys.stdout.flush()  # TODO: Is this required?
-                    # return
-                    yield
+            except BaseException:
+                if THREAD_TERMINATE:
+                    # Return command to Thread function
+                    return
+                # No input, just check again
+                continue
+            if line:
+                line = self.__use_linefeeds(line)
+                yield line
+            # EOF or <Ctrl>+<d>
+            else:
+                # DO NOT RETURN HERE, THE UPSTREAM CONNECTION MUST GO!
+                self.log.trace("No more input generated, quitting (tty: {}).".format(self.tty))
+                #return   # TODO: check if this works in all modes
+                # Return to parent function
+                if THREAD_TERMINATE:
+                    self.log.trace("No more input generated, quitting (tty: {}).".format(self.tty))
+                    # Return command to Thread function
+                    return
+                # Let's check if this works for UDP server started by script
+                if not self.quit_on_eof:
+                    continue
+                # No input, just check again
+                #continue
+                #return
 
     def output_callback(self, data):
         """Print received data to stdout."""
         print(data, end="")
+        sys.stdout.flush()  # TODO: test this!!!
 
 
 # -------------------------------------------------------------------------------------------------
@@ -749,9 +844,15 @@ class NetcatModuleCommand(AbstractNetcatModule):
 
         # Open executable to wait for commands
         env = os.environ.copy()
-        self.p = Popen(
-            self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env
-        )
+        try:
+            self.p = Popen(
+            # TODO: should I also use 'bufsize=1'?
+                self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env
+            )
+        except FileNotFoundError:
+            self.log.error("Specified executable '{}' not found".format(self.executable))
+            sys.exit(1)
+
         # Define destructor
         atexit.register(self.__exit__)
 
@@ -763,15 +864,48 @@ class NetcatModuleCommand(AbstractNetcatModule):
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
+    def stop(self):
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace("[NetcatModuleCommand] subprocess.kill() was raised by stop() function")
+        self.p.kill()
+
+    def __set_input_timeout(self, timeout=0.1):
+        """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
+        # select((rlist, wlist, xlist, timeout)
+        # rlist: wait until ready for reading
+        # wlist: wait until ready for writing
+        # xlist: wait for an "exceptional condition"
+        i, o, e = select.select([self.p.stdout], [], [], timeout)
+        #i, o, e = select.select([], [self.p.stdout], [], timeout)
+        #if not o:
+        if not i:
+            raise BaseException("timed out")
+
     def input_generator(self):
         """Constantly ask for input."""
         while True:
             self.log.trace("Reading command output")
-            data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
+            #try:
+                #self.__set_input_timeout(timeout=1.5)
+            data = self.p.stdout.readline()
+            self.log.trace(data)
+            #except BaseException:
+            #    if THREAD_TERMINATE:
+            #        print("KIIIIIIIIIIIIIIIL FROM  SUBPROCESS READLINE")
+            #        # Return command to Thread function
+            #        return
+            #    # No input, just check again
+            #    #self.p.stdout.flush()
+            #    continue
+
+            #self.p.stdout.flush()
+            #self.log.trace("Reading command output")
+            #data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
             data = self.enc.decode(data)
             self.log.trace("Command output: {}".format(data))
             if not data:
-                self.log.error("No program output received")
+                #print("EMPTY DATA RECEIVEDEMPTY DATA RECEIVED EMPTY DATA RECEIVEDEMPTY DATA RECEID")
+                #self.log.error("No program output received")
                 break
             yield data
 
@@ -1278,13 +1412,17 @@ def main():
         mod = NetcatModuleCommand(logger, encoder, module_opts)
     # Use output module
     else:
-        module_opts = {"linefeed": "\r\n" if args.crlf else "\n"}
+        module_opts = {}
+        module_opts["linefeed"] = "\r\n" if args.crlf else "\n"
+        module_opts["quit_on_eof"] = False if args.listen and args.udp else True
         mod = NetcatModuleOutput(logger, encoder, module_opts)
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
     if args.local:
         # Create listen and client instances
+        net_opts["reconn"] = True
+        net_opts["reconn_wait"] = 0
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
         net_srv = NetcatServer(logger, encoder, lhost, lport, net_opts)
@@ -1302,6 +1440,8 @@ def main():
         # [srv] Runner parses data from Proxy-Client onto Server, which sends/back to User-Client
         run.set_send_callback(net_srv.send)
 
+        run.set_revc_generator_stop_function(object)
+        run.set_input_generator_stop_function(object)
         # And finally run
         run.run()
     # Run server
@@ -1312,6 +1452,9 @@ def main():
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
         run.set_output_callback(mod.output_callback)
+
+        run.set_revc_generator_stop_function(object)
+        run.set_input_generator_stop_function(mod.stop)
         run.run()
     # Run client
     else:
@@ -1323,6 +1466,8 @@ def main():
         run.set_output_callback(mod.output_callback)
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
             run.set_timed_action(args.udp_ping_intvl, net.send, "\x00")
+        run.set_revc_generator_stop_function(object)
+        run.set_input_generator_stop_function(object)
         run.run()
 
 
@@ -1331,5 +1476,6 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
+        THREAD_TERMINATE = True
         print()
         sys.exit(1)
