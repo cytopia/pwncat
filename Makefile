@@ -122,10 +122,51 @@ lint-usage:
 # Test Targets
 # -------------------------------------------------------------------------------------------------
 
-test: test-client
+test: test-tcp-client-http
+test: test-tcp-client-echo
+test: test-udp-client-echo
+test: test-tcp-client-send-text
+test: test-udp-client-send-text
+test: test-tcp-client-send-file
+test: test-udp-client-send-file
+test: test-tcp-client-send-command
+test: test-udp-client-send-command
+test: test-tcp-server-local-port-forward
 
-test-client:
-	tests/01-client.sh ""
+# HTTP
+test-tcp-client-http:
+	tests/01-tcp-client-http-server-request.sh ""
+
+# ECHO
+test-tcp-client-echo:
+	@echo "TODO: Not yet implemented."
+	#tests/02-tcp-client-echo-server-request.sh ""
+test-udp-client-echo:
+	@echo "TODO: Not yet implemented."
+	#tests/02-udp-client-echo-server-request.sh ""
+
+# SEND TEXT
+test-tcp-client-send-text:
+	tests/03-tcp-client-send-text-to-server.sh ""
+test-udp-client-send-text:
+	tests/03-udp-client-send-text-to-server.sh ""
+
+# SEND FILE
+test-tcp-client-send-file:
+	tests/04-tcp-client-send-file-to-server.sh ""
+test-udp-client-send-file:
+	tests/04-udp-client-send-file-to-server.sh ""
+
+# SEND COMMAND
+test-tcp-client-send-command:
+	tests/05-tcp-client-send-command-to-server.sh ""
+test-udp-client-send-command:
+	tests/05-udp-client-send-command-to-server.sh ""
+
+# LOCAL PORT FORWARD
+test-tcp-server-local-port-forward:
+	@echo "TODO: Not yet implemented."
+	#06-tcp-server-local-port-forward.sh ""
 
 
 # -------------------------------------------------------------------------------------------------
@@ -137,6 +178,10 @@ man: $(BINPATH)$(BINNAME)
 		apk add help2man \
 		&& help2man -n $(BINNAME) -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
 		&& chown $${UID}:$${GID} $(MANPATH)$(BINNAME).1'
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
+		apk add groff \
+		&& cat $(MANPATH)$(BINNAME).1 | groff -mandoc -Thtml > $(DOCPATH)$(BINNAME).man.html \
+		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).man.html'
 
 docs:
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \

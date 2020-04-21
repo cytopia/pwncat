@@ -19,21 +19,71 @@ jobs:
           - 3.6
           - 3.7
           - 3.8
-        target:
-          - test
 
-    name: "[${{ matrix.version}}] ${{ matrix.target }}"
+    name: "[${{ matrix.version}}]"
     steps:
+      # ------------------------------------------------------------
+      # Setup
+      # ------------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v2
+
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.version }}
-      - name: Test
+
+      # ------------------------------------------------------------
+      # Tests
+      # ------------------------------------------------------------
+      # (CLIENT) HTTP REQUEST
+      - name: "[TCP] Client HTTP server request"
         shell: bash
         run: |
-          make ${target}
-        env:
-          target: ${{ matrix.target }}
-          version: ${{ matrix.version }}
+          make test-tcp-client-http
+
+      # (CLIENT) ECHO REQUEST
+      - name: "[TCP] Client ECHO server request"
+        shell: bash
+        run: |
+          make test-tcp-client-echo
+      - name: "[UDP] Client ECHO server request"
+        shell: bash
+        run: |
+          make test-udp-client-echo
+
+      # (CLIENT) SEND TEXT
+      - name: "[TCP] Client send text to server"
+        shell: bash
+        run: |
+          make test-tcp-client-send-text
+      - name: "[UDP] Client send text to server"
+        shell: bash
+        run: |
+          make test-udp-client-send-text
+
+      # (CLIENT) SEND FILE
+      - name: "[TCP] Client send file to server"
+        shell: bash
+        run: |
+          make test-tcp-client-send-file
+      - name: "[UDP] Client send file to server"
+        shell: bash
+        run: |
+          make test-udp-client-send-file
+
+      # (CLIENT) SEND COMMAND
+      - name: "[TCP] Client send command to server"
+        shell: bash
+        run: |
+          make test-tcp-client-send-command
+      - name: "[UDP] Client send command to server"
+        shell: bash
+        run: |
+          make test-udp-client-send-command
+
+      # (SERVER) LOCAL PORT FORWARD
+      - name: "[TCP] Server local port forward"
+        shell: bash
+        run: |
+          make test-tcp-server-local-port-forward
