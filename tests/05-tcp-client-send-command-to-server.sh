@@ -21,8 +21,8 @@ print_h1 "[05] TCP Client send command to Server (${PYVER})"
 
 RHOST="localhost"
 RPORT="${2:-4500}"
-RUNS=5
-SRV_WAIT=2
+RUNS=2
+SRV_WAIT=5
 TRANS_WAIT=20
 
 
@@ -217,7 +217,9 @@ run_test() {
 			if ! pid_is_running "${cli_pid}"; then
 				break
 			fi
-		done
+			printf "."
+			sleep 1
+		done; echo
 		if pid_is_running "${cli_pid}"; then
 			>&2 echo "[Meta] Could not kill client process"
 			print_file "CLIENT STDERR" "${cli_stderr}"
