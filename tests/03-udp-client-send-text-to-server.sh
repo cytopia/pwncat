@@ -196,11 +196,31 @@ run_test() {
 	###
 	print_info "Stop Client"
 	run "kill ${cli_pid}"
+	for i in {1..10}; do
+		if ! pid_is_running "${cli_pid}"; then
+			break
+		fi
+		printf "."
+		sleep 1
+	done; echo
+
+	###
+	### Stop Client with force
+	###
 	if pid_is_running "${cli_pid}"; then
-		print_file "CLIENT STDERR" "${cli_stderr}"
-		print_file "CLIENT STDOUT" "${cli_stdout}"
-		>&2 echo "[Meta] Could not kill client process"
-		exit 1
+		print_info "Stop Client forcefully"
+		run "kill -9 ${cli_pid}"
+		for i in {1..10}; do
+			if ! pid_is_running "${cli_pid}"; then
+				break
+			fi
+		done
+		if pid_is_running "${cli_pid}"; then
+			>&2 echo "[Meta] Could not kill client process"
+			print_file "CLIENT STDERR" "${cli_stderr}"
+			print_file "CLIENT STDOUT" "${cli_stdout}"
+			exit 1
+		fi
 	fi
 
 	###
