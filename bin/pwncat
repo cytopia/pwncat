@@ -789,7 +789,9 @@ class NetcatModuleOutput(AbstractNetcatModule):
             # while True: line = sys.stdin.readline() <- reads a whole line (faster)
             # for line in sys.stdin.readlin():        <- reads one byte at a time
             try:
-                self.__set_input_timeout(timeout=0.3)
+                # TODO: select() does not work on windows on stdin/stdout
+                if os.name != 'nt':
+                    self.__set_input_timeout(timeout=0.3)
                 line = sys.stdin.readline()
             except BaseException:
                 if THREAD_TERMINATE:
