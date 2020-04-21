@@ -29,10 +29,10 @@ import threading
 import time
 
 # Python 2 + Python 3 support
-ABC = ABCMeta('ABC', (object,), {'__slots__': ()})
+ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
 
 # TODO: Find windows import
-if os.name != 'nt':
+if os.name != "nt":
     import select
 
 
@@ -358,7 +358,7 @@ class AbstractSocket(object):
         if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
             self.log.info("Waiting for UDP client to connect")
             while self.udp_client_addr is None and self.udp_client_port is None:
-                pass
+                time.sleep(0.2)  # Less wastefull than using 'pass'
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
@@ -368,11 +368,8 @@ class AbstractSocket(object):
 
         # Loop until all bytes have been send
         while send < size:
-            if self.conn is None:
-                self.log.error("Socket is gone.")
-                return
             try:
-                self.log.trace("Trying to send {} bytes: {}".format(size - send, data))
+                self.log.trace("Trying to send {} bytes".format(size - send))
                 if self.options["udp"]:
                     curr = self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
                     send += curr
@@ -382,29 +379,27 @@ class AbstractSocket(object):
                 if curr == 0:
                     self.log.error("No bytes send during loop round.")
                     return
-                else:
-                    self.log.trace("Send {} bytes".format(curr))
                 # Remove 'curr' many bytes from data for the next round
                 data = data[curr:]
+                self.log.trace("Send {} bytes ({} bytes remaining)".format(curr, size - send))
             except socket.error as error:
                 if error.errno == socket.errno.EPIPE:
-                    self.log.error("Socket error({}): {}".format(error.errno, error))
+                    self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
                     return
-                else:
-                    # Most likely nothing to see here... ??
-                    # FIXME: TODO: Need to re-accepd new client
-                    self.log.error("Socket Error: {}".format(error))
-                    if self.role == "server":
-                        if not self.__reaccept_from_client():
-                            self.log.warning("Shutdown")
-                            return
-                    return  # TODO: Do we need this?
+                # Most likely nothing to see here... ??
+                # FIXME: TODO: Need to re-accepd new client
+                self.log.error("TODO:Add desc. Socket Error: {}".format(error))
+                if self.role == "server":
+                    if self.__reaccept_from_client():
+                        continue
+                self.log.warning("Shutdown")
+                return
             except (OSError) as error:
                 self.log.error("Socket OS Error: {}".format(error))
                 return
 
     def receive(self):
-        """Generate received data endlessly by yielding it."""
+        """Generator function to receive data endlessly by yielding it."""
         # TODO: Set this somewhere configurable
         self.conn.settimeout(0.2)
         retry_before_terminate = 2
@@ -415,25 +410,33 @@ class AbstractSocket(object):
                 self.log.error("Socket is gone")
                 return
 
-            # self.log.trace("Receiving data (bufsize={})...".format(self.options["bufsize"]))
+            # Non-blocking socket with timeout. If the timeout threshold is hit,
+            # it will throw an socket.timeout exception. This is required to see if other
+            # threads have been terminated already.
             try:
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
             except socket.timeout:
-                if THREAD_TERMINATE:
-                    if count_before_terminate < retry_before_terminate:
-                        count_before_terminate += 1
-                        continue
-                    return
-                continue
+                # No other thread has terminated yet, and thus not asked us to quit.
+                # so we can continue waiting for input on the socket
+                if not THREAD_TERMINATE:
+                    continue
+                # Other threads are done. Let's try to read a few more times before
+                # returning and ending this function (might be data left)
+                if count_before_terminate < retry_before_terminate:
+                    count_before_terminate += 1
+                    continue
+                return
             except socket.error as error:
-                self.log.error("Socket Receive Error: {}".format(error))
+                self.log.error("TODO: What happens here? Socket Receive Error: {}".format(error))
                 return
             except AttributeError as error:
-                self.log.error("Attribute Receive Error: {}".format(error))
+                self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
                 return
 
-            data = byte
+            # We're receiving data again, so let's reset the retry/terminate counter
+            count_before_terminate = 0
 
+            data = byte
             if not data:
                 # Upstream (server or client) is gone. Do we reconnect or quit?
                 self.log.warning("Upstream connection is gone")
@@ -707,7 +710,7 @@ class Runner(object):
 
         # Cleanup the main program
         while True:
-            # TODO: is this required?
+            # TODO: is this required? (check if need to press Ctrl+c twice)
             # if not THREAD_TERMINATE:
             #     self.input_generator_stop_fn()
             #     self.recv_generator_stop_fn()
@@ -797,7 +800,7 @@ class NetcatModuleOutput(AbstractNetcatModule):
             # for line in sys.stdin.readlin():        <- reads one byte at a time
             try:
                 # TODO: select() does not work for windows on stdin/stdout
-                if os.name != 'nt':
+                if os.name != "nt":
                     self.__set_input_timeout(timeout=0.3)
                 line = sys.stdin.readline()
             except BaseException:
@@ -845,8 +848,13 @@ class NetcatModuleCommand(AbstractNetcatModule):
         env = os.environ.copy()
         try:
             self.p = Popen(
-            # TODO: should I also use 'bufsize=1'?
-                self.executable, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, shell=False, env=env
+                # TODO: should I also use 'bufsize=1'?
+                self.executable,
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=subprocess.STDOUT,
+                shell=False,
+                env=env,
             )
         except FileNotFoundError:
             self.log.error("Specified executable '{}' not found".format(self.executable))
@@ -875,8 +883,8 @@ class NetcatModuleCommand(AbstractNetcatModule):
         # wlist: wait until ready for writing
         # xlist: wait for an "exceptional condition"
         i, o, e = select.select([self.p.stdout], [], [], timeout)
-        #i, o, e = select.select([], [self.p.stdout], [], timeout)
-        #if not o:
+        # i, o, e = select.select([], [self.p.stdout], [], timeout)
+        # if not o:
         if not i:
             raise BaseException("timed out")
 
@@ -884,11 +892,11 @@ class NetcatModuleCommand(AbstractNetcatModule):
         """Constantly ask for input."""
         while True:
             self.log.trace("Reading command output")
-            #try:
-                #self.__set_input_timeout(timeout=1.5)
+            # try:
+            # self.__set_input_timeout(timeout=1.5)
             data = self.p.stdout.readline()
             self.log.trace(data)
-            #except BaseException:
+            # except BaseException:
             #    if THREAD_TERMINATE:
             #        print("KIIIIIIIIIIIIIIIL FROM  SUBPROCESS READLINE")
             #        # Return command to Thread function
@@ -897,14 +905,13 @@ class NetcatModuleCommand(AbstractNetcatModule):
             #    #self.p.stdout.flush()
             #    continue
 
-            #self.p.stdout.flush()
-            #self.log.trace("Reading command output")
-            #data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
+            # self.p.stdout.flush()
+            # self.log.trace("Reading command output")
+            # data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
             data = self.enc.decode(data)
             self.log.trace("Command output: {}".format(data))
             if not data:
-                #print("EMPTY DATA RECEIVEDEMPTY DATA RECEIVED EMPTY DATA RECEIVEDEMPTY DATA RECEID")
-                #self.log.error("No program output received")
+                # self.log.error("No program output received")
                 break
             yield data
 
