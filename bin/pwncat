@@ -173,14 +173,13 @@ class AbstractSocket(object):
 
     def __exit__(self):
         """Destructor."""
-        if self.conn is not None:
-            self.log.trace("Closing 'conn' socket")
-            self.__close_socket(self.conn)
-            self.conn = None
-        if self.sock is not None:
-            self.log.trace("Closing 'sock' socket")
-            self.__close_socket(self.sock)
-            self.sock = None
+
+        self.log.trace("Closing 'sock' socket")
+        self.__close_socket(self.sock)
+        self.sock = None
+        self.log.trace("Closing 'conn' socket")
+        self.__close_socket(self.conn)
+        self.conn = None
 
     # ------------------------------------------------------------------------------
     # Private Functions
@@ -188,10 +187,17 @@ class AbstractSocket(object):
     def __close_socket(self, sock):
         """Close a socket."""
         try:
+            # (SHUT_RD)   0 = Done receiving (disallows receiving)
+            # (SHUT_WR)   1 = Done sending (disallows sending)
+            # (SHUT_RDWR) 2 = Both
             sock.shutdown(socket.SHUT_RDWR)
-        except (ValueError, OSError, socket.error):
+        except (AttributeError, OSError, socket.error):
+            self.log.trace("Could not shutdown socket")
             pass
-        sock.close()
+        try:
+            sock.close()
+        except (AttributeError, OSError, socket.error):
+            self.log.trace("Could not shutdown socket")
 
     def __reconnect(self):
         """Reconnect to a server if upstream has gone."""
@@ -701,6 +707,10 @@ class Runner(object):
 
         # Cleanup the main program
         while True:
+            # TODO: is this required?
+            # if not THREAD_TERMINATE:
+            #     self.input_generator_stop_fn()
+            #     self.recv_generator_stop_fn()
             if not self.tr.is_alive():
                 self.log.trace("Setting THREAD_TERMINATE=True from Thread-Recv death")
                 self.log.trace("Waiting for Thread-Send to finish")
@@ -717,6 +727,7 @@ class Runner(object):
                 self.recv_generator_stop_fn()
                 self.tr.join()
                 sys.exit(0)
+            # TODO: Yes, also implement the timed function
             # if hasattr(self, "tt"):
             #     if not self.tt.is_alive():
             #         sys.exit(0)
@@ -781,48 +792,34 @@ class NetcatModuleOutput(AbstractNetcatModule):
         # https://stackoverflow.com/questions/1450393/#38670261
         # Works for Python2 and Python3
         # sys.stdin.readline()
-        # 1. User input: returns on newline
-        # 2. Pipe input: returns on completion
-        # TODO: This is a blocking function in case of user input and the thread
-        #       might need to be informed to exit this function
         while True:
             # while True: line = sys.stdin.readline() <- reads a whole line (faster)
             # for line in sys.stdin.readlin():        <- reads one byte at a time
             try:
-                # TODO: select() does not work on windows on stdin/stdout
+                # TODO: select() does not work for windows on stdin/stdout
                 if os.name != 'nt':
                     self.__set_input_timeout(timeout=0.3)
                 line = sys.stdin.readline()
             except BaseException:
+                # When using select() with timeout, we don't have any input
+                # at this point and simply continue the loop or quit if
+                # a terminate request has been made by other threads.
                 if THREAD_TERMINATE:
-                    # Return command to Thread function
                     return
-                # No input, just check again
                 continue
             if line:
-                line = self.__use_linefeeds(line)
-                yield line
+                yield self.__use_linefeeds(line)
             # EOF or <Ctrl>+<d>
             else:
-                # DO NOT RETURN HERE, THE UPSTREAM CONNECTION MUST GO!
-                self.log.trace("No more input generated, quitting (tty: {}).".format(self.tty))
-                #return   # TODO: check if this works in all modes
-                # Return to parent function
+                # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
                 if THREAD_TERMINATE:
                     self.log.trace("No more input generated, quitting (tty: {}).".format(self.tty))
-                    # Return command to Thread function
                     return
-                # Let's check if this works for UDP server started by script
-                if not self.quit_on_eof:
-                    continue
-                # No input, just check again
-                #continue
-                #return
 
     def output_callback(self, data):
         """Print received data to stdout."""
         print(data, end="")
-        sys.stdout.flush()  # TODO: test this!!!
+        sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
 
 
 # -------------------------------------------------------------------------------------------------
