@@ -198,6 +198,8 @@ run_test() {
 	run "kill ${cli_pid}"
 	if pid_is_running "${cli_pid}"; then
 		>&2 echo "[Meta] Could not kill client process"
+		print_file "CLIENT STDERR" "${cli_stderr}"
+		print_file "CLIENT STDOUT" "${cli_stdout}"
 		exit 1
 	fi
 
