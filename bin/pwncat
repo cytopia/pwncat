@@ -701,9 +701,12 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
                 if THREAD_TERMINATE:
+                    self.log.trace("STDIN: terminate")
                     return
+                self.log.trace("STDIN: timeout")
                 continue
             if line:
+                self.log.trace("Yielding stdin")
                 yield self.__use_linefeeds(line)
             # EOF or <Ctrl>+<d>
             else:
@@ -711,6 +714,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 if THREAD_TERMINATE:
                     self.log.trace("No more input generated, quitting.")
                     return
+                self.log.trace("STDIN: Reached EOF, repeating")
 
     def output_callback(self, data):
         """Print received data to stdout."""
