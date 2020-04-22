@@ -47,23 +47,36 @@ print_info() {
 	>&2 printf "${clr_blue}%s${clr_rst}\\n" "${info}"
 }
 
+print_error() {
+	local info="${1}"
+	local clr_blue="\\033[0;34m"  # Blue
+	local clr_rst="\\033[m"       # Reset to normal
+	>&2 printf "${clr_blue}%s${clr_rst}\\n" "${info}"
+}
+
 print_file() {
 	local name="${1}"
 	local file="${2}"
-	print_h3 "[${name}]: ${file}"
-	echo "########## START OF FILE ##########"
+	local clr_div="\\033[0;33m"  # Yellow
+	local clr_rst="\\033[m"       # Reset to normal
+
+	print_h3 "[${name}] Filename: ${file}"
+	printf "${clr_div}########## %s ##########${clr_rst}\\n" "START OF FILE"
 	cat "${file}"
-	echo "########## END OF FILE ##########"
+	printf "${clr_div}########## %s ##########${clr_rst}\\n" "End OF FILE"
 	echo
 }
 
 print_data() {
 	local name="${1}"
 	local data="${2}"
+	local clr_div="\\033[0;33m"  # Yellow
+	local clr_rst="\\033[m"       # Reset to normal
+
 	print_h3 "[${name}]"
-	echo "########## START OF FILE ##########"
+	printf "${clr_div}########## %s ##########${clr_rst}\\n" "START OF DATA"
 	echo "${data}"
-	echo "########## END OF FILE ##########"
+	printf "${clr_div}########## %s ##########${clr_rst}\\n" "End OF DATA"
 	echo
 }
 
