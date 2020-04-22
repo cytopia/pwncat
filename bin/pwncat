@@ -298,6 +298,15 @@ class AbstractSocket(object):
         except socket.error as error:
             self.log.error("Failed to create the socket: {}".format(error))
             sys.exit(1)
+        # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
+        # we instruct it to reuse the address anyway.
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # TODO: Not sure if SO_REUSEPORT is also required
+        # try:
+        #     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        # except AttributeError:
+        #     # Not available on Windows (and maybe others)
+        #     self.log.debug("socket.SO_REUSEPORT is not available on your platform")
 
     def bind(self, addr, port):
         """Bind the socket to an address."""
@@ -406,6 +415,7 @@ class AbstractSocket(object):
             # it will throw an socket.timeout exception. This is required to see if other
             # threads have been terminated already.
             try:
+                # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
             except socket.timeout:
                 # No other thread has terminated yet, and thus not asked us to quit.

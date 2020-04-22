@@ -24,15 +24,25 @@ print_h1() {
 }
 
 print_h2() {
+	local clr_clr="\\033[0;34m"   # Blue
+	local clr_rst="\\033[m"       # Reset to normal
+
+	printf "${clr_clr}"
 	printf -- '*%.0s' {1..80}; echo
 	printf -- '* %s\n' "${1}"
 	printf -- '*%.0s' {1..80}; echo
+	printf "${clr_rst}"
 }
 
 print_h3() {
+	local clr_clr="\\033[0;34m"   # Blue
+	local clr_rst="\\033[m"       # Reset to normal
+
+	printf "${clr_clr}"
 	printf -- '-%.0s' {1..60}; echo
-	printf -- '- %s\n' "${1}"
+	printf -- '%s\n' "${1}"
 	printf -- '-%.0s' {1..60}; echo
+	printf "${clr_rst}"
 }
 
 
@@ -41,29 +51,30 @@ print_h3() {
 # -------------------------------------------------------------------------------------------------
 
 print_info() {
-	local info="${1}"
+	local message="${1}"
 	local clr_blue="\\033[0;34m"  # Blue
 	local clr_rst="\\033[m"       # Reset to normal
-	>&2 printf "${clr_blue}%s${clr_rst}\\n" "${info}"
+	>&2 printf "[INFO] %s\\n" "${message}"
+	#>&2 printf "${clr_blue}%s${clr_rst}\\n" "${message}"
 }
 
 print_error() {
-	local info="${1}"
-	local clr_blue="\\033[0;34m"  # Blue
+	local message="${1}"
+	local clr_blue="\\033[0;31m"  # Blue
 	local clr_rst="\\033[m"       # Reset to normal
-	>&2 printf "${clr_blue}%s${clr_rst}\\n" "${info}"
+	>&2 printf "${clr_blue}%s${clr_rst}\\n" "${message}"
 }
 
 print_file() {
 	local name="${1}"
 	local file="${2}"
-	local clr_div="\\033[0;33m"  # Yellow
+	local clr_div="\\033[0;33m"   # Yellow
 	local clr_rst="\\033[m"       # Reset to normal
 
 	print_h3 "[${name}] Filename: ${file}"
-	printf "${clr_div}########## %s ##########${clr_rst}\\n" "START OF FILE"
+	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF FILE"
 	cat "${file}"
-	printf "${clr_div}########## %s ##########${clr_rst}\\n" "End OF FILE"
+	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF FILE"
 	echo
 }
 
@@ -88,7 +99,7 @@ print_data() {
 run() {
 	local cmd="${1}"
 
-	local clr_cmd="\\033[0;33m"  # Yellow
+	local clr_cmd="\\033[0;35m"   # Purple
 	local clr_ok="\\033[0;32m"    # Green
 	local clr_fail="\\033[0;31m"  # Red
 	local clr_rst="\\033[m"       # Reset to normal

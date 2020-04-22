@@ -122,6 +122,7 @@ lint-usage:
 # Test Targets
 # -------------------------------------------------------------------------------------------------
 
+test: test-socket-reuseaddr
 test: test-tcp-client-http
 test: test-tcp-client-echo
 test: test-udp-client-echo
@@ -132,6 +133,10 @@ test: test-udp-client-send-file
 test: test-tcp-client-send-command
 test: test-udp-client-send-command
 test: test-tcp-server-local-port-forward
+
+# SOCKET
+test-socket-reuseaddr:
+	tests/00-socket-reuseaddr.sh ""
 
 # HTTP
 test-tcp-client-http:

@@ -44,7 +44,7 @@ run_test() {
 	local data=
 
 	echo;echo
-	print_h1 "[${tround}/${RUNS}] (${sround}/13) Starting Test Round (cli '${cli_opts}' vs srv '${srv_opts}')"
+	print_h1 "[${tround}/${RUNS}] (${sround}/13) Starting Test Round (${host}:${port}) (cli '${cli_opts}' vs srv '${srv_opts}')"
 
 	kill_process "pwncat" >/dev/null 2>&1 || true
 
@@ -78,10 +78,10 @@ run_test() {
 	if [ -z "${srv_pid}" ]; then
 		print_file "SERVER STDERR" "${srv_stderr}"
 		print_file "SERVER STDOUT" "${srv_stdout}"
-		>&2 echo "[Server Error] Failed to start Server in background"
+		print_error "[Server Error] Failed to start Server in background"
 		exit 1
 	fi
-	print_info "[Server Info] Server started in background with pid: ${srv_pid}"
+	print_info "Server started in background with pid: ${srv_pid}"
 	sleep "${SRV_WAIT}"  # Wait until server is up
 
 	###
@@ -91,8 +91,8 @@ run_test() {
 	if has_errors "${srv_stderr}"; then
 		print_file "SERVER STDERR" "${srv_stderr}"
 		print_file "SERVER STDOUT" "${srv_stdout}"
-		run "kill ${srv_pid} || true 2>/dev/null"
-		>&2 echo "[Server Error] Errors found in stderr"
+		run "kill ${srv_pid} || true" 2>/dev/null
+		print_error "[Server Error] Errors found in stderr"
 		exit 1
 	fi
 
@@ -119,8 +119,8 @@ run_test() {
 		print_file "SERVER STDOUT" "${srv_stdout}"
 		print_file "CLIENT STDERR" "${cli_stderr}"
 		print_file "CLIENT STDOUT" "${cli_stdout}"
-		>&2 echo "[Client Error] Failed to start Client in background"
-		run "kill ${srv_pid} || true 2>/dev/null"
+		print_error "[Client Error] Failed to start Client in background"
+		run "kill ${srv_pid} || true" 2>/dev/null
 		exit 1
 	fi
 	print_info "[Client Info] Client started in background with pid: ${cli_pid}"
@@ -147,11 +147,11 @@ run_test() {
 			print_file "SERVER STDOUT" "${srv_stdout}"
 			print_data "EXPECT DATA" "${data}"
 			diff <(echo "${data}") "${srv_stdout}" 2>&1 || true
-			run "kill ${cli_pid} || true 2>/dev/null"
-			run "kill ${srv_pid} || true 2>/dev/null"
+			run "kill ${cli_pid} || true" 2>/dev/null
+			run "kill ${srv_pid} || true" 2>/dev/null
 			print_data "RECEIVED RAW" "$( echo "${srv_stdout}" | od -c )"
 			print_data "EXPECTED RAW" "$( echo "${data}" | od -c )"
-			>&2 echo "[Receive Error] Received data on server does not match send data from Client"
+			print_error "[Receive Error] Received data on server does not match send data from Client"
 			exit 1
 		fi
 		sleep 1
@@ -173,9 +173,9 @@ run_test() {
 		print_file "SERVER STDOUT" "${srv_stdout}"
 		print_file "CLIENT STDERR" "${cli_stderr}"
 		print_file "CLIENT STDOUT" "${cli_stdout}"
-		run "kill ${cli_pid} || true 2>/dev/null"
-		run "kill ${srv_pid} || true 2>/dev/null"
-		>&2 echo "[Client Error] Errors found in stderr"
+		run "kill ${cli_pid} || true" 2>/dev/null
+		run "kill ${srv_pid} || true" 2>/dev/null
+		print_error "[Client Error] Errors found in stderr"
 		exit 1
 	fi
 
@@ -188,8 +188,8 @@ run_test() {
 		print_file "SERVER STDOUT" "${srv_stdout}"
 		print_file "CLIENT STDERR" "${cli_stderr}"
 		print_file "CLIENT STDOUT" "${cli_stdout}"
-		>&2 echo "[Client Error] Client is not running anymore"
-		run "kill ${srv_pid} || true 2>/dev/null"
+		print_error "[Client Error] Client is not running anymore"
+		run "kill ${srv_pid} || true" 2>/dev/null
 		exit 1
 	fi
 
@@ -204,7 +204,8 @@ run_test() {
 		fi
 		printf "."
 		sleep 1
-	done; echo
+	done
+	[ "${i}" -gt "1" ] && echo
 
 	###
 	### Stop Client with force
@@ -218,9 +219,10 @@ run_test() {
 			fi
 			printf "."
 			sleep 1
-		done; echo
+		done;
+		[ "${i}" -gt "1" ] && echo
 		if pid_is_running "${cli_pid}"; then
-			>&2 echo "[Meta] Could not kill client process"
+			print_error "[Meta] Could not kill client process"
 			print_file "CLIENT STDERR" "${cli_stderr}"
 			print_file "CLIENT STDOUT" "${cli_stdout}"
 			exit 1
@@ -236,9 +238,9 @@ run_test() {
 		print_file "SERVER STDOUT" "${srv_stdout}"
 		print_file "CLIENT STDERR" "${cli_stderr}"
 		print_file "CLIENT STDOUT" "${cli_stdout}"
-		run "kill ${cli_pid} || true 2>/dev/null"
-		run "kill ${srv_pid} || true 2>/dev/null"
-		>&2 echo "[Client Error] Errors found in stderr"
+		run "kill ${cli_pid} || true" 2>/dev/null
+		run "kill ${srv_pid} || true" 2>/dev/null
+		print_error "[Client Error] Errors found in stderr"
 		exit 1
 	fi
 
@@ -253,12 +255,12 @@ run_test() {
 	###
 	print_info "Check Server stayed alive"
 	if ! pid_is_running "${srv_pid}"; then
-		run "kill ${cli_pid} || true 2>/dev/null"
+		run "kill ${cli_pid} || true" 2>/dev/null
 		print_file "CLIENT STDERR" "${cli_stderr}"
 		print_file "CLIENT STDOUT" "${cli_stdout}"
 		print_file "SERVER STDERR" "${srv_stderr}"
 		print_file "SERVER STDOUT" "${srv_stdout}"
-		>&2 echo "[Server Error] Server went down"
+		print_error "[Server Error] Server went down"
 		exit 1
 	fi
 
@@ -269,8 +271,8 @@ run_test() {
 	if has_errors "${srv_stderr}"; then
 		print_file "SERVER STDERR" "${srv_stderr}"
 		print_file "SERVER STDOUT" "${srv_stdout}"
-		run "kill ${srv_pid} || true 2>/dev/null"
-		>&2 echo "[Server Error] Errors found in stderr"
+		run "kill ${srv_pid} || true" 2>/dev/null
+		print_error "[Server Error] Errors found in stderr"
 		exit 1
 	fi
 }

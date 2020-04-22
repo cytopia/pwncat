@@ -36,6 +36,12 @@ jobs:
       # ------------------------------------------------------------
       # Tests
       # ------------------------------------------------------------
+      # (SOCKET) REUSEADDR
+      - name: "[SOCKET] REUSEADDR"
+        shell: bash
+        run: |
+          make test-socket-reuseaddr
+
       # (CLIENT) HTTP REQUEST
       - name: "[TCP] Client HTTP server request"
         shell: bash

@@ -12,7 +12,7 @@ source "${SCRIPTPATH}/.lib.sh"
 
 PYTHON="python${1:-}"
 PYVER="$( eval "${PYTHON} -V" 2>&1 | head -1 )"
-print_h1 "[04] TCP Client send file to Server (${PYVER})"
+print_h1 "[03] TCP Client send data to Server (${PYVER})"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -20,7 +20,7 @@ print_h1 "[04] TCP Client send file to Server (${PYVER})"
 # -------------------------------------------------------------------------------------------------
 
 RHOST="localhost"
-RPORT="${2:-4400}"
+RPORT="${2:-4000}"
 RUNS=2
 SRV_WAIT=5
 TRANS_WAIT=20
@@ -30,9 +30,16 @@ TRANS_WAIT=20
 # TEST FUNCTIONS
 # -------------------------------------------------------------------------------------------------
 
-# 1. Start server which pipes stdout into a fie
-# 2. Run client with file input to be send to server
-# 3. Compare file contents
+# 1. Start server in background which pipes stdout into a fie
+# 2. Start client in background with text input to be send to server
+# 3. Wait until data has arrived
+# 4. Kill the server
+# 5. Ensure the client is killed as well (should be behaviour)
+# 6. Rebind the server
+
+# This tests the ability of "setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)"
+# Without this option an error will pop up as the socket is still in wait state:
+# "[Errno 98] Address already in use"
 
 run_test() {
 	local host="${1}"
@@ -51,8 +58,7 @@ run_test() {
 	###
 	### Create data and files
 	###
-	datafile="$(tmp_file)"
-	printf "line1 line1\\nline2 and keeps going\\nThird line\\n\\n\\n6th line\\n\\n" > "${datafile}"
+	data='abcdefghijklmnopqrstuvwxyz1234567890_-+*[](){}#'
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"
@@ -87,7 +93,7 @@ run_test() {
 
 	###
 	### Check Server for errors
-	###a
+	###
 	print_info "Check Server for Errors"
 	if has_errors "${srv_stderr}"; then
 		print_file "SERVER STDERR" "${srv_stderr}"
@@ -106,9 +112,9 @@ run_test() {
 	###
 	### Run client
 	###
-	print_info "Start Client"
-	# shellcheck disable=SC2086,2002
-	cat "${datafile}" | ${PYTHON} "${BINARY}" ${cli_opts} "${host}" "${port}" > "${cli_stdout}" 2> "${cli_stderr}" &
+	print_info "Start Client and send data"
+	# shellcheck disable=SC2086
+	echo "${data}" | ${PYTHON} "${BINARY}" ${cli_opts} "${host}" "${port}" > "${cli_stdout}" 2> "${cli_stderr}" &
 	cli_pid="${!:-}"
 
 	###
@@ -124,7 +130,7 @@ run_test() {
 		run "kill ${srv_pid} || true" 2>/dev/null
 		exit 1
 	fi
-	print_info "[Client Info] Client started in background with pid: ${cli_pid}"
+	print_info "Client started in background with pid: ${cli_pid}"
 
 
 	# --------------------------------------------------------------------------------
@@ -137,7 +143,7 @@ run_test() {
 	###
 	print_info "Wait for data transfer"
 	cnt=0
-	while ! diff "${datafile}" "${srv_stdout}" >/dev/null 2>&1; do
+	while ! diff <(echo "${data}") "${srv_stdout}" >/dev/null 2>&1; do
 		printf "."
 		cnt=$(( cnt + 1 ))
 		if [ "${cnt}" -gt "${TRANS_WAIT}" ]; then
@@ -147,7 +153,7 @@ run_test() {
 			print_file "SERVER STDERR" "${srv_stderr}"
 			print_file "SERVER STDOUT" "${srv_stdout}"
 			print_data "EXPECT DATA" "${data}"
-			diff "${datafile}" "${srv_stdout}" 2>&1 || true
+			diff <(echo "${data}") "${srv_stdout}" 2>&1 || true
 			run "kill ${cli_pid} || true" 2>/dev/null
 			run "kill ${srv_pid} || true" 2>/dev/null
 			print_data "RECEIVED RAW" "$( echo "${srv_stdout}" | od -c )"
@@ -174,8 +180,8 @@ run_test() {
 		print_file "SERVER STDOUT" "${srv_stdout}"
 		print_file "CLIENT STDERR" "${cli_stderr}"
 		print_file "CLIENT STDOUT" "${cli_stdout}"
-		run "kill ${cli_pid} || true" 2>/dev/null
-		run "kill ${srv_pid} || true" 2>/dev/null
+		run "kill ${cli_pid} || true " 2>/dev/null
+		run "kill ${srv_pid} || true " 2>/dev/null
 		print_error "[Client Error] Errors found in stderr"
 		exit 1
 	fi
@@ -194,36 +200,40 @@ run_test() {
 		exit 1
 	fi
 
+
+	# --------------------------------------------------------------------------------
+	# Stop Server
+	# --------------------------------------------------------------------------------
+	echo;print_h2 "Stop Server"
+
 	###
-	### Stop Client
+	### Stop Server
 	###
-	print_info "Stop Client"
-	run "kill ${cli_pid}"
+	print_info "Stop Server"
+	run "kill ${srv_pid}"
 	for i in {1..10}; do
-		if ! pid_is_running "${cli_pid}"; then
+		if ! pid_is_running "${srv_pid}"; then
 			break
 		fi
 		printf "."
 		sleep 1
-	done
-	[ "${i}" -gt "1" ] && echo
+	done;
 
 	###
-	### Stop Client with force
+	### Stop Server with force
 	###
-	if pid_is_running "${cli_pid}"; then
-		print_info "Stop Client forcefully"
-		run "kill -9 ${cli_pid}"
+	if pid_is_running "${srv_pid}"; then
+		print_info "Stop Server forcefully"
+		run "kill -9 ${srv_pid}"
 		for i in {1..10}; do
-			if ! pid_is_running "${cli_pid}"; then
+			if ! pid_is_running "${srv_pid}"; then
 				break
 			fi
 			printf "."
 			sleep 1
-		done;
-		[ "${i}" -gt "1" ] && echo
-		if pid_is_running "${cli_pid}"; then
-			print_error "[Meta] Could not kill client process"
+		done
+		if pid_is_running "${srv_pid}"; then
+			print_error "[Meta] Could not kill server process"
 			print_file "CLIENT STDERR" "${cli_stderr}"
 			print_file "CLIENT STDOUT" "${cli_stdout}"
 			exit 1
@@ -231,54 +241,51 @@ run_test() {
 	fi
 
 	###
-	### Check Client for errors (again)
+	### Check Server for errors
 	###
-	print_info "Check Client for errors (after stop)"
-	if has_errors "${cli_stderr}"; then
+	print_info "Check Server for Errors"
+	if has_errors "${srv_stderr}"; then
 		print_file "SERVER STDERR" "${srv_stderr}"
 		print_file "SERVER STDOUT" "${srv_stdout}"
-		print_file "CLIENT STDERR" "${cli_stderr}"
-		print_file "CLIENT STDOUT" "${cli_stdout}"
-		run "kill ${cli_pid} || true" 2>/dev/null
 		run "kill ${srv_pid} || true" 2>/dev/null
-		print_error "[Client Error] Errors found in stderr"
+		print_error "[Server Error] Errors found in stderr"
 		exit 1
 	fi
 
 
 	# --------------------------------------------------------------------------------
-	# POST CHECK: SERVER
+	# POST CHECK: CLIENT
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "Post check Server"
+	echo;print_h2 "Post check Client"
 
 	###
 	### Check if Server has quit (as it should, if client disconnects)
 	###
-	print_info "Check Server quitted automatically"
+	print_info "Check Client quitted automatically"
 	cnt=0
 	tot=20
-	while pid_is_running "${srv_pid}"; do
+	while pid_is_running "${cli_pid}"; do
 		printf "."
 		cnt=$(( cnt + 1 ))
 		if [ "${cnt}" -gt "${tot}" ]; then
 			echo
-			print_error "[Server Error] Still running. Need to kil itl manually by pid: ${srv_pid}"
-			run "kill ${srv_pid} || true" 2>/dev/null
+			print_error "[Client Error] Still running. Need to kil itl manually by pid: ${cli_pid}"
+			run "kill ${cli_pid} || true" 2>/dev/null
 			print_file "CLIENT STDERR" "${cli_stderr}"
 			print_file "CLIENT STDOUT" "${cli_stdout}"
 			print_file "SERVER STDERR" "${srv_stderr}"
 			print_file "SERVER STDOUT" "${srv_stdout}"
-			print_error "[Server Error] Server did not finish after ${tot} sec"
+			print_error "[Client Error] Client did not finish after ${tot} sec"
 			exit 1
 		fi
 		sleep 1
-	done
+	done;
 	[ "${cnt}" -gt "0" ] && echo
 
 	###
-	### Check Server for errors (during quit phase)
+	### Check Client for errors (during quit phase)
 	###
-	print_info "Check Server for errors (during quit)"
+	print_info "Check Client for errors (during quit)"
 	if has_errors "${srv_stderr}"; then
 		print_file "SERVER STDERR" "${srv_stderr}"
 		print_file "SERVER STDOUT" "${srv_stdout}"
@@ -296,32 +303,21 @@ run_test() {
 for i in $(seq "${RUNS}"); do
 	echo
 
+	# We want to check if the server is able to bind at the same address
+	# again, that's why we do not increment the port numer here.
 	run_test "${RHOST}" "${RPORT}" "-vvvv" "-vvvv" "${i}" "1"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-vvv " "-vvvv" "${i}" "2"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-vv  " "-vvvv" "${i}" "3"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-v   " "-vvvv" "${i}" "4"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "     " "-vvvv" "${i}" "5"
-	RPORT=$(( RPORT + 1))
 
 	run_test "${RHOST}" "${RPORT}" "-vvvv" "-vvv " "${i}" "6"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-vvvv" "-vv  " "${i}" "7"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-vvvv" "-v   " "${i}" "8"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-vvvv" "     " "${i}" "9"
-	RPORT=$(( RPORT + 1))
 
 	run_test "${RHOST}" "${RPORT}" "-vvv " "-vvv " "${i}" "10"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-vv  " "-vv  " "${i}" "11"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "-v   " "-v   " "${i}" "12"
-	RPORT=$(( RPORT + 1))
 	run_test "${RHOST}" "${RPORT}" "     " "     " "${i}" "13"
-	RPORT=$(( RPORT + 1))
 done

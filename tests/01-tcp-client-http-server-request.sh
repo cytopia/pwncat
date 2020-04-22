@@ -41,14 +41,14 @@ run_test() {
 	stderr="$(tmp_file)"
 	ret=0
 
-	print_h2 "Starting Test Round (cli '${opts}')"
+	print_h2 "Starting Test Round (connect: ${RHOST}:${RPORT}) (cli '${opts}')"
 
 	###
 	### Runt Client
 	###
 	cmd="echo 'HEAD /' | ${PYTHON} ${BINARY} ${opts} > ${stdout} 2> ${stderr}"
 	if ! run "${cmd}"; then
-		>&2 echo "Error, failed to execute eval command."
+		print_error "Error, failed to execute eval command."
 		ret=1
 	fi
 
@@ -56,7 +56,7 @@ run_test() {
 	### Check Client for errors
 	###
 	if has_errors "${stderr}"; then
-		>&2 echo "Errors found in stderr"
+		print_error "Errors found in stderr"
 		ret=1
 	fi
 
@@ -64,11 +64,11 @@ run_test() {
 	### Check if Client has received data
 	###
 	if ! grep -E '^HTTP/' "${stdout}" >/dev/null; then
-		echo "Error, no expected content in stdout"
+		print_error "Error, no expected content in stdout"
 		ret=1
 	fi
 	if ! grep -E '^Content' "${stdout}" >/dev/null; then
-		echo "Error, no expected content in stdout"
+		print_error "Error, no expected content in stdout"
 		ret=1
 	fi
 
@@ -82,7 +82,7 @@ run_test() {
 	### Determine Exit code
 	###
 	if [ "${ret}" -eq "1" ]; then
-		>&2 echo "[FAILED]"
+		print_error "[FAILED]"
 		exit 1
 	fi
 }
