@@ -54,13 +54,13 @@ THREAD_TERMINATE = False
 
 
 # -------------------------------------------------------------------------------------------------
-# ABSTRACT CLASS: AbstractNetcatModule
+# ABSTRACT CLASS: AbstractNetcatPlugin
 # -------------------------------------------------------------------------------------------------
-class AbstractNetcatModule(ABC):
+class AbstractNetcatPlugin(ABC):
     """
-    Abstract class to for netcat modules.
+    Abstract class to for netcat plugins.
 
-    This is a skeleton that defines how the modules for Netcat should look like.
+    This is a skeleton that defines how the plugins for Netcat should look like.
 
     The data_generator should constantly yield data received from sort sort of input
     which could be user input, output from a shell command data from a socket.
@@ -73,7 +73,7 @@ class AbstractNetcatModule(ABC):
 
     @abstractmethod
     def __init__(self, logger, encoder, options={}):
-        """Set specific options for this module."""
+        """Set specific options for this plugin."""
         pass
 
     @abstractmethod
@@ -107,17 +107,25 @@ class AbstractSocket(object):
     role = None  # Must be 'server' or 'client'
 
     options = {
-        "udp": False,  # Is TCP or UDP server?
         "bufsize": 1024,  # Receive buffer size
         "backlog": 0,  # Listen backlog
-        "nodns": False,  # Do not resolve hostnames
-        "reinit": False,  # False (never), True (indefinite) or int for how many times to reinit
+        "nodns": False,  # Do not resolve hostname
+        "udp": False,  # Is TCP or UDP?
+        "http": False,  # Use HTTP instead
+        "https": False,  # Use HTTPS instead
+        "keep_open": False,  # Keep server open for new connections
+        "rebind": False,  # False (never), True (indefinite) or int for how many times to rebind
         "reconn": False,  # False (never), True (indefinite) or int for how many times to reconnect
-        "reinit_robin": [],  # Ports to round-robin during failed init phase
-        "reconn_robin": [],  # Ports to round-robin during failed phase (after 1st succ init)
-        "reinit_wait": 0,  # Time in seconds to wait between reinits
-        "reconn_wait": 0,  # Time in seconds to wait between reconnects
+        "rebind_wait": 0,  # Time in seconds between re-binds
+        "reconn_wait": 0,  # Time in seconds between reconnects
+        "rebind_robin": [],  # Ports to round-robind for bindings
+        "reconn_robin": [],  # Ports to round-robin for reconnects
+        "wait": False,  # Close client if it is idle for x many seconds
+        "udp_ping_init": False,  # Send initial UDP ping packet
         "udp_ping_intvl": False,  # Interval in sec for UDP client to ping server
+        "udp_ping_word": "\0",  # The char/string to send as UDP ping probe
+        "udp_ping_robing": [],  # Ports to round-robing during UDP ping probes
+        "safe_word": False,  # Once this is received, the application quits
     }
 
     # In case the server is running in UDP mode,
@@ -145,28 +153,13 @@ class AbstractSocket(object):
         self.enc = encoder
         self.role = role
 
-        if "udp" in options:
-            self.options["udp"] = options["udp"]
-        if "bufsize" in options:
-            self.options["bufsize"] = options["bufsize"]
-        if "backlog" in options:
-            self.options["backlog"] = options["backlog"]
-        if "nodns" in options:
-            self.options["nodns"] = options["nodns"]
-        if "reinit" in options:
-            self.options["reinit"] = options["reinit"]
-        if "reconn" in options:
-            self.options["reconn"] = options["reconn"]
-        if "reinit_robin" in options:
-            self.options["reinit_robin"] = options["reinit_robin"]
-        if "reconn_robin" in options:
-            self.options["reconn_robin"] = options["reconn_robin"]
-        if "reinit_wait" in options:
-            self.options["reinit_wait"] = options["reinit_wait"]
-        if "reconn_wait" in options:
-            self.options["reconn_wait"] = options["reconn_wait"]
-        if "udp_ping_intvl" in options:
-            self.options["udp_ping_intvl"] = options["udp_ping_intvl"]
+        # Ensure to provide all items (be explicit - currently helps to find bugs)
+        for index in self.options:
+            assert index in options, "Provided options are missing key: {}".format(index)
+        # Ensure to only provide option itenms that are defined/exist (helps to find bugs)
+        for index in options:
+            assert index in self.options, "Provided an invalid option item"
+            self.options[index] = options[index]
 
         # Register destructor
         atexit.register(self.__exit__)
@@ -738,31 +731,37 @@ class Runner(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: NetcatModuleOutput (Module for: user-input -> send -> receive -> output)
+# CLASS: NetcatPluginOutput (Module for: user-input -> send -> receive -> output)
 # -------------------------------------------------------------------------------------------------
-# FIXED: THIS IS CHECKED AND WORKS AS EXPECTED (TODO: remove this comment)
-class NetcatModuleOutput(AbstractNetcatModule):
-    """Implement basic chat module functionality."""
+class NetcatPluginOutput(AbstractNetcatPlugin):
+    """Implement basic input/output plugin.
 
+    This plugin provides a generator which continuously reads from stdin
+    (non-blocking on POSIX and blocking on windows) as well as a
+    callback that writes to stdout.
+    """
+
+    # Line feeds to use for user input
     linefeed = "\n"
-    quit_on_eof = True
+
+    # Non-blocking read from stdin achieved via timeout.
+    # Specify timeout in seconds.
+    __input_timeout = 0.3
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self, logger, encoder, options={}):
-        """Set specific options for this module."""
+        """Set specific options for this plugin."""
         self.log = logger
         self.enc = encoder
 
-        # Two things to consider for this Module:
+        # TODO: Two things to consider for this Module:
         self.py3 = sys.version_info >= (3, 0)
         self.tty = sys.stdin.isatty()
 
         if "linefeed" in options:
             self.linefeed = options["linefeed"]
-        if "quit_on_eof" in options:
-            self.quit_on_eof = options["quit_on_eof"]
 
     # ------------------------------------------------------------------------------
     # Private Functions
@@ -776,9 +775,9 @@ class NetcatModuleOutput(AbstractNetcatModule):
         data += self.linefeed
         return data
 
-    def __set_input_timeout(self, timeout=0.1):
-        """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
-        i, o, e = select.select([sys.stdin], [], [], timeout)
+    def __set_input_timeout(self):
+        """Throws a catchable BaseException for sys.stdin after timeout (Linux only)."""
+        i, o, e = select.select([sys.stdin], [], [], self.__input_timeout)
         if not i:
             raise BaseException("timed out")
 
@@ -793,15 +792,13 @@ class NetcatModuleOutput(AbstractNetcatModule):
     def input_generator(self):
         """Constantly ask for user input."""
         # https://stackoverflow.com/questions/1450393/#38670261
-        # Works for Python2 and Python3
-        # sys.stdin.readline()
+        # while True: line = sys.stdin.readline() <- reads a whole line (faster)
+        # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
-            # while True: line = sys.stdin.readline() <- reads a whole line (faster)
-            # for line in sys.stdin.readlin():        <- reads one byte at a time
             try:
                 # TODO: select() does not work for windows on stdin/stdout
                 if os.name != "nt":
-                    self.__set_input_timeout(timeout=0.3)
+                    self.__set_input_timeout()
                 line = sys.stdin.readline()
             except BaseException:
                 # When using select() with timeout, we don't have any input
@@ -826,9 +823,9 @@ class NetcatModuleOutput(AbstractNetcatModule):
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: NetcatModuleCommand (Module for user-input -> send -> execute -> send-back -> output)
+# CLASS: NetcatPluginCommand (Module for user-input -> send -> execute -> send-back -> output)
 # -------------------------------------------------------------------------------------------------
-class NetcatModuleCommand(AbstractNetcatModule):
+class NetcatPluginCommand(AbstractNetcatPlugin):
     """Implement command execution functionality."""
 
     executable = None
@@ -837,7 +834,7 @@ class NetcatModuleCommand(AbstractNetcatModule):
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self, logger, encoder, options={}):
-        """Set specific options for this module."""
+        """Set specific options for this plugin."""
         self.log = logger
         self.enc = encoder
         assert "executable" in options
@@ -873,7 +870,7 @@ class NetcatModuleCommand(AbstractNetcatModule):
     # ------------------------------------------------------------------------------
     def stop(self):
         """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatModuleCommand] subprocess.kill() was raised by stop() function")
+        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by stop() function")
         self.p.kill()
 
     def __set_input_timeout(self, timeout=0.1):
@@ -883,8 +880,6 @@ class NetcatModuleCommand(AbstractNetcatModule):
         # wlist: wait until ready for writing
         # xlist: wait for an "exceptional condition"
         i, o, e = select.select([self.p.stdout], [], [], timeout)
-        # i, o, e = select.select([], [self.p.stdout], [], timeout)
-        # if not o:
         if not i:
             raise BaseException("timed out")
 
@@ -892,26 +887,21 @@ class NetcatModuleCommand(AbstractNetcatModule):
         """Constantly ask for input."""
         while True:
             self.log.trace("Reading command output")
+            # TODO: non-blocking read does not seem to work or?
             # try:
             # self.__set_input_timeout(timeout=1.5)
-            data = self.p.stdout.readline()
+            data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
             self.log.trace(data)
             # except BaseException:
             #    if THREAD_TERMINATE:
-            #        print("KIIIIIIIIIIIIIIIL FROM  SUBPROCESS READLINE")
-            #        # Return command to Thread function
             #        return
             #    # No input, just check again
             #    #self.p.stdout.flush()
             #    continue
-
-            # self.p.stdout.flush()
-            # self.log.trace("Reading command output")
-            # data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
             data = self.enc.decode(data)
             self.log.trace("Command output: {}".format(data))
             if not data:
-                # self.log.error("No program output received")
+                self.log.trace("Command output was empty. Exiting loop.")
                 break
             yield data
 
@@ -1002,8 +992,8 @@ def _args_check_forwards(value):
     return value
 
 
-def _args_check_reinit(value):
-    """Check reinit argument for correct value."""
+def _args_check_rebind(value):
+    """Check rebind argument for correct value."""
     intvalue = int(value)
     if intvalue < 0:
         raise argparse.ArgumentTypeError("must be equal or greater than 0." % value)
@@ -1019,7 +1009,7 @@ def _args_check_reconn(value):
 
 
 def _args_check_robin_ports(value):
-    """Check reinit-robin argument for comma separated string or range."""
+    """Check round-robin argument for comma separated string or range."""
     mcomma = re.search(r"^[0-9]+(,([0-9]+))*$", value)
     mrange = re.search(r"^[0-9]+\-[0-9]+$", value)
 
@@ -1049,52 +1039,41 @@ def _args_check_robin_ports(value):
 def _args_check_mutually_exclusive(parser, args):
     """Check mutually exclusive arguments."""
 
+    # This is connect mode
+    connect_mode = not args.listen and not args.zero and not args.local
+
     # [MODE] --listen
-    if args.listen and (args.zero or args.local or args.remote):
+    if args.listen and (args.zero or args.local):
         parser.print_usage()
         print(
-            "%s: error: -l/--listen mutually exclusive with -z/-zero, -L/--local or -R/--remote"
-            % (APPNAME),
+            "%s: error: -l/--listen mutually exclusive with -z/-zero or -L/--local" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
 
     # [MODE] --zero
-    if args.zero and (args.listen or args.local or args.remote):
+    if args.zero and (args.listen or args.local):
         parser.print_usage()
         print(
-            "%s: error: -z/--zero mutually exclusive with -l/--listen, -L/--local or -R/--remote"
-            % (APPNAME),
+            "%s: error: -z/--zero mutually exclusive with -l/--listen or -L/--local" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
 
     # [MODE --local
-    if args.local and (args.listen or args.zero or args.remote):
+    if args.local and (args.listen or args.zero):
         parser.print_usage()
         print(
-            "%s: error: -L/--local mutually exclusive with -l/--listen, -z/--zero or -R/--remote"
-            % (APPNAME),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # [MODE] --remote
-    if args.remote and (args.listen or args.zero or args.local):
-        parser.print_usage()
-        print(
-            "%s: error: -R/--remote mutually exclusive with -l/--listen, -z/--zero or -L/--local"
-            % (APPNAME),
+            "%s: error: -L/--local mutually exclusive with -l/--listen or -z/--zero" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
 
     # [MODULE] --exec
-    if args.cmd and (args.local or args.remote or args.zero):
+    if args.cmd and (args.local or args.zero):
         parser.print_usage()
         print(
-            "%s: error: -e/--exec mutually exclusive with -L/--local, -R/-remote or -z/--zero"
-            % (APPNAME),
+            "%s: error: -e/--exec mutually exclusive with -L/--local or -z/--zero" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -1107,32 +1086,87 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [ADVANCED] --reinit
-    if args.reinit is not False and (args.udp or args.local or args.remote):
+    # [ADVANCED] --http
+    if args.http and (args.https or args.udp or args.zero):
         parser.print_usage()
         print(
-            "%s: error: --reinit mutually exclusive with -u/--udp, -L/--local or -R/--remote"
-            % (APPNAME),
+            "%s: error: --http mutually exclusive with --https, -u/--udp or -z/--zero" % (APPNAME),
             file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --https
+    if args.https and (args.http or args.udp or args.zero):
+        parser.print_usage()
+        print(
+            "%s: error: --https mutually exclusive with --http, -z/--udp or -z/--zero" % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --keep-open
+    if args.keep_open and (args.udp):
+        parser.print_usage()
+        print(
+            "%s: error: --keep-open mutually exclusive with -u/--udp" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+    if args.keep_open and not args.listen:
+        parser.print_usage()
+        print(
+            "%s: error: --keep-open only works with -l/--listen" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --rebind
+    if args.rebind is not False and not args.listen:
+        parser.print_usage()
+        print(
+            "%s: error: --rebind only works with -l/--listen" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
 
     # [ADVANCED] --reconn
-    if args.reconn is not False and (args.udp or args.local or args.remote or args.zero):
+    if args.reconn is not False and (args.udp):
         parser.print_usage()
         print(
-            "%s: error: --reinit mutually excl. with -u/--udp, -L/--local -R/--remote or -z/--zero"
-            % (APPNAME),
+            "%s: error: --reconn mutually excl. with -u/--udp" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+    if args.reconn is not False and not (connect_mode or args.zero):
+        parser.print_usage()
+        print(
+            "%s: error: --reconn only works with connect mode or -z/--zero" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
 
-    # [ADVANCED] --udp-ping-interval
-    if args.udp_ping_intvl and not args.udp:
+    # [ADVANCED] --wait
+    if args.wait is not False and (args.udp):
         parser.print_usage()
         print(
-            "%s: error: --udp-ping-intvl mutually exclusive with -u/--udp" % (APPNAME),
+            "%s: error: -w/--wait mutually excl. with -u/--udp" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+    if args.wait is not False and not (connect_mode):
+        parser.print_usage()
+        print(
+            "%s: error: -w/--wait only works with connect mode" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --udp-ping-init
+    if args.udp_ping_init is not False and (args.listen or args.local):
+        parser.print_usage()
+        print(
+            "%s: error: --udp-ping-init mutually excl. with -l/--listen or -L/--local" % (APPNAME),
             file=sys.stderr,
+        )
+        sys.exit(1)
+    if args.udp_ping_init is not False and not (args.udp):
+        parser.print_usage()
+        print(
+            "%s: error: --udp-ping-init only works with -u/--udp" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
 
@@ -1143,10 +1177,10 @@ def get_args():
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False,
         usage="""%(prog)s [-Cnuv] [-e cmd] hostname port
+       %(prog)s [-Cnuv] [-e cmd] -l [hostname] -p port
        %(prog)s [-Cnuv] [-e cmd] -l [hostname] port
        %(prog)s [-Cnuv] -z hostname port
        %(prog)s [-Cnuv] -L addr:port [hostname] port
-       %(prog)s [-Cnuv] -R addr:port hostname port
        %(prog)s -V, --version
        %(prog)s -h, --help
        """
@@ -1154,7 +1188,12 @@ def get_args():
         description="""
 Enhanced and comptaible Netcat implementation written in Python (2 and 3) with
 connect, zero-i/o, listen and forward modes and techniques to detect and evade
-firewalls and intrusion prevention systems.""",
+firewalls and intrusion detection/prevention systems.
+
+If no mode arguments are specified, pwncat will run in connect mode and act as
+a client to connect to a remote endpoint. If the connection to the remote
+endoint is lost, pwncat will quit. See advanced options for how to automatically
+reconnect.""",
     )
 
     positional = parser.add_argument_group("positional arguments")
@@ -1176,7 +1215,10 @@ firewalls and intrusion prevention systems.""",
         action="store_true",
         default=False,
         help="""[Listen mode]:
-Start server and listen for incoming connections.
+Start a server and listen for incoming connections.
+If using TCP and a connected client disconnects or the
+connection is interrupted otherwise, the server will
+quit. See -k/--keep-open to change this behaviour.
 
 """,
     )
@@ -1187,6 +1229,7 @@ Start server and listen for incoming connections.
         default=False,
         help="""[Zero-I/0 mode]:
 Connect to a remote endpoint and report status only.
+Used for port scanning.
 
 """,
     )
@@ -1197,29 +1240,16 @@ Connect to a remote endpoint and report status only.
         default=False,
         type=_args_check_forwards,
         help="""[Local forward mode]:
-Specify local <addr>:<port> to which traffic should be
-forwarded to. %(prog)s will listen locally
-(specified by hostname and port) and forward all
-traffic to the specified value for -L/--local.
-
+This mode will start a server and a client internally.
+The internal server will listen locally on specified
+hostname/port (positional arguments). Same as with -l.
+The server will then forward traffic to the internal
+client which connects to another server specified by
+address given via -L/--local addr:port.
+(I.e.: proxies a remote service to a local address)
 """
         % ({"prog": APPNAME}),
     )
-    mode.add_argument(
-        "-R",
-        "--remote",
-        metavar="addr:port",
-        default=False,
-        type=_args_check_forwards,
-        help="""[Remote forward mode]:
-Specify local <addr>:<port> from which traffic should be
-forwarded from. %(prog)s will connect remotely
-(specified by hostname and port) and for ward all
-traffic from the specified value for -R/--remote.
-"""
-        % ({"prog": APPNAME}),
-    )
-
     optional.add_argument(
         "-e",
         "--exec",
@@ -1239,7 +1269,13 @@ traffic from the specified value for -R/--remote.
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
     )
-    optional.add_argument("-u", "--udp", action="store_true", default=False, help="UDP mode")
+    optional.add_argument(
+        "-u",
+        "--udp",
+        action="store_true",
+        default=False,
+        help="Use UDP for the connection instead of TCP.",
+    )
     optional.add_argument(
         "-v",
         "--verbose",
@@ -1247,25 +1283,74 @@ traffic from the specified value for -R/--remote.
         default=0,
         help="""Be verbose and print info to stderr. Use -v, -vv, -vvv
 or -vvvv for more verbosity. The server performance will
-decrease drastically if you use more than three -v.""",
+decrease drastically if you use more than three times.""",
+    )
+
+    advanced.add_argument(
+        "--http",
+        action="store_true",
+        default=False,
+        help="""Connect / Listen / Local forward mode (TCP only):
+Hide traffic in http packets to fool Firewalls/IDS/IPS.
+
+""",
     )
     advanced.add_argument(
-        "--reinit",
+        "--https",
+        action="store_true",
+        default=False,
+        help="""Connect / Listen / Local forward mode (TCP only):
+Hide traffic in https packets to fool Firewalls/IDS/IPS.
+
+""",
+    )
+    advanced.add_argument(
+        "-k",
+        "--keep-open",
+        action="store_true",
+        default=False,
+        help="""Listen mode (TCP only):
+Re-accept new clients in listen mode after a client has
+disconnected or the connection is unterrupted otherwise.
+(default: server will quit after connection is gone)
+
+""",
+    )
+    advanced.add_argument(
+        "--rebind",
         metavar="x",
         default=False,
-        type=_args_check_reinit,
-        help="""Listen mode (TCP only):
+        type=_args_check_rebind,
+        help="""Listen mode (TCP and UDP):
 If the server is unable to bind or accept clients, it
 will re-initialize itself x many times before giving up.
-Use 0 to re-initialize endlessly. (default: don't).
+Use 0 to re-initialize endlessly. (default: fail after
+first unsuccessful try).
 
-Connect mode (TCP only):
-If the client is unable to connect to a remote endpoint,
-it will try again x many times before giving up.
-Use 0 to retry endlessly. (default: don't)
+""",
+    )
+    advanced.add_argument(
+        "--rebind-wait",
+        metavar="s",
+        default=1,
+        type=int,
+        help="""Listen mode (TCP and UDP):
+Wait x seconds between re-initialization. (default: 1)
 
-Zero-I/O mode (TCP only):
-Same as connect mode.
+""",
+    )
+    advanced.add_argument(
+        "--rebind-robin",
+        metavar="port",
+        default=[],
+        type=_args_check_robin_ports,
+        help="""Listen mode (TCP and UDP):
+If the server is unable to initialize (e.g: cannot bind
+and --rebind is specified, it it will shuffle ports in
+round-robin mode to bind to. Use comma separated string
+such as '80,81,82' or a range of ports '80-100'.
+Set --rebind to at least the number of ports to probe +1
+This option requires --rebind to be specified.
 
 """,
     )
@@ -1274,36 +1359,23 @@ Same as connect mode.
         metavar="x",
         default=False,
         type=_args_check_reconn,
-        help="""Listen mode (TCP only):
-If the client has hung up, the server will re-accept a
-new client x many times before quitting. Use 0 to accept
-endlessly. (default: quit after a client has hung up)
-
-Connect mode (TCP only):
-If the remote server is gone, the client will re-connect
-to it x many times before giving up. Use 0 to reconnect
-endlessy. (default: don't)
-This might be handy for reverse shells ;-)
+        help="""Connect mode / Zero-I/O mode (TCP only):
+If the remote server is not reachable or the connection
+is interrupted, the client will connect again x many
+times before giving up. Use 0 to retry endlessly.
+(default: quit if the remote is not available or the
+connection was interrupted)
+This might be handy for stable TCP reverse shells ;-)
 
 """,
     )
     advanced.add_argument(
-        "--reinit-robin",
-        metavar="port",
-        default=[],
-        type=_args_check_robin_ports,
-        help="""Connect mode (TCP only):
-If the client does multiple initial connections to a
-remote endpoint (via --reinit), this option instructs it
-to also "round-robin" different ports to connect to. It
-will stop iterating after first successfull connection
-and stick with it or quit if --reinit limit is reached.
-Use comma separated string: 80,81,82 or a range 80-100.
-Set --reinit to at least the number of ports to probe +1
-Set --reinit-wait to 0
-This helps to evade EGRESS firewalls for reverse shells
-Use with -z/--zero to probe outbound allowed ports.
-Ensure to have enough listeners at the remote endpoint.
+        "--reconn-wait",
+        metavar="s",
+        default=1,
+        type=int,
+        help="""Connect mode / Zero-I/O mode (TCP only):
+Wait x seconds between re-connects. (default: 1)
 
 """,
     )
@@ -1312,51 +1384,111 @@ Ensure to have enough listeners at the remote endpoint.
         metavar="port",
         default=[],
         type=_args_check_robin_ports,
-        help="""Connect mode (TCP only):
-If the remote endpoint is gone after initial successful
-connection, and the the client is set to reconnect with
-(--reconn), it will connect back by "round-robin" to
-different ports. It will stop after --reconn limit has
-reached.
+        help="""Connect mode / Zero-I/O mode (TCP only):
+If the remote server is not reachable or the connection
+is interrupted and --reconn is specified, the client
+will shuffle ports in round-robin mode to connect to.
+Use comma separated string such as '80,81,82' or a range
+of ports '80-100'.
 Set --reconn to at least the number of ports to probe +1
-Set --reconn-wait to 0
-This help your reverse shell to evade intrusion
-prevention systems that will cut your connection and
-block the outbound port.
+This helps reverse shell to evade intrusiona prevention
+systems that will cut your connection and block the
+outbound port.
+This is also useful in Connect or Zero-I/O mode to
+figure out what outbound ports are allowed.
 
 """,
     )
     advanced.add_argument(
-        "--reinit-wait",
+        "-w",
+        "--wait",
         metavar="s",
-        default=1,
+        default=False,
         type=int,
-        help="Wait x seconds between re-inits. (default: 1)\n\n",
+        help="""Connect mode (TCP only):
+If a connection and stdin are idle for more than s sec,
+then the connection is silently closed and the client
+will exit. (default: wait forever).
+Note: if --reconn is specified, the connection will be
+re-opened.
+
+""",
     )
     advanced.add_argument(
-        "--reconn-wait",
-        metavar="s",
-        default=1,
-        type=int,
-        help="Wait x seconds between re-connects. (default: 1)\n\n",
+        "--udp-ping-init",
+        action="store_true",
+        default=False,
+        help="""Connect mode / Zero-I/O mode (UDP only):
+UDP is a stateless protocol unlike TCP, so no hand-
+shake communication takes place and the client just
+sends data to a server without being "accepted" by
+the server first.
+This means a server waiting for an UDP client to
+connect to, is unable to send any data to the client,
+before the client hasn't send data first. The server
+simply doesn't know the IP address before an initial
+connect.
+The --udp-ping-init option instructs the client to send
+one single initial ping packet to the server, so that it
+is able to talk to the client.
+This is the only way to make a UDP reverse shell work.
+See --udp-ping-word for what char/string to send as
+initial ping packet (default: '\\0')
+
+""",
     )
     advanced.add_argument(
         "--udp-ping-intvl",
         metavar="s",
         default=False,
         type=int,
-        help="""Connect mode (UDP only):
-As UDP is stateless, a client must first connect to a
-server before the server can communicate with it.
-If you listen on UDP and wait for a reverse UDP client
-or reverse UDP shell, you can only talk to it after it
-has sent you some initial data, as UDP does not have a
-"connect" state like TCP.
-This option instructs the UDP client to send a single
-newline every s seconds. By not only doing it once,
-but in intervals, you can also maintain a connection
-if you restart your listening server.
+        help="""Connect mode / Zero-I/O mode (UDP only):
+Instruct the UDP client to send ping intervalls every
+s seconds. This allows you to restart your UDP server
+and just wait for the client to report back in.
+This might be handy for stable UDP reverse shells ;-)
+See --udp-ping-word for what char/string to send as
+initial ping packet (default: '\\0')
+
 """,
+    )
+    advanced.add_argument(
+        "--udp-ping-word",
+        metavar="str",
+        default="\0",
+        type=str,
+        help="""Connect mode / Zero-I/O mode (UDP only):
+Change the default character '\\0' to use for upd ping.
+Single character or strings are supported.
+
+""",
+    )
+    advanced.add_argument(
+        "--udp-ping-robin",
+        metavar="port",
+        default=[],
+        type=_args_check_robin_ports,
+        help="""Zero-I/O mode (UDP only):
+Instruct the UDP client to shuffle the specified ports
+in round-robin mode for a remote server to ping.
+This might be handy to scan outbound allowed ports.
+Use --udp-ping-intvl 0 to be faster.
+
+""",
+    )
+    advanced.add_argument(
+        "--safe-word",
+        metavar="str",
+        default=False,
+        type=str,
+        help="""All modes:
+If %(prog)s is started with this argument, it will shut
+down as soon as it receives the specified string.
+The --rebind or --reconn options will not start it up
+again. Use a very unique string to not have it shut down
+accidentally by other input.
+"""
+        % ({"prog": APPNAME}),
     )
     misc.add_argument("-h", "--help", action="help", help="Show this help message and exit")
     misc.add_argument(
@@ -1373,14 +1505,17 @@ if you restart your listening server.
     # Check mutually exclive arguments
     _args_check_mutually_exclusive(parser, args)
 
-    # TODO: Exit on unimplemented features
-    if args.remote:
+    # Connect mode and Zero-I/O mode require hostname and port to be set
+    connect_mode = not (args.listen or args.zero or args.local)
+    if (connect_mode or args.zero) and not (args.hostname):
         parser.print_usage()
         print(
-            "%s: error: -L/--local and -R/--remote are not yet implemented" % (APPNAME),
+            "%s: error: the following arguments are required: hostname" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
+
+    # TODO: deny unimplemented modes
 
     return args
 
@@ -1396,17 +1531,25 @@ def main():
 
     # Set netcat options
     net_opts = {
-        "udp": args.udp,
         "bufsize": 1024,
         "backlog": 0,
         "nodns": args.nodns,
-        "reinit": True if (type(args.reinit) is int and args.reinit == 0) else args.reinit,
+        "udp": args.udp,
+        "http": args.http,
+        "https": args.https,
+        "keep_open": args.keep_open,
+        "rebind": True if (type(args.rebind) is int and args.rebind == 0) else args.rebind,
         "reconn": True if (type(args.reconn) is int and args.reconn == 0) else args.reconn,
-        "reinit_robin": args.reinit_robin,
-        "reconn_robin": args.reconn_robin,
-        "reinit_wait": args.reinit_wait,
+        "rebind_wait": args.rebind_wait,
         "reconn_wait": args.reconn_wait,
-        "udp_ping_intvl": args.udp_ping_intvl,  # only for udp client and only for rev-shell (0:off)
+        "rebind_robin": args.rebind_robin,
+        "reconn_robin": args.reconn_robin,
+        "wait": args.wait,
+        "udp_ping_init": args.udp_ping_init,
+        "udp_ping_intvl": args.udp_ping_intvl,
+        "udp_ping_word": args.udp_ping_word,
+        "udp_ping_robing": args.udp_ping_robin,
+        "safe_word": args.safe_word,
     }
     # Initialize logger
     logger = Logger(args.verbose)
@@ -1415,13 +1558,13 @@ def main():
     # Use command modulde
     if args.cmd:
         module_opts = {"executable": args.cmd}
-        mod = NetcatModuleCommand(logger, encoder, module_opts)
+        mod = NetcatPluginCommand(logger, encoder, module_opts)
     # Use output module
     else:
         module_opts = {}
         module_opts["linefeed"] = "\r\n" if args.crlf else "\n"
         module_opts["quit_on_eof"] = False if args.listen and args.udp else True
-        mod = NetcatModuleOutput(logger, encoder, module_opts)
+        mod = NetcatPluginOutput(logger, encoder, module_opts)
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
