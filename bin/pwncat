@@ -19,7 +19,7 @@ from abc import ABCMeta, abstractmethod
 from subprocess import Popen, PIPE
 import argparse
 import atexit
-import inspect
+import logging
 import os
 import re
 import socket
@@ -35,10 +35,6 @@ ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
 if os.name != "nt":
     import select
 
-
-# TODO: Use bundled logger 'import logging'
-
-
 # -------------------------------------------------------------------------------------------------
 # GLOBALS
 # -------------------------------------------------------------------------------------------------
@@ -51,6 +47,9 @@ VERSION = "0.0.5-alpha"
 # if they should exit or not.
 # TODO: check if this is best-practice
 THREAD_TERMINATE = False
+
+# Custom loglevel numer for TRACE
+LOGLEVEL_TRACE_NUM = 9
 
 
 # -------------------------------------------------------------------------------------------------
@@ -72,7 +71,7 @@ class AbstractNetcatPlugin(ABC):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __init__(self, logger, encoder, options={}):
+    def __init__(self, encoder, options={}):
         """Set specific options for this plugin."""
         pass
 
@@ -144,12 +143,12 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, encoder, role, options={}):
+    def __init__(self, encoder, role, options={}):
         """Constructor."""
         assert type(self) is not AbstractSocket, "AbstractSocket cannot be instantiated directly."
         assert role in ["server", "client"], "The role must be 'server' or 'client'."
 
-        self.log = logger
+        self.log = logging.getLogger(__name__)
         self.enc = encoder
         self.role = role
 
@@ -478,118 +477,20 @@ class StringEncoder(object):
     # https://stackoverflow.com/questions/606191/27527728#27527728
     codec = "cp437"
 
-    def __init__(self, logger):
-        self.log = logger
+    def __init__(self):
         self.py3 = sys.version_info >= (3, 0)
 
     def encode(self, data):
         """Convert string into a byte type for Python3."""
         if self.py3:
-            # self.log.trace("Encoding: {}".format(data))
             data = data.encode("cp437")
-            # self.log.trace("Encoded: {}".format(data))
         return data
 
     def decode(self, data):
         """Convert bytes into a string type for Python3."""
         if self.py3:
-            # self.log.trace("Decoding: {}".format(data))
             data = data.decode("cp437")
-            # self.log.trace("Decoded: {}".format(data))
         return data
-
-
-# -------------------------------------------------------------------------------------------------
-# CLASS: Logger
-# -------------------------------------------------------------------------------------------------
-class Logger(object):
-    """Logger class."""
-
-    # ------------------------------------------------------------------------------
-    # Constructor / Destructor
-    # ------------------------------------------------------------------------------
-    def __init__(self, verbosity=1):
-        """Constructor.
-
-        verbosity == 0: Log fatal, errors
-        verbosity == 1: Log fatal, errors, warnings
-        verbosity == 2: Log fatal, errors, warnings, info
-        verbosity == 3: Log fatal, errors, warnings, info, debug, class/func names
-        verbosity == 4: Log fatal, errors, warnings, info, debug, trace, class/func names
-        """
-        assert verbosity >= 0, "Verbosity cannot be less than 0."
-        self.verbosity = verbosity
-
-    # ------------------------------------------------------------------------------
-    # Public Functions
-    # ------------------------------------------------------------------------------
-    def fatal(self, message):
-        """Log error messages."""
-        if self.verbosity > 2:
-            _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals["self"].__class__.__name__
-            fnc = _stack[3]
-            print("[FATAL] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
-        else:
-            print("[FATAL] %s" % repr(message), file=sys.stderr)
-
-    def error(self, message):
-        """Log error messages."""
-        if self.verbosity > 2:
-            _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals["self"].__class__.__name__
-            fnc = _stack[3]
-            print("[ERROR] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
-        else:
-            print("[ERROR] %s" % repr(message), file=sys.stderr)
-
-    def warning(self, message):
-        """Log warning messages."""
-        if self.verbosity > 2:
-            _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals["self"].__class__.__name__
-            fnc = _stack[3]
-            print("[WARN]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
-        elif self.verbosity > 0:
-            print("[WARN]  %s" % repr(message), file=sys.stderr)
-
-    def info(self, message):
-        """Log info messages."""
-        if self.verbosity > 2:
-            _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals["self"].__class__.__name__
-            fnc = _stack[3]
-            print("[INFO]  %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
-        elif self.verbosity > 1:
-            print("[INFO]  %s" % repr(message), file=sys.stderr)
-
-    def debug(self, message):
-        """Log debug messages."""
-        if self.verbosity > 2:
-            _stack = inspect.stack()[1]
-            cls = _stack[0].f_locals["self"].__class__.__name__
-            fnc = _stack[3]
-            print("[DEBUG] %s.%s(): %s" % (cls, fnc, repr(message)), file=sys.stderr)
-        elif self.verbosity > 2:
-            print("[DEBUG] %s" % repr(message), file=sys.stderr)
-
-    def trace(self, message):
-        """Log trace messages."""
-        if self.verbosity > 3:
-            stack = inspect.stack()
-            prev = ""
-            # if len(stack) > 2:
-            #     _stack2 = stack[2]
-            #     if "self" in _stack2[0].f_locals:
-            #         cls2 = _stack2[0].f_locals["self"].__class__.__name__
-            #     else:
-            #         cls2 = ''
-            #     fnc2 = _stack2[3]
-            #     prev = "{}.{}() -> ".format(cls2, fnc2)
-            _stack1 = stack[1]
-            cls1 = _stack1[0].f_locals["self"].__class__.__name__
-            fnc1 = _stack1[3]
-            print("[TRACE] %s%s.%s(): %s" % (prev, cls1, fnc1, repr(message)), file=sys.stderr)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -601,9 +502,9 @@ class Runner(object):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger):
+    def __init__(self):
         """Constructor."""
-        self.log = logger
+        self.log = logging.getLogger(__name__)
 
     # ------------------------------------------------------------------------------
     # Public Functions
@@ -751,14 +652,10 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, encoder, options={}):
+    def __init__(self, encoder, options={}):
         """Set specific options for this plugin."""
-        self.log = logger
+        self.log = logging.getLogger(__name__)
         self.enc = encoder
-
-        # TODO: Two things to consider for this Module:
-        self.py3 = sys.version_info >= (3, 0)
-        self.tty = sys.stdin.isatty()
 
         if "linefeed" in options:
             self.linefeed = options["linefeed"]
@@ -787,7 +684,6 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     def stop(self):
         """Stop function that can be called externally to close this instance."""
         self.log.trace("[NetcatOutputCommand] pass was raised by stop() function")
-        pass
 
     def input_generator(self):
         """Constantly ask for user input."""
@@ -813,7 +709,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
             else:
                 # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
                 if THREAD_TERMINATE:
-                    self.log.trace("No more input generated, quitting (tty: {}).".format(self.tty))
+                    self.log.trace("No more input generated, quitting.")
                     return
 
     def output_callback(self, data):
@@ -833,9 +729,9 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, logger, encoder, options={}):
+    def __init__(self, encoder, options={}):
         """Set specific options for this plugin."""
-        self.log = logger
+        self.log = logging.getLogger(__name__)
         self.enc = encoder
         assert "executable" in options
         self.log.debug("Setting '{}' as executable".format(options["executable"]))
@@ -919,9 +815,9 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
 class NetcatServer(AbstractSocket):
     """Netcat Server implementation."""
 
-    def __init__(self, logger, encoder, host, port, options={}):
+    def __init__(self, encoder, host, port, options={}):
         """Construct a listening server."""
-        super(NetcatServer, self).__init__(logger, encoder, "server", options)
+        super(NetcatServer, self).__init__(encoder, "server", options)
 
         # Setup server
         addr = self.gethostbyname(host)
@@ -942,9 +838,9 @@ class NetcatServer(AbstractSocket):
 class NetcatClient(AbstractSocket):
     """Netcat Client implementation."""
 
-    def __init__(self, logger, encoder, host, port, options={}):
+    def __init__(self, encoder, host, port, options={}):
         """Construct a connecting clientt."""
-        super(NetcatClient, self).__init__(logger, encoder, "client", options)
+        super(NetcatClient, self).__init__(encoder, "client", options)
 
         # Setup client
         addr = self.gethostbyname(host)
@@ -963,8 +859,6 @@ class NetcatClient(AbstractSocket):
 # -------------------------------------------------------------------------------------------------
 # COMMAND LINE ARGUMENTS
 # -------------------------------------------------------------------------------------------------
-
-
 def get_version():
     """Return version information."""
     return """%(prog)s: Version %(version)s (%(url)s) by %(author)s""" % (
@@ -1521,6 +1415,15 @@ accidentally by other input.
 
 
 # -------------------------------------------------------------------------------------------------
+# CUSTOM FUNCTIONS
+# -------------------------------------------------------------------------------------------------
+def logtrace(self, message, *args, **kws):
+    """Set custom log level for TRACE."""
+    if self.isEnabledFor(LOGLEVEL_TRACE_NUM):
+        self._log(LOGLEVEL_TRACE_NUM, message, args, **kws)
+
+
+# -------------------------------------------------------------------------------------------------
 # MAIN ENTRYPOINT
 # -------------------------------------------------------------------------------------------------
 def main():
@@ -1551,20 +1454,38 @@ def main():
         "udp_ping_robing": args.udp_ping_robin,
         "safe_word": args.safe_word,
     }
+
     # Initialize logger
-    logger = Logger(args.verbose)
+    if args.verbose == 0:
+        loglevel = logging.ERROR
+    elif args.verbose == 1:
+        loglevel = logging.WARNING
+    elif args.verbose == 2:
+        loglevel = logging.INFO
+    elif args.verbose == 3:
+        loglevel = logging.DEBUG
+    else:
+        loglevel = LOGLEVEL_TRACE_NUM
+
+    logging.addLevelName(LOGLEVEL_TRACE_NUM, "TRACE")
+    logging.Logger.trace = logtrace
+    logformat = "%(levelname)s:%(message)s"
+    if args.verbose > 3:
+        logformat = "%(levelname)s [%(threadName)s] %(funcName)s():%(message)s"
+    logging.basicConfig(format=logformat, level=loglevel)
+
     # Initialize encoder
-    encoder = StringEncoder(logger)
+    encoder = StringEncoder()
     # Use command modulde
     if args.cmd:
         module_opts = {"executable": args.cmd}
-        mod = NetcatPluginCommand(logger, encoder, module_opts)
+        mod = NetcatPluginCommand(encoder, module_opts)
     # Use output module
     else:
         module_opts = {}
         module_opts["linefeed"] = "\r\n" if args.crlf else "\n"
         module_opts["quit_on_eof"] = False if args.listen and args.udp else True
-        mod = NetcatPluginOutput(logger, encoder, module_opts)
+        mod = NetcatPluginOutput(encoder, module_opts)
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
@@ -1574,11 +1495,11 @@ def main():
         net_opts["reconn_wait"] = 0
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
-        net_srv = NetcatServer(logger, encoder, lhost, lport, net_opts)
-        net_cli = NetcatClient(logger, encoder, host, port, net_opts)
+        net_srv = NetcatServer(encoder, lhost, lport, net_opts)
+        net_cli = NetcatClient(encoder, host, port, net_opts)
 
         # Create Runner (the set_* funcs below are brainfuck and took me 1 hour to figure it out)
-        run = Runner(logger)
+        run = Runner()
 
         # [srv] User-Client connects here, sends data and the Server takes it as input
         run.set_recv_generator(net_srv.receive)
@@ -1595,8 +1516,8 @@ def main():
         run.run()
     # Run server
     if args.listen:
-        net = NetcatServer(logger, encoder, host, port, net_opts)
-        run = Runner(logger)
+        net = NetcatServer(encoder, host, port, net_opts)
+        run = Runner()
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
@@ -1607,8 +1528,8 @@ def main():
         run.run()
     # Run client
     else:
-        net = NetcatClient(logger, encoder, host, port, net_opts)
-        run = Runner(logger)
+        net = NetcatClient(encoder, host, port, net_opts)
+        run = Runner()
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
