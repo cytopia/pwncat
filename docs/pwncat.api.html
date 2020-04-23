@@ -1361,40 +1361,21 @@ class AbstractSocket(object):
             self.__reconnect_to_server()
 
     def __reaccept_from_client(self):
-        """Ensure the server is able to accept clients again, after current client has left."""
+        """Ensure the server is able to keep connection open by re-accepting new clients."""
         # Only for server
         assert self.role == "server", "Only the role 'server' can accept connections."
         # Do not re-accept for UDP
         assert not self.options["udp"], "This should have been caught during arg check."
 
-        # [NO] Never re-accept
-        if type(self.options["reconn"]) is bool and not self.options["reconn"]:
+        # [NO] Do not re-accept
+        if not self.options["keep_open"]:
             self.log.info("No automatic re-accept specified. Shutting down.")
             return False
-        # [YES] Always re-accept indefinitely
-        if type(self.options["reconn"]) is bool and self.options["reconn"]:
-            self.log.info(
-                "Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"])
-            )
-            time.sleep(self.options["reconn_wait"])
-            self.__close_socket(self.conn)
-            self.accept()
-            return True
-        # [YES] Re-accept x many times
-        if self.options["reconn"] > 0:
-            self.log.info(
-                "Re-accepting in {} sec ({} more times left)".format(
-                    self.options["reconn_wait"], self.options["reconn"]
-                )
-            )
-            self.options["reconn"] -= 1
-            time.sleep(self.options["reconn_wait"])
-            self.__close_socket(self.conn)
-            self.accept()
-            return True
-        # [NO] Re-accept count is used up
-        self.log.info("Re-accept count is used up. Shutting down.")
-        return False
+        # [YES] Re-accept indefinitely
+        self.log.info("Re-accepting new clients")
+        self.__close_socket(self.conn)
+        self.accept()
+        return True
 
     def __reconnect_to_server(self):
         """Ensure the client re-connects to the remote server, if the remote server hang up."""
@@ -1433,18 +1414,22 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Helper Functions
     # ------------------------------------------------------------------------------
-    def gethostbyname(self, host):
+    def gethostbyname(self, host, port, family):
         """Translate hostname into IP address."""
+        socktype = socket.SOCK_DGRAM if self.options["udp"] else socket.SOCK_STREAM
+        flags = 0
         if self.options["nodns"]:
-            return host
+            flags = socket.AI_NUMERICHOST
         try:
             self.log.debug("Resolving hostname: {}".format(host))
-            addr = socket.gethostbyname(host)
-            self.log.debug("Resolved hostname:  {}".format(addr))
-            return addr
+            (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
+                host, port, socket.AF_INET, socktype, flags
+            )
         except socket.gaierror as error:
             self.log.error("Resolve Error: {}".format(error))
-            sys.exit(1)
+            self.log.debug("Resolve Error: {}".format(error))
+        self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
+        return sockaddr[0]
 
     def create_socket(self):
         """Create TCP or UDP socket."""
@@ -2022,16 +2007,24 @@ class NetcatServer(AbstractSocket):
             encoder, "server", recv_timeout, recv_timeout_retry, options
         )
 
+        # Listen on 0.0.0.0 by default
+        addr = "0.0.0.0"
+        if host is not None:
+            addr = self.gethostbyname(host, port, socket.AF_INET)
+
         # Setup server
-        addr = self.gethostbyname(host)
         self.create_socket()
         self.bind(addr, port)
         if self.options["udp"]:
             self.conn = self.sock
-            self.log.info("Waiting on {}:{} (UDP)".format(addr, port))
+            self.log.info(
+                "Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port)
+            )
         else:
             self.listen()
-            self.log.info("Listening on {}:{} (TCP)".format(addr, port))
+            self.log.info(
+                "Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port)
+            )
             self.accept()
 
 
@@ -2048,7 +2041,7 @@ class NetcatClient(AbstractSocket):
         )
 
         # Setup client
-        addr = self.gethostbyname(host)
+        addr = self.gethostbyname(host, port, socket.AF_INET)
         self.create_socket()
         self.conn = self.sock
         if self.options["udp"]:
@@ -2581,9 +2574,10 @@ Use --udp-ping-intvl 0 to be faster.
         type=str,
         help="""All modes:
 If %(prog)s is started with this argument, it will shut
-down as soon as it receives the specified string.
-The --rebind or --reconn options will not start it up
-again. Use a very unique string to not have it shut down
+down as soon as it receives the specified string. The
+--keep (server) or --reconn (client) options will be
+ignored and it won't listen again or reconnect to you.
+Use a very unique string to not have it shut down
 accidentally by other input.
 """
         % ({"prog": APPNAME}),
@@ -2613,7 +2607,19 @@ accidentally by other input.
         )
         sys.exit(1)
 
-    # TODO: deny unimplemented modes
+    # Deny unimplemented modes
+    if (
+        args.http
+        or args.https
+        or args.rebind
+        or args.reconn
+        or args.wait
+        or args.udp_ping_init
+        or args.udp_ping_intvl
+        or args.safe_word
+    ):
+        print("Unimplemented options", file=sys.stderr)
+        sys.exit(1)
 
     return args
 
@@ -2633,7 +2639,7 @@ def logtrace(self, message, *args, **kws):
 def main():
     """Run the program."""
     args = get_args()
-    host = args.hostname if args.hostname is not None else "0.0.0.0"
+    host = args.hostname
     port = args.port
 
     # Set netcat options
@@ -3170,9 +3176,10 @@ Use --udp-ping-intvl 0 to be faster.
         type=str,
         help="""All modes:
 If %(prog)s is started with this argument, it will shut
-down as soon as it receives the specified string.
-The --rebind or --reconn options will not start it up
-again. Use a very unique string to not have it shut down
+down as soon as it receives the specified string. The
+--keep (server) or --reconn (client) options will be
+ignored and it won't listen again or reconnect to you.
+Use a very unique string to not have it shut down
 accidentally by other input.
 """
         % ({"prog": APPNAME}),
@@ -3202,7 +3209,19 @@ accidentally by other input.
         )
         sys.exit(1)
 
-    # TODO: deny unimplemented modes
+    # Deny unimplemented modes
+    if (
+        args.http
+        or args.https
+        or args.rebind
+        or args.reconn
+        or args.wait
+        or args.udp_ping_init
+        or args.udp_ping_intvl
+        or args.safe_word
+    ):
+        print("Unimplemented options", file=sys.stderr)
+        sys.exit(1)
 
     return args
 </code></pre>
@@ -3274,7 +3293,7 @@ accidentally by other input.
     <pre><code>def main():
     """Run the program."""
     args = get_args()
-    host = args.hostname if args.hostname is not None else "0.0.0.0"
+    host = args.hostname
     port = args.port
 
     # Set netcat options
@@ -3725,40 +3744,21 @@ def stop(self):
             self.__reconnect_to_server()
 
     def __reaccept_from_client(self):
-        """Ensure the server is able to accept clients again, after current client has left."""
+        """Ensure the server is able to keep connection open by re-accepting new clients."""
         # Only for server
         assert self.role == "server", "Only the role 'server' can accept connections."
         # Do not re-accept for UDP
         assert not self.options["udp"], "This should have been caught during arg check."
 
-        # [NO] Never re-accept
-        if type(self.options["reconn"]) is bool and not self.options["reconn"]:
+        # [NO] Do not re-accept
+        if not self.options["keep_open"]:
             self.log.info("No automatic re-accept specified. Shutting down.")
             return False
-        # [YES] Always re-accept indefinitely
-        if type(self.options["reconn"]) is bool and self.options["reconn"]:
-            self.log.info(
-                "Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"])
-            )
-            time.sleep(self.options["reconn_wait"])
-            self.__close_socket(self.conn)
-            self.accept()
-            return True
-        # [YES] Re-accept x many times
-        if self.options["reconn"] > 0:
-            self.log.info(
-                "Re-accepting in {} sec ({} more times left)".format(
-                    self.options["reconn_wait"], self.options["reconn"]
-                )
-            )
-            self.options["reconn"] -= 1
-            time.sleep(self.options["reconn_wait"])
-            self.__close_socket(self.conn)
-            self.accept()
-            return True
-        # [NO] Re-accept count is used up
-        self.log.info("Re-accept count is used up. Shutting down.")
-        return False
+        # [YES] Re-accept indefinitely
+        self.log.info("Re-accepting new clients")
+        self.__close_socket(self.conn)
+        self.accept()
+        return True
 
     def __reconnect_to_server(self):
         """Ensure the client re-connects to the remote server, if the remote server hang up."""
@@ -3797,18 +3797,22 @@ def stop(self):
     # ------------------------------------------------------------------------------
     # Helper Functions
     # ------------------------------------------------------------------------------
-    def gethostbyname(self, host):
+    def gethostbyname(self, host, port, family):
         """Translate hostname into IP address."""
+        socktype = socket.SOCK_DGRAM if self.options["udp"] else socket.SOCK_STREAM
+        flags = 0
         if self.options["nodns"]:
-            return host
+            flags = socket.AI_NUMERICHOST
         try:
             self.log.debug("Resolving hostname: {}".format(host))
-            addr = socket.gethostbyname(host)
-            self.log.debug("Resolved hostname:  {}".format(addr))
-            return addr
+            (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
+                host, port, socket.AF_INET, socktype, flags
+            )
         except socket.gaierror as error:
             self.log.error("Resolve Error: {}".format(error))
-            sys.exit(1)
+            self.log.debug("Resolve Error: {}".format(error))
+        self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
+        return sockaddr[0]
 
     def create_socket(self):
         """Create TCP or UDP socket."""
@@ -4263,7 +4267,7 @@ def stop(self):
             
   <div class="item">
     <div class="name def" id="pwncat.AbstractSocket.gethostbyname">
-    <p>def <span class="ident">gethostbyname</span>(</p><p>self, host)</p>
+    <p>def <span class="ident">gethostbyname</span>(</p><p>self, host, port, family)</p>
     </div>
     
 
@@ -4273,18 +4277,22 @@ def stop(self):
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractSocket.gethostbyname', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.AbstractSocket.gethostbyname" class="source">
-    <pre><code>def gethostbyname(self, host):
+    <pre><code>def gethostbyname(self, host, port, family):
     """Translate hostname into IP address."""
+    socktype = socket.SOCK_DGRAM if self.options["udp"] else socket.SOCK_STREAM
+    flags = 0
     if self.options["nodns"]:
-        return host
+        flags = socket.AI_NUMERICHOST
     try:
         self.log.debug("Resolving hostname: {}".format(host))
-        addr = socket.gethostbyname(host)
-        self.log.debug("Resolved hostname:  {}".format(addr))
-        return addr
+        (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
+            host, port, socket.AF_INET, socktype, flags
+        )
     except socket.gaierror as error:
         self.log.error("Resolve Error: {}".format(error))
-        sys.exit(1)
+        self.log.debug("Resolve Error: {}".format(error))
+    self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
+    return sockaddr[0]
 </code></pre>
   </div>
 </div>
@@ -4542,7 +4550,7 @@ def stop(self):
         )
 
         # Setup client
-        addr = self.gethostbyname(host)
+        addr = self.gethostbyname(host, port, socket.AF_INET)
         self.create_socket()
         self.conn = self.sock
         if self.options["udp"]:
@@ -4666,7 +4674,7 @@ def stop(self):
         encoder, "client", recv_timeout, recv_timeout_retry, options
     )
     # Setup client
-    addr = self.gethostbyname(host)
+    addr = self.gethostbyname(host, port, socket.AF_INET)
     self.create_socket()
     self.conn = self.sock
     if self.options["udp"]:
@@ -4806,7 +4814,7 @@ def stop(self):
             
   <div class="item">
     <div class="name def" id="pwncat.NetcatClient.gethostbyname">
-    <p>def <span class="ident">gethostbyname</span>(</p><p>self, host)</p>
+    <p>def <span class="ident">gethostbyname</span>(</p><p>self, host, port, family)</p>
     </div>
     
 
@@ -4816,18 +4824,22 @@ def stop(self):
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatClient.gethostbyname', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.NetcatClient.gethostbyname" class="source">
-    <pre><code>def gethostbyname(self, host):
+    <pre><code>def gethostbyname(self, host, port, family):
     """Translate hostname into IP address."""
+    socktype = socket.SOCK_DGRAM if self.options["udp"] else socket.SOCK_STREAM
+    flags = 0
     if self.options["nodns"]:
-        return host
+        flags = socket.AI_NUMERICHOST
     try:
         self.log.debug("Resolving hostname: {}".format(host))
-        addr = socket.gethostbyname(host)
-        self.log.debug("Resolved hostname:  {}".format(addr))
-        return addr
+        (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
+            host, port, socket.AF_INET, socktype, flags
+        )
     except socket.gaierror as error:
         self.log.error("Resolve Error: {}".format(error))
-        sys.exit(1)
+        self.log.debug("Resolve Error: {}".format(error))
+    self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
+    return sockaddr[0]
 </code></pre>
   </div>
 </div>
@@ -5623,16 +5635,24 @@ callback that writes to stdout.</p></div>
             encoder, "server", recv_timeout, recv_timeout_retry, options
         )
 
+        # Listen on 0.0.0.0 by default
+        addr = "0.0.0.0"
+        if host is not None:
+            addr = self.gethostbyname(host, port, socket.AF_INET)
+
         # Setup server
-        addr = self.gethostbyname(host)
         self.create_socket()
         self.bind(addr, port)
         if self.options["udp"]:
             self.conn = self.sock
-            self.log.info("Waiting on {}:{} (UDP)".format(addr, port))
+            self.log.info(
+                "Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port)
+            )
         else:
             self.listen()
-            self.log.info("Listening on {}:{} (TCP)".format(addr, port))
+            self.log.info(
+                "Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port)
+            )
             self.accept()
 </code></pre>
   </div>
@@ -5760,16 +5780,23 @@ callback that writes to stdout.</p></div>
     super(NetcatServer, self).__init__(
         encoder, "server", recv_timeout, recv_timeout_retry, options
     )
+    # Listen on 0.0.0.0 by default
+    addr = "0.0.0.0"
+    if host is not None:
+        addr = self.gethostbyname(host, port, socket.AF_INET)
     # Setup server
-    addr = self.gethostbyname(host)
     self.create_socket()
     self.bind(addr, port)
     if self.options["udp"]:
         self.conn = self.sock
-        self.log.info("Waiting on {}:{} (UDP)".format(addr, port))
+        self.log.info(
+            "Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port)
+        )
     else:
         self.listen()
-        self.log.info("Listening on {}:{} (TCP)".format(addr, port))
+        self.log.info(
+            "Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port)
+        )
         self.accept()
 </code></pre>
   </div>
@@ -5900,7 +5927,7 @@ callback that writes to stdout.</p></div>
             
   <div class="item">
     <div class="name def" id="pwncat.NetcatServer.gethostbyname">
-    <p>def <span class="ident">gethostbyname</span>(</p><p>self, host)</p>
+    <p>def <span class="ident">gethostbyname</span>(</p><p>self, host, port, family)</p>
     </div>
     
 
@@ -5910,18 +5937,22 @@ callback that writes to stdout.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatServer.gethostbyname', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.NetcatServer.gethostbyname" class="source">
-    <pre><code>def gethostbyname(self, host):
+    <pre><code>def gethostbyname(self, host, port, family):
     """Translate hostname into IP address."""
+    socktype = socket.SOCK_DGRAM if self.options["udp"] else socket.SOCK_STREAM
+    flags = 0
     if self.options["nodns"]:
-        return host
+        flags = socket.AI_NUMERICHOST
     try:
         self.log.debug("Resolving hostname: {}".format(host))
-        addr = socket.gethostbyname(host)
-        self.log.debug("Resolved hostname:  {}".format(addr))
-        return addr
+        (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
+            host, port, socket.AF_INET, socktype, flags
+        )
     except socket.gaierror as error:
         self.log.error("Resolve Error: {}".format(error))
-        sys.exit(1)
+        self.log.debug("Resolve Error: {}".format(error))
+    self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
+    return sockaddr[0]
 </code></pre>
   </div>
 </div>

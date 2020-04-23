@@ -276,20 +276,22 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Helper Functions
     # ------------------------------------------------------------------------------
-    def gethostbyname(self, host, port):
+    def gethostbyname(self, host, port, family):
         """Translate hostname into IP address."""
+        socktype = socket.SOCK_DGRAM if self.options["udp"] else socket.SOCK_STREAM
         flags = 0
         if self.options["nodns"]:
             flags = socket.AI_NUMERICHOST
         try:
             self.log.debug("Resolving hostname: {}".format(host))
-            info = socket.getaddrinfo(host, port, socket.AF_INET, 0, flags)
+            (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
+                host, port, socket.AF_INET, socktype, flags
+            )[0]
         except socket.gaierror as error:
             self.log.error("Resolve Error: {}".format(error))
             sys.exit(1)
-        addr = info[2][4][0]
-        self.log.debug("Resolved hostname:  {}".format(addr))
-        return addr
+        self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
+        return sockaddr[0]
 
     def create_socket(self):
         """Create TCP or UDP socket."""
@@ -870,7 +872,7 @@ class NetcatServer(AbstractSocket):
         # Listen on 0.0.0.0 by default
         addr = "0.0.0.0"
         if host is not None:
-            addr = self.gethostbyname(host, port)
+            addr = self.gethostbyname(host, port, socket.AF_INET)
 
         # Setup server
         self.create_socket()
@@ -901,7 +903,7 @@ class NetcatClient(AbstractSocket):
         )
 
         # Setup client
-        addr = self.gethostbyname(host, port)
+        addr = self.gethostbyname(host, port, socket.AF_INET)
         self.create_socket()
         self.conn = self.sock
         if self.options["udp"]:
