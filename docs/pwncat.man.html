@@ -1,0 +1,341 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Wed Apr 22 01:57:01 2020 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PWNCAT:</title>
+
+</head>
+<body>
+
+<h1 align="center">PWNCAT:</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">pwncat: &minus;
+pwncat</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">usage: pwncat
+[&minus;Cnuv] [&minus;e cmd] hostname port</p>
+
+<p style="margin-left:22%; margin-top: 1em">pwncat
+[&minus;Cnuv] [&minus;e cmd] <b>&minus;l</b> [hostname]
+<b>&minus;p</b> port pwncat [&minus;Cnuv] [&minus;e cmd]
+<b>&minus;l</b> [hostname] port pwncat [&minus;Cnuv]
+<b>&minus;z</b> hostname port pwncat [&minus;Cnuv]
+<b>&minus;L</b> addr:port [hostname] port pwncat
+<b>&minus;V</b>, <b>&minus;&minus;version</b> pwncat
+<b>&minus;h</b>, <b>&minus;&minus;help</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Enhanced and
+comptaible Netcat implementation written in Python (2 and 3)
+with connect, zero&minus;i/o, listen and forward modes and
+techniques to detect and evade firewalls and intrusion
+detection/prevention systems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If no mode
+arguments are specified, pwncat will run in connect mode and
+act as a client to connect to a remote endpoint. If the
+connection to the remote endoint is lost, pwncat will quit.
+See advanced options for how to automatically reconnect.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>positional
+arguments:</b> <br>
+hostname</p>
+
+<p style="margin-left:22%;">Address to listen, forward or
+connect to</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>port</p></td>
+<td width="5%"></td>
+<td width="56%">
+
+
+<p>Port to listen, forward or connect to</p></td>
+<td width="22%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>mode
+arguments: <br>
+&minus;l</b>, <b>&minus;&minus;listen</b></p>
+
+<p style="margin-left:22%;">[Listen mode]: Start a server
+and listen for incoming connections. If using TCP and a
+connected client disconnects or the connection is
+interrupted otherwise, the server will quit. See
+<b>&minus;k</b>/&minus;&minus;keep&minus;open to change this
+behaviour.</p>
+
+<p style="margin-left:11%;"><b>&minus;z</b>,
+<b>&minus;&minus;zero</b></p>
+
+<p style="margin-left:22%;">[Zero&minus;I/0 mode]: Connect
+to a remote endpoint and report status only. Used for port
+scanning.</p>
+
+<p style="margin-left:11%;"><b>&minus;L</b> addr:port,
+<b>&minus;&minus;local</b> addr:port</p>
+
+<p style="margin-left:22%;">[Local forward mode]: This mode
+will start a server and a client internally. The internal
+server will listen locally on specified hostname/port
+(positional arguments). Same as with <b>&minus;l</b>. The
+server will then forward traffic to the internal client
+which connects to another server specified by address given
+via <b>&minus;L</b>/&minus;&minus;local addr:port. (I.e.:
+proxies a remote service to a local address)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>optional
+arguments: <br>
+&minus;e</b> cmd, <b>&minus;&minus;exec</b> cmd</p>
+
+<p style="margin-left:22%;">Execute shell command. Only for
+connect or listen mode.</p>
+
+<p style="margin-left:11%;"><b>&minus;C</b>,
+<b>&minus;&minus;crlf</b></p>
+
+<p style="margin-left:22%;">Send CRLF line&minus;endings in
+connect mode (default: LF)</p>
+
+<p style="margin-left:11%;"><b>&minus;n</b>,
+<b>&minus;&minus;nodns</b></p>
+
+<p style="margin-left:22%;">Do not resolve DNS.</p>
+
+<p style="margin-left:11%;"><b>&minus;u</b>,
+<b>&minus;&minus;udp</b></p>
+
+<p style="margin-left:22%;">Use UDP for the connection
+instead of TCP.</p>
+
+<p style="margin-left:11%;"><b>&minus;v</b>,
+<b>&minus;&minus;verbose</b></p>
+
+<p style="margin-left:22%;">Be verbose and print info to
+stderr. Use <b>&minus;v</b>, <b>&minus;vv</b>,
+<b>&minus;vvv</b> or <b>&minus;vvvv</b> for more verbosity.
+The server performance will decrease drastically if you use
+more than three times.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>advanced
+arguments:</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>&minus;&minus;http</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Connect / Listen / Local forward mode (TCP only): Hide
+traffic in http packets to fool Firewalls/IDS/IPS.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>&minus;&minus;https</b></p>
+
+<p style="margin-left:22%;">Connect / Listen / Local
+forward mode (TCP only): Hide traffic in https packets to
+fool Firewalls/IDS/IPS.</p>
+
+<p style="margin-left:11%;"><b>&minus;k</b>,
+<b>&minus;&minus;keep&minus;open</b></p>
+
+<p style="margin-left:22%;">Listen mode (TCP only):
+Re&minus;accept new clients in listen mode after a client
+has disconnected or the connection is unterrupted otherwise.
+(default: server will quit after connection is gone)</p>
+
+<p style="margin-left:11%;"><b>&minus;&minus;rebind</b>
+x</p>
+
+<p style="margin-left:22%;">Listen mode (TCP and UDP): If
+the server is unable to bind or accept clients, it will
+re&minus;initialize itself x many times before giving up.
+Use 0 to re&minus;initialize endlessly. (default: fail after
+first unsuccessful try).</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;rebind&minus;wait</b>
+s</p>
+
+<p style="margin-left:22%;">Listen mode (TCP and UDP): Wait
+x seconds between re&minus;initialization. (default: 1)</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;rebind&minus;robin</b>
+port</p>
+
+<p style="margin-left:22%;">Listen mode (TCP and UDP): If
+the server is unable to initialize (e.g: cannot bind and
+<b>&minus;&minus;rebind</b> is specified, it it will shuffle
+ports in round&minus;robin mode to bind to. Use comma
+separated string such as &rsquo;80,81,82&rsquo; or a range
+of ports &rsquo;80&minus;100&rsquo;. Set
+<b>&minus;&minus;rebind</b> to at least the number of ports
+to probe +1 This option requires <b>&minus;&minus;rebind</b>
+to be specified.</p>
+
+<p style="margin-left:11%;"><b>&minus;&minus;reconn</b>
+x</p>
+
+<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
+mode (TCP only): If the remote server is not reachable or
+the connection is interrupted, the client will connect again
+x many times before giving up. Use 0 to retry endlessly.
+(default: quit if the remote is not available or the
+connection was interrupted) This might be handy for stable
+TCP reverse shells ;&minus;)</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;reconn&minus;wait</b>
+s</p>
+
+<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
+mode (TCP only): Wait x seconds between re&minus;connects.
+(default: 1)</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;reconn&minus;robin</b>
+port</p>
+
+<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
+mode (TCP only): If the remote server is not reachable or
+the connection is interrupted and
+<b>&minus;&minus;reconn</b> is specified, the client will
+shuffle ports in round&minus;robin mode to connect to. Use
+comma separated string such as &rsquo;80,81,82&rsquo; or a
+range of ports &rsquo;80&minus;100&rsquo;. Set
+<b>&minus;&minus;reconn</b> to at least the number of ports
+to probe +1 This helps reverse shell to evade intrusiona
+prevention systems that will cut your connection and block
+the outbound port. This is also useful in Connect or
+Zero&minus;I/O mode to figure out what outbound ports are
+allowed.</p>
+
+<p style="margin-left:11%;"><b>&minus;w</b> s,
+<b>&minus;&minus;wait</b> s</p>
+
+<p style="margin-left:22%;">Connect mode (TCP only): If a
+connection and stdin are idle for more than s sec, then the
+connection is silently closed and the client will exit.
+(default: wait forever). Note: if
+<b>&minus;&minus;reconn</b> is specified, the connection
+will be re&minus;opened.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;init</b></p>
+
+<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
+mode (UDP only): UDP is a stateless protocol unlike TCP, so
+no handshake communication takes place and the client just
+sends data to a server without being &quot;accepted&quot; by
+the server first. This means a server waiting for an UDP
+client to connect to, is unable to send any data to the
+client, before the client hasn&rsquo;t send data first. The
+server simply doesn&rsquo;t know the IP address before an
+initial connect. The
+<b>&minus;&minus;udp&minus;ping&minus;init</b> option
+instructs the client to send one single initial ping packet
+to the server, so that it is able to talk to the client.
+This is the only way to make a UDP reverse shell work. See
+<b>&minus;&minus;udp&minus;ping&minus;word</b> for what
+char/string to send as initial ping packet (default:
+&rsquo;\0&rsquo;)</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;intvl</b>
+s</p>
+
+<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
+mode (UDP only): Instruct the UDP client to send ping
+intervalls every s seconds. This allows you to restart your
+UDP server and just wait for the client to report back in.
+This might be handy for stable UDP reverse shells ;&minus;)
+See <b>&minus;&minus;udp&minus;ping&minus;word</b> for what
+char/string to send as initial ping packet (default:
+&rsquo;\0&rsquo;)</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;word</b>
+str</p>
+
+<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
+mode (UDP only): Change the default character
+&rsquo;\0&rsquo; to use for upd ping. Single character or
+strings are supported.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;robin</b>
+port</p>
+
+<p style="margin-left:22%;">Zero&minus;I/O mode (UDP only):
+Instruct the UDP client to shuffle the specified ports in
+round&minus;robin mode for a remote server to ping. This
+might be handy to scan outbound allowed ports. Use
+<b>&minus;&minus;udp&minus;ping&minus;intvl</b> 0 to be
+faster.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;safe&minus;word</b>
+str</p>
+
+<p style="margin-left:22%;">All modes: If pwncat is started
+with this argument, it will shut down as soon as it receives
+the specified string. The <b>&minus;&minus;rebind</b> or
+<b>&minus;&minus;reconn</b> options will not start it up
+again. Use a very unique string to not have it shut down
+accidentally by other input.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>misc
+arguments: <br>
+&minus;h</b>, <b>&minus;&minus;help</b></p>
+
+<p style="margin-left:22%;">Show this help message and
+exit</p>
+
+<p style="margin-left:11%;"><b>&minus;V</b>,
+<b>&minus;&minus;version</b></p>
+
+<p style="margin-left:22%;">Show version information and
+exit</p>
+<hr>
+</body>
+</html>
