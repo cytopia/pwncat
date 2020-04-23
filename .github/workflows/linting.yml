@@ -49,10 +49,10 @@ jobs:
         run: |
           make lint-usage
 
-      - name: Check up-to-date man page
-        run: |
-          make lint-man
-
       - name: Check up-to-date docs
         run: |
           make lint-docs
+
+      - name: Check up-to-date man page
+        run: |
+          make lint-man
