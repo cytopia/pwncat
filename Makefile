@@ -14,7 +14,7 @@ DOCPATH = docs/
 BINNAME = pwncat
 
 FL_VERSION = 0.3
-FL_IGNORES = .git/,.github/,data/,$(BINNAME).egg-info,docs/$(BINNAME).api.html
+FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/
 
 UID := $(shell id -u)
 GID := $(shell id -g)

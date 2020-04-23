@@ -35,9 +35,10 @@ print_test_case "[100] Behaviour: (TCP) Server hangs up automatically after Clie
 # 3. Wait random time for transfer (between 1 and $TRANS_WAIT seconds)
 # 4. Stop Client
 # 5. Ensure Server is still running
-# 6. Wait random time for transfer (between 1 and $TRANS_WAIT seconds)
-# 7. Stop Client
-# 8. Ensure Server is still running
+# 6. Start Client in background
+# 7. Wait random time for transfer (between 1 and $TRANS_WAIT seconds)
+# 8. Stop Client
+# 9. Ensure Server is still running
 run_test() {
 	local host="${1}"
 	local port="${2}"
@@ -65,7 +66,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# START: SERVER
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(1/8) Start: Server"
+	echo;print_h2 "(1/9) Start: Server"
 
 	# Start Server
 	print_info "Start Server"
@@ -85,7 +86,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# START: CLIENT
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(2/8) Start: Client (1st round)"
+	echo;print_h2 "(2/9) Start: Client (1st round)"
 
 	# Start Client
 	print_info "Start Client"
@@ -99,7 +100,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# TRANSFER
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(3/8) Transfer (1st round)"
+	echo;print_h2 "(3/9) Transfer (1st round)"
 
 	###
 	### Wait random time for data to be sent or quit earlier if send already
@@ -123,7 +124,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# STOP: CLIENT
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(4/8) Stop: Client (1st round)"
+	echo;print_h2 "(4/9) Stop: Client (1st round)"
 
 	# Ensure Client has no errors (before stop)
 	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
@@ -141,7 +142,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# TEST: Ensure Server is still running
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(5/8) Test: Ensure server is still running (1st round)"
+	echo;print_h2 "(5/9) Test: Ensure server is still running (1st round)"
 
 	# Give it some time
 	run "sleep 1"
@@ -160,7 +161,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# START: CLIENT (2nd round)
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(6/8) Start: Client (2nd round)"
+	echo;print_h2 "(6/9) Start: Client (2nd round)"
 
 	# Start Client
 	print_info "Start Client"
@@ -174,7 +175,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# TRANSFER (2nd round)
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(7/8) Transfer (2nd round)"
+	echo;print_h2 "(7/9) Transfer (2nd round)"
 
 	###
 	### Wait random time for data to be sent or quit earlier if send already
@@ -198,7 +199,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# STOP: CLIENT (2nd round)
 	# --------------------------------------------------------------------------------
-	echo;print_h2 "(8/8) Stop: Client (2nd round)"
+	echo;print_h2 "(8/9) Stop: Client (2nd round)"
 
 	# Ensure Client has no errors (before stop)
 	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"

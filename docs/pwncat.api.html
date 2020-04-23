@@ -1008,9 +1008,9 @@ table {
           
   <ul>
     <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.__init__">__init__</a></li>
+    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.input_callback">input_callback</a></li>
     <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.input_generator">input_generator</a></li>
-    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.output_callback">output_callback</a></li>
-    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.stop">stop</a></li>
+    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.input_interrupter">input_interrupter</a></li>
   </ul>
 
         </li>
@@ -1054,9 +1054,9 @@ table {
           
   <ul>
     <li class="mono"><a href="#pwncat.NetcatPluginCommand.__init__">__init__</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginCommand.input_callback">input_callback</a></li>
     <li class="mono"><a href="#pwncat.NetcatPluginCommand.input_generator">input_generator</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginCommand.output_callback">output_callback</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginCommand.stop">stop</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginCommand.input_interrupter">input_interrupter</a></li>
   </ul>
 
         </li>
@@ -1066,9 +1066,9 @@ table {
           
   <ul>
     <li class="mono"><a href="#pwncat.NetcatPluginOutput.__init__">__init__</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginOutput.input_callback">input_callback</a></li>
     <li class="mono"><a href="#pwncat.NetcatPluginOutput.input_generator">input_generator</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginOutput.output_callback">output_callback</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginOutput.stop">stop</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginOutput.input_interrupter">input_interrupter</a></li>
   </ul>
 
         </li>
@@ -1195,47 +1195,42 @@ TIMEOUT_RECV_SOCKET = 0.3
 TIMEOUT_RECV_SOCKET_RETRY = 1
 
 
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   1 / 3   L I B R A R Y   C L A S S E S
+# ###
+# #################################################################################################
+# #################################################################################################
+
 # -------------------------------------------------------------------------------------------------
-# ABSTRACT CLASS: AbstractNetcatPlugin
+# CLASS: StringEncoder
 # -------------------------------------------------------------------------------------------------
-class AbstractNetcatPlugin(ABC):
+class StringEncoder(object):
     """
-    Abstract class to for netcat plugins.
+    Takes care about Python 2/3 string encoding/decoding.
 
-    This is a skeleton that defines how the plugins for Netcat should look like.
-
-    The "input_generator" should constantly yield data received from sort sort of input
-    which could be user input, output from a shell command data from a socket.
-
-    The "data_callback" will apply some sort of action on the data received from a data_generator
-    which could be output to stdout, send it to the shell or to a socket.
+    This allows to parse all string/byte values internally between all
+    classes or functions as strings to keep full Python 2/3 compat.
     """
 
-    __metaclass__ = ABCMeta
+    # https://stackoverflow.com/questions/606191/27527728#27527728
+    codec = "cp437"
 
-    @abstractmethod
-    def __init__(self, encoder, options={}):
-        """Set specific options for this plugin.
-        Args:
-            encoder (object): An instance which provides "encode" and "decode" for string/bytes.
-            options (dict):   Custom dictionary of options.
-        """
-        pass
+    def __init__(self):
+        self.py3 = sys.version_info >= (3, 0)
 
-    @abstractmethod
-    def input_generator(self):
-        """Implement a generator function which constantly yields data from some input."""
-        while False:
-            yield None
+    def encode(self, data):
+        """Convert string into a byte type for Python3."""
+        if self.py3:
+            data = data.encode("cp437")
+        return data
 
-    @abstractmethod
-    def output_callback(self, data):
-        """Implement a callback which processes the input into some output."""
-        print(data)
-
-    @abstractmethod
-    def stop(self):
-        """Implement a stop method, which exits the instance."""
+    def decode(self, data):
+        """Convert bytes into a string type for Python3."""
+        if self.py3:
+            data = data.decode("cp437")
+        return data
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1424,10 +1419,10 @@ class AbstractSocket(object):
             self.log.debug("Resolving hostname: {}".format(host))
             (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
                 host, port, socket.AF_INET, socktype, flags
-            )
+            )[0]
         except socket.gaierror as error:
             self.log.error("Resolve Error: {}".format(error))
-            self.log.debug("Resolve Error: {}".format(error))
+            sys.exit(1)
         self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
         return sockaddr[0]
 
@@ -1624,34 +1619,322 @@ class AbstractSocket(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: StringEncoder
+# CLASS: NetcatServer
 # -------------------------------------------------------------------------------------------------
-class StringEncoder(object):
+class NetcatServer(AbstractSocket):
+    """Netcat Server implementation."""
+
+    def __init__(self, encoder, host, port, recv_timeout, recv_timeout_retry, options={}):
+        """Construct a listening server."""
+        super(NetcatServer, self).__init__(
+            encoder, "server", recv_timeout, recv_timeout_retry, options
+        )
+
+        # Listen on 0.0.0.0 by default
+        addr = "0.0.0.0"
+        if host is not None:
+            addr = self.gethostbyname(host, port, socket.AF_INET)
+
+        # Setup server
+        self.create_socket()
+        self.bind(addr, port)
+        if self.options["udp"]:
+            self.conn = self.sock
+            self.log.info(
+                "Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port)
+            )
+        else:
+            self.listen()
+            self.log.info(
+                "Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port)
+            )
+            self.accept()
+
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: NetcatClient
+# -------------------------------------------------------------------------------------------------
+class NetcatClient(AbstractSocket):
+    """Netcat Client implementation."""
+
+    def __init__(self, encoder, host, port, recv_timeout, recv_timeout_retry, options={}):
+        """Construct a connecting clientt."""
+        super(NetcatClient, self).__init__(
+            encoder, "client", recv_timeout, recv_timeout_retry, options
+        )
+
+        # Setup client
+        addr = self.gethostbyname(host, port, socket.AF_INET)
+        self.create_socket()
+        self.conn = self.sock
+        if self.options["udp"]:
+            self.udp_client_addr = addr
+            self.udp_client_port = port
+        else:
+            self.remote_addr = addr
+            self.remote_port = port
+            if not self.connect():
+                sys.exit(1)
+
+
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   2 / 3   N E T C A T   P L U G I N S
+# ###
+# #################################################################################################
+# #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# ABSTRACT CLASS: AbstractNetcatPlugin
+# -------------------------------------------------------------------------------------------------
+class AbstractNetcatPlugin(ABC):
     """
-    Takes care about Python 2/3 string encoding/decoding.
+    Abstract class to for netcat plugins.
 
-    This allows to parse all string/byte values internally between all
-    classes or functions as strings to keep full Python 2/3 compat.
+    This is a skeleton that defines how the plugins for Netcat should look like.
+
+    The "input_generator" should constantly yield data received from some sort of input
+    which could be user input, output from a shell command data from a socket.
+
+    The "input_callback" will apply some sort of action on the data received from a input_generator
+    which could be output to stdout, send it to the shell or to a socket.
+
+    "The "input_interrupter" can implement a mechanism to trigger the input_generator to stop
+    and return to its parent thread/function. The input_generator must also be implemented
+    in a way that it is able to act on the event which the "input_interrupter" emitted.
     """
 
-    # https://stackoverflow.com/questions/606191/27527728#27527728
-    codec = "cp437"
+    __metaclass__ = ABCMeta
 
-    def __init__(self):
-        self.py3 = sys.version_info >= (3, 0)
+    @abstractmethod
+    def __init__(self, options={}):
+        """Set specific options for this plugin."""
+        raise NotImplementedError("Should have implemented this")
 
-    def encode(self, data):
-        """Convert string into a byte type for Python3."""
-        if self.py3:
-            data = data.encode("cp437")
+    @abstractmethod
+    def input_generator(self):
+        """Implement a generator function which constantly yields data from some input."""
+        raise NotImplementedError("Should have implemented this")
+
+    @abstractmethod
+    def input_callback(self, data):
+        """Implement a callback which processes the input which is parsed from input_generator. """
+        raise NotImplementedError("Should have implemented this")
+
+    @abstractmethod
+    def input_interrupter(self):
+        """Implement a method, which quits the input_generator."""
+        raise NotImplementedError("Should have implemented this")
+
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: NetcatPluginOutput (Module for: user-input -> send -> receive -> output)
+# -------------------------------------------------------------------------------------------------
+class NetcatPluginOutput(AbstractNetcatPlugin):
+    """Implement basic input/output plugin.
+
+    This plugin provides a generator which continuously reads from stdin
+    (non-blocking on POSIX and blocking on windows) as well as a
+    callback that writes to stdout.
+    """
+
+    # Line feeds to use for user input
+    linefeed = "\n"
+
+    # Non-blocking read from stdin achieved via timeout.
+    # Specify timeout in seconds.
+    input_timeout = None
+
+    # Used by the input_interrupter to set this to true.
+    # The input_generator will frequently check this value
+    __quit = False
+
+    # ------------------------------------------------------------------------------
+    # Constructor / Destructor
+    # ------------------------------------------------------------------------------
+    def __init__(self, options={}):
+        """Set specific options for this plugin."""
+        super(AbstractNetcatPlugin, self).__init__()
+        assert "encoder" in options
+        assert "input_timeout" in options
+        assert "linefeed" in options
+
+        self.log = logging.getLogger(__name__)
+        self.enc = options["encoder"]
+        if "input_timeout" in options:
+            self.input_timeout = options["input_timeout"]
+        if "linefeed" in options:
+            self.linefeed = options["linefeed"]
+
+    # ------------------------------------------------------------------------------
+    # Private Functions
+    # ------------------------------------------------------------------------------
+    def __use_linefeeds(self, data):
+        """Ensure the user input has the desired linefeeds --crlf or not."""
+        if data.endswith("\r\n"):
+            data = data[:-2]
+        elif data.endswith("\n") or data.endswith("\r"):
+            data = data[:-1]
+        data += self.linefeed
         return data
 
-    def decode(self, data):
-        """Convert bytes into a string type for Python3."""
-        if self.py3:
-            data = data.decode("cp437")
-        return data
+    def __set_input_timeout(self):
+        """Throws a catchable BaseException for sys.stdin after timeout (Linux only)."""
+        i, o, e = select.select([sys.stdin], [], [], self.input_timeout)
+        if not i:
+            raise BaseException("timed out")
 
+    # ------------------------------------------------------------------------------
+    # Public Functions
+    # ------------------------------------------------------------------------------
+    def input_interrupter(self):
+        global THREAD_TERMINATE
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace("[NetcatOutputCommand] quit flag was set by input_interrupter()")
+        self.__quit = True
+
+    def input_generator(self):
+        """Constantly ask for user input."""
+        # https://stackoverflow.com/questions/1450393/#38670261
+        # while True: line = sys.stdin.readline() <- reads a whole line (faster)
+        # for line in sys.stdin.readlin():        <- reads one byte at a time
+        while True:
+            if self.__quit:
+                return
+            try:
+                # TODO: select() does not work for windows on stdin/stdout
+                if os.name != "nt":
+                    self.__set_input_timeout()
+                line = sys.stdin.readline()
+            except BaseException:
+                # When using select() with timeout, we don't have any input
+                # at this point and simply continue the loop or quit if
+                # a terminate request has been made by other threads.
+                if THREAD_TERMINATE:
+                    self.log.trace("STDIN: terminate")
+                    return
+                # TODO: Re-enable this for very verbose logging
+                # self.log.trace("STDIN: timeout. Waiting for input...")
+                continue
+            if line:
+                self.log.trace("Yielding stdin")
+                yield self.__use_linefeeds(line)
+            # EOF or <Ctrl>+<d>
+            else:
+                # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
+                if THREAD_TERMINATE:
+                    self.log.trace("No more input generated, quitting.")
+                    return
+                # TODO: Re-enable this for very verbose logging
+                # self.log.trace("STDIN: Reached EOF, repeating")
+
+    def input_callback(self, data):
+        """Print received data to stdout."""
+        print(data, end="")
+        sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
+
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: NetcatPluginCommand (Module for user-input -> send -> execute -> send-back -> output)
+# -------------------------------------------------------------------------------------------------
+class NetcatPluginCommand(AbstractNetcatPlugin):
+    """Implement command execution functionality."""
+
+    executable = None
+
+    # ------------------------------------------------------------------------------
+    # Constructor / Destructor
+    # ------------------------------------------------------------------------------
+    def __init__(self, options={}):
+        """Set specific options for this plugin."""
+        assert "encoder" in options
+        assert "executable" in options
+
+        self.log = logging.getLogger(__name__)
+        self.enc = options["encoder"]
+        self.executable = options["executable"]
+        self.log.debug("Setting '{}' as executable".format(self.executable))
+
+        # Open executable to wait for commands
+        env = os.environ.copy()
+        try:
+            self.p = Popen(
+                # TODO: should I also use 'bufsize=1'?
+                self.executable,
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=subprocess.STDOUT,
+                shell=False,
+                env=env,
+            )
+        except FileNotFoundError:
+            self.log.error("Specified executable '{}' not found".format(self.executable))
+            sys.exit(1)
+
+        # Define destructor
+        atexit.register(self.__exit__)
+
+    def __exit__(self):
+        """Destructor."""
+        self.log.trace("Killing executable: {} with pid {}".format(self.executable, self.p.pid))
+        self.p.kill()
+
+    # ------------------------------------------------------------------------------
+    # Public Functions
+    # ------------------------------------------------------------------------------
+    def input_interrupter(self):
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
+        self.p.kill()
+
+    def __set_input_timeout(self, timeout=0.1):
+        """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
+        # select((rlist, wlist, xlist, timeout)
+        # rlist: wait until ready for reading
+        # wlist: wait until ready for writing
+        # xlist: wait for an "exceptional condition"
+        i, o, e = select.select([self.p.stdout], [], [], timeout)
+        if not i:
+            raise BaseException("timed out")
+
+    def input_generator(self):
+        """Constantly ask for input."""
+        while True:
+            self.log.trace("Reading command output")
+            # TODO: non-blocking read does not seem to work or?
+            # try:
+            # self.__set_input_timeout(timeout=1.5)
+            data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
+            self.log.trace(data)
+            # except BaseException:
+            #    if THREAD_TERMINATE:
+            #        return
+            #    # No input, just check again
+            #    #self.p.stdout.flush()
+            #    continue
+            data = self.enc.decode(data)
+            self.log.trace("Command output: {}".format(data))
+            if not data:
+                self.log.trace("Command output was empty. Exiting loop.")
+                break
+            yield data
+
+    def input_callback(self, data):
+        """Send data received to stdin (command input)."""
+        data = self.enc.encode(data)
+        self.log.trace("Appending to stdin: {}".format(data))
+        self.p.stdin.write(data)
+        self.p.stdin.flush()
+
+
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   3 / 3   N E T C A T   P L U G I N   R U N N E R
+# ###
+# #################################################################################################
+# #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
 # CLASS: Runner
@@ -1800,258 +2083,6 @@ class Runner(object):
             #     if not self.tt.is_alive():
             #         sys.exit(0)
             # time.sleep(0.1)
-
-
-# -------------------------------------------------------------------------------------------------
-# CLASS: NetcatPluginOutput (Module for: user-input -> send -> receive -> output)
-# -------------------------------------------------------------------------------------------------
-class NetcatPluginOutput(AbstractNetcatPlugin):
-    """Implement basic input/output plugin.
-
-    This plugin provides a generator which continuously reads from stdin
-    (non-blocking on POSIX and blocking on windows) as well as a
-    callback that writes to stdout.
-    """
-
-    # Line feeds to use for user input
-    linefeed = "\n"
-
-    # Non-blocking read from stdin achieved via timeout.
-    # Specify timeout in seconds.
-    input_timeout = None
-
-    # ------------------------------------------------------------------------------
-    # Constructor / Destructor
-    # ------------------------------------------------------------------------------
-    def __init__(self, encoder, options={}):
-        """Set specific options for this plugin."""
-        self.log = logging.getLogger(__name__)
-        self.enc = encoder
-
-        assert "input_timeout" in options, "Error, 'input_timeout' must be set."
-        if "input_timeout" in options:
-            self.input_timeout = options["input_timeout"]
-        if "linefeed" in options:
-            self.linefeed = options["linefeed"]
-
-    # ------------------------------------------------------------------------------
-    # Private Functions
-    # ------------------------------------------------------------------------------
-    def __use_linefeeds(self, data):
-        """Ensure the user input has the desired linefeeds --crlf or not."""
-        if data.endswith("\r\n"):
-            data = data[:-2]
-        elif data.endswith("\n") or data.endswith("\r"):
-            data = data[:-1]
-        data += self.linefeed
-        return data
-
-    def __set_input_timeout(self):
-        """Throws a catchable BaseException for sys.stdin after timeout (Linux only)."""
-        i, o, e = select.select([sys.stdin], [], [], self.input_timeout)
-        if not i:
-            raise BaseException("timed out")
-
-    # ------------------------------------------------------------------------------
-    # Public Functions
-    # ------------------------------------------------------------------------------
-    def stop(self):
-        global THREAD_TERMINATE
-        """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatOutputCommand] pass was raised by stop() function")
-        THREAD_TERMINATE = True
-
-    def input_generator(self):
-        """Constantly ask for user input."""
-        # https://stackoverflow.com/questions/1450393/#38670261
-        # while True: line = sys.stdin.readline() <- reads a whole line (faster)
-        # for line in sys.stdin.readlin():        <- reads one byte at a time
-        while True:
-            if THREAD_TERMINATE:
-                return
-            try:
-                # TODO: select() does not work for windows on stdin/stdout
-                if os.name != "nt":
-                    self.__set_input_timeout()
-                line = sys.stdin.readline()
-            except BaseException:
-                # When using select() with timeout, we don't have any input
-                # at this point and simply continue the loop or quit if
-                # a terminate request has been made by other threads.
-                if THREAD_TERMINATE:
-                    self.log.trace("STDIN: terminate")
-                    return
-                # TODO: Re-enable this for very verbose logging
-                # self.log.trace("STDIN: timeout. Waiting for input...")
-                continue
-            if line:
-                self.log.trace("Yielding stdin")
-                yield self.__use_linefeeds(line)
-            # EOF or <Ctrl>+<d>
-            else:
-                # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
-                if THREAD_TERMINATE:
-                    self.log.trace("No more input generated, quitting.")
-                    return
-                # TODO: Re-enable this for very verbose logging
-                # self.log.trace("STDIN: Reached EOF, repeating")
-
-    def output_callback(self, data):
-        """Print received data to stdout."""
-        print(data, end="")
-        sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
-
-
-# -------------------------------------------------------------------------------------------------
-# CLASS: NetcatPluginCommand (Module for user-input -> send -> execute -> send-back -> output)
-# -------------------------------------------------------------------------------------------------
-class NetcatPluginCommand(AbstractNetcatPlugin):
-    """Implement command execution functionality."""
-
-    executable = None
-
-    # ------------------------------------------------------------------------------
-    # Constructor / Destructor
-    # ------------------------------------------------------------------------------
-    def __init__(self, encoder, options={}):
-        """Set specific options for this plugin."""
-        self.log = logging.getLogger(__name__)
-        self.enc = encoder
-        assert "executable" in options
-        self.log.debug("Setting '{}' as executable".format(options["executable"]))
-        self.executable = options["executable"]
-
-        # Open executable to wait for commands
-        env = os.environ.copy()
-        try:
-            self.p = Popen(
-                # TODO: should I also use 'bufsize=1'?
-                self.executable,
-                stdin=PIPE,
-                stdout=PIPE,
-                stderr=subprocess.STDOUT,
-                shell=False,
-                env=env,
-            )
-        except FileNotFoundError:
-            self.log.error("Specified executable '{}' not found".format(self.executable))
-            sys.exit(1)
-
-        # Define destructor
-        atexit.register(self.__exit__)
-
-    def __exit__(self):
-        """Destructor."""
-        self.log.trace("Killing executable: {} with pid {}".format(self.executable, self.p.pid))
-        self.p.kill()
-
-    # ------------------------------------------------------------------------------
-    # Public Functions
-    # ------------------------------------------------------------------------------
-    def stop(self):
-        """Stop function that can be called externally to close this instance."""
-        global THREAD_TERMINATE
-        THREAD_TERMINATE = True
-        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by stop() function")
-        self.p.kill()
-
-    def __set_input_timeout(self, timeout=0.1):
-        """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
-        # select((rlist, wlist, xlist, timeout)
-        # rlist: wait until ready for reading
-        # wlist: wait until ready for writing
-        # xlist: wait for an "exceptional condition"
-        i, o, e = select.select([self.p.stdout], [], [], timeout)
-        if not i:
-            raise BaseException("timed out")
-
-    def input_generator(self):
-        """Constantly ask for input."""
-        while True:
-            self.log.trace("Reading command output")
-            # TODO: non-blocking read does not seem to work or?
-            # try:
-            # self.__set_input_timeout(timeout=1.5)
-            data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
-            self.log.trace(data)
-            # except BaseException:
-            #    if THREAD_TERMINATE:
-            #        return
-            #    # No input, just check again
-            #    #self.p.stdout.flush()
-            #    continue
-            data = self.enc.decode(data)
-            self.log.trace("Command output: {}".format(data))
-            if not data:
-                self.log.trace("Command output was empty. Exiting loop.")
-                break
-            yield data
-
-    def output_callback(self, data):
-        """Send data received to stdin (command input)."""
-        data = self.enc.encode(data)
-        self.log.trace("Appending to stdin: {}".format(data))
-        self.p.stdin.write(data)
-        self.p.stdin.flush()
-
-
-# -------------------------------------------------------------------------------------------------
-# CLASS: NetcatServer
-# -------------------------------------------------------------------------------------------------
-class NetcatServer(AbstractSocket):
-    """Netcat Server implementation."""
-
-    def __init__(self, encoder, host, port, recv_timeout, recv_timeout_retry, options={}):
-        """Construct a listening server."""
-        super(NetcatServer, self).__init__(
-            encoder, "server", recv_timeout, recv_timeout_retry, options
-        )
-
-        # Listen on 0.0.0.0 by default
-        addr = "0.0.0.0"
-        if host is not None:
-            addr = self.gethostbyname(host, port, socket.AF_INET)
-
-        # Setup server
-        self.create_socket()
-        self.bind(addr, port)
-        if self.options["udp"]:
-            self.conn = self.sock
-            self.log.info(
-                "Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port)
-            )
-        else:
-            self.listen()
-            self.log.info(
-                "Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port)
-            )
-            self.accept()
-
-
-# -------------------------------------------------------------------------------------------------
-# CLASS: NetcatClient
-# -------------------------------------------------------------------------------------------------
-class NetcatClient(AbstractSocket):
-    """Netcat Client implementation."""
-
-    def __init__(self, encoder, host, port, recv_timeout, recv_timeout_retry, options={}):
-        """Construct a connecting clientt."""
-        super(NetcatClient, self).__init__(
-            encoder, "client", recv_timeout, recv_timeout_retry, options
-        )
-
-        # Setup client
-        addr = self.gethostbyname(host, port, socket.AF_INET)
-        self.create_socket()
-        self.conn = self.sock
-        if self.options["udp"]:
-            self.udp_client_addr = addr
-            self.udp_client_port = port
-        else:
-            self.remote_addr = addr
-            self.remote_port = port
-            if not self.connect():
-                sys.exit(1)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -2686,16 +2717,22 @@ def main():
 
     # Initialize encoder
     encoder = StringEncoder()
+
     # Use command modulde
     if args.cmd:
-        module_opts = {"executable": args.cmd}
-        mod = NetcatPluginCommand(encoder, module_opts)
+        module_opts = {
+            "encoder": encoder,
+            "executable": args.cmd,
+        }
+        mod = NetcatPluginCommand(module_opts)
     # Use output module
     else:
-        module_opts = {}
-        module_opts["linefeed"] = "\r\n" if args.crlf else "\n"
-        module_opts["input_timeout"] = TIMEOUT_READ_STDIN
-        mod = NetcatPluginOutput(encoder, module_opts)
+        module_opts = {
+            "encoder": encoder,
+            "linefeed": "\r\n" if args.crlf else "\n",
+            "input_timeout": TIMEOUT_READ_STDIN,
+        }
+        mod = NetcatPluginOutput(module_opts)
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
@@ -2741,10 +2778,10 @@ def main():
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
-        run.set_output_callback(mod.output_callback)
+        run.set_output_callback(mod.input_callback)
 
         run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(mod.stop)
+        run.set_input_generator_stop_function(mod.input_interrupter)
         run.run()
     # Run client
     else:
@@ -2755,7 +2792,7 @@ def main():
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
-        run.set_output_callback(mod.output_callback)
+        run.set_output_callback(mod.input_callback)
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
             run.set_timed_action(args.udp_ping_intvl, net.send, "\x00")
         run.set_revc_generator_stop_function(object)
@@ -3340,16 +3377,22 @@ accidentally by other input.
 
     # Initialize encoder
     encoder = StringEncoder()
+
     # Use command modulde
     if args.cmd:
-        module_opts = {"executable": args.cmd}
-        mod = NetcatPluginCommand(encoder, module_opts)
+        module_opts = {
+            "encoder": encoder,
+            "executable": args.cmd,
+        }
+        mod = NetcatPluginCommand(module_opts)
     # Use output module
     else:
-        module_opts = {}
-        module_opts["linefeed"] = "\r\n" if args.crlf else "\n"
-        module_opts["input_timeout"] = TIMEOUT_READ_STDIN
-        mod = NetcatPluginOutput(encoder, module_opts)
+        module_opts = {
+            "encoder": encoder,
+            "linefeed": "\r\n" if args.crlf else "\n",
+            "input_timeout": TIMEOUT_READ_STDIN,
+        }
+        mod = NetcatPluginOutput(module_opts)
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
@@ -3395,10 +3438,10 @@ accidentally by other input.
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
-        run.set_output_callback(mod.output_callback)
+        run.set_output_callback(mod.input_callback)
 
         run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(mod.stop)
+        run.set_input_generator_stop_function(mod.input_interrupter)
         run.run()
     # Run client
     else:
@@ -3409,7 +3452,7 @@ accidentally by other input.
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
         run.set_send_callback(net.send)
-        run.set_output_callback(mod.output_callback)
+        run.set_output_callback(mod.input_callback)
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
             run.set_timed_action(args.udp_ping_intvl, net.send, "\x00")
         run.set_revc_generator_stop_function(object)
@@ -3456,10 +3499,13 @@ accidentally by other input.
   
     <div class="desc"><p>Abstract class to for netcat plugins.</p>
 <p>This is a skeleton that defines how the plugins for Netcat should look like.</p>
-<p>The "input_generator" should constantly yield data received from sort sort of input
+<p>The "input_generator" should constantly yield data received from some sort of input
 which could be user input, output from a shell command data from a socket.</p>
-<p>The "data_callback" will apply some sort of action on the data received from a data_generator
-which could be output to stdout, send it to the shell or to a socket.</p></div>
+<p>The "input_callback" will apply some sort of action on the data received from a input_generator
+which could be output to stdout, send it to the shell or to a socket.</p>
+<p>"The "input_interrupter" can implement a mechanism to trigger the input_generator to stop
+and return to its parent thread/function. The input_generator must also be implemented
+in a way that it is able to act on the event which the "input_interrupter" emitted.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.AbstractNetcatPlugin" class="source">
@@ -3469,38 +3515,38 @@ which could be output to stdout, send it to the shell or to a socket.</p></div>
 
     This is a skeleton that defines how the plugins for Netcat should look like.
 
-    The "input_generator" should constantly yield data received from sort sort of input
+    The "input_generator" should constantly yield data received from some sort of input
     which could be user input, output from a shell command data from a socket.
 
-    The "data_callback" will apply some sort of action on the data received from a data_generator
+    The "input_callback" will apply some sort of action on the data received from a input_generator
     which could be output to stdout, send it to the shell or to a socket.
+
+    "The "input_interrupter" can implement a mechanism to trigger the input_generator to stop
+    and return to its parent thread/function. The input_generator must also be implemented
+    in a way that it is able to act on the event which the "input_interrupter" emitted.
     """
 
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __init__(self, encoder, options={}):
-        """Set specific options for this plugin.
-        Args:
-            encoder (object): An instance which provides "encode" and "decode" for string/bytes.
-            options (dict):   Custom dictionary of options.
-        """
-        pass
+    def __init__(self, options={}):
+        """Set specific options for this plugin."""
+        raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
     def input_generator(self):
         """Implement a generator function which constantly yields data from some input."""
-        while False:
-            yield None
+        raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def output_callback(self, data):
-        """Implement a callback which processes the input into some output."""
-        print(data)
+    def input_callback(self, data):
+        """Implement a callback which processes the input which is parsed from input_generator. """
+        raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def stop(self):
-        """Implement a stop method, which exits the instance."""
+    def input_interrupter(self):
+        """Implement a method, which quits the input_generator."""
+        raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
 </div>
@@ -3517,27 +3563,43 @@ which could be output to stdout, send it to the shell or to a socket.</p></div>
             
   <div class="item">
     <div class="name def" id="pwncat.AbstractNetcatPlugin.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, encoder, options={})</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, options={})</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Set specific options for this plugin.
-Args:
-    encoder (object): An instance which provides "encode" and "decode" for string/bytes.
-    options (dict):   Custom dictionary of options.</p></div>
+    <div class="desc"><p>Set specific options for this plugin.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.__init__', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.AbstractNetcatPlugin.__init__" class="source">
     <pre><code>@abstractmethod
-def __init__(self, encoder, options={}):
-    """Set specific options for this plugin.
-    Args:
-        encoder (object): An instance which provides "encode" and "decode" for string/bytes.
-        options (dict):   Custom dictionary of options.
-    """
-    pass
+def __init__(self, options={}):
+    """Set specific options for this plugin."""
+    raise NotImplementedError("Should have implemented this")
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.AbstractNetcatPlugin.input_callback">
+    <p>def <span class="ident">input_callback</span>(</p><p>self, data)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Implement a callback which processes the input which is parsed from input_generator.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.input_callback', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.AbstractNetcatPlugin.input_callback" class="source">
+    <pre><code>@abstractmethod
+def input_callback(self, data):
+    """Implement a callback which processes the input which is parsed from input_generator. """
+    raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
 </div>
@@ -3560,8 +3622,7 @@ def __init__(self, encoder, options={}):
     <pre><code>@abstractmethod
 def input_generator(self):
     """Implement a generator function which constantly yields data from some input."""
-    while False:
-        yield None
+    raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
 </div>
@@ -3570,43 +3631,21 @@ def input_generator(self):
   
             
   <div class="item">
-    <div class="name def" id="pwncat.AbstractNetcatPlugin.output_callback">
-    <p>def <span class="ident">output_callback</span>(</p><p>self, data)</p>
+    <div class="name def" id="pwncat.AbstractNetcatPlugin.input_interrupter">
+    <p>def <span class="ident">input_interrupter</span>(</p><p>self)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Implement a callback which processes the input into some output.</p></div>
+    <div class="desc"><p>Implement a method, which quits the input_generator.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.output_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.AbstractNetcatPlugin.output_callback" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.input_interrupter', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.AbstractNetcatPlugin.input_interrupter" class="source">
     <pre><code>@abstractmethod
-def output_callback(self, data):
-    """Implement a callback which processes the input into some output."""
-    print(data)
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.AbstractNetcatPlugin.stop">
-    <p>def <span class="ident">stop</span>(</p><p>self)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Implement a stop method, which exits the instance.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.stop', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.AbstractNetcatPlugin.stop" class="source">
-    <pre><code>@abstractmethod
-def stop(self):
-    """Implement a stop method, which exits the instance."""
+def input_interrupter(self):
+    """Implement a method, which quits the input_generator."""
+    raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
 </div>
@@ -3807,10 +3846,10 @@ def stop(self):
             self.log.debug("Resolving hostname: {}".format(host))
             (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
                 host, port, socket.AF_INET, socktype, flags
-            )
+            )[0]
         except socket.gaierror as error:
             self.log.error("Resolve Error: {}".format(error))
-            self.log.debug("Resolve Error: {}".format(error))
+            sys.exit(1)
         self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
         return sockaddr[0]
 
@@ -4287,10 +4326,10 @@ def stop(self):
         self.log.debug("Resolving hostname: {}".format(host))
         (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
             host, port, socket.AF_INET, socktype, flags
-        )
+        )[0]
     except socket.gaierror as error:
         self.log.error("Resolve Error: {}".format(error))
-        self.log.debug("Resolve Error: {}".format(error))
+        sys.exit(1)
     self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
     return sockaddr[0]
 </code></pre>
@@ -4834,10 +4873,10 @@ def stop(self):
         self.log.debug("Resolving hostname: {}".format(host))
         (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
             host, port, socket.AF_INET, socktype, flags
-        )
+        )[0]
     except socket.gaierror as error:
         self.log.error("Resolve Error: {}".format(error))
-        self.log.debug("Resolve Error: {}".format(error))
+        sys.exit(1)
     self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
     return sockaddr[0]
 </code></pre>
@@ -5055,13 +5094,15 @@ def stop(self):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, encoder, options={}):
+    def __init__(self, options={}):
         """Set specific options for this plugin."""
-        self.log = logging.getLogger(__name__)
-        self.enc = encoder
+        assert "encoder" in options
         assert "executable" in options
-        self.log.debug("Setting '{}' as executable".format(options["executable"]))
+
+        self.log = logging.getLogger(__name__)
+        self.enc = options["encoder"]
         self.executable = options["executable"]
+        self.log.debug("Setting '{}' as executable".format(self.executable))
 
         # Open executable to wait for commands
         env = os.environ.copy()
@@ -5090,11 +5131,9 @@ def stop(self):
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
-    def stop(self):
+    def input_interrupter(self):
         """Stop function that can be called externally to close this instance."""
-        global THREAD_TERMINATE
-        THREAD_TERMINATE = True
-        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by stop() function")
+        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
         self.p.kill()
 
     def __set_input_timeout(self, timeout=0.1):
@@ -5129,7 +5168,7 @@ def stop(self):
                 break
             yield data
 
-    def output_callback(self, data):
+    def input_callback(self, data):
         """Send data received to stdin (command input)."""
         data = self.enc.encode(data)
         self.log.trace("Appending to stdin: {}".format(data))
@@ -5163,7 +5202,7 @@ def stop(self):
             
   <div class="item">
     <div class="name def" id="pwncat.NetcatPluginCommand.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, encoder, options={})</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, options={})</p>
     </div>
     
 
@@ -5173,13 +5212,14 @@ def stop(self):
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.__init__', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.NetcatPluginCommand.__init__" class="source">
-    <pre><code>def __init__(self, encoder, options={}):
+    <pre><code>def __init__(self, options={}):
     """Set specific options for this plugin."""
-    self.log = logging.getLogger(__name__)
-    self.enc = encoder
+    assert "encoder" in options
     assert "executable" in options
-    self.log.debug("Setting '{}' as executable".format(options["executable"]))
+    self.log = logging.getLogger(__name__)
+    self.enc = options["encoder"]
     self.executable = options["executable"]
+    self.log.debug("Setting '{}' as executable".format(self.executable))
     # Open executable to wait for commands
     env = os.environ.copy()
     try:
@@ -5197,6 +5237,31 @@ def stop(self):
         sys.exit(1)
     # Define destructor
     atexit.register(self.__exit__)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.NetcatPluginCommand.input_callback">
+    <p>def <span class="ident">input_callback</span>(</p><p>self, data)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Send data received to stdin (command input).</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.input_callback', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginCommand.input_callback" class="source">
+    <pre><code>def input_callback(self, data):
+    """Send data received to stdin (command input)."""
+    data = self.enc.encode(data)
+    self.log.trace("Appending to stdin: {}".format(data))
+    self.p.stdin.write(data)
+    self.p.stdin.flush()
 </code></pre>
   </div>
 </div>
@@ -5245,33 +5310,8 @@ def stop(self):
   
             
   <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginCommand.output_callback">
-    <p>def <span class="ident">output_callback</span>(</p><p>self, data)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Send data received to stdin (command input).</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.output_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginCommand.output_callback" class="source">
-    <pre><code>def output_callback(self, data):
-    """Send data received to stdin (command input)."""
-    data = self.enc.encode(data)
-    self.log.trace("Appending to stdin: {}".format(data))
-    self.p.stdin.write(data)
-    self.p.stdin.flush()
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginCommand.stop">
-    <p>def <span class="ident">stop</span>(</p><p>self)</p>
+    <div class="name def" id="pwncat.NetcatPluginCommand.input_interrupter">
+    <p>def <span class="ident">input_interrupter</span>(</p><p>self)</p>
     </div>
     
 
@@ -5279,13 +5319,11 @@ def stop(self):
   
     <div class="desc"><p>Stop function that can be called externally to close this instance.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.stop', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginCommand.stop" class="source">
-    <pre><code>def stop(self):
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.input_interrupter', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginCommand.input_interrupter" class="source">
+    <pre><code>def input_interrupter(self):
     """Stop function that can be called externally to close this instance."""
-    global THREAD_TERMINATE
-    THREAD_TERMINATE = True
-    self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by stop() function")
+    self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
     self.p.kill()
 </code></pre>
   </div>
@@ -5353,15 +5391,22 @@ callback that writes to stdout.</p></div>
     # Specify timeout in seconds.
     input_timeout = None
 
+    # Used by the input_interrupter to set this to true.
+    # The input_generator will frequently check this value
+    __quit = False
+
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, encoder, options={}):
+    def __init__(self, options={}):
         """Set specific options for this plugin."""
-        self.log = logging.getLogger(__name__)
-        self.enc = encoder
+        super(AbstractNetcatPlugin, self).__init__()
+        assert "encoder" in options
+        assert "input_timeout" in options
+        assert "linefeed" in options
 
-        assert "input_timeout" in options, "Error, 'input_timeout' must be set."
+        self.log = logging.getLogger(__name__)
+        self.enc = options["encoder"]
         if "input_timeout" in options:
             self.input_timeout = options["input_timeout"]
         if "linefeed" in options:
@@ -5388,11 +5433,11 @@ callback that writes to stdout.</p></div>
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
-    def stop(self):
+    def input_interrupter(self):
         global THREAD_TERMINATE
         """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatOutputCommand] pass was raised by stop() function")
-        THREAD_TERMINATE = True
+        self.log.trace("[NetcatOutputCommand] quit flag was set by input_interrupter()")
+        self.__quit = True
 
     def input_generator(self):
         """Constantly ask for user input."""
@@ -5400,7 +5445,7 @@ callback that writes to stdout.</p></div>
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
         # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
-            if THREAD_TERMINATE:
+            if self.__quit:
                 return
             try:
                 # TODO: select() does not work for windows on stdin/stdout
@@ -5429,7 +5474,7 @@ callback that writes to stdout.</p></div>
                 # TODO: Re-enable this for very verbose logging
                 # self.log.trace("STDIN: Reached EOF, repeating")
 
-    def output_callback(self, data):
+    def input_callback(self, data):
         """Print received data to stdout."""
         print(data, end="")
         sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
@@ -5471,7 +5516,7 @@ callback that writes to stdout.</p></div>
             
   <div class="item">
     <div class="name def" id="pwncat.NetcatPluginOutput.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, encoder, options={})</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, options={})</p>
     </div>
     
 
@@ -5481,15 +5526,41 @@ callback that writes to stdout.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.__init__', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.NetcatPluginOutput.__init__" class="source">
-    <pre><code>def __init__(self, encoder, options={}):
+    <pre><code>def __init__(self, options={}):
     """Set specific options for this plugin."""
+    super(AbstractNetcatPlugin, self).__init__()
+    assert "encoder" in options
+    assert "input_timeout" in options
+    assert "linefeed" in options
     self.log = logging.getLogger(__name__)
-    self.enc = encoder
-    assert "input_timeout" in options, "Error, 'input_timeout' must be set."
+    self.enc = options["encoder"]
     if "input_timeout" in options:
         self.input_timeout = options["input_timeout"]
     if "linefeed" in options:
         self.linefeed = options["linefeed"]
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.NetcatPluginOutput.input_callback">
+    <p>def <span class="ident">input_callback</span>(</p><p>self, data)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Print received data to stdout.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.input_callback', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginOutput.input_callback" class="source">
+    <pre><code>def input_callback(self, data):
+    """Print received data to stdout."""
+    print(data, end="")
+    sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
 </code></pre>
   </div>
 </div>
@@ -5515,7 +5586,7 @@ callback that writes to stdout.</p></div>
     # while True: line = sys.stdin.readline() <- reads a whole line (faster)
     # for line in sys.stdin.readlin():        <- reads one byte at a time
     while True:
-        if THREAD_TERMINATE:
+        if self.__quit:
             return
         try:
             # TODO: select() does not work for windows on stdin/stdout
@@ -5549,45 +5620,22 @@ callback that writes to stdout.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginOutput.output_callback">
-    <p>def <span class="ident">output_callback</span>(</p><p>self, data)</p>
+    <div class="name def" id="pwncat.NetcatPluginOutput.input_interrupter">
+    <p>def <span class="ident">input_interrupter</span>(</p><p>self)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Print received data to stdout.</p></div>
+    <div class="desc"><p>Implement a method, which quits the input_generator.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.output_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginOutput.output_callback" class="source">
-    <pre><code>def output_callback(self, data):
-    """Print received data to stdout."""
-    print(data, end="")
-    sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginOutput.stop">
-    <p>def <span class="ident">stop</span>(</p><p>self)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Implement a stop method, which exits the instance.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.stop', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginOutput.stop" class="source">
-    <pre><code>def stop(self):
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.input_interrupter', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginOutput.input_interrupter" class="source">
+    <pre><code>def input_interrupter(self):
     global THREAD_TERMINATE
     """Stop function that can be called externally to close this instance."""
-    self.log.trace("[NetcatOutputCommand] pass was raised by stop() function")
-    THREAD_TERMINATE = True
+    self.log.trace("[NetcatOutputCommand] quit flag was set by input_interrupter()")
+    self.__quit = True
 </code></pre>
   </div>
 </div>
@@ -5947,10 +5995,10 @@ callback that writes to stdout.</p></div>
         self.log.debug("Resolving hostname: {}".format(host))
         (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
             host, port, socket.AF_INET, socktype, flags
-        )
+        )[0]
     except socket.gaierror as error:
         self.log.error("Resolve Error: {}".format(error))
-        self.log.debug("Resolve Error: {}".format(error))
+        sys.exit(1)
     self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
     return sockaddr[0]
 </code></pre>

@@ -387,6 +387,8 @@ test_case_instance_is_running() {
 		fi
 		print_file "${name} STDERR" "${file_stderr}"
 		print_file "${name} STDOUT" "${file_stdout}"
+		# shellcheck disable=SC2009
+		print_data "ps aux | grep '^$(whoami)'" "$( ps aux | grep "^$(whoami)" )"
 		print_error "[${name} Error] ${name} is not running anymore"
 		run "kill ${pid} || true" 2>/dev/null
 		exit 1
