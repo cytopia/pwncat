@@ -292,9 +292,10 @@ advanced arguments:
 
   --safe-word str       All modes:
                         If pwncat is started with this argument, it will shut
-                        down as soon as it receives the specified string.
-                        The --rebind or --reconn options will not start it up
-                        again. Use a very unique string to not have it shut down
+                        down as soon as it receives the specified string. The
+                        --keep (server) or --reconn (client) options will be
+                        ignored and it won't listen again or reconnect to you.
+                        Use a very unique string to not have it shut down
                         accidentally by other input.
 
 misc arguments:
