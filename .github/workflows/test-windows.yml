@@ -34,62 +34,85 @@ jobs:
           python-version: ${{ matrix.version }}
 
       # ------------------------------------------------------------
-      # Tests
+      # Tests: Behaviour
       # ------------------------------------------------------------
-      # (SOCKET) REUSEADDR
-      - name: "[SOCKET] REUSEADDR"
-        shell: bash
-        run: |
-          make test-socket-reuseaddr
 
-      # (CLIENT) HTTP REQUEST
-      - name: "[TCP] Client HTTP server request"
+      ###
+      ### Shutdown
+      ###
+      - name: "[BEHAVIOUR] (TCP) Client shutdown"
         shell: bash
         run: |
-          make test-tcp-client-http
+          make test-behaviour-tcp_client_exits_and_server_hangs_up
 
-      # (CLIENT) ECHO REQUEST
-      - name: "[TCP] Client ECHO server request"
+      - name: "[BEHAVIOUR] (UDP) Client shutdown"
         shell: bash
         run: |
-          make test-tcp-client-echo
-      - name: "[UDP] Client ECHO server request"
-        shell: bash
-        run: |
-          make test-udp-client-echo
+          make test-behaviour-udp_client_exits_and_server_stays_alive
 
-      # (CLIENT) SEND TEXT
-      - name: "[TCP] Client send text to server"
+      - name: "[BEHAVIOUR] (TCP) Server shutdown"
         shell: bash
         run: |
-          make test-tcp-client-send-text
-      - name: "[UDP] Client send text to server"
-        shell: bash
-        run: |
-          make test-udp-client-send-text
+          make test-behaviour-tcp_server_exits_and_hangs_up
 
-      # (CLIENT) SEND FILE
-      - name: "[TCP] Client send file to server"
+      - name: "[BEHAVIOUR] (UDP) Server shutdown"
         shell: bash
         run: |
-          make test-tcp-client-send-file
-      - name: "[UDP] Client send file to server"
-        shell: bash
-        run: |
-          make test-udp-client-send-file
+          make test-behaviour-udp_server_exits_and_client_stays_alive
 
-      # (CLIENT) SEND COMMAND
-      - name: "[TCP] Client send command to server"
+      ###
+      ### Socket
+      ###
+      - name: "[BEHAVIOUR] (TCP) Socket REUSEADDR"
         shell: bash
         run: |
-          make test-tcp-client-send-command
-      - name: "[UDP] Client send command to server"
+          make test-behaviour-tcp_socket_reuseaddr
+      - name: "[BEHAVIOUR] (UDP) Socket REUSEADDR"
         shell: bash
         run: |
-          make test-udp-client-send-command
+          make test-behaviour-udp_socket_reuseaddr
 
-      # (SERVER) LOCAL PORT FORWARD
-      - name: "[TCP] Server local port forward"
+      # ------------------------------------------------------------
+      # Tests: Basic
+      # ------------------------------------------------------------
+
+      ###
+      ### Client requests
+      ###
+      - name: "[BASICS] (TCP) Client makes HTTP request"
         shell: bash
         run: |
-          make test-tcp-server-local-port-forward
+          make test-basics-client-tcp_make_http_request
+
+      ###
+      ### Client sends data/file/command to server
+      ###
+      - name: "[BASICS] (TCP) Client sends data to Server"
+        shell: bash
+        run: |
+          make test-basics-client-tcp_send_text_to_server
+
+      - name: "[BASICS] (UDP) Client sends data to Server"
+        shell: bash
+        run: |
+          make test-basics-client-udp_send_text_to_server
+
+      - name: "[BASICS] (TCP) Client sends file to Server"
+        shell: bash
+        run: |
+          make test-basics-client-tcp_send_file_to_server
+
+      - name: "[BASICS] (UDP) Client sends file to Server"
+        shell: bash
+        run: |
+          make test-basics-client-udp_send_file_to_server
+
+      - name: "[BASICS] (TCP) Client sends command to Server"
+        shell: bash
+        run: |
+          make test-basics-client-tcp_send_comand_to_server
+
+      - name: "[BASICS] (UDP) Client sends command to Server"
+        shell: bash
+        run: |
+          make test-basics-client-udp_send_comand_to_server

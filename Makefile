@@ -121,57 +121,66 @@ lint-usage:
 # -------------------------------------------------------------------------------------------------
 # Test Targets
 # -------------------------------------------------------------------------------------------------
+test: test-behaviour-tcp_client_exits_and_server_hangs_up
+test: test-behaviour-udp_client_exits_and_server_stays_alive
+test: test-behaviour-tcp_server_exits_and_hangs_up
+test: test-behaviour-udp_server_exits_and_client_stays_alive
+test: test-behaviour-tcp_socket_reuseaddr
+test: test-behaviour-udp_socket_reuseaddr
+test: test-basics-client-tcp_make_http_request
+test: test-basics-client-tcp_send_text_to_server
+test: test-basics-client-udp_send_text_to_server
+test: test-basics-client-tcp_send_file_to_server
+test: test-basics-client-udp_send_file_to_server
+test: test-basics-client-tcp_send_comand_to_server
+test: test-basics-client-udp_send_comand_to_server
 
-test: test-socket-reuseaddr
-test: test-tcp-client-http
-test: test-tcp-client-echo
-test: test-udp-client-echo
-test: test-tcp-client-send-text
-test: test-udp-client-send-text
-test: test-tcp-client-send-file
-test: test-udp-client-send-file
-test: test-tcp-client-send-command
-test: test-udp-client-send-command
-test: test-tcp-server-local-port-forward
 
-# SOCKET
-test-socket-reuseaddr:
-	tests/00-socket-reuseaddr.sh ""
+# -------------------------------------------------------------------------------------------------
+# Test Targets: Behaviour
+# -------------------------------------------------------------------------------------------------
+test-behaviour-tcp_client_exits_and_server_hangs_up:
+	tests/100-behaviour-tcp_client_exits_and_server_hangs_up.sh ""
 
-# HTTP
-test-tcp-client-http:
-	tests/01-tcp-client-http-server-request.sh ""
+test-behaviour-udp_client_exits_and_server_stays_alive:
+	tests/101-behaviour-udp_client_exits_and_server_stays_alive.sh ""
 
-# ECHO
-test-tcp-client-echo:
-	@echo "TODO: Not yet implemented."
-	#tests/02-tcp-client-echo-server-request.sh ""
-test-udp-client-echo:
-	@echo "TODO: Not yet implemented."
-	#tests/02-udp-client-echo-server-request.sh ""
+test-behaviour-tcp_server_exits_and_hangs_up:
+	tests/102-behaviour-tcp_server_exits_and_hangs_up.sh ""
 
-# SEND TEXT
-test-tcp-client-send-text:
-	tests/03-tcp-client-send-text-to-server.sh ""
-test-udp-client-send-text:
-	tests/03-udp-client-send-text-to-server.sh ""
+test-behaviour-udp_server_exits_and_client_stays_alive:
+	tests/103-behaviour-udp_server_exits_and_client_stays_alive.sh ""
 
-# SEND FILE
-test-tcp-client-send-file:
-	tests/04-tcp-client-send-file-to-server.sh ""
-test-udp-client-send-file:
-	tests/04-udp-client-send-file-to-server.sh ""
+test-behaviour-tcp_socket_reuseaddr:
+	tests/110-behaviour-tcp_socket_reuseaddr.sh ""
 
-# SEND COMMAND
-test-tcp-client-send-command:
-	tests/05-tcp-client-send-command-to-server.sh ""
-test-udp-client-send-command:
-	tests/05-udp-client-send-command-to-server.sh ""
+test-behaviour-udp_socket_reuseaddr:
+	tests/111-behaviour-udp_socket_reuseaddr.sh ""
 
-# LOCAL PORT FORWARD
-test-tcp-server-local-port-forward:
-	@echo "TODO: Not yet implemented."
-	#06-tcp-server-local-port-forward.sh ""
+
+# -------------------------------------------------------------------------------------------------
+# Test Targets: Basics
+# -------------------------------------------------------------------------------------------------
+test-basics-client-tcp_make_http_request:
+	tests/200-basics-client-tcp_make_http_request.sh ""
+
+test-basics-client-tcp_send_text_to_server:
+	tests/202-basics-client-tcp_send_text_to_server.sh ""
+
+test-basics-client-udp_send_text_to_server:
+	tests/203-basics-client-udp_send_text_to_server.sh ""
+
+test-basics-client-tcp_send_file_to_server:
+	tests/204-basics-client-tcp_send_file_to_server.sh ""
+
+test-basics-client-udp_send_file_to_server:
+	tests/205-basics-client-udp_send_file_to_server.sh ""
+
+test-basics-client-tcp_send_comand_to_server:
+	tests/206-basics-client-tcp_send_comand_to_server.sh ""
+
+test-basics-client-udp_send_comand_to_server:
+	tests/207-basics-client-udp_send_comand_to_server.sh ""
 
 
 # -------------------------------------------------------------------------------------------------
