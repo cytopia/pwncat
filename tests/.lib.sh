@@ -273,10 +273,18 @@ action_stop_instance() {
 	local pid="${2}"
 	local file_stdout="${3}"
 	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local file_stdout2="${6:-}"
+	local file_stderr2="${7:-}"
 
 	# Normal stop
 	print_info "Stop ${name}"
 	if ! run "kill ${pid}"; then
+		if [ -n "${name2}" ]; then
+			print_file "${name2} STDERR" "${file_stderr2}"
+			print_file "${name2} STDOUT" "${file_stdout2}"
+		fi
 		print_file "${name} STDERR" "${file_stderr}"
 		print_file "${name} STDOUT" "${file_stdout}"
 		print_error "[Meta] Could not kill ${name} process with pid: ${pid}"
@@ -297,6 +305,10 @@ action_stop_instance() {
 	if pid_is_running "${pid}"; then
 		print_info "Stop ${name} forcefully"
 		if ! run "kill -9 ${pid}"; then
+			if [ -n "${name2}" ]; then
+				print_file "${name2} STDERR" "${file_stderr2}"
+				print_file "${name2} STDOUT" "${file_stdout2}"
+			fi
 			print_file "${name} STDERR" "${file_stderr}"
 			print_file "${name} STDOUT" "${file_stdout}"
 			print_error "[Meta] Could not kill ${name} process with pid: ${pid}"
@@ -330,10 +342,18 @@ test_case_instance_is_started_in_bg() {
 	local pid="${2}"
 	local file_stdout="${3}"
 	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local file_stdout2="${6:-}"
+	local file_stderr2="${7:-}"
 
 	print_info "Check pid"
 
 	if [ -z "${pid}" ]; then
+		if [ -n "${name2}" ]; then
+			print_file "${name2} STDERR" "${file_stderr2}"
+			print_file "${name2} STDOUT" "${file_stdout2}"
+		fi
 		print_file "${name} STDERR" "${file_stderr}"
 		print_file "${name} STDOUT" "${file_stdout}"
 		print_error "[${name} Error] Failed to start ${name} in background"
@@ -353,10 +373,18 @@ test_case_instance_is_running() {
 	local pid="${2}"
 	local file_stdout="${3}"
 	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local file_stdout2="${6:-}"
+	local file_stderr2="${7:-}"
 
 	print_info "Check ${name} is still running"
 
 	if ! pid_is_running "${pid}"; then
+		if [ -n "${name2}" ]; then
+			print_file "${name2} STDERR" "${file_stderr2}"
+			print_file "${name2} STDOUT" "${file_stdout2}"
+		fi
 		print_file "${name} STDERR" "${file_stderr}"
 		print_file "${name} STDOUT" "${file_stdout}"
 		print_error "[${name} Error] ${name} is not running anymore"
@@ -375,6 +403,10 @@ test_case_instance_is_stopped() {
 	local pid="${2}"
 	local file_stdout="${3}"
 	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local file_stdout2="${6:-}"
+	local file_stderr2="${7:-}"
 
 	print_info "Check ${name} quitted automatically"
 
@@ -387,6 +419,10 @@ test_case_instance_is_stopped() {
 			echo
 			print_error "[${name} Error] Still running. Need to kill it manually by pid: ${pid}"
 			run "kill ${pid} || true" 2>/dev/null
+			if [ -n "${name2}" ]; then
+				print_file "${name2} STDERR" "${file_stderr2}"
+				print_file "${name2} STDOUT" "${file_stdout2}"
+			fi
 			print_file "${name} STDERR" "${file_stderr}"
 			print_file "${name} STDOUT" "${file_stdout}"
 			print_error "[${name} Error] ${name} did not finish after ${tot} sec"
@@ -409,10 +445,18 @@ test_case_instance_has_no_errors() {
 	local pid="${2:-}"
 	local file_stdout="${3}"
 	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local file_stdout2="${6:-}"
+	local file_stderr2="${7:-}"
 
 	print_info "Check ${name} for errors"
 
 	if has_errors "${file_stderr}"; then
+		if [ -n "${name2}" ]; then
+			print_file "${name2} STDERR" "${file_stderr2}"
+			print_file "${name2} STDOUT" "${file_stdout2}"
+		fi
 		print_file "${name} STDERR" "${file_stderr}"
 		print_file "${name} STDOUT" "${file_stdout}"
 		if [ -n "${pid}" ]; then

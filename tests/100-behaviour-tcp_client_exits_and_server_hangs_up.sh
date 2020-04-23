@@ -90,7 +90,7 @@ run_test() {
 	cli_pid="$( run_bg "echo ${data}" "${PYTHON}" "${BINARY}" ${cli_opts} "${host}" "${port}" "${cli_stdout}" "${cli_stderr}" )"
 
 	# Ensure Client is started in background
-	test_case_instance_is_started_in_bg "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	test_case_instance_is_started_in_bg "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -123,16 +123,16 @@ run_test() {
 	echo;print_h2 "(4/5) Stop: Client"
 
 	# Ensure Client has no errors (before stop)
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_stdout}" "${srv_stderr}"
 
 	# Ensure Client is still running
-	test_case_instance_is_running "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	test_case_instance_is_running "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_stdout}" "${srv_stderr}"
 
 	# Manually stop the Client
-	action_stop_instance "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	action_stop_instance "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_stdout}" "${srv_stderr}"
 
 	# Ensure Client has no errors (after stop)
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -141,10 +141,10 @@ run_test() {
 	echo;print_h2 "(5/5) Test: Server shut down automatically"
 
 	# Ensure Server has no errors
-	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "Client" "${cli_stdout}" "${cli_stderr}"
 
 	# Ensure Server has quit automatically (as it should, if Client disconnects)
-	test_case_instance_is_stopped "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	test_case_instance_is_stopped "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "Client" "${cli_stdout}" "${cli_stderr}"
 }
 
 
