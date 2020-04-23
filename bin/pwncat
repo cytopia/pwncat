@@ -886,8 +886,12 @@ class NetcatServer(AbstractSocket):
             encoder, "server", recv_timeout, recv_timeout_retry, options
         )
 
+        # Listen on 0.0.0.0 by default
+        addr = "0.0.0.0"
+        if host is not None:
+            addr = self.gethostbyname(host, port)
+
         # Setup server
-        addr = self.gethostbyname(host, port)
         self.create_socket()
         self.bind(addr, port)
         if self.options["udp"]:
@@ -1510,7 +1514,7 @@ def logtrace(self, message, *args, **kws):
 def main():
     """Run the program."""
     args = get_args()
-    host = args.hostname if args.hostname is not None else "0.0.0.0"
+    host = args.hostname
     port = args.port
 
     # Set netcat options
