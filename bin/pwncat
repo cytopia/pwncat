@@ -51,6 +51,11 @@ THREAD_TERMINATE = False
 # Custom loglevel numer for TRACE
 LOGLEVEL_TRACE_NUM = 9
 
+# Default timeout for timeout-based sys.stdin and socket.recv
+TIMEOUT_READ_STDIN = 0.3
+TIMEOUT_RECV_SOCKET = 0.3
+TIMEOUT_RECV_SOCKET_RETRY = 1
+
 
 # -------------------------------------------------------------------------------------------------
 # ABSTRACT CLASS: AbstractNetcatPlugin
@@ -61,10 +66,10 @@ class AbstractNetcatPlugin(ABC):
 
     This is a skeleton that defines how the plugins for Netcat should look like.
 
-    The data_generator should constantly yield data received from sort sort of input
+    The "input_generator" should constantly yield data received from sort sort of input
     which could be user input, output from a shell command data from a socket.
 
-    The data_callback will apply some sort of action on the data received from a data_generator
+    The "data_callback" will apply some sort of action on the data received from a data_generator
     which could be output to stdout, send it to the shell or to a socket.
     """
 
@@ -72,7 +77,11 @@ class AbstractNetcatPlugin(ABC):
 
     @abstractmethod
     def __init__(self, encoder, options={}):
-        """Set specific options for this plugin."""
+        """Set specific options for this plugin.
+        Args:
+            encoder (object): An instance which provides "encode" and "decode" for string/bytes.
+            options (dict):   Custom dictionary of options.
+        """
         pass
 
     @abstractmethod
@@ -104,6 +113,16 @@ class AbstractSocket(object):
     # is used to determine how to reconnect broken connections.
     # Either listen again (tcp-only) or re-connect to upstream.
     role = None  # Must be 'server' or 'client'
+
+    # Specify a float of seconds for the socket timeout.
+    # A default of None means it is blocking.
+    recv_timeout = None
+
+    # If no data is received, the socket will timeout and counts subsequent timeouts
+    # with no data received. If 'recv_timeout_retry' many timeouts occured, the socket
+    # will stop reading data.
+    # The internal counter is reset as soon as data is received again.
+    recv_timeout_retry = 0
 
     options = {
         "bufsize": 1024,  # Receive buffer size
@@ -143,7 +162,7 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, encoder, role, options={}):
+    def __init__(self, encoder, role, recv_timeout, recv_timeout_retry, options={}):
         """Constructor."""
         assert type(self) is not AbstractSocket, "AbstractSocket cannot be instantiated directly."
         assert role in ["server", "client"], "The role must be 'server' or 'client'."
@@ -151,6 +170,9 @@ class AbstractSocket(object):
         self.log = logging.getLogger(__name__)
         self.enc = encoder
         self.role = role
+
+        self.recv_timeout = recv_timeout
+        self.recv_timeout_retry = recv_timeout_retry
 
         # Ensure to provide all items (be explicit - currently helps to find bugs)
         for index in self.options:
@@ -387,7 +409,7 @@ class AbstractSocket(object):
                 if error.errno == socket.errno.EPIPE:
                     self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
                     return
-                # Most likely nothing to see here... ??
+                # Most likely nothing to see here??
                 # FIXME: TODO: Need to re-accepd new client
                 self.log.error("TODO:Add desc. Socket Error: {}".format(error))
                 if self.role == "server":
@@ -401,10 +423,12 @@ class AbstractSocket(object):
 
     def receive(self):
         """Generator function to receive data endlessly by yielding it."""
-        # TODO: Set this somewhere configurable
-        self.conn.settimeout(0.2)
-        retry_before_terminate = 2
-        count_before_terminate = 0
+        # Set current receive timeout
+        self.conn.settimeout(self.recv_timeout)
+        self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
+        # Counts how many times we had a ready timeout for later to decide
+        # if we exceeded maximum retires
+        curr_recv_timeout_retry = 0
         while True:
 
             if self.conn is None:
@@ -421,11 +445,14 @@ class AbstractSocket(object):
                 # No other thread has terminated yet, and thus not asked us to quit.
                 # so we can continue waiting for input on the socket
                 if not THREAD_TERMINATE:
+                    # TODO: Re-enable this for very verbose logging
+                    # self.log.trace("SOCKET RECV timeout. Waiting for input...")
                     continue
                 # Other threads are done. Let's try to read a few more times before
                 # returning and ending this function (might be data left)
-                if count_before_terminate < retry_before_terminate:
-                    count_before_terminate += 1
+                if curr_recv_timeout_retry < self.recv_timeout_retry:
+                    self.log.trace("RECV EOF TIMEOUT: AND THREAD_TERMINATE REQUESTED")
+                    curr_recv_timeout_retry += 1
                     continue
                 return
             except socket.error as error:
@@ -436,7 +463,7 @@ class AbstractSocket(object):
                 return
 
             # We're receiving data again, so let's reset the retry/terminate counter
-            count_before_terminate = 0
+            curr_recv_timeout_retry = 0
 
             data = byte
             if not data:
@@ -515,6 +542,17 @@ class Runner(object):
     def __init__(self):
         """Constructor."""
         self.log = logging.getLogger(__name__)
+
+    # Generator
+    [
+        {
+            "name": "",
+            "input_generator": {"fnc": "", "args": "", "kwargs": "",},
+            "input_interrupter": {"fnc": "", "args": "", "kwargs": "",},
+            "input_callback": {"fnc": "", "args": "", "kwargs": "",},
+        }
+    ]
+    # Timebased
 
     # ------------------------------------------------------------------------------
     # Public Functions
@@ -604,7 +642,7 @@ class Runner(object):
         self.ts.daemon = False  # should also be outputted)
         # Start threads
         self.tr.start()
-        time.sleep(0.1)
+        # time.sleep(0.1)
         self.ts.start()
 
         if hasattr(self, "timed_action_intvl"):
@@ -621,7 +659,7 @@ class Runner(object):
             if not self.tr.is_alive():
                 self.log.trace("Setting THREAD_TERMINATE=True from Thread-Recv death")
                 self.log.trace("Waiting for Thread-Send to finish")
-                time.sleep(0.1)
+                # time.sleep(0.1)
                 THREAD_TERMINATE = True
                 self.input_generator_stop_fn()
                 self.ts.join()
@@ -629,7 +667,7 @@ class Runner(object):
             if not self.ts.is_alive():
                 self.log.trace("Setting THREAD_TERMINATE=True from Thread-Send death")
                 self.log.trace("Waiting for Thread-Recv to finish")
-                time.sleep(0.1)
+                # time.sleep(0.1)
                 THREAD_TERMINATE = True
                 self.recv_generator_stop_fn()
                 self.tr.join()
@@ -657,7 +695,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
 
     # Non-blocking read from stdin achieved via timeout.
     # Specify timeout in seconds.
-    __input_timeout = 0.3
+    input_timeout = None
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -667,6 +705,9 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
         self.log = logging.getLogger(__name__)
         self.enc = encoder
 
+        assert "input_timeout" in options, "Error, 'input_timeout' must be set."
+        if "input_timeout" in options:
+            self.input_timeout = options["input_timeout"]
         if "linefeed" in options:
             self.linefeed = options["linefeed"]
 
@@ -684,7 +725,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
 
     def __set_input_timeout(self):
         """Throws a catchable BaseException for sys.stdin after timeout (Linux only)."""
-        i, o, e = select.select([sys.stdin], [], [], self.__input_timeout)
+        i, o, e = select.select([sys.stdin], [], [], self.input_timeout)
         if not i:
             raise BaseException("timed out")
 
@@ -692,8 +733,10 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # Public Functions
     # ------------------------------------------------------------------------------
     def stop(self):
+        global THREAD_TERMINATE
         """Stop function that can be called externally to close this instance."""
         self.log.trace("[NetcatOutputCommand] pass was raised by stop() function")
+        THREAD_TERMINATE = True
 
     def input_generator(self):
         """Constantly ask for user input."""
@@ -701,6 +744,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
         # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
+            if THREAD_TERMINATE:
+                return
             try:
                 # TODO: select() does not work for windows on stdin/stdout
                 if os.name != "nt":
@@ -713,7 +758,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 if THREAD_TERMINATE:
                     self.log.trace("STDIN: terminate")
                     return
-                self.log.trace("STDIN: timeout")
+                # TODO: Re-enable this for very verbose logging
+                # self.log.trace("STDIN timeout. Waiting for input...")
                 continue
             if line:
                 self.log.trace("Yielding stdin")
@@ -780,6 +826,8 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     def stop(self):
         """Stop function that can be called externally to close this instance."""
+        global THREAD_TERMINATE
+        THREAD_TERMINATE = True
         self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by stop() function")
         self.p.kill()
 
@@ -829,9 +877,11 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
 class NetcatServer(AbstractSocket):
     """Netcat Server implementation."""
 
-    def __init__(self, encoder, host, port, options={}):
+    def __init__(self, encoder, host, port, recv_timeout, recv_timeout_retry, options={}):
         """Construct a listening server."""
-        super(NetcatServer, self).__init__(encoder, "server", options)
+        super(NetcatServer, self).__init__(
+            encoder, "server", recv_timeout, recv_timeout_retry, options
+        )
 
         # Setup server
         addr = self.gethostbyname(host)
@@ -852,9 +902,11 @@ class NetcatServer(AbstractSocket):
 class NetcatClient(AbstractSocket):
     """Netcat Client implementation."""
 
-    def __init__(self, encoder, host, port, options={}):
+    def __init__(self, encoder, host, port, recv_timeout, recv_timeout_retry, options={}):
         """Construct a connecting clientt."""
-        super(NetcatClient, self).__init__(encoder, "client", options)
+        super(NetcatClient, self).__init__(
+            encoder, "client", recv_timeout, recv_timeout_retry, options
+        )
 
         # Setup client
         addr = self.gethostbyname(host)
@@ -1498,19 +1550,27 @@ def main():
     else:
         module_opts = {}
         module_opts["linefeed"] = "\r\n" if args.crlf else "\n"
-        module_opts["quit_on_eof"] = False if args.listen and args.udp else True
+        module_opts["input_timeout"] = TIMEOUT_READ_STDIN
         mod = NetcatPluginOutput(encoder, module_opts)
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
     if args.local:
+        # TODO: Make the listen address optional!
         # Create listen and client instances
-        net_opts["reconn"] = True
-        net_opts["reconn_wait"] = 0
+        # FIXME: As there is only one THREAD_TERMINATE, both instances will use it.
+        #       this should go into the runner or so.
+        srv_opts = net_opts.copy()
+        srv_opts["reconn"] = True
+        srv_opts["reconn_wait"] = 0
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
-        net_srv = NetcatServer(encoder, lhost, lport, net_opts)
-        net_cli = NetcatClient(encoder, host, port, net_opts)
+        net_srv = NetcatServer(
+            encoder, lhost, lport, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
+        )
+        net_cli = NetcatClient(
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
+        )
 
         # Create Runner (the set_* funcs below are brainfuck and took me 1 hour to figure it out)
         run = Runner()
@@ -1530,7 +1590,9 @@ def main():
         run.run()
     # Run server
     if args.listen:
-        net = NetcatServer(encoder, host, port, net_opts)
+        net = NetcatServer(
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
+        )
         run = Runner()
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
@@ -1542,7 +1604,9 @@ def main():
         run.run()
     # Run client
     else:
-        net = NetcatClient(encoder, host, port, net_opts)
+        net = NetcatClient(
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
+        )
         run = Runner()
         run.set_recv_generator(net.receive)
         run.set_input_generator(mod.input_generator)
