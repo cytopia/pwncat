@@ -446,7 +446,7 @@ class AbstractSocket(object):
                 # so we can continue waiting for input on the socket
                 if not THREAD_TERMINATE:
                     # TODO: Re-enable this for very verbose logging
-                    # self.log.trace("SOCKET RECV timeout. Waiting for input...")
+                    # self.log.trace("SOCKET RECV: timeout. Waiting for input...")
                     continue
                 # Other threads are done. Let's try to read a few more times before
                 # returning and ending this function (might be data left)
@@ -759,7 +759,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                     self.log.trace("STDIN: terminate")
                     return
                 # TODO: Re-enable this for very verbose logging
-                # self.log.trace("STDIN timeout. Waiting for input...")
+                # self.log.trace("STDIN: timeout. Waiting for input...")
                 continue
             if line:
                 self.log.trace("Yielding stdin")
@@ -770,7 +770,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 if THREAD_TERMINATE:
                     self.log.trace("No more input generated, quitting.")
                     return
-                self.log.trace("STDIN: Reached EOF, repeating")
+                # TODO: Re-enable this for very verbose logging
+                # self.log.trace("STDIN: Reached EOF, repeating")
 
     def output_callback(self, data):
         """Print received data to stdout."""
