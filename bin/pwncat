@@ -1477,7 +1477,10 @@ accidentally by other input.
         )
         sys.exit(1)
 
-    # TODO: deny unimplemented modes
+    # Deny unimplemented modes
+    if args.http or args.https or args.rebind or args.rebind_wait or args.rebind_robin or args.reconn or args.reconn_wait or args.reconn_robin or args.wait or args.udp_ping_init or args.udp_ping_intvl or args.udp_ping_word or args.udp_ping_robin or args.safe_word:
+        print("Unimplemented options", file=sys.stderr)
+        sys.exit(1)
 
     return args
 
