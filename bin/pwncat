@@ -892,10 +892,10 @@ class NetcatServer(AbstractSocket):
         self.bind(addr, port)
         if self.options["udp"]:
             self.conn = self.sock
-            self.log.info("Waiting on {}:{} (UDP)".format(addr, port))
+            self.log.info("Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port))
         else:
             self.listen()
-            self.log.info("Listening on {}:{} (TCP)".format(addr, port))
+            self.log.info("Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port))
             self.accept()
 
 
