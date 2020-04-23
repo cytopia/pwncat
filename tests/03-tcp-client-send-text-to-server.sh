@@ -149,7 +149,7 @@ run_test() {
 			diff <(echo "${data}") "${srv_stdout}" 2>&1 || true
 			run "kill ${cli_pid} || true" 2>/dev/null
 			run "kill ${srv_pid} || true" 2>/dev/null
-			print_data "RECEIVED RAW" "$( echo "${srv_stdout}" | od -c )"
+			print_data "RECEIVED RAW" "$( cat "${srv_stdout}" | od -c )"
 			print_data "EXPECTED RAW" "$( echo "${data}" | od -c )"
 			print_error "[Receive Error] Received data on server does not match send data from Client"
 			exit 1

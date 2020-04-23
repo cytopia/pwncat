@@ -150,7 +150,7 @@ run_test() {
 			diff <(echo "${expect}") "${cli_stdout}" 2>&1 || true
 			run "kill ${cli_pid} || true" 2>/dev/null
 			run "kill ${srv_pid} || true" 2>/dev/null
-			print_data "RECEIVED RAW" "$( echo "${cli_stdout}" | od -c )"
+			print_data "RECEIVED RAW" "$( cat "${cli_stdout}" | od -c )"
 			print_data "EXPECTED RAW" "$( echo "${expect}" | od -c )"
 			print_error "[Receive Error] Returned data on client does not match expected command output"
 			exit 1
