@@ -144,7 +144,6 @@ Documentation will evolve over time.
 ## :computer: Usage
 ```
 usage: pwncat [-Cnuv] [-e cmd] hostname port
-       pwncat [-Cnuv] [-e cmd] -l [hostname] -p port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
        pwncat [-Cnuv] -z hostname port
        pwncat [-Cnuv] -L addr:port [hostname] port
