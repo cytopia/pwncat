@@ -99,14 +99,14 @@ lint-man:
 	@echo "# Lint man page"
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory man
-	git diff --quiet || { echo "Build Changes"; git diff|cat; git status; false; }
+	git diff --quiet -- $(DOCPATH) $(MANPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
 
 lint-docs:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Lint docs"
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory docs
-	git diff --quiet || { echo "Build Changes"; git diff|cat; git status; false; }
+	git diff --quiet -- $(DOCPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
 
 lint-usage: SHELL := /bin/bash
 lint-usage:
@@ -190,7 +190,7 @@ test-basics-client-udp_send_comand_to_server:
 man: $(BINPATH)$(BINNAME)
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add help2man \
-		&& help2man -n $(BINNAME) -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
+		&& help2man -n $(BINNAME) --no-info --source=https://github.com/cytopia/pwncat -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
 		&& chown $${UID}:$${GID} $(MANPATH)$(BINNAME).1'
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add groff \
