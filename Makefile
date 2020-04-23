@@ -136,6 +136,7 @@ test: test-basics-client-tcp_send_comand_to_server
 test: test-basics-client-udp_send_comand_to_server
 test: test-options-client-tcp_nodns
 test: test-options-client-udp_nodns
+test: test-options-tcp_server_keep_open
 
 
 # -------------------------------------------------------------------------------------------------
@@ -193,6 +194,9 @@ test-options-client-tcp_nodns:
 
 test-options-client-udp_nodns:
 	tests/301-options-client-udp_nodns.sh ""
+
+test-options-tcp_server_keep_open:
+	tests/302-options-tcp_server_keep_open.sh ""
 
 
 # -------------------------------------------------------------------------------------------------

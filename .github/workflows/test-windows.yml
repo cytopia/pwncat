@@ -67,6 +67,7 @@ jobs:
         shell: bash
         run: |
           make test-behaviour-tcp_socket_reuseaddr
+
       - name: "[BEHAVIOUR] (UDP) Socket REUSEADDR"
         shell: bash
         run: |
@@ -128,7 +129,16 @@ jobs:
         shell: bash
         run: |
           make test-options-client-tcp_nodns
+
       - name: "[OPTIONS] (UDP) Client --nodns"
         shell: bash
         run: |
           make test-options-client-udp_nodns
+
+      ###
+      ### Keep open
+      ###
+      - name: "[OPTIONS] (TCP) Server --keep-open"
+        shell: bash
+        run: |
+          make test-options-tcp_server_keep_open

@@ -223,40 +223,21 @@ class AbstractSocket(object):
             self.__reconnect_to_server()
 
     def __reaccept_from_client(self):
-        """Ensure the server is able to accept clients again, after current client has left."""
+        """Ensure the server is able to keep connection open by re-accepting new clients."""
         # Only for server
         assert self.role == "server", "Only the role 'server' can accept connections."
         # Do not re-accept for UDP
         assert not self.options["udp"], "This should have been caught during arg check."
 
-        # [NO] Never re-accept
-        if type(self.options["reconn"]) is bool and not self.options["reconn"]:
+        # [NO] Do not re-accept
+        if not self.options["keep_open"]:
             self.log.info("No automatic re-accept specified. Shutting down.")
             return False
-        # [YES] Always re-accept indefinitely
-        if type(self.options["reconn"]) is bool and self.options["reconn"]:
-            self.log.info(
-                "Re-accepting in {} sec (indefinitely)".format(self.options["reconn_wait"])
-            )
-            time.sleep(self.options["reconn_wait"])
-            self.__close_socket(self.conn)
-            self.accept()
-            return True
-        # [YES] Re-accept x many times
-        if self.options["reconn"] > 0:
-            self.log.info(
-                "Re-accepting in {} sec ({} more times left)".format(
-                    self.options["reconn_wait"], self.options["reconn"]
-                )
-            )
-            self.options["reconn"] -= 1
-            time.sleep(self.options["reconn_wait"])
-            self.__close_socket(self.conn)
-            self.accept()
-            return True
-        # [NO] Re-accept count is used up
-        self.log.info("Re-accept count is used up. Shutting down.")
-        return False
+        # [YES] Re-accept indefinitely
+        self.log.info("Re-accepting new clients")
+        self.__close_socket(self.conn)
+        self.accept()
+        return True
 
     def __reconnect_to_server(self):
         """Ensure the client re-connects to the remote server, if the remote server hang up."""
@@ -896,10 +877,14 @@ class NetcatServer(AbstractSocket):
         self.bind(addr, port)
         if self.options["udp"]:
             self.conn = self.sock
-            self.log.info("Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port))
+            self.log.info(
+                "Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port)
+            )
         else:
             self.listen()
-            self.log.info("Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port))
+            self.log.info(
+                "Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port)
+            )
             self.accept()
 
 
