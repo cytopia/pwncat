@@ -295,13 +295,15 @@ class AbstractSocket(object):
     # ------------------------------------------------------------------------------
     # Helper Functions
     # ------------------------------------------------------------------------------
-    def gethostbyname(self, host):
+    def gethostbyname(self, host, port):
         """Translate hostname into IP address."""
+        flags = 0
         if self.options["nodns"]:
-            return host
+            flags = socket.AI_NUMERICHOST
         try:
             self.log.debug("Resolving hostname: {}".format(host))
-            addr = socket.gethostbyname(host)
+            info = socket.getaddrinfo(host, port, 0, 0, flags)
+            addr = info[2][4][0]
             self.log.debug("Resolved hostname:  {}".format(addr))
             return addr
         except socket.gaierror as error:
@@ -885,7 +887,7 @@ class NetcatServer(AbstractSocket):
         )
 
         # Setup server
-        addr = self.gethostbyname(host)
+        addr = self.gethostbyname(host, port)
         self.create_socket()
         self.bind(addr, port)
         if self.options["udp"]:
@@ -910,7 +912,7 @@ class NetcatClient(AbstractSocket):
         )
 
         # Setup client
-        addr = self.gethostbyname(host)
+        addr = self.gethostbyname(host, port)
         self.create_socket()
         self.conn = self.sock
         if self.options["udp"]:

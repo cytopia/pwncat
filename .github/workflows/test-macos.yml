@@ -116,3 +116,19 @@ jobs:
         shell: bash
         run: |
           make test-basics-client-udp_send_comand_to_server
+
+      # ------------------------------------------------------------
+      # Tests: Options
+      # ------------------------------------------------------------
+
+      ###
+      ### DNS Resolution
+      ###
+      - name: "[OPTIONS] (TCP) Client --nodns"
+        shell: bash
+        run: |
+          make test-options-client-tcp_nodns
+      - name: "[OPTIONS] (UDP) Client --nodns"
+        shell: bash
+        run: |
+          make test-options-client-udp_nodns

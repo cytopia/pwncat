@@ -134,6 +134,8 @@ test: test-basics-client-tcp_send_file_to_server
 test: test-basics-client-udp_send_file_to_server
 test: test-basics-client-tcp_send_comand_to_server
 test: test-basics-client-udp_send_comand_to_server
+test: test-options-client-tcp_nodns
+test: test-options-client-udp_nodns
 
 
 # -------------------------------------------------------------------------------------------------
@@ -181,6 +183,16 @@ test-basics-client-tcp_send_comand_to_server:
 
 test-basics-client-udp_send_comand_to_server:
 	tests/207-basics-client-udp_send_comand_to_server.sh ""
+
+
+# -------------------------------------------------------------------------------------------------
+# Test Targets: Options
+# -------------------------------------------------------------------------------------------------
+test-options-client-tcp_nodns:
+	tests/300-options-client-tcp_nodns.sh ""
+
+test-options-client-udp_nodns:
+	tests/301-options-client-udp_nodns.sh ""
 
 
 # -------------------------------------------------------------------------------------------------
