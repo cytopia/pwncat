@@ -302,13 +302,13 @@ class AbstractSocket(object):
             flags = socket.AI_NUMERICHOST
         try:
             self.log.debug("Resolving hostname: {}".format(host))
-            info = socket.getaddrinfo(host, port, 0, 0, flags)
-            addr = info[2][4][0]
-            self.log.debug("Resolved hostname:  {}".format(addr))
-            return addr
+            info = socket.getaddrinfo(host, port, socket.AF_INET, 0, flags)
         except socket.gaierror as error:
             self.log.error("Resolve Error: {}".format(error))
             sys.exit(1)
+        addr = info[2][4][0]
+        self.log.debug("Resolved hostname:  {}".format(addr))
+        return addr
 
     def create_socket(self):
         """Create TCP or UDP socket."""
