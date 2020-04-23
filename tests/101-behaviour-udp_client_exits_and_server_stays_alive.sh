@@ -18,7 +18,7 @@ PYTHON="python${1:-}"
 PYVER="$( eval "${PYTHON} -V" 2>&1 | head -1 )"
 
 RHOST="localhost"
-RPORT="${2:-4000}"
+RPORT="${2:-4444}"
 RUNS=2
 SRV_WAIT=2
 TRANS_WAIT=5
