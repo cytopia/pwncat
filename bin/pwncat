@@ -452,7 +452,7 @@ class AbstractSocket(object):
                         return
 
             data = self.enc.decode(byte)
-            self.log.trace("Received: {}".format(data))
+            self.log.trace("Received: {}".format(repr(data)))
 
             # If we're receiving data from a UDP client
             # we can firstly/finally set its addr/port in order
@@ -565,7 +565,7 @@ class Runner(object):
             """
             self.log.trace("[Thread-Recv] START")
             for data in self.recv_generator():
-                self.log.trace("[Thread-Recv] recv_generator() received: {}".format(data))
+                self.log.trace("[Thread-Recv] recv_generator() received: {}".format(repr(data)))
                 self.output_callback(data)
             self.log.trace("[Thread-Recv] STOP")
 
