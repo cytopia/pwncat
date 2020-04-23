@@ -74,10 +74,11 @@ run_test() {
 	# shellcheck disable=SC2086
 	srv_pid="$( run_bg "" "${PYTHON}" "${BINARY}" ${srv_opts} "-l" "${host}" "${port}" "${srv_stdout}" "${srv_stderr}" )"
 
-	# Ensure Server is started in background
-	test_case_instance_is_started_in_bg "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 	# Wait until Server is up
 	run "sleep ${SRV_WAIT}"
+
+	# Ensure Server is started in background
+	test_case_instance_is_started_in_bg "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 	# Ensure Server has no errors
 	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"

@@ -140,6 +140,23 @@ run() {
 	return 1
 }
 
+run_fail() {
+	local cmd="${1}"
+
+	local clr_cmd="\\033[0;35m"   # Purple
+	local clr_ok="\\033[0;32m"    # Green
+	local clr_fail="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"       # Reset to normal
+
+	>&2 printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
+	if ! eval "${cmd}"; then
+		>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK] (failed)"
+		return 0
+	fi
+	>&2 printf "${clr_fail}%s${clr_rst}\\n" "[FAIL] (succeeded)"
+	return 1
+}
+
 run_bg() {
 	local pipe="${1}"
 	shift
