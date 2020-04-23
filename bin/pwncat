@@ -547,9 +547,9 @@ class Runner(object):
     [
         {
             "name": "",
-            "input_generator": {"fnc": "", "args": "", "kwargs": "",},
-            "input_interrupter": {"fnc": "", "args": "", "kwargs": "",},
-            "input_callback": {"fnc": "", "args": "", "kwargs": "",},
+            "input_generator": {"fnc": "", "args": "", "kwargs": ""},
+            "input_interrupter": {"fnc": "", "args": "", "kwargs": ""},
+            "input_callback": {"fnc": "", "args": "", "kwargs": ""},
         }
     ]
     # Timebased
