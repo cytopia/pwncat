@@ -409,10 +409,11 @@ class AbstractSocket(object):
         # Counts how many times we had a ready timeout for later to decide
         # if we exceeded maximum retires
         curr_recv_timeout_retry = 0
+
         while True:
 
             if self.conn is None:
-                self.log.error("Socket is gone")
+                self.log.error("Exit. Socket is gone in receive()")
                 return
 
             # Non-blocking socket with timeout. If the timeout threshold is hit,
@@ -421,12 +422,14 @@ class AbstractSocket(object):
             try:
                 # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
+
+            # [1/5] NOTE: This is the place where we can do any checks in between reads as the
+            # socket has been changed from blocking to time-out based.
             except socket.timeout:
                 # No other thread has terminated yet, and thus not asked us to quit.
                 # so we can continue waiting for input on the socket
                 if not THREAD_TERMINATE:
-                    # TODO: Re-enable this for very verbose logging
-                    # self.log.trace("SOCKET RECV: timeout. Waiting for input...")
+                    # No action required, continue the loop and read again.
                     continue
                 # Other threads are done. Let's try to read a few more times before
                 # returning and ending this function (might be data left)
@@ -435,32 +438,44 @@ class AbstractSocket(object):
                     curr_recv_timeout_retry += 1
                     continue
                 return
+
+            # [2/5] [Errno 10054] An existing connection was forcibly closed by the remote host
+            # So we will just warn (instead of error our) and pass (and don't return here) and
+            # to let the bottom of this function decide whether we should just quit or
+            # reconnect/bind (if the user specified this.
             except socket.error as error:
-                # E.g.: [Errno 10054] An existing connection was forcibly closed by the remote host
-                # So we will just warn (instead of error our) and pass (and don't return here) and
-                # to let the bottom of this function decide whether we should just quit ro
-                # reconnect/bind (if the user specified this.
+                # Also ensure we reset the 'byte' value to none so that the below check can kick in.
+                byte = None
                 self.log.warning("Socket Receive: {}".format(error))
+
+            # [3/5] TODO: Still need to figure out what this error is and when it is thrown
             except AttributeError as error:
                 self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
                 return
 
             # We're receiving data again, so let's reset the retry/terminate counter
+            # The counter is incremented in 'except socket.timeout' above.
             curr_recv_timeout_retry = 0
 
-            data = byte
-            if not data:
-                # Upstream (server or client) is gone. Do we reconnect or quit?
-                self.log.warning("Upstream connection is gone")
-                if self.role == "server":
-                    if not self.__reaccept_from_client():
-                        self.log.warning("Shutdown-1")
-                        return
-                if self.role == "client":
-                    if not self.__reconnect_to_server():
-                        self.log.warning("Shutdown-2")
-                        return
+            # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
+            if not byte:
+                self.log.trace("Socket: Empty data received or otherwise caught.")
 
+                if self.role == "server":
+                    # Yay, we want to continue and allow new clients
+                    if self.__reaccept_from_client():
+                        self.log.trace("Server can continue, because of --keep")
+                        continue
+                if self.role == "client":
+                    # Yay, we want to continue and our client will re-connect upstream again
+                    if self.__reconnect_to_server():
+                        self.log.trace("Client can continue, because of --reconn")
+                        continue
+
+                self.log.warning("Exit. Upstream connection gone. No --keep/--reconn specified.")
+                return
+
+            # [5/5] We have data to process
             data = self.enc.decode(byte)
             self.log.trace("Received: {}".format(repr(data)))
 
