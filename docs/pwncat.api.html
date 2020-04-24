@@ -1574,8 +1574,11 @@ class AbstractSocket(object):
                     continue
                 return
             except socket.error as error:
-                self.log.error("TODO: What happens here? Socket Receive Error: {}".format(error))
-                return
+                # E.g.: [Errno 10054] An existing connection was forcibly closed by the remote host
+                # So we will just warn (instead of error our) and pass (and don't return here) and
+                # to let the bottom of this function decide whether we should just quit ro
+                # reconnect/bind (if the user specified this.
+                self.log.warning("Socket Receive: {}".format(error))
             except AttributeError as error:
                 self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
                 return
@@ -3987,8 +3990,11 @@ def input_interrupter(self):
                     continue
                 return
             except socket.error as error:
-                self.log.error("TODO: What happens here? Socket Receive Error: {}".format(error))
-                return
+                # E.g.: [Errno 10054] An existing connection was forcibly closed by the remote host
+                # So we will just warn (instead of error our) and pass (and don't return here) and
+                # to let the bottom of this function decide whether we should just quit ro
+                # reconnect/bind (if the user specified this.
+                self.log.warning("Socket Receive: {}".format(error))
             except AttributeError as error:
                 self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
                 return
@@ -4397,8 +4403,11 @@ def input_interrupter(self):
                 continue
             return
         except socket.error as error:
-            self.log.error("TODO: What happens here? Socket Receive Error: {}".format(error))
-            return
+            # E.g.: [Errno 10054] An existing connection was forcibly closed by the remote host
+            # So we will just warn (instead of error our) and pass (and don't return here) and
+            # to let the bottom of this function decide whether we should just quit ro
+            # reconnect/bind (if the user specified this.
+            self.log.warning("Socket Receive: {}".format(error))
         except AttributeError as error:
             self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
             return
@@ -4952,8 +4961,11 @@ def input_interrupter(self):
                 continue
             return
         except socket.error as error:
-            self.log.error("TODO: What happens here? Socket Receive Error: {}".format(error))
-            return
+            # E.g.: [Errno 10054] An existing connection was forcibly closed by the remote host
+            # So we will just warn (instead of error our) and pass (and don't return here) and
+            # to let the bottom of this function decide whether we should just quit ro
+            # reconnect/bind (if the user specified this.
+            self.log.warning("Socket Receive: {}".format(error))
         except AttributeError as error:
             self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
             return
@@ -6074,8 +6086,11 @@ callback that writes to stdout.</p></div>
                 continue
             return
         except socket.error as error:
-            self.log.error("TODO: What happens here? Socket Receive Error: {}".format(error))
-            return
+            # E.g.: [Errno 10054] An existing connection was forcibly closed by the remote host
+            # So we will just warn (instead of error our) and pass (and don't return here) and
+            # to let the bottom of this function decide whether we should just quit ro
+            # reconnect/bind (if the user specified this.
+            self.log.warning("Socket Receive: {}".format(error))
         except AttributeError as error:
             self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
             return
