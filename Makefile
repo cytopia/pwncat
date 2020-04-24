@@ -14,7 +14,7 @@ DOCPATH = docs/
 BINNAME = pwncat
 
 FL_VERSION = 0.3
-FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html
+FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/
 
 UID := $(shell id -u)
 GID := $(shell id -g)
@@ -99,14 +99,14 @@ lint-man:
 	@echo "# Lint man page"
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory man
-	git diff --quiet || { echo "Build Changes"; git diff|cat; git status; false; }
+	git diff --quiet -- $(DOCPATH) $(MANPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
 
 lint-docs:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Lint docs"
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory docs
-	git diff --quiet || { echo "Build Changes"; git diff|cat; git status; false; }
+	git diff --quiet -- $(DOCPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
 
 lint-usage: SHELL := /bin/bash
 lint-usage:
@@ -121,9 +121,82 @@ lint-usage:
 # -------------------------------------------------------------------------------------------------
 # Test Targets
 # -------------------------------------------------------------------------------------------------
+test: test-behaviour-tcp_client_exits_and_server_hangs_up
+test: test-behaviour-udp_client_exits_and_server_stays_alive
+test: test-behaviour-tcp_server_exits_and_hangs_up
+test: test-behaviour-udp_server_exits_and_client_stays_alive
+test: test-behaviour-tcp_socket_reuseaddr
+test: test-behaviour-udp_socket_reuseaddr
+test: test-basics-client-tcp_make_http_request
+test: test-basics-client-tcp_send_text_to_server
+test: test-basics-client-udp_send_text_to_server
+test: test-basics-client-tcp_send_file_to_server
+test: test-basics-client-udp_send_file_to_server
+test: test-basics-client-tcp_send_comand_to_server
+test: test-basics-client-udp_send_comand_to_server
+test: test-options-client-tcp_nodns
+test: test-options-client-udp_nodns
+test: test-options-tcp_server_keep_open
 
-test:
-	@echo "noop"
+
+# -------------------------------------------------------------------------------------------------
+# Test Targets: Behaviour
+# -------------------------------------------------------------------------------------------------
+test-behaviour-tcp_client_exits_and_server_hangs_up:
+	tests/100-behaviour-tcp_client_exits_and_server_hangs_up.sh ""
+
+test-behaviour-udp_client_exits_and_server_stays_alive:
+	tests/101-behaviour-udp_client_exits_and_server_stays_alive.sh ""
+
+test-behaviour-tcp_server_exits_and_hangs_up:
+	tests/102-behaviour-tcp_server_exits_and_hangs_up.sh ""
+
+test-behaviour-udp_server_exits_and_client_stays_alive:
+	tests/103-behaviour-udp_server_exits_and_client_stays_alive.sh ""
+
+test-behaviour-tcp_socket_reuseaddr:
+	tests/110-behaviour-tcp_socket_reuseaddr.sh ""
+
+test-behaviour-udp_socket_reuseaddr:
+	tests/111-behaviour-udp_socket_reuseaddr.sh ""
+
+
+# -------------------------------------------------------------------------------------------------
+# Test Targets: Basics
+# -------------------------------------------------------------------------------------------------
+test-basics-client-tcp_make_http_request:
+	tests/200-basics-client-tcp_make_http_request.sh ""
+
+test-basics-client-tcp_send_text_to_server:
+	tests/202-basics-client-tcp_send_text_to_server.sh ""
+
+test-basics-client-udp_send_text_to_server:
+	tests/203-basics-client-udp_send_text_to_server.sh ""
+
+test-basics-client-tcp_send_file_to_server:
+	tests/204-basics-client-tcp_send_file_to_server.sh ""
+
+test-basics-client-udp_send_file_to_server:
+	tests/205-basics-client-udp_send_file_to_server.sh ""
+
+test-basics-client-tcp_send_comand_to_server:
+	tests/206-basics-client-tcp_send_comand_to_server.sh ""
+
+test-basics-client-udp_send_comand_to_server:
+	tests/207-basics-client-udp_send_comand_to_server.sh ""
+
+
+# -------------------------------------------------------------------------------------------------
+# Test Targets: Options
+# -------------------------------------------------------------------------------------------------
+test-options-client-tcp_nodns:
+	tests/300-options-client-tcp_nodns.sh ""
+
+test-options-client-udp_nodns:
+	tests/301-options-client-udp_nodns.sh ""
+
+test-options-tcp_server_keep_open:
+	tests/302-options-tcp_server_keep_open.sh ""
 
 
 # -------------------------------------------------------------------------------------------------
@@ -133,8 +206,12 @@ test:
 man: $(BINPATH)$(BINNAME)
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add help2man \
-		&& help2man -n $(BINNAME) -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
+		&& help2man -n $(BINNAME) --no-info --source=https://github.com/cytopia/pwncat -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
 		&& chown $${UID}:$${GID} $(MANPATH)$(BINNAME).1'
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
+		apk add groff \
+		&& cat $(MANPATH)$(BINNAME).1 | groff -mandoc -Thtml | sed "s/.*CreationDate:.*//g" > $(DOCPATH)$(BINNAME).man.html \
+		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).man.html'
 
 docs:
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \

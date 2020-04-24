@@ -4,6 +4,30 @@
 ## Unreleased
 
 
+## Release 0.0.6-alpha
+
+#### Fixed
+- Fixed `-n`/`--nodns` to actually not resolve DNS
+- Fixed various threading issues
+
+#### Added
+- Check for unimplemented options
+- Feature: Made socket receive non-blocking
+- Feature: Made stdin non-blocking (except for Windows)
+- Documentation: man page
+- Documentation: updated readme and contribution guidelines
+- CI: lots of integration tests for Linux, MacOS and Windows
+
+#### Changed
+- Changed daemon threads to non-daemon threads
+- Use Python's `logging` module instead of self-written one
+- Usage options have changed drastically
+- Changed `--reconnect` and `--reconnect-wait` to keep open (`-k`/`--keep`)
+
+#### Removed
+- Removed `builtins` import for cross-os base install compatibility
+
+
 ## Release 0.0.5-alpha
 
 #### Added
