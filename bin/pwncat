@@ -1509,10 +1509,8 @@ accidentally by other input.
         args.http
         or args.https
         or args.rebind
-        or args.reconn
         or args.wait
         or args.udp_ping_init
-        or args.udp_ping_intvl
         or args.safe_word
     ):
         print("Unimplemented options", file=sys.stderr)
