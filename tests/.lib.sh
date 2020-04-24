@@ -246,15 +246,19 @@ pid_is_running() {
 		exit 1
 	fi
 	# shellcheck disable=SC2009
-	out="$( ps auxw | awk '{print $2}' | grep -E "^${the_pid}\$" )"
-	if [ -z "${out}" ]; then
-		return 1
+	if ps -p "${the_pid}"; then
+		return 0
 	fi
-	if [ "${the_pid}" != "${out}" ]; then
-		>&2 echo "Error, 'pid_is_running()' function found a running pid different to input"
-		>&2 echo "Error, input pid = ${the_pid}  != output pid = ${out}"
-		exit 1
-	fi
+	exit 1
+	#out="$( ps auxw | awk '{print $2}' | grep -E "^${the_pid}\$" )"
+	#if [ -z "${out}" ]; then
+	#	return 1
+	#fi
+	#if [ "${the_pid}" != "${out}" ]; then
+	#	>&2 echo "Error, 'pid_is_running()' function found a running pid different to input"
+	#	>&2 echo "Error, input pid = ${the_pid}  != output pid = ${out}"
+	#	exit 1
+	#fi
 }
 
 

@@ -33,6 +33,20 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
 
+      - name: Test commands
+        shell: bash
+        run: |
+          ps -ef  || echo "No ps -ef"
+          ps -efW || echo "No ps -efW"
+          ps --help
+          ps -afl || "no ps afl"
+          ps -afls || "no ps afls"
+      #    ps -axl || "no ps -axl"
+      #    ps  || "no ps"
+      #    ps --windows -ealf || "no ps --windows -ealf"
+      #    ps -p 420 || "no ps -p 420"
+
+
       # ------------------------------------------------------------
       # Tests: Behaviour
       # ------------------------------------------------------------
