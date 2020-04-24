@@ -239,17 +239,16 @@ kill_process() {
 
 pid_is_running() {
 	local the_pid="${1}"
-	local out=
 	# shellcheck disable=SC2009
 	if [ -z "${the_pid}" ]; then
-		>&2 echo "Error, 'pid_is_running()' function did not receive a pid value"
+		>&2 echo "Assert Error, 'pid_is_running()' function did not receive a pid value"
 		exit 1
 	fi
 	# shellcheck disable=SC2009
 	if ps -p "${the_pid}"; then
 		return 0
 	fi
-	exit 1
+	return 1
 	#out="$( ps auxw | awk '{print $2}' | grep -E "^${the_pid}\$" )"
 	#if [ -z "${out}" ]; then
 	#	return 1
@@ -296,7 +295,7 @@ action_stop_instance() {
 	fi
 	for i in {1..10}; do
 		if ! pid_is_running "${pid}"; then
-			break
+			return 0
 		fi
 		printf "."
 		sleep 1
