@@ -210,7 +210,7 @@ man: $(BINPATH)$(BINNAME)
 		&& chown $${UID}:$${GID} $(MANPATH)$(BINNAME).1'
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add groff \
-		&& cat $(MANPATH)$(BINNAME).1 | groff -mandoc -Thtml > $(DOCPATH)$(BINNAME).man.html \
+		&& cat $(MANPATH)$(BINNAME).1 | groff -mandoc -Thtml | sed "s/.*CreationDate:.*//g" > $(DOCPATH)$(BINNAME).man.html \
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).man.html'
 
 docs:
