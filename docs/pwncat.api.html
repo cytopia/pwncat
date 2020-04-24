@@ -1577,9 +1577,11 @@ class AbstractSocket(object):
                     continue
                 return
 
-            # [2/5] [Errno 10054] An existing connection was forcibly closed by the remote host
-            # So we will just warn (instead of error our) and pass (and don't return here) and
-            # to let the bottom of this function decide whether we should just quit or
+            # [2/5] Connection was forcibly closed
+            # [Errno 10054] An existing connection was forcibly closed by the remote host
+            # [WinError 10054] An existing connection was forcibly closed by the remote host
+            # So we will just warn (instead of error our), ignore (don't return here) and
+            # let the bottom of this function decide whether we should just quit or
             # reconnect/bind (if the user specified this.
             except socket.error as error:
                 # Also ensure we reset the 'byte' value to none so that the below check can kick in.
@@ -2043,7 +2045,7 @@ class Runner(object):
             """
             self.log.trace("[Thread-Send] START")
             for data in self.input_generator():
-                self.log.trace("[Thread-Send] received via input_generator(): {}".format(data))
+                self.log.trace("[Thread-Send] input_generator() received: {}".format(repr(data)))
                 self.send_callback(data)
             self.log.trace("[Thread-Send] STOP")
 
@@ -4008,9 +4010,11 @@ def input_interrupter(self):
                     continue
                 return
 
-            # [2/5] [Errno 10054] An existing connection was forcibly closed by the remote host
-            # So we will just warn (instead of error our) and pass (and don't return here) and
-            # to let the bottom of this function decide whether we should just quit or
+            # [2/5] Connection was forcibly closed
+            # [Errno 10054] An existing connection was forcibly closed by the remote host
+            # [WinError 10054] An existing connection was forcibly closed by the remote host
+            # So we will just warn (instead of error our), ignore (don't return here) and
+            # let the bottom of this function decide whether we should just quit or
             # reconnect/bind (if the user specified this.
             except socket.error as error:
                 # Also ensure we reset the 'byte' value to none so that the below check can kick in.
@@ -4433,9 +4437,11 @@ def input_interrupter(self):
                 curr_recv_timeout_retry += 1
                 continue
             return
-        # [2/5] [Errno 10054] An existing connection was forcibly closed by the remote host
-        # So we will just warn (instead of error our) and pass (and don't return here) and
-        # to let the bottom of this function decide whether we should just quit or
+        # [2/5] Connection was forcibly closed
+        # [Errno 10054] An existing connection was forcibly closed by the remote host
+        # [WinError 10054] An existing connection was forcibly closed by the remote host
+        # So we will just warn (instead of error our), ignore (don't return here) and
+        # let the bottom of this function decide whether we should just quit or
         # reconnect/bind (if the user specified this.
         except socket.error as error:
             # Also ensure we reset the 'byte' value to none so that the below check can kick in.
@@ -5000,9 +5006,11 @@ def input_interrupter(self):
                 curr_recv_timeout_retry += 1
                 continue
             return
-        # [2/5] [Errno 10054] An existing connection was forcibly closed by the remote host
-        # So we will just warn (instead of error our) and pass (and don't return here) and
-        # to let the bottom of this function decide whether we should just quit or
+        # [2/5] Connection was forcibly closed
+        # [Errno 10054] An existing connection was forcibly closed by the remote host
+        # [WinError 10054] An existing connection was forcibly closed by the remote host
+        # So we will just warn (instead of error our), ignore (don't return here) and
+        # let the bottom of this function decide whether we should just quit or
         # reconnect/bind (if the user specified this.
         except socket.error as error:
             # Also ensure we reset the 'byte' value to none so that the below check can kick in.
@@ -6134,9 +6142,11 @@ callback that writes to stdout.</p></div>
                 curr_recv_timeout_retry += 1
                 continue
             return
-        # [2/5] [Errno 10054] An existing connection was forcibly closed by the remote host
-        # So we will just warn (instead of error our) and pass (and don't return here) and
-        # to let the bottom of this function decide whether we should just quit or
+        # [2/5] Connection was forcibly closed
+        # [Errno 10054] An existing connection was forcibly closed by the remote host
+        # [WinError 10054] An existing connection was forcibly closed by the remote host
+        # So we will just warn (instead of error our), ignore (don't return here) and
+        # let the bottom of this function decide whether we should just quit or
         # reconnect/bind (if the user specified this.
         except socket.error as error:
             # Also ensure we reset the 'byte' value to none so that the below check can kick in.
@@ -6345,7 +6355,7 @@ callback that writes to stdout.</p></div>
             """
             self.log.trace("[Thread-Send] START")
             for data in self.input_generator():
-                self.log.trace("[Thread-Send] received via input_generator(): {}".format(data))
+                self.log.trace("[Thread-Send] input_generator() received: {}".format(repr(data)))
                 self.send_callback(data)
             self.log.trace("[Thread-Send] STOP")
 
@@ -6473,7 +6483,7 @@ callback that writes to stdout.</p></div>
         """
         self.log.trace("[Thread-Send] START")
         for data in self.input_generator():
-            self.log.trace("[Thread-Send] received via input_generator(): {}".format(data))
+            self.log.trace("[Thread-Send] input_generator() received: {}".format(repr(data)))
             self.send_callback(data)
         self.log.trace("[Thread-Send] STOP")
     def timer():

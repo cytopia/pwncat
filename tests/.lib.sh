@@ -216,8 +216,16 @@ run_bg() {
 
 has_errors() {
 	local stderr="${1}"
-	if grep -Ei 'Traceback|Exception|Error|Segfaul' "${stderr}" >/dev/null; then
-		return 0
+
+	# Stuff the Python logger is producing
+	if grep -E 'FATAL|ERROR' "${stderr}" >/dev/null; then
+		return 0  # Successful return means it has errors
+	fi
+	# Other stuff that might pop up. Note that greping for 'Error' case-insensitive
+	# might yield false positives due to all the caught exception messages that may
+	# contain the word 'Error' or a combination of it.
+	if grep -Ei 'Traceback|Exception|Segfaul|Fatal' "${stderr}" >/dev/null; then
+		return 0  # Successful return means it has errors
 	fi
 	return 1
 }
