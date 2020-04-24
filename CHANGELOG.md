@@ -22,7 +22,7 @@
 - Changed daemon threads to non-daemon threads
 - Use Python's `logging` module instead of self-written one
 - Usage options have changed drastically
-- Changed `--reconnect` and `--reconnect-wait` to Keep open (`-k`/`--keep`)
+- Changed `--reconnect` and `--reconnect-wait` to keep open (`-k`/`--keep`)
 
 #### Removed
 - Removed `builtins` import for cross-os base install compatibility

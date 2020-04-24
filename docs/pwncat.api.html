@@ -1179,7 +1179,7 @@ if os.name != "nt":
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.5-alpha"
+VERSION = "0.0.6-alpha"
 
 # Global variable to be used within threads to determine
 # if they should exit or not.
@@ -2643,14 +2643,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if (
-        args.http
-        or args.https
-        or args.rebind
-        or args.wait
-        or args.udp_ping_init
-        or args.safe_word
-    ):
+    if args.http or args.https or args.rebind or args.wait or args.udp_ping_init or args.safe_word:
         print("Unimplemented options", file=sys.stderr)
         sys.exit(1)
 
@@ -3249,14 +3242,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if (
-        args.http
-        or args.https
-        or args.rebind
-        or args.wait
-        or args.udp_ping_init
-        or args.safe_word
-    ):
+    if args.http or args.https or args.rebind or args.wait or args.udp_ping_init or args.safe_word:
         print("Unimplemented options", file=sys.stderr)
         sys.exit(1)
 
