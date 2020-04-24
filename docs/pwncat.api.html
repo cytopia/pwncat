@@ -1673,8 +1673,12 @@ class NetcatClient(AbstractSocket):
         else:
             self.remote_addr = addr
             self.remote_port = port
-            if not self.connect():
-                sys.exit(1)
+            if self.connect():
+                return
+            if self.role == "client":
+                if self._AbstractSocket__reconnect_to_server():
+                    return
+            sys.exit(1)
 
 
 # #################################################################################################
@@ -4598,8 +4602,12 @@ def input_interrupter(self):
         else:
             self.remote_addr = addr
             self.remote_port = port
-            if not self.connect():
-                sys.exit(1)
+            if self.connect():
+                return
+            if self.role == "client":
+                if self._AbstractSocket__reconnect_to_server():
+                    return
+            sys.exit(1)
 </code></pre>
   </div>
 </div>
@@ -4722,8 +4730,12 @@ def input_interrupter(self):
     else:
         self.remote_addr = addr
         self.remote_port = port
-        if not self.connect():
-            sys.exit(1)
+        if self.connect():
+            return
+        if self.role == "client":
+            if self._AbstractSocket__reconnect_to_server():
+                return
+        sys.exit(1)
 </code></pre>
   </div>
 </div>
