@@ -3,6 +3,7 @@
 
 #
 # TODO: where to use sys.stdout.flush ??
+# TODO: change docstring to this format: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/
 #
 # Behaviour Server
 # 1. (tty and non-tty mode) TCP Server should always quit if client disconnects
