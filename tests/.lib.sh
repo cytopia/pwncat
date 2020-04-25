@@ -257,15 +257,6 @@ pid_is_running() {
 		return 0
 	fi
 	return 1
-	#out="$( ps auxw | awk '{print $2}' | grep -E "^${the_pid}\$" )"
-	#if [ -z "${out}" ]; then
-	#	return 1
-	#fi
-	#if [ "${the_pid}" != "${out}" ]; then
-	#	>&2 echo "Error, 'pid_is_running()' function found a running pid different to input"
-	#	>&2 echo "Error, input pid = ${the_pid}  != output pid = ${out}"
-	#	exit 1
-	#fi
 }
 
 
