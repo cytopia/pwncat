@@ -4,6 +4,20 @@
 ## Unreleased
 
 
+## Release 0.0.7-alpha
+
+#### Fixed
+- Fixed `-L`/`--local` mode to now persist multiple requests
+- Fixed `-C`/`--crlf` Only replace `\n` with `\r\n` if `\n` exists and don't blindly add.
+
+#### Added
+- Integration tests for `L`/`--local` mode
+
+#### Changed
+- Plugin architecture has been heavily refactored to make it easier to add new plugins
+- Improved logging
+
+
 ## Release 0.0.6-alpha
 
 #### Fixed

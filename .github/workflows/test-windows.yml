@@ -156,3 +156,15 @@ jobs:
         shell: bash
         run: |
           make test-options-tcp_server_keep_open
+
+      # ------------------------------------------------------------
+      # Tests: Modes
+      # ------------------------------------------------------------
+
+      ###
+      ### Port Forward
+      ###
+      - name: "[MODES] (TCP) Port Forward"
+        shell: bash
+        run: |
+          make test-modes-forwawrd_tcp-client_make_http_request

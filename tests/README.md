@@ -9,3 +9,4 @@ Test files start with the following numbers:
 * `1xx`: Testing Behaviour (socket, auto-shutdown, etc)
 * `2xx`: Testing Basics
 * `3xx`: Testing Options
+* `4xx`: Testing modes

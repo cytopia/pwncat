@@ -187,7 +187,7 @@ mode arguments:
 
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
-  -C, --crlf            Send CRLF line-endings in connect mode (default: LF)
+  -C, --crlf            Replace LF with CRLF from stdin (default: don't)
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
@@ -293,8 +293,8 @@ advanced arguments:
   --safe-word str       All modes:
                         If pwncat is started with this argument, it will shut
                         down as soon as it receives the specified string. The
-                        --keep (server) or --reconn (client) options will be
-                        ignored and it won't listen again or reconnect to you.
+                        --keep-open (server) or --reconn (client) options will
+                        be ignored and it won't listen again or reconnect to you.
                         Use a very unique string to not have it shut down
                         accidentally by other input.
 
