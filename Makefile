@@ -137,6 +137,7 @@ test: test-basics-client-udp_send_comand_to_server
 test: test-options-client-tcp_nodns
 test: test-options-client-udp_nodns
 test: test-options-tcp_server_keep_open
+test: test-modes-forwawrd_tcp-client_make_http_request
 
 
 # -------------------------------------------------------------------------------------------------
@@ -197,6 +198,13 @@ test-options-client-udp_nodns:
 
 test-options-tcp_server_keep_open:
 	tests/302-options-tcp_server_keep_open.sh ""
+
+
+# -------------------------------------------------------------------------------------------------
+# Test Targets: Modes
+# -------------------------------------------------------------------------------------------------
+test-modes-forwawrd_tcp-client_make_http_request:
+	tests/400-mode-forward_tcp-client_make_http_request.sh ""
 
 
 # -------------------------------------------------------------------------------------------------
