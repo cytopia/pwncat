@@ -434,10 +434,11 @@ class AbstractSocket(object):
                 # Other threads are done. Let's try to read a few more times before
                 # returning and ending this function (might be data left)
                 if curr_recv_timeout_retry < self.recv_timeout_retry:
-                    self.log.trace("Final socket read: {}/{} before quitting.".format(
-                        curr_recv_timeout_retry,
-                        self.recv_timeout_retry
-                    ))
+                    self.log.trace(
+                        "Final socket read: {}/{} before quitting.".format(
+                            curr_recv_timeout_retry, self.recv_timeout_retry
+                        )
+                    )
                     curr_recv_timeout_retry += 1
                     continue
                 ssig.raise_stop()
@@ -927,6 +928,7 @@ class Runner(object):
 
     def run(self):
         """Run threaded NetCat."""
+
         def run_action(name, producer, consumer, ssig):
             """
             Receive data (network, user-input, shell-output) and process it (send, output).
@@ -977,7 +979,7 @@ class Runner(object):
                     self.__actions[key]["producer"],
                     self.__actions[key]["consumer"],
                     self.__actions[key]["signal"],
-                )
+                ),
             )
             thread.daemon = False
             thread.start()
@@ -996,7 +998,6 @@ class Runner(object):
                     self.__timers[key]["args"],
                 ),
                 kwargs=self.__timers[key]["kwargs"],
-
             )
             thread.daemon = False
             thread.start()
@@ -1706,20 +1707,24 @@ def main():
             encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
         )
         run = Runner()
-        run.add_action({
-            "name": "RECV",
-            "producer": net.receive,
-            "consumer": mod.consumer,
-            "signal": ssig,
-            "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
-        })
-        run.add_action({
-            "name": "STDIN",
-            "producer": mod.producer,
-            "consumer": net.send,
-            "signal": ssig,
-            "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
-        })
+        run.add_action(
+            {
+                "name": "RECV",
+                "producer": net.receive,
+                "consumer": mod.consumer,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
+            }
+        )
+        run.add_action(
+            {
+                "name": "STDIN",
+                "producer": mod.producer,
+                "consumer": net.send,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
+            }
+        )
         run.run()
 
     # Run client
@@ -1729,28 +1734,34 @@ def main():
             encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
         )
         run = Runner()
-        run.add_action({
-            "name": "RECV",
-            "producer": net.receive,
-            "consumer": mod.consumer,
-            "signal": ssig,
-            "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
-        })
-        run.add_action({
-            "name": "STDIN",
-            "producer": mod.producer,
-            "consumer": net.send,
-            "signal": ssig,
-            "interrupt": mod.interrupt,
-        })
-        if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
-            run.add_timer({
-                "name": "PING",
-                "action": net.send,
-                "intvl": args.udp_ping_intvl,
-                "args": ("\x00"),
+        run.add_action(
+            {
+                "name": "RECV",
+                "producer": net.receive,
+                "consumer": mod.consumer,
                 "signal": ssig,
-            })
+                "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
+            }
+        )
+        run.add_action(
+            {
+                "name": "STDIN",
+                "producer": mod.producer,
+                "consumer": net.send,
+                "signal": ssig,
+                "interrupt": mod.interrupt,
+            }
+        )
+        if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
+            run.add_timer(
+                {
+                    "name": "PING",
+                    "action": net.send,
+                    "intvl": args.udp_ping_intvl,
+                    "args": ("\x00"),
+                    "signal": ssig,
+                }
+            )
         run.run()
 
 
