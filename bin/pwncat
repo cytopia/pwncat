@@ -1014,7 +1014,10 @@ class Runner(object):
                     self.__threads[key].join(timeout=0.1)
             # If all threads have died, exit
             if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
-                sys.exit(1)
+                if force:
+                    sys.exit(1)
+                else:
+                    sys.exit(0)
 
         try:
             while True:
