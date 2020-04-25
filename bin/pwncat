@@ -412,7 +412,7 @@ class AbstractSocket(object):
 
         while True:
             # Ensure to signal that we do not stop receiving data
-            #if ssig.has_stop():
+            # if ssig.has_stop():
             #    self.log.debug("Interrupt has been requested for receive()")
             #    return
 
