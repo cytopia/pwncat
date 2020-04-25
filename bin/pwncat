@@ -86,13 +86,13 @@ class StringEncoder(object):
     def encode(self, data):
         """Convert string into a byte type for Python3."""
         if self.py3:
-            data = data.encode("cp437")
+            data = data.encode(self.codec)
         return data
 
     def decode(self, data):
         """Convert bytes into a string type for Python3."""
         if self.py3:
-            data = data.decode("cp437")
+            data = data.decode(self.codec)
         return data
 
 
