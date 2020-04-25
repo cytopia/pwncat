@@ -137,18 +137,13 @@ class AbstractSocket(object):
         "safe_word": False,  # Once this is received, the application quits
     }
 
-    # In case the server is running in UDP mode,
-    # it must wait for the client to connect in order
+    # Store the address of the remote end.
+    # If we are in server role and running in UDP mode,
+    # it must wait for the client to connect first in order
     # to retrieve its addr and port in order to be able
     # to send data back to it.
-    udp_client_addr = None
-    udp_client_port = None
-
-    # For client role only
-    # Store the address and port of the remote server to connect to.
-    # This is required for self.connect()
     remote_addr = None
-    remote_addr = None
+    remote_port = None
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -348,9 +343,9 @@ class AbstractSocket(object):
         """Send data."""
         # In case of sending data back to an udp client we need to wait
         # until the client has first connected and told us its addr/port
-        if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
-            self.log.info("Waiting for UDP client to connect")
-            while self.udp_client_addr is None and self.udp_client_port is None:
+        if self.options["udp"] and self.remote_addr is None and self.remote_port is None:
+            self.log.warning("UDP client has not yet connected. Queueing message")
+            while self.remote_addr is None and self.remote_port is None:
                 time.sleep(0.1)  # Less wastefull than using 'pass'
 
         curr = 0  # bytes send during one loop iteration
@@ -362,9 +357,14 @@ class AbstractSocket(object):
         # Loop until all bytes have been send
         while send < size:
             try:
-                self.log.trace("Trying to send {} bytes".format(size - send))
+                self.log.debug(
+                    "Trying to send {} bytes to {}:{}".format(
+                        size - send, self.remote_addr, self.remote_port
+                    )
+                )
+                self.log.trace("Trying to send: {}".format(repr(data)))
                 if self.options["udp"]:
-                    curr = self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
+                    curr = self.conn.sendto(data, (self.remote_addr, self.remote_port))
                     send += curr
                 else:
                     curr = self.conn.send(data)
@@ -374,7 +374,11 @@ class AbstractSocket(object):
                     return
                 # Remove 'curr' many bytes from data for the next round
                 data = data[curr:]
-                self.log.trace("Send {} bytes ({} bytes remaining)".format(curr, size - send))
+                self.log.debug(
+                    "Sent {} bytes to {}:{} ({} bytes remaining)".format(
+                        curr, self.remote_addr, self.remote_port, size - send
+                    )
+                )
             except socket.error as error:
                 if error.errno == socket.errno.EPIPE:
                     self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
@@ -465,6 +469,13 @@ class AbstractSocket(object):
             # The counter is incremented in 'except socket.timeout' above.
             curr_recv_timeout_retry = 0
 
+            # If we're receiving data from a UDP client
+            # we can firstly/finally set its addr/port in order
+            # to send data back to it (see send() function)
+            if self.options["udp"]:
+                self.remote_addr, self.remote_port = addr
+                self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
+
             # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
             if not byte:
                 self.log.trace("Socket: Empty data received or otherwise caught.")
@@ -486,23 +497,10 @@ class AbstractSocket(object):
 
             # [5/5] We have data to process
             data = self.enc.decode(byte)
+            self.log.debug(
+                "Received {} bytes from {}:{}".format(len(data), self.remote_addr, self.remote_port)
+            )
             self.log.trace("Received: {}".format(repr(data)))
-
-            # If we're receiving data from a UDP client
-            # we can firstly/finally set its addr/port in order
-            # to send data back to it (see send() function)
-            if self.options["udp"]:
-                self.udp_client_addr, self.udp_client_port = addr
-                # Avoid the noise on UDP connections to spam on every send
-                if self.udp_client_addr is None or self.udp_client_port is None:
-                    self.log.info(
-                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                    )
-                # Find for debug
-                else:
-                    self.log.debug(
-                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                    )
 
             yield data
 
@@ -556,17 +554,14 @@ class NetcatClient(AbstractSocket):
         addr = self.gethostbyname(host, port, socket.AF_INET)
         self.create_socket()
         self.conn = self.sock
-        if self.options["udp"]:
-            self.udp_client_addr = addr
-            self.udp_client_port = port
-        else:
-            self.remote_addr = addr
-            self.remote_port = port
+
+        self.remote_addr = addr
+        self.remote_port = port
+        if not self.options["udp"]:
             if self.connect():
                 return
-            if self.role == "client":
-                if self._AbstractSocket__reconnect_to_server():
-                    return
+            if self._AbstractSocket__reconnect_to_server():
+                return
             sys.exit(1)
 
 
@@ -1645,9 +1640,11 @@ def main():
 
     logging.addLevelName(LOGLEVEL_TRACE_NUM, "TRACE")
     logging.Logger.trace = logtrace
-    logformat = "%(levelname)s:%(message)s"
+    logformat = "%(levelname)s %(message)s"
+    if args.verbose > 2:
+        logformat = "%(levelname)s [%(threadName)s]: %(message)s"
     if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(funcName)s():%(message)s"
+        logformat = "%(levelname)s [%(threadName)s] %(funcName)s(): %(message)s"
     logging.basicConfig(format=logformat, level=loglevel)
 
     # Initialize encoder
@@ -1672,38 +1669,41 @@ def main():
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
     if args.local:
+        ssig = StopSignal()
         # TODO: Make the listen address optional!
-        # Create listen and client instances
-        # FIXME: As there is only one THREAD_TERMINATE, both instances will use it.
-        #       this should go into the runner or so.
         srv_opts = net_opts.copy()
         srv_opts["reconn"] = True
         srv_opts["keep_open"] = True
         srv_opts["reconn_wait"] = 0
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
+        # Create listen and client instances
         net_srv = NetcatServer(
             encoder, lhost, lport, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
         )
         net_cli = NetcatClient(
-            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
         )
-
-        # Create Runner (the set_* funcs below are brainfuck and took me 1 hour to figure it out)
+        # Create Runner
         run = Runner()
-
-        # [srv] User-Client connects here, sends data and the Server takes it as input
-        run.set_recv_generator(net_srv.receive)
-        # [cli] Runner parses data from Server on to Proxy-Client, which sends/connect it further
-        run.set_output_callback(net_cli.send)
-        # [cli] Proxy-Client waits for response and receives data back
-        run.set_input_generator(net_cli.receive)
-        # [srv] Runner parses data from Proxy-Client onto Server, which sends/back to User-Client
-        run.set_send_callback(net_srv.send)
-
-        run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(object)
-        # And finally run
+        run.add_action(
+            {
+                "name": "TRANSMIT",
+                "producer": net_srv.receive,  # USER sends data to PC-SERVER
+                "consumer": net_cli.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
+        run.add_action(
+            {
+                "name": "RECEIVE",
+                "producer": net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
+                "consumer": net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
         run.run()
     # Run server
     if args.listen:

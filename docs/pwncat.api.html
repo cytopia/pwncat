@@ -976,7 +976,6 @@ table {
     <li class="mono"><a href="#pwncat.APPREPO">APPREPO</a></li>
     <li class="mono"><a href="#pwncat.LOGLEVEL_TRACE_NUM">LOGLEVEL_TRACE_NUM</a></li>
     <li class="mono"><a href="#pwncat.PIPE">PIPE</a></li>
-    <li class="mono"><a href="#pwncat.THREAD_TERMINATE">THREAD_TERMINATE</a></li>
     <li class="mono"><a href="#pwncat.TIMEOUT_READ_STDIN">TIMEOUT_READ_STDIN</a></li>
     <li class="mono"><a href="#pwncat.TIMEOUT_RECV_SOCKET">TIMEOUT_RECV_SOCKET</a></li>
     <li class="mono"><a href="#pwncat.TIMEOUT_RECV_SOCKET_RETRY">TIMEOUT_RECV_SOCKET_RETRY</a></li>
@@ -1008,9 +1007,9 @@ table {
           
   <ul>
     <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.__init__">__init__</a></li>
-    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.input_callback">input_callback</a></li>
-    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.input_generator">input_generator</a></li>
-    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.input_interrupter">input_interrupter</a></li>
+    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.consumer">consumer</a></li>
+    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.interrupt">interrupt</a></li>
+    <li class="mono"><a href="#pwncat.AbstractNetcatPlugin.producer">producer</a></li>
   </ul>
 
         </li>
@@ -1054,9 +1053,9 @@ table {
           
   <ul>
     <li class="mono"><a href="#pwncat.NetcatPluginCommand.__init__">__init__</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginCommand.input_callback">input_callback</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginCommand.input_generator">input_generator</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginCommand.input_interrupter">input_interrupter</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginCommand.consumer">consumer</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginCommand.interrupt">interrupt</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginCommand.producer">producer</a></li>
   </ul>
 
         </li>
@@ -1066,9 +1065,9 @@ table {
           
   <ul>
     <li class="mono"><a href="#pwncat.NetcatPluginOutput.__init__">__init__</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginOutput.input_callback">input_callback</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginOutput.input_generator">input_generator</a></li>
-    <li class="mono"><a href="#pwncat.NetcatPluginOutput.input_interrupter">input_interrupter</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginOutput.consumer">consumer</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginOutput.interrupt">interrupt</a></li>
+    <li class="mono"><a href="#pwncat.NetcatPluginOutput.producer">producer</a></li>
   </ul>
 
         </li>
@@ -1095,14 +1094,19 @@ table {
           
   <ul>
     <li class="mono"><a href="#pwncat.Runner.__init__">__init__</a></li>
+    <li class="mono"><a href="#pwncat.Runner.add_action">add_action</a></li>
+    <li class="mono"><a href="#pwncat.Runner.add_timer">add_timer</a></li>
     <li class="mono"><a href="#pwncat.Runner.run">run</a></li>
-    <li class="mono"><a href="#pwncat.Runner.set_input_generator">set_input_generator</a></li>
-    <li class="mono"><a href="#pwncat.Runner.set_input_generator_stop_function">set_input_generator_stop_function</a></li>
-    <li class="mono"><a href="#pwncat.Runner.set_output_callback">set_output_callback</a></li>
-    <li class="mono"><a href="#pwncat.Runner.set_recv_generator">set_recv_generator</a></li>
-    <li class="mono"><a href="#pwncat.Runner.set_revc_generator_stop_function">set_revc_generator_stop_function</a></li>
-    <li class="mono"><a href="#pwncat.Runner.set_send_callback">set_send_callback</a></li>
-    <li class="mono"><a href="#pwncat.Runner.set_timed_action">set_timed_action</a></li>
+  </ul>
+
+        </li>
+        <li class="mono">
+        <span class="class_name"><a href="#pwncat.StopSignal">StopSignal</a></span>
+        
+          
+  <ul>
+    <li class="mono"><a href="#pwncat.StopSignal.has_stop">has_stop</a></li>
+    <li class="mono"><a href="#pwncat.StopSignal.raise_stop">raise_stop</a></li>
   </ul>
 
         </li>
@@ -1141,6 +1145,7 @@ table {
 
 #
 # TODO: where to use sys.stdout.flush ??
+# TODO: change docstring to this format: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/
 #
 # Behaviour Server
 # 1. (tty and non-tty mode) TCP Server should always quit if client disconnects
@@ -1181,17 +1186,12 @@ APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
 VERSION = "0.0.6-alpha"
 
-# Global variable to be used within threads to determine
-# if they should exit or not.
-# TODO: check if this is best-practice
-THREAD_TERMINATE = False
-
 # Custom loglevel numer for TRACE
 LOGLEVEL_TRACE_NUM = 9
 
 # Default timeout for timeout-based sys.stdin and socket.recv
-TIMEOUT_READ_STDIN = 0.3
-TIMEOUT_RECV_SOCKET = 0.3
+TIMEOUT_READ_STDIN = 0.1
+TIMEOUT_RECV_SOCKET = 0.1
 TIMEOUT_RECV_SOCKET_RETRY = 1
 
 
@@ -1223,13 +1223,13 @@ class StringEncoder(object):
     def encode(self, data):
         """Convert string into a byte type for Python3."""
         if self.py3:
-            data = data.encode("cp437")
+            data = data.encode(self.codec)
         return data
 
     def decode(self, data):
         """Convert bytes into a string type for Python3."""
         if self.py3:
-            data = data.decode("cp437")
+            data = data.decode(self.codec)
         return data
 
 
@@ -1279,18 +1279,13 @@ class AbstractSocket(object):
         "safe_word": False,  # Once this is received, the application quits
     }
 
-    # In case the server is running in UDP mode,
-    # it must wait for the client to connect in order
+    # Store the address of the remote end.
+    # If we are in server role and running in UDP mode,
+    # it must wait for the client to connect first in order
     # to retrieve its addr and port in order to be able
     # to send data back to it.
-    udp_client_addr = None
-    udp_client_port = None
-
-    # For client role only
-    # Store the address and port of the remote server to connect to.
-    # This is required for self.connect()
     remote_addr = None
-    remote_addr = None
+    remote_port = None
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -1441,12 +1436,6 @@ class AbstractSocket(object):
         # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # TODO: Not sure if SO_REUSEPORT is also required
-        # try:
-        #     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        # except AttributeError:
-        #     # Not available on Windows (and maybe others)
-        #     self.log.debug("socket.SO_REUSEPORT is not available on your platform")
 
     def bind(self, addr, port):
         """Bind the socket to an address."""
@@ -1496,10 +1485,10 @@ class AbstractSocket(object):
         """Send data."""
         # In case of sending data back to an udp client we need to wait
         # until the client has first connected and told us its addr/port
-        if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
-            self.log.info("Waiting for UDP client to connect")
-            while self.udp_client_addr is None and self.udp_client_port is None:
-                time.sleep(0.2)  # Less wastefull than using 'pass'
+        if self.options["udp"] and self.remote_addr is None and self.remote_port is None:
+            self.log.warning("UDP client has not yet connected. Queueing message")
+            while self.remote_addr is None and self.remote_port is None:
+                time.sleep(0.1)  # Less wastefull than using 'pass'
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
@@ -1510,9 +1499,14 @@ class AbstractSocket(object):
         # Loop until all bytes have been send
         while send < size:
             try:
-                self.log.trace("Trying to send {} bytes".format(size - send))
+                self.log.debug(
+                    "Trying to send {} bytes to {}:{}".format(
+                        size - send, self.remote_addr, self.remote_port
+                    )
+                )
+                self.log.trace("Trying to send: {}".format(repr(data)))
                 if self.options["udp"]:
-                    curr = self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
+                    curr = self.conn.sendto(data, (self.remote_addr, self.remote_port))
                     send += curr
                 else:
                     curr = self.conn.send(data)
@@ -1522,7 +1516,11 @@ class AbstractSocket(object):
                     return
                 # Remove 'curr' many bytes from data for the next round
                 data = data[curr:]
-                self.log.trace("Send {} bytes ({} bytes remaining)".format(curr, size - send))
+                self.log.debug(
+                    "Sent {} bytes to {}:{} ({} bytes remaining)".format(
+                        curr, self.remote_addr, self.remote_port, size - send
+                    )
+                )
             except socket.error as error:
                 if error.errno == socket.errno.EPIPE:
                     self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
@@ -1539,8 +1537,12 @@ class AbstractSocket(object):
                 self.log.error("Socket OS Error: {}".format(error))
                 return
 
-    def receive(self):
-        """Generator function to receive data endlessly by yielding it."""
+    def receive(self, ssig):
+        """
+        Generator function to receive data endlessly by yielding it.
+
+        :param function interrupter: A Func that returns True/False to tell us to stop or not.
+        """
         # Set current receive timeout
         self.conn.settimeout(self.recv_timeout)
         self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
@@ -1549,9 +1551,15 @@ class AbstractSocket(object):
         curr_recv_timeout_retry = 0
 
         while True:
+            # Ensure to signal that we do not stop receiving data
+            self.__stop_recv = False
+            if ssig.has_stop():
+                self.log.debug("Interrupt has been requested for receive()")
+                return
 
             if self.conn is None:
                 self.log.error("Exit. Socket is gone in receive()")
+                ssig.raise_stop()
                 return
 
             # Non-blocking socket with timeout. If the timeout threshold is hit,
@@ -1564,17 +1572,22 @@ class AbstractSocket(object):
             # [1/5] NOTE: This is the place where we can do any checks in between reads as the
             # socket has been changed from blocking to time-out based.
             except socket.timeout:
-                # No other thread has terminated yet, and thus not asked us to quit.
-                # so we can continue waiting for input on the socket
-                if not THREAD_TERMINATE:
+                # Let's ask the interrupter() function if we should terminate?
+                if not ssig.has_stop():
                     # No action required, continue the loop and read again.
                     continue
+                self.log.debug("Interrupt has been requested for receive()")
                 # Other threads are done. Let's try to read a few more times before
                 # returning and ending this function (might be data left)
                 if curr_recv_timeout_retry < self.recv_timeout_retry:
-                    self.log.trace("RECV EOF TIMEOUT: AND THREAD_TERMINATE REQUESTED")
+                    self.log.trace(
+                        "Final socket read: {}/{} before quitting.".format(
+                            curr_recv_timeout_retry, self.recv_timeout_retry
+                        )
+                    )
                     curr_recv_timeout_retry += 1
                     continue
+                ssig.raise_stop()
                 return
 
             # [2/5] Connection was forcibly closed
@@ -1591,11 +1604,19 @@ class AbstractSocket(object):
             # [3/5] TODO: Still need to figure out what this error is and when it is thrown
             except AttributeError as error:
                 self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
+                ssig.raise_stop()
                 return
 
             # We're receiving data again, so let's reset the retry/terminate counter
             # The counter is incremented in 'except socket.timeout' above.
             curr_recv_timeout_retry = 0
+
+            # If we're receiving data from a UDP client
+            # we can firstly/finally set its addr/port in order
+            # to send data back to it (see send() function)
+            if self.options["udp"]:
+                self.remote_addr, self.remote_port = addr
+                self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
 
             # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
             if not byte:
@@ -1604,7 +1625,7 @@ class AbstractSocket(object):
                 if self.role == "server":
                     # Yay, we want to continue and allow new clients
                     if self.__reaccept_from_client():
-                        self.log.trace("Server can continue, because of --keep")
+                        self.log.trace("Server can continue, because of --keep-open")
                         continue
                 if self.role == "client":
                     # Yay, we want to continue and our client will re-connect upstream again
@@ -1612,28 +1633,16 @@ class AbstractSocket(object):
                         self.log.trace("Client can continue, because of --reconn")
                         continue
 
-                self.log.warning("Exit. Upstream connection gone. No --keep/--reconn specified.")
+                self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
+                ssig.raise_stop()
                 return
 
             # [5/5] We have data to process
             data = self.enc.decode(byte)
+            self.log.debug(
+                "Received {} bytes from {}:{}".format(len(data), self.remote_addr, self.remote_port)
+            )
             self.log.trace("Received: {}".format(repr(data)))
-
-            # If we're receiving data from a UDP client
-            # we can firstly/finally set its addr/port in order
-            # to send data back to it (see send() function)
-            if self.options["udp"]:
-                self.udp_client_addr, self.udp_client_port = addr
-                # Avoid the noise on UDP connections to spam on every send
-                if self.udp_client_addr is None or self.udp_client_port is None:
-                    self.log.info(
-                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                    )
-                # Find for debug
-                else:
-                    self.log.debug(
-                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                    )
 
             yield data
 
@@ -1687,17 +1696,14 @@ class NetcatClient(AbstractSocket):
         addr = self.gethostbyname(host, port, socket.AF_INET)
         self.create_socket()
         self.conn = self.sock
-        if self.options["udp"]:
-            self.udp_client_addr = addr
-            self.udp_client_port = port
-        else:
-            self.remote_addr = addr
-            self.remote_port = port
+
+        self.remote_addr = addr
+        self.remote_port = port
+        if not self.options["udp"]:
             if self.connect():
                 return
-            if self.role == "client":
-                if self._AbstractSocket__reconnect_to_server():
-                    return
+            if self._AbstractSocket__reconnect_to_server():
+                return
             sys.exit(1)
 
 
@@ -1733,22 +1739,40 @@ class AbstractNetcatPlugin(ABC):
 
     @abstractmethod
     def __init__(self, options={}):
-        """Set specific options for this plugin."""
+        """
+        Set specific options for this plugin.
+
+        Args:
+            options (dict):    A dict which allows you to add custom options to your module
+        """
         raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def input_generator(self):
-        """Implement a generator function which constantly yields data from some input."""
+    def producer(self, ssig):
+        """
+        Implement a generator function which constantly yields data.
+
+        The data could be from various sources such as: received from a socket,
+        received from user input, received from shell command output or anything else.
+
+        Args:
+            ssig (StopSignal): A StopSignal instance providing has_stop() and raise_stop() functions
+        """
         raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def input_callback(self, data):
-        """Implement a callback which processes the input which is parsed from input_generator. """
+    def consumer(self, data):
+        """The consumer takes the consumers' output as input and processes it in some form."""
         raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def input_interrupter(self):
-        """Implement a method, which quits the input_generator."""
+    def interrupt(self):
+        """Defines an interrupt function which will stop the producer.
+
+        Various producer might call blocking functions and they won't be able to stop themself
+        as they hang on that blocking function. This method is triggered from outside and is
+        supposed to stop/shutdown the producer.
+        If no such interrupt is required, imeplemt it empty."""
         raise NotImplementedError("Should have implemented this")
 
 
@@ -1769,10 +1793,6 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # Non-blocking read from stdin achieved via timeout.
     # Specify timeout in seconds.
     input_timeout = None
-
-    # Used by the input_interrupter to set this to true.
-    # The input_generator will frequently check this value
-    __quit = False
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -1812,19 +1832,15 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
-    def input_interrupter(self):
-        global THREAD_TERMINATE
-        """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatOutputCommand] quit flag was set by input_interrupter()")
-        self.__quit = True
 
-    def input_generator(self):
+    def producer(self, ssig):
         """Constantly ask for user input."""
         # https://stackoverflow.com/questions/1450393/#38670261
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
         # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
-            if self.__quit:
+            if ssig.has_stop():
+                self.log.trace("Stop signal acknowledged for reading STDIN-1")
                 return
             try:
                 # TODO: select() does not work for windows on stdin/stdout
@@ -1835,8 +1851,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 # When using select() with timeout, we don't have any input
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
-                if THREAD_TERMINATE:
-                    self.log.trace("STDIN: terminate")
+                if ssig.has_stop():
+                    self.log.trace("Stop signal acknowledged for reading STDIN-2")
                     return
                 # TODO: Re-enable this for very verbose logging
                 # self.log.trace("STDIN: timeout. Waiting for input...")
@@ -1847,16 +1863,20 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
             # EOF or <Ctrl>+<d>
             else:
                 # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
-                if THREAD_TERMINATE:
-                    self.log.trace("No more input generated, quitting.")
+                if ssig.has_stop():
+                    self.log.trace("Stop signal acknowledged for reading STDIN-3")
                     return
                 # TODO: Re-enable this for very verbose logging
                 # self.log.trace("STDIN: Reached EOF, repeating")
 
-    def input_callback(self, data):
+    def consumer(self, data):
         """Print received data to stdout."""
         print(data, end="")
         sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
+
+    def interrupt(self):
+        """Empty interrupt."""
+        pass
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1892,6 +1912,10 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
                 shell=False,
                 env=env,
             )
+        # Python-2 compat (doesn't have FileNotFoundError)
+        except OSError:
+            self.log.error("Specified executable '{}' not found".format(self.executable))
+            sys.exit(1)
         except FileNotFoundError:
             self.log.error("Specified executable '{}' not found".format(self.executable))
             sys.exit(1)
@@ -1904,14 +1928,6 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         self.log.trace("Killing executable: {} with pid {}".format(self.executable, self.p.pid))
         self.p.kill()
 
-    # ------------------------------------------------------------------------------
-    # Public Functions
-    # ------------------------------------------------------------------------------
-    def input_interrupter(self):
-        """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
-        self.p.kill()
-
     def __set_input_timeout(self, timeout=0.1):
         """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
         # select((rlist, wlist, xlist, timeout)
@@ -1922,9 +1938,20 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         if not i:
             raise BaseException("timed out")
 
-    def input_generator(self):
+    # ------------------------------------------------------------------------------
+    # Public Functions
+    # ------------------------------------------------------------------------------
+    def interrupt(self):
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
+        self.p.kill()
+
+    def producer(self, ssig):
         """Constantly ask for input."""
         while True:
+            if ssig.has_stop():
+                self.log.trace("Stop signal acknowledged in Command")
+                return
             self.log.trace("Reading command output")
             # TODO: non-blocking read does not seem to work or?
             # try:
@@ -1944,7 +1971,7 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
                 break
             yield data
 
-    def input_callback(self, data):
+    def consumer(self, data):
         """Send data received to stdin (command input)."""
         data = self.enc.encode(data)
         self.log.trace("Appending to stdin: {}".format(data))
@@ -1963,8 +1990,37 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
 # -------------------------------------------------------------------------------------------------
 # CLASS: Runner
 # -------------------------------------------------------------------------------------------------
+class StopSignal(object):
+
+    __stop = False
+
+    def has_stop(self):
+        return self.__stop
+
+    def raise_stop(self):
+        self.__stop = True
+
+
 class Runner(object):
     """Runner class that takes care about putting everything into threads."""
+
+    # Dict of producer/consumer action to run in a Thread.
+    # Each list item will be run in a single thread
+    # {
+    #   "name": {
+    #     {
+    #       "producer": "function",     # A func which yields data
+    #       "consumer": "function",     # A callback func to process the data
+    #       "interrupter": "function",  # A interrupt func to tell the producer to stop
+    #   }
+    # }
+    __actions = {}
+    __timers = {}
+
+    # A dict which holds the threads created from actions.
+    # The name is based on the __actions name
+    # {"name": "<thread>"}
+    __threads = {}
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -1973,140 +2029,141 @@ class Runner(object):
         """Constructor."""
         self.log = logging.getLogger(__name__)
 
-    # Generator
-    [
-        {
-            "name": "",
-            "input_generator": {"fnc": "", "args": "", "kwargs": ""},
-            "input_interrupter": {"fnc": "", "args": "", "kwargs": ""},
-            "input_callback": {"fnc": "", "args": "", "kwargs": ""},
-        }
-    ]
-    # Timebased
-
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
-    def set_recv_generator(self, func):
-        """Set generator func which constantly receives network data."""
-        self.recv_generator = func
+    def add_action(self, action):
+        """
+        Enables a function to run threaded by the producer/consumer runner.
 
-    def set_input_generator(self, func):
-        """Set generator func which constantly receives input (shell output/user input)."""
-        self.input_generator = func
+        :param str      name:        Name for logging output
+        :param function producer:    A generator function which yields data
+        :param function consumer:    A callback which consumes data from the generator
+        :param function interrupter: A func that signals a stop event to the producer
+        """
+        assert "name" in action
+        assert "producer" in action
+        assert "consumer" in action
+        assert "signal" in action
+        assert "interrupt" in action
+        self.__actions[action["name"]] = {
+            "name": action["name"],
+            "producer": action["producer"],
+            "consumer": action["consumer"],
+            "signal": action["signal"],
+            "interrupt": action["interrupt"],
+        }
 
-    def set_send_callback(self, func):
-        """Set the callback for sending data to a socket."""
-        self.send_callback = func
-
-    def set_output_callback(self, func):
-        """Set the callback for outputting data to stdin/stdout."""
-        self.output_callback = func
-
-    def set_revc_generator_stop_function(self, func):
-        self.recv_generator_stop_fn = func
-
-    def set_input_generator_stop_function(self, func):
-        self.input_generator_stop_fn = func
-
-    def set_timed_action(self, intvl, func, *args, **kwargs):
-        """Set a function that should be called periodically."""
-        self.timed_action_intvl = intvl
-        self.timed_action_func = func
-        self.timed_action_args = args
-        self.timed_action_kwargs = kwargs
+    def add_timer(self, timer):
+        self.__timers[timer["name"]] = {
+            "action": timer["action"],
+            "intvl": timer["intvl"],
+            "args": timer["args"] if "args" in timer else None,
+            "kwargs": timer["kwargs"] if "kwargs" in timer else {},
+            "signal": timer["signal"],
+        }
 
     def run(self):
         """Run threaded NetCat."""
-        global THREAD_TERMINATE
 
-        assert hasattr(self, "recv_generator"), "Error, recv_generator not set"
-        assert hasattr(self, "input_generator"), "Error, input_generator not set"
-        assert hasattr(self, "send_callback"), "Error, send_callback not set"
-        assert hasattr(self, "output_callback"), "Error, output_callback not set"
-
-        def receiver():
-            """Receive data from a socket and process it with a callback.
-
-            receive: Must be a generator function to receive network data.
-            callback: Must be a callback to process received data, e.g.: print to stdin/stdout.
+        def run_action(name, producer, consumer, ssig):
             """
-            self.log.trace("[Thread-Recv] START")
-            for data in self.recv_generator():
-                self.log.trace("[Thread-Recv] recv_generator() received: {}".format(repr(data)))
-                self.output_callback(data)
-            self.log.trace("[Thread-Recv] STOP")
+            Receive data (network, user-input, shell-output) and process it (send, output).
 
-        def sender():
-            """Receive data from user-input/command-output and process it with a callback.
-
-            receive: Must be a generator function to receive user-input or command output.
-            callback: Must be a callback to send this data to a socket.
+            :param str        name:        Name for logging output
+            :param function   producer:    A generator function which yields data
+            :param function   consumer:    A callback which consumes data from the generator
+            :param StopSignal ssig:        Providing has_stop() and raise_stop()
             """
-            self.log.trace("[Thread-Send] START")
-            for data in self.input_generator():
-                self.log.trace("[Thread-Send] input_generator() received: {}".format(repr(data)))
-                self.send_callback(data)
-            self.log.trace("[Thread-Send] STOP")
+            self.log.trace("[{}] Producer Start".format(name))
+            for data in producer(ssig):
+                self.log.trace("[{}] Producer received: {}".format(name, repr(data)))
+                consumer(data)
+            self.log.trace("[{}] Producer Stop".format(name))
 
-        def timer():
+        def run_timer(name, action, intvl, ssig, *args, **kwargs):
             """Execute periodic tasks by an optional provided time_action."""
-            self.log.trace("[Thread-Time] START")
-            self.log.debug(
-                "Ready for timed action every {} seconds".format(self.timed_action_intvl)
-            )
+            self.log.trace("[{}] Timer Start (exec every {} sec)".format(name, intvl))
             time_last = int(time.time())
             while True:
+                if ssig.has_stop():
+                    self.log.trace("Stop signal acknowledged for timer {}".format(name))
+                    return
                 time_now = int(time.time())
-                if time_now > time_last + self.timed_action_intvl:
+                if time_now > time_last + intvl:
                     self.log.debug("[{}] Executing timed function".format(time_now))
-                    self.timed_action_func(*self.timed_action_args, **self.timed_action_kwargs)
+                    if args is not None:
+                        if kwargs:
+                            action(*args, **kwargs)
+                        else:
+                            action(*args)
+                    else:
+                        if kwargs:
+                            action(**kwargs)
+                        else:
+                            action()
                     time_last = time_now  # Reset previous time
                 time.sleep(1)
 
-        # Start sending and receiving threads
-        self.tr = threading.Thread(target=receiver, name="Thread-Recv")
-        self.ts = threading.Thread(target=sender, name="Thread-Send")
-        # If the main thread kills, this thread will be killed too.
-        self.tr.daemon = False  # No daemon, wait for each other (e.g.: data received
-        self.ts.daemon = False  # should also be outputted)
-        # Start threads
-        self.tr.start()
-        # time.sleep(0.1)
-        self.ts.start()
+        # Start available action in a thread
+        for key in self.__actions:
+            # Create Thread object
+            thread = threading.Thread(
+                target=run_action,
+                name=key,
+                args=(
+                    key,
+                    self.__actions[key]["producer"],
+                    self.__actions[key]["consumer"],
+                    self.__actions[key]["signal"],
+                ),
+            )
+            thread.daemon = False
+            thread.start()
+            self.__threads[key] = thread
+        # Start available timers in a thread
+        for key in self.__timers:
+            # Create Thread object
+            thread = threading.Thread(
+                target=run_timer,
+                name=key,
+                args=(
+                    key,
+                    self.__timers[key]["action"],
+                    self.__timers[key]["intvl"],
+                    self.__timers[key]["signal"],
+                    self.__timers[key]["args"],
+                ),
+                kwargs=self.__timers[key]["kwargs"],
+            )
+            thread.daemon = False
+            thread.start()
 
-        if hasattr(self, "timed_action_intvl"):
-            self.tt = threading.Thread(target=timer, name="Thread-Time")
-            self.tt.daemon = True
-            self.tt.start()
+        def stop(force):
+            """Stop threads."""
+            for key in self.__threads:
+                if not self.__threads[key].is_alive() or force:
+                    self.log.trace("Raise stop signal for {}".format(self.__threads[key].getName()))
+                    self.__actions[key]["signal"].raise_stop()
+                    self.log.trace("Call interrupt for {}".format(self.__threads[key].getName()))
+                    self.__actions[key]["interrupt"]()
+                    self.log.trace("Joining {}".format(self.__threads[key].getName()))
+                    self.__threads[key].join(timeout=0.1)
+            # If all threads have died, exit
+            if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
+                if force:
+                    sys.exit(1)
+                else:
+                    sys.exit(0)
 
-        # Cleanup the main program
-        while True:
-            # TODO: is this required? (check if need to press Ctrl+c twice)
-            # if not THREAD_TERMINATE:
-            #     self.input_generator_stop_fn()
-            #     self.recv_generator_stop_fn()
-            if not self.tr.is_alive():
-                self.log.trace("Setting THREAD_TERMINATE=True from Thread-Recv death")
-                self.log.trace("Waiting for Thread-Send to finish")
-                # time.sleep(0.1)
-                THREAD_TERMINATE = True
-                self.input_generator_stop_fn()
-                self.ts.join()
-                sys.exit(0)
-            if not self.ts.is_alive():
-                self.log.trace("Setting THREAD_TERMINATE=True from Thread-Send death")
-                self.log.trace("Waiting for Thread-Recv to finish")
-                # time.sleep(0.1)
-                THREAD_TERMINATE = True
-                self.recv_generator_stop_fn()
-                self.tr.join()
-                sys.exit(0)
-            # TODO: Yes, also implement the timed function
-            # if hasattr(self, "tt"):
-            #     if not self.tt.is_alive():
-            #         sys.exit(0)
-            # time.sleep(0.1)
+        try:
+            while True:
+                stop(False)
+                # Need a timeout to not skyrocket the CPU
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            print()
+            stop(True)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -2630,8 +2687,8 @@ Use --udp-ping-intvl 0 to be faster.
         help="""All modes:
 If %(prog)s is started with this argument, it will shut
 down as soon as it receives the specified string. The
---keep (server) or --reconn (client) options will be
-ignored and it won't listen again or reconnect to you.
+--keep-open (server) or --reconn (client) options will
+be ignored and it won't listen again or reconnect to you.
 Use a very unique string to not have it shut down
 accidentally by other input.
 """
@@ -2690,7 +2747,7 @@ def main():
 
     # Set netcat options
     net_opts = {
-        "bufsize": 1024,
+        "bufsize": 8192,
         "backlog": 0,
         "nodns": args.nodns,
         "udp": args.udp,
@@ -2725,9 +2782,11 @@ def main():
 
     logging.addLevelName(LOGLEVEL_TRACE_NUM, "TRACE")
     logging.Logger.trace = logtrace
-    logformat = "%(levelname)s:%(message)s"
+    logformat = "%(levelname)s %(message)s"
+    if args.verbose > 2:
+        logformat = "%(levelname)s [%(threadName)s]: %(message)s"
     if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(funcName)s():%(message)s"
+        logformat = "%(levelname)s [%(threadName)s] %(funcName)s(): %(message)s"
     logging.basicConfig(format=logformat, level=loglevel)
 
     # Initialize encoder
@@ -2752,66 +2811,104 @@ def main():
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
     if args.local:
+        ssig = StopSignal()
         # TODO: Make the listen address optional!
-        # Create listen and client instances
-        # FIXME: As there is only one THREAD_TERMINATE, both instances will use it.
-        #       this should go into the runner or so.
         srv_opts = net_opts.copy()
         srv_opts["reconn"] = True
+        srv_opts["keep_open"] = True
         srv_opts["reconn_wait"] = 0
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
+        # Create listen and client instances
         net_srv = NetcatServer(
             encoder, lhost, lport, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
         )
         net_cli = NetcatClient(
-            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
         )
-
-        # Create Runner (the set_* funcs below are brainfuck and took me 1 hour to figure it out)
+        # Create Runner
         run = Runner()
-
-        # [srv] User-Client connects here, sends data and the Server takes it as input
-        run.set_recv_generator(net_srv.receive)
-        # [cli] Runner parses data from Server on to Proxy-Client, which sends/connect it further
-        run.set_output_callback(net_cli.send)
-        # [cli] Proxy-Client waits for response and receives data back
-        run.set_input_generator(net_cli.receive)
-        # [srv] Runner parses data from Proxy-Client onto Server, which sends/back to User-Client
-        run.set_send_callback(net_srv.send)
-
-        run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(object)
-        # And finally run
+        run.add_action(
+            {
+                "name": "TRANSMIT",
+                "producer": net_srv.receive,  # USER sends data to PC-SERVER
+                "consumer": net_cli.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
+        run.add_action(
+            {
+                "name": "RECEIVE",
+                "producer": net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
+                "consumer": net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
         run.run()
     # Run server
     if args.listen:
+        ssig = StopSignal()
         net = NetcatServer(
             encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
         )
         run = Runner()
-        run.set_recv_generator(net.receive)
-        run.set_input_generator(mod.input_generator)
-        run.set_send_callback(net.send)
-        run.set_output_callback(mod.input_callback)
-
-        run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(mod.input_interrupter)
+        run.add_action(
+            {
+                "name": "RECV",
+                "producer": net.receive,
+                "consumer": mod.consumer,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Also force the producer to stop on net error
+            }
+        )
+        run.add_action(
+            {
+                "name": "STDIN",
+                "producer": mod.producer,
+                "consumer": net.send,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Externally stop the produer itself
+            }
+        )
         run.run()
+
     # Run client
     else:
+        ssig = StopSignal()
         net = NetcatClient(
             encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
         )
         run = Runner()
-        run.set_recv_generator(net.receive)
-        run.set_input_generator(mod.input_generator)
-        run.set_send_callback(net.send)
-        run.set_output_callback(mod.input_callback)
+        run.add_action(
+            {
+                "name": "RECV",
+                "producer": net.receive,
+                "consumer": mod.consumer,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Also force the producer to stop on net error
+            }
+        )
+        run.add_action(
+            {
+                "name": "STDIN",
+                "producer": mod.producer,
+                "consumer": net.send,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Externally stop the produer itself
+            }
+        )
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
-            run.set_timed_action(args.udp_ping_intvl, net.send, "\x00")
-        run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(object)
+            run.add_timer(
+                {
+                    "name": "PING",
+                    "action": net.send,
+                    "intvl": args.udp_ping_intvl,
+                    "args": ("\x00"),
+                    "signal": ssig,
+                }
+            )
         run.run()
 
 
@@ -2820,7 +2917,6 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        THREAD_TERMINATE = True
         print()
         sys.exit(1)
 </code></pre>
@@ -2856,14 +2952,6 @@ if __name__ == "__main__":
       </div>
       <div class="item">
       <p id="pwncat.PIPE" class="name">var <span class="ident">PIPE</span></p>
-      
-  
-  <div class="source_cont">
-</div>
-
-      </div>
-      <div class="item">
-      <p id="pwncat.THREAD_TERMINATE" class="name">var <span class="ident">THREAD_TERMINATE</span></p>
       
   
   <div class="source_cont">
@@ -3229,8 +3317,8 @@ Use --udp-ping-intvl 0 to be faster.
         help="""All modes:
 If %(prog)s is started with this argument, it will shut
 down as soon as it receives the specified string. The
---keep (server) or --reconn (client) options will be
-ignored and it won't listen again or reconnect to you.
+--keep-open (server) or --reconn (client) options will
+be ignored and it won't listen again or reconnect to you.
 Use a very unique string to not have it shut down
 accidentally by other input.
 """
@@ -3341,7 +3429,7 @@ accidentally by other input.
 
     # Set netcat options
     net_opts = {
-        "bufsize": 1024,
+        "bufsize": 8192,
         "backlog": 0,
         "nodns": args.nodns,
         "udp": args.udp,
@@ -3376,9 +3464,11 @@ accidentally by other input.
 
     logging.addLevelName(LOGLEVEL_TRACE_NUM, "TRACE")
     logging.Logger.trace = logtrace
-    logformat = "%(levelname)s:%(message)s"
+    logformat = "%(levelname)s %(message)s"
+    if args.verbose > 2:
+        logformat = "%(levelname)s [%(threadName)s]: %(message)s"
     if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(funcName)s():%(message)s"
+        logformat = "%(levelname)s [%(threadName)s] %(funcName)s(): %(message)s"
     logging.basicConfig(format=logformat, level=loglevel)
 
     # Initialize encoder
@@ -3403,66 +3493,104 @@ accidentally by other input.
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
     if args.local:
+        ssig = StopSignal()
         # TODO: Make the listen address optional!
-        # Create listen and client instances
-        # FIXME: As there is only one THREAD_TERMINATE, both instances will use it.
-        #       this should go into the runner or so.
         srv_opts = net_opts.copy()
         srv_opts["reconn"] = True
+        srv_opts["keep_open"] = True
         srv_opts["reconn_wait"] = 0
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
+        # Create listen and client instances
         net_srv = NetcatServer(
             encoder, lhost, lport, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
         )
         net_cli = NetcatClient(
-            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
         )
-
-        # Create Runner (the set_* funcs below are brainfuck and took me 1 hour to figure it out)
+        # Create Runner
         run = Runner()
-
-        # [srv] User-Client connects here, sends data and the Server takes it as input
-        run.set_recv_generator(net_srv.receive)
-        # [cli] Runner parses data from Server on to Proxy-Client, which sends/connect it further
-        run.set_output_callback(net_cli.send)
-        # [cli] Proxy-Client waits for response and receives data back
-        run.set_input_generator(net_cli.receive)
-        # [srv] Runner parses data from Proxy-Client onto Server, which sends/back to User-Client
-        run.set_send_callback(net_srv.send)
-
-        run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(object)
-        # And finally run
+        run.add_action(
+            {
+                "name": "TRANSMIT",
+                "producer": net_srv.receive,  # USER sends data to PC-SERVER
+                "consumer": net_cli.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
+        run.add_action(
+            {
+                "name": "RECEIVE",
+                "producer": net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
+                "consumer": net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
         run.run()
     # Run server
     if args.listen:
+        ssig = StopSignal()
         net = NetcatServer(
             encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
         )
         run = Runner()
-        run.set_recv_generator(net.receive)
-        run.set_input_generator(mod.input_generator)
-        run.set_send_callback(net.send)
-        run.set_output_callback(mod.input_callback)
-
-        run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(mod.input_interrupter)
+        run.add_action(
+            {
+                "name": "RECV",
+                "producer": net.receive,
+                "consumer": mod.consumer,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Also force the producer to stop on net error
+            }
+        )
+        run.add_action(
+            {
+                "name": "STDIN",
+                "producer": mod.producer,
+                "consumer": net.send,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Externally stop the produer itself
+            }
+        )
         run.run()
+
     # Run client
     else:
+        ssig = StopSignal()
         net = NetcatClient(
             encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, net_opts
         )
         run = Runner()
-        run.set_recv_generator(net.receive)
-        run.set_input_generator(mod.input_generator)
-        run.set_send_callback(net.send)
-        run.set_output_callback(mod.input_callback)
+        run.add_action(
+            {
+                "name": "RECV",
+                "producer": net.receive,
+                "consumer": mod.consumer,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Also force the producer to stop on net error
+            }
+        )
+        run.add_action(
+            {
+                "name": "STDIN",
+                "producer": mod.producer,
+                "consumer": net.send,
+                "signal": ssig,
+                "interrupt": mod.interrupt,  # Externally stop the produer itself
+            }
+        )
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
-            run.set_timed_action(args.udp_ping_intvl, net.send, "\x00")
-        run.set_revc_generator_stop_function(object)
-        run.set_input_generator_stop_function(object)
+            run.add_timer(
+                {
+                    "name": "PING",
+                    "action": net.send,
+                    "intvl": args.udp_ping_intvl,
+                    "args": ("\x00"),
+                    "signal": ssig,
+                }
+            )
         run.run()
 </code></pre>
   </div>
@@ -3536,22 +3664,40 @@ in a way that it is able to act on the event which the "input_interrupter" emitt
 
     @abstractmethod
     def __init__(self, options={}):
-        """Set specific options for this plugin."""
+        """
+        Set specific options for this plugin.
+
+        Args:
+            options (dict):    A dict which allows you to add custom options to your module
+        """
         raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def input_generator(self):
-        """Implement a generator function which constantly yields data from some input."""
+    def producer(self, ssig):
+        """
+        Implement a generator function which constantly yields data.
+
+        The data could be from various sources such as: received from a socket,
+        received from user input, received from shell command output or anything else.
+
+        Args:
+            ssig (StopSignal): A StopSignal instance providing has_stop() and raise_stop() functions
+        """
         raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def input_callback(self, data):
-        """Implement a callback which processes the input which is parsed from input_generator. """
+    def consumer(self, data):
+        """The consumer takes the consumers' output as input and processes it in some form."""
         raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
-    def input_interrupter(self):
-        """Implement a method, which quits the input_generator."""
+    def interrupt(self):
+        """Defines an interrupt function which will stop the producer.
+
+        Various producer might call blocking functions and they won't be able to stop themself
+        as they hang on that blocking function. This method is triggered from outside and is
+        supposed to stop/shutdown the producer.
+        If no such interrupt is required, imeplemt it empty."""
         raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
@@ -3575,13 +3721,19 @@ in a way that it is able to act on the event which the "input_interrupter" emitt
 
     
   
-    <div class="desc"><p>Set specific options for this plugin.</p></div>
+    <div class="desc"><p>Set specific options for this plugin.</p>
+<p>Args:
+    options (dict):    A dict which allows you to add custom options to your module</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.__init__', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.AbstractNetcatPlugin.__init__" class="source">
     <pre><code>@abstractmethod
 def __init__(self, options={}):
-    """Set specific options for this plugin."""
+    """
+    Set specific options for this plugin.
+    Args:
+        options (dict):    A dict which allows you to add custom options to your module
+    """
     raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
@@ -3591,20 +3743,20 @@ def __init__(self, options={}):
   
             
   <div class="item">
-    <div class="name def" id="pwncat.AbstractNetcatPlugin.input_callback">
-    <p>def <span class="ident">input_callback</span>(</p><p>self, data)</p>
+    <div class="name def" id="pwncat.AbstractNetcatPlugin.consumer">
+    <p>def <span class="ident">consumer</span>(</p><p>self, data)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Implement a callback which processes the input which is parsed from input_generator.</p></div>
+    <div class="desc"><p>The consumer takes the consumers' output as input and processes it in some form.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.input_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.AbstractNetcatPlugin.input_callback" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.consumer', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.AbstractNetcatPlugin.consumer" class="source">
     <pre><code>@abstractmethod
-def input_callback(self, data):
-    """Implement a callback which processes the input which is parsed from input_generator. """
+def consumer(self, data):
+    """The consumer takes the consumers' output as input and processes it in some form."""
     raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
@@ -3614,20 +3766,28 @@ def input_callback(self, data):
   
             
   <div class="item">
-    <div class="name def" id="pwncat.AbstractNetcatPlugin.input_generator">
-    <p>def <span class="ident">input_generator</span>(</p><p>self)</p>
+    <div class="name def" id="pwncat.AbstractNetcatPlugin.interrupt">
+    <p>def <span class="ident">interrupt</span>(</p><p>self)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Implement a generator function which constantly yields data from some input.</p></div>
+    <div class="desc"><p>Defines an interrupt function which will stop the producer.</p>
+<p>Various producer might call blocking functions and they won't be able to stop themself
+as they hang on that blocking function. This method is triggered from outside and is
+supposed to stop/shutdown the producer.
+If no such interrupt is required, imeplemt it empty.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.input_generator', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.AbstractNetcatPlugin.input_generator" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.interrupt', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.AbstractNetcatPlugin.interrupt" class="source">
     <pre><code>@abstractmethod
-def input_generator(self):
-    """Implement a generator function which constantly yields data from some input."""
+def interrupt(self):
+    """Defines an interrupt function which will stop the producer.
+    Various producer might call blocking functions and they won't be able to stop themself
+    as they hang on that blocking function. This method is triggered from outside and is
+    supposed to stop/shutdown the producer.
+    If no such interrupt is required, imeplemt it empty."""
     raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
@@ -3637,20 +3797,30 @@ def input_generator(self):
   
             
   <div class="item">
-    <div class="name def" id="pwncat.AbstractNetcatPlugin.input_interrupter">
-    <p>def <span class="ident">input_interrupter</span>(</p><p>self)</p>
+    <div class="name def" id="pwncat.AbstractNetcatPlugin.producer">
+    <p>def <span class="ident">producer</span>(</p><p>self, ssig)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Implement a method, which quits the input_generator.</p></div>
+    <div class="desc"><p>Implement a generator function which constantly yields data.</p>
+<p>The data could be from various sources such as: received from a socket,
+received from user input, received from shell command output or anything else.</p>
+<p>Args:
+    ssig (StopSignal): A StopSignal instance providing has_stop() and raise_stop() functions</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.input_interrupter', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.AbstractNetcatPlugin.input_interrupter" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractNetcatPlugin.producer', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.AbstractNetcatPlugin.producer" class="source">
     <pre><code>@abstractmethod
-def input_interrupter(self):
-    """Implement a method, which quits the input_generator."""
+def producer(self, ssig):
+    """
+    Implement a generator function which constantly yields data.
+    The data could be from various sources such as: received from a socket,
+    received from user input, received from shell command output or anything else.
+    Args:
+        ssig (StopSignal): A StopSignal instance providing has_stop() and raise_stop() functions
+    """
     raise NotImplementedError("Should have implemented this")
 </code></pre>
   </div>
@@ -3712,18 +3882,13 @@ def input_interrupter(self):
         "safe_word": False,  # Once this is received, the application quits
     }
 
-    # In case the server is running in UDP mode,
-    # it must wait for the client to connect in order
+    # Store the address of the remote end.
+    # If we are in server role and running in UDP mode,
+    # it must wait for the client to connect first in order
     # to retrieve its addr and port in order to be able
     # to send data back to it.
-    udp_client_addr = None
-    udp_client_port = None
-
-    # For client role only
-    # Store the address and port of the remote server to connect to.
-    # This is required for self.connect()
     remote_addr = None
-    remote_addr = None
+    remote_port = None
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -3874,12 +4039,6 @@ def input_interrupter(self):
         # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # TODO: Not sure if SO_REUSEPORT is also required
-        # try:
-        #     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        # except AttributeError:
-        #     # Not available on Windows (and maybe others)
-        #     self.log.debug("socket.SO_REUSEPORT is not available on your platform")
 
     def bind(self, addr, port):
         """Bind the socket to an address."""
@@ -3929,10 +4088,10 @@ def input_interrupter(self):
         """Send data."""
         # In case of sending data back to an udp client we need to wait
         # until the client has first connected and told us its addr/port
-        if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
-            self.log.info("Waiting for UDP client to connect")
-            while self.udp_client_addr is None and self.udp_client_port is None:
-                time.sleep(0.2)  # Less wastefull than using 'pass'
+        if self.options["udp"] and self.remote_addr is None and self.remote_port is None:
+            self.log.warning("UDP client has not yet connected. Queueing message")
+            while self.remote_addr is None and self.remote_port is None:
+                time.sleep(0.1)  # Less wastefull than using 'pass'
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
@@ -3943,9 +4102,14 @@ def input_interrupter(self):
         # Loop until all bytes have been send
         while send < size:
             try:
-                self.log.trace("Trying to send {} bytes".format(size - send))
+                self.log.debug(
+                    "Trying to send {} bytes to {}:{}".format(
+                        size - send, self.remote_addr, self.remote_port
+                    )
+                )
+                self.log.trace("Trying to send: {}".format(repr(data)))
                 if self.options["udp"]:
-                    curr = self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
+                    curr = self.conn.sendto(data, (self.remote_addr, self.remote_port))
                     send += curr
                 else:
                     curr = self.conn.send(data)
@@ -3955,7 +4119,11 @@ def input_interrupter(self):
                     return
                 # Remove 'curr' many bytes from data for the next round
                 data = data[curr:]
-                self.log.trace("Send {} bytes ({} bytes remaining)".format(curr, size - send))
+                self.log.debug(
+                    "Sent {} bytes to {}:{} ({} bytes remaining)".format(
+                        curr, self.remote_addr, self.remote_port, size - send
+                    )
+                )
             except socket.error as error:
                 if error.errno == socket.errno.EPIPE:
                     self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
@@ -3972,8 +4140,12 @@ def input_interrupter(self):
                 self.log.error("Socket OS Error: {}".format(error))
                 return
 
-    def receive(self):
-        """Generator function to receive data endlessly by yielding it."""
+    def receive(self, ssig):
+        """
+        Generator function to receive data endlessly by yielding it.
+
+        :param function interrupter: A Func that returns True/False to tell us to stop or not.
+        """
         # Set current receive timeout
         self.conn.settimeout(self.recv_timeout)
         self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
@@ -3982,9 +4154,15 @@ def input_interrupter(self):
         curr_recv_timeout_retry = 0
 
         while True:
+            # Ensure to signal that we do not stop receiving data
+            self.__stop_recv = False
+            if ssig.has_stop():
+                self.log.debug("Interrupt has been requested for receive()")
+                return
 
             if self.conn is None:
                 self.log.error("Exit. Socket is gone in receive()")
+                ssig.raise_stop()
                 return
 
             # Non-blocking socket with timeout. If the timeout threshold is hit,
@@ -3997,17 +4175,22 @@ def input_interrupter(self):
             # [1/5] NOTE: This is the place where we can do any checks in between reads as the
             # socket has been changed from blocking to time-out based.
             except socket.timeout:
-                # No other thread has terminated yet, and thus not asked us to quit.
-                # so we can continue waiting for input on the socket
-                if not THREAD_TERMINATE:
+                # Let's ask the interrupter() function if we should terminate?
+                if not ssig.has_stop():
                     # No action required, continue the loop and read again.
                     continue
+                self.log.debug("Interrupt has been requested for receive()")
                 # Other threads are done. Let's try to read a few more times before
                 # returning and ending this function (might be data left)
                 if curr_recv_timeout_retry < self.recv_timeout_retry:
-                    self.log.trace("RECV EOF TIMEOUT: AND THREAD_TERMINATE REQUESTED")
+                    self.log.trace(
+                        "Final socket read: {}/{} before quitting.".format(
+                            curr_recv_timeout_retry, self.recv_timeout_retry
+                        )
+                    )
                     curr_recv_timeout_retry += 1
                     continue
+                ssig.raise_stop()
                 return
 
             # [2/5] Connection was forcibly closed
@@ -4024,11 +4207,19 @@ def input_interrupter(self):
             # [3/5] TODO: Still need to figure out what this error is and when it is thrown
             except AttributeError as error:
                 self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
+                ssig.raise_stop()
                 return
 
             # We're receiving data again, so let's reset the retry/terminate counter
             # The counter is incremented in 'except socket.timeout' above.
             curr_recv_timeout_retry = 0
+
+            # If we're receiving data from a UDP client
+            # we can firstly/finally set its addr/port in order
+            # to send data back to it (see send() function)
+            if self.options["udp"]:
+                self.remote_addr, self.remote_port = addr
+                self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
 
             # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
             if not byte:
@@ -4037,7 +4228,7 @@ def input_interrupter(self):
                 if self.role == "server":
                     # Yay, we want to continue and allow new clients
                     if self.__reaccept_from_client():
-                        self.log.trace("Server can continue, because of --keep")
+                        self.log.trace("Server can continue, because of --keep-open")
                         continue
                 if self.role == "client":
                     # Yay, we want to continue and our client will re-connect upstream again
@@ -4045,28 +4236,16 @@ def input_interrupter(self):
                         self.log.trace("Client can continue, because of --reconn")
                         continue
 
-                self.log.warning("Exit. Upstream connection gone. No --keep/--reconn specified.")
+                self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
+                ssig.raise_stop()
                 return
 
             # [5/5] We have data to process
             data = self.enc.decode(byte)
+            self.log.debug(
+                "Received {} bytes from {}:{}".format(len(data), self.remote_addr, self.remote_port)
+            )
             self.log.trace("Received: {}".format(repr(data)))
-
-            # If we're receiving data from a UDP client
-            # we can firstly/finally set its addr/port in order
-            # to send data back to it (see send() function)
-            if self.options["udp"]:
-                self.udp_client_addr, self.udp_client_port = addr
-                # Avoid the noise on UDP connections to spam on every send
-                if self.udp_client_addr is None or self.udp_client_port is None:
-                    self.log.info(
-                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                    )
-                # Find for debug
-                else:
-                    self.log.debug(
-                        "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                    )
 
             yield data
 </code></pre>
@@ -4132,6 +4311,16 @@ def input_interrupter(self):
 
             </div>
             <div class="item">
+            <p id="pwncat.AbstractSocket.remote_port" class="name">var <span class="ident">remote_port</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
             <p id="pwncat.AbstractSocket.role" class="name">var <span class="ident">role</span></p>
             
 
@@ -4143,26 +4332,6 @@ def input_interrupter(self):
             </div>
             <div class="item">
             <p id="pwncat.AbstractSocket.sock" class="name">var <span class="ident">sock</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="pwncat.AbstractSocket.udp_client_addr" class="name">var <span class="ident">udp_client_addr</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="pwncat.AbstractSocket.udp_client_port" class="name">var <span class="ident">udp_client_port</span></p>
             
 
             
@@ -4394,18 +4563,22 @@ def input_interrupter(self):
             
   <div class="item">
     <div class="name def" id="pwncat.AbstractSocket.receive">
-    <p>def <span class="ident">receive</span>(</p><p>self)</p>
+    <p>def <span class="ident">receive</span>(</p><p>self, ssig)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Generator function to receive data endlessly by yielding it.</p></div>
+    <div class="desc"><p>Generator function to receive data endlessly by yielding it.</p>
+<p>:param function interrupter: A Func that returns True/False to tell us to stop or not.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.AbstractSocket.receive', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.AbstractSocket.receive" class="source">
-    <pre><code>def receive(self):
-    """Generator function to receive data endlessly by yielding it."""
+    <pre><code>def receive(self, ssig):
+    """
+    Generator function to receive data endlessly by yielding it.
+    :param function interrupter: A Func that returns True/False to tell us to stop or not.
+    """
     # Set current receive timeout
     self.conn.settimeout(self.recv_timeout)
     self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
@@ -4413,8 +4586,14 @@ def input_interrupter(self):
     # if we exceeded maximum retires
     curr_recv_timeout_retry = 0
     while True:
+        # Ensure to signal that we do not stop receiving data
+        self.__stop_recv = False
+        if ssig.has_stop():
+            self.log.debug("Interrupt has been requested for receive()")
+            return
         if self.conn is None:
             self.log.error("Exit. Socket is gone in receive()")
+            ssig.raise_stop()
             return
         # Non-blocking socket with timeout. If the timeout threshold is hit,
         # it will throw an socket.timeout exception. This is required to see if other
@@ -4425,17 +4604,22 @@ def input_interrupter(self):
         # [1/5] NOTE: This is the place where we can do any checks in between reads as the
         # socket has been changed from blocking to time-out based.
         except socket.timeout:
-            # No other thread has terminated yet, and thus not asked us to quit.
-            # so we can continue waiting for input on the socket
-            if not THREAD_TERMINATE:
+            # Let's ask the interrupter() function if we should terminate?
+            if not ssig.has_stop():
                 # No action required, continue the loop and read again.
                 continue
+            self.log.debug("Interrupt has been requested for receive()")
             # Other threads are done. Let's try to read a few more times before
             # returning and ending this function (might be data left)
             if curr_recv_timeout_retry < self.recv_timeout_retry:
-                self.log.trace("RECV EOF TIMEOUT: AND THREAD_TERMINATE REQUESTED")
+                self.log.trace(
+                    "Final socket read: {}/{} before quitting.".format(
+                        curr_recv_timeout_retry, self.recv_timeout_retry
+                    )
+                )
                 curr_recv_timeout_retry += 1
                 continue
+            ssig.raise_stop()
             return
         # [2/5] Connection was forcibly closed
         # [Errno 10054] An existing connection was forcibly closed by the remote host
@@ -4450,43 +4634,39 @@ def input_interrupter(self):
         # [3/5] TODO: Still need to figure out what this error is and when it is thrown
         except AttributeError as error:
             self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
+            ssig.raise_stop()
             return
         # We're receiving data again, so let's reset the retry/terminate counter
         # The counter is incremented in 'except socket.timeout' above.
         curr_recv_timeout_retry = 0
+        # If we're receiving data from a UDP client
+        # we can firstly/finally set its addr/port in order
+        # to send data back to it (see send() function)
+        if self.options["udp"]:
+            self.remote_addr, self.remote_port = addr
+            self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
         # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
         if not byte:
             self.log.trace("Socket: Empty data received or otherwise caught.")
             if self.role == "server":
                 # Yay, we want to continue and allow new clients
                 if self.__reaccept_from_client():
-                    self.log.trace("Server can continue, because of --keep")
+                    self.log.trace("Server can continue, because of --keep-open")
                     continue
             if self.role == "client":
                 # Yay, we want to continue and our client will re-connect upstream again
                 if self.__reconnect_to_server():
                     self.log.trace("Client can continue, because of --reconn")
                     continue
-            self.log.warning("Exit. Upstream connection gone. No --keep/--reconn specified.")
+            self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
+            ssig.raise_stop()
             return
         # [5/5] We have data to process
         data = self.enc.decode(byte)
+        self.log.debug(
+            "Received {} bytes from {}:{}".format(len(data), self.remote_addr, self.remote_port)
+        )
         self.log.trace("Received: {}".format(repr(data)))
-        # If we're receiving data from a UDP client
-        # we can firstly/finally set its addr/port in order
-        # to send data back to it (see send() function)
-        if self.options["udp"]:
-            self.udp_client_addr, self.udp_client_port = addr
-            # Avoid the noise on UDP connections to spam on every send
-            if self.udp_client_addr is None or self.udp_client_port is None:
-                self.log.info(
-                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                )
-            # Find for debug
-            else:
-                self.log.debug(
-                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                )
         yield data
 </code></pre>
   </div>
@@ -4511,10 +4691,10 @@ def input_interrupter(self):
     """Send data."""
     # In case of sending data back to an udp client we need to wait
     # until the client has first connected and told us its addr/port
-    if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
-        self.log.info("Waiting for UDP client to connect")
-        while self.udp_client_addr is None and self.udp_client_port is None:
-            time.sleep(0.2)  # Less wastefull than using 'pass'
+    if self.options["udp"] and self.remote_addr is None and self.remote_port is None:
+        self.log.warning("UDP client has not yet connected. Queueing message")
+        while self.remote_addr is None and self.remote_port is None:
+            time.sleep(0.1)  # Less wastefull than using 'pass'
     curr = 0  # bytes send during one loop iteration
     send = 0  # total bytes send
     size = len(data)  # bytes of data that needs to be send
@@ -4523,9 +4703,14 @@ def input_interrupter(self):
     # Loop until all bytes have been send
     while send < size:
         try:
-            self.log.trace("Trying to send {} bytes".format(size - send))
+            self.log.debug(
+                "Trying to send {} bytes to {}:{}".format(
+                    size - send, self.remote_addr, self.remote_port
+                )
+            )
+            self.log.trace("Trying to send: {}".format(repr(data)))
             if self.options["udp"]:
-                curr = self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
+                curr = self.conn.sendto(data, (self.remote_addr, self.remote_port))
                 send += curr
             else:
                 curr = self.conn.send(data)
@@ -4535,7 +4720,11 @@ def input_interrupter(self):
                 return
             # Remove 'curr' many bytes from data for the next round
             data = data[curr:]
-            self.log.trace("Send {} bytes ({} bytes remaining)".format(curr, size - send))
+            self.log.debug(
+                "Sent {} bytes to {}:{} ({} bytes remaining)".format(
+                    curr, self.remote_addr, self.remote_port, size - send
+                )
+            )
         except socket.error as error:
             if error.errno == socket.errno.EPIPE:
                 self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
@@ -4632,17 +4821,14 @@ def input_interrupter(self):
         addr = self.gethostbyname(host, port, socket.AF_INET)
         self.create_socket()
         self.conn = self.sock
-        if self.options["udp"]:
-            self.udp_client_addr = addr
-            self.udp_client_port = port
-        else:
-            self.remote_addr = addr
-            self.remote_port = port
+
+        self.remote_addr = addr
+        self.remote_port = port
+        if not self.options["udp"]:
             if self.connect():
                 return
-            if self.role == "client":
-                if self._AbstractSocket__reconnect_to_server():
-                    return
+            if self._AbstractSocket__reconnect_to_server():
+                return
             sys.exit(1)
 </code></pre>
   </div>
@@ -4688,16 +4874,6 @@ def input_interrupter(self):
 
             </div>
             <div class="item">
-            <p id="pwncat.NetcatClient.remote_addr" class="name">var <span class="ident">remote_addr</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
             <p id="pwncat.NetcatClient.role" class="name">var <span class="ident">role</span></p>
             
 
@@ -4709,26 +4885,6 @@ def input_interrupter(self):
             </div>
             <div class="item">
             <p id="pwncat.NetcatClient.sock" class="name">var <span class="ident">sock</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="pwncat.NetcatClient.udp_client_addr" class="name">var <span class="ident">udp_client_addr</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="pwncat.NetcatClient.udp_client_port" class="name">var <span class="ident">udp_client_port</span></p>
             
 
             
@@ -4760,17 +4916,13 @@ def input_interrupter(self):
     addr = self.gethostbyname(host, port, socket.AF_INET)
     self.create_socket()
     self.conn = self.sock
-    if self.options["udp"]:
-        self.udp_client_addr = addr
-        self.udp_client_port = port
-    else:
-        self.remote_addr = addr
-        self.remote_port = port
+    self.remote_addr = addr
+    self.remote_port = port
+    if not self.options["udp"]:
         if self.connect():
             return
-        if self.role == "client":
-            if self._AbstractSocket__reconnect_to_server():
-                return
+        if self._AbstractSocket__reconnect_to_server():
+            return
         sys.exit(1)
 </code></pre>
   </div>
@@ -4963,18 +5115,22 @@ def input_interrupter(self):
             
   <div class="item">
     <div class="name def" id="pwncat.NetcatClient.receive">
-    <p>def <span class="ident">receive</span>(</p><p>self)</p>
+    <p>def <span class="ident">receive</span>(</p><p>self, ssig)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Generator function to receive data endlessly by yielding it.</p></div>
+    <div class="desc"><p>Generator function to receive data endlessly by yielding it.</p>
+<p>:param function interrupter: A Func that returns True/False to tell us to stop or not.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatClient.receive', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.NetcatClient.receive" class="source">
-    <pre><code>def receive(self):
-    """Generator function to receive data endlessly by yielding it."""
+    <pre><code>def receive(self, ssig):
+    """
+    Generator function to receive data endlessly by yielding it.
+    :param function interrupter: A Func that returns True/False to tell us to stop or not.
+    """
     # Set current receive timeout
     self.conn.settimeout(self.recv_timeout)
     self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
@@ -4982,8 +5138,14 @@ def input_interrupter(self):
     # if we exceeded maximum retires
     curr_recv_timeout_retry = 0
     while True:
+        # Ensure to signal that we do not stop receiving data
+        self.__stop_recv = False
+        if ssig.has_stop():
+            self.log.debug("Interrupt has been requested for receive()")
+            return
         if self.conn is None:
             self.log.error("Exit. Socket is gone in receive()")
+            ssig.raise_stop()
             return
         # Non-blocking socket with timeout. If the timeout threshold is hit,
         # it will throw an socket.timeout exception. This is required to see if other
@@ -4994,17 +5156,22 @@ def input_interrupter(self):
         # [1/5] NOTE: This is the place where we can do any checks in between reads as the
         # socket has been changed from blocking to time-out based.
         except socket.timeout:
-            # No other thread has terminated yet, and thus not asked us to quit.
-            # so we can continue waiting for input on the socket
-            if not THREAD_TERMINATE:
+            # Let's ask the interrupter() function if we should terminate?
+            if not ssig.has_stop():
                 # No action required, continue the loop and read again.
                 continue
+            self.log.debug("Interrupt has been requested for receive()")
             # Other threads are done. Let's try to read a few more times before
             # returning and ending this function (might be data left)
             if curr_recv_timeout_retry < self.recv_timeout_retry:
-                self.log.trace("RECV EOF TIMEOUT: AND THREAD_TERMINATE REQUESTED")
+                self.log.trace(
+                    "Final socket read: {}/{} before quitting.".format(
+                        curr_recv_timeout_retry, self.recv_timeout_retry
+                    )
+                )
                 curr_recv_timeout_retry += 1
                 continue
+            ssig.raise_stop()
             return
         # [2/5] Connection was forcibly closed
         # [Errno 10054] An existing connection was forcibly closed by the remote host
@@ -5019,43 +5186,39 @@ def input_interrupter(self):
         # [3/5] TODO: Still need to figure out what this error is and when it is thrown
         except AttributeError as error:
             self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
+            ssig.raise_stop()
             return
         # We're receiving data again, so let's reset the retry/terminate counter
         # The counter is incremented in 'except socket.timeout' above.
         curr_recv_timeout_retry = 0
+        # If we're receiving data from a UDP client
+        # we can firstly/finally set its addr/port in order
+        # to send data back to it (see send() function)
+        if self.options["udp"]:
+            self.remote_addr, self.remote_port = addr
+            self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
         # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
         if not byte:
             self.log.trace("Socket: Empty data received or otherwise caught.")
             if self.role == "server":
                 # Yay, we want to continue and allow new clients
                 if self.__reaccept_from_client():
-                    self.log.trace("Server can continue, because of --keep")
+                    self.log.trace("Server can continue, because of --keep-open")
                     continue
             if self.role == "client":
                 # Yay, we want to continue and our client will re-connect upstream again
                 if self.__reconnect_to_server():
                     self.log.trace("Client can continue, because of --reconn")
                     continue
-            self.log.warning("Exit. Upstream connection gone. No --keep/--reconn specified.")
+            self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
+            ssig.raise_stop()
             return
         # [5/5] We have data to process
         data = self.enc.decode(byte)
+        self.log.debug(
+            "Received {} bytes from {}:{}".format(len(data), self.remote_addr, self.remote_port)
+        )
         self.log.trace("Received: {}".format(repr(data)))
-        # If we're receiving data from a UDP client
-        # we can firstly/finally set its addr/port in order
-        # to send data back to it (see send() function)
-        if self.options["udp"]:
-            self.udp_client_addr, self.udp_client_port = addr
-            # Avoid the noise on UDP connections to spam on every send
-            if self.udp_client_addr is None or self.udp_client_port is None:
-                self.log.info(
-                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                )
-            # Find for debug
-            else:
-                self.log.debug(
-                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                )
         yield data
 </code></pre>
   </div>
@@ -5080,10 +5243,10 @@ def input_interrupter(self):
     """Send data."""
     # In case of sending data back to an udp client we need to wait
     # until the client has first connected and told us its addr/port
-    if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
-        self.log.info("Waiting for UDP client to connect")
-        while self.udp_client_addr is None and self.udp_client_port is None:
-            time.sleep(0.2)  # Less wastefull than using 'pass'
+    if self.options["udp"] and self.remote_addr is None and self.remote_port is None:
+        self.log.warning("UDP client has not yet connected. Queueing message")
+        while self.remote_addr is None and self.remote_port is None:
+            time.sleep(0.1)  # Less wastefull than using 'pass'
     curr = 0  # bytes send during one loop iteration
     send = 0  # total bytes send
     size = len(data)  # bytes of data that needs to be send
@@ -5092,9 +5255,14 @@ def input_interrupter(self):
     # Loop until all bytes have been send
     while send < size:
         try:
-            self.log.trace("Trying to send {} bytes".format(size - send))
+            self.log.debug(
+                "Trying to send {} bytes to {}:{}".format(
+                    size - send, self.remote_addr, self.remote_port
+                )
+            )
+            self.log.trace("Trying to send: {}".format(repr(data)))
             if self.options["udp"]:
-                curr = self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
+                curr = self.conn.sendto(data, (self.remote_addr, self.remote_port))
                 send += curr
             else:
                 curr = self.conn.send(data)
@@ -5104,7 +5272,11 @@ def input_interrupter(self):
                 return
             # Remove 'curr' many bytes from data for the next round
             data = data[curr:]
-            self.log.trace("Send {} bytes ({} bytes remaining)".format(curr, size - send))
+            self.log.debug(
+                "Sent {} bytes to {}:{} ({} bytes remaining)".format(
+                    curr, self.remote_addr, self.remote_port, size - send
+                )
+            )
         except socket.error as error:
             if error.errno == socket.errno.EPIPE:
                 self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
@@ -5129,6 +5301,26 @@ def input_interrupter(self):
           <h3>Instance variables</h3>
             <div class="item">
             <p id="pwncat.NetcatClient.conn" class="name">var <span class="ident">conn</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.NetcatClient.remote_addr" class="name">var <span class="ident">remote_addr</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.NetcatClient.remote_port" class="name">var <span class="ident">remote_port</span></p>
             
 
             
@@ -5178,6 +5370,10 @@ def input_interrupter(self):
                 shell=False,
                 env=env,
             )
+        # Python-2 compat (doesn't have FileNotFoundError)
+        except OSError:
+            self.log.error("Specified executable '{}' not found".format(self.executable))
+            sys.exit(1)
         except FileNotFoundError:
             self.log.error("Specified executable '{}' not found".format(self.executable))
             sys.exit(1)
@@ -5190,14 +5386,6 @@ def input_interrupter(self):
         self.log.trace("Killing executable: {} with pid {}".format(self.executable, self.p.pid))
         self.p.kill()
 
-    # ------------------------------------------------------------------------------
-    # Public Functions
-    # ------------------------------------------------------------------------------
-    def input_interrupter(self):
-        """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
-        self.p.kill()
-
     def __set_input_timeout(self, timeout=0.1):
         """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
         # select((rlist, wlist, xlist, timeout)
@@ -5208,9 +5396,20 @@ def input_interrupter(self):
         if not i:
             raise BaseException("timed out")
 
-    def input_generator(self):
+    # ------------------------------------------------------------------------------
+    # Public Functions
+    # ------------------------------------------------------------------------------
+    def interrupt(self):
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
+        self.p.kill()
+
+    def producer(self, ssig):
         """Constantly ask for input."""
         while True:
+            if ssig.has_stop():
+                self.log.trace("Stop signal acknowledged in Command")
+                return
             self.log.trace("Reading command output")
             # TODO: non-blocking read does not seem to work or?
             # try:
@@ -5230,7 +5429,7 @@ def input_interrupter(self):
                 break
             yield data
 
-    def input_callback(self, data):
+    def consumer(self, data):
         """Send data received to stdin (command input)."""
         data = self.enc.encode(data)
         self.log.trace("Appending to stdin: {}".format(data))
@@ -5294,6 +5493,10 @@ def input_interrupter(self):
             shell=False,
             env=env,
         )
+    # Python-2 compat (doesn't have FileNotFoundError)
+    except OSError:
+        self.log.error("Specified executable '{}' not found".format(self.executable))
+        sys.exit(1)
     except FileNotFoundError:
         self.log.error("Specified executable '{}' not found".format(self.executable))
         sys.exit(1)
@@ -5307,8 +5510,8 @@ def input_interrupter(self):
   
             
   <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginCommand.input_callback">
-    <p>def <span class="ident">input_callback</span>(</p><p>self, data)</p>
+    <div class="name def" id="pwncat.NetcatPluginCommand.consumer">
+    <p>def <span class="ident">consumer</span>(</p><p>self, data)</p>
     </div>
     
 
@@ -5316,9 +5519,9 @@ def input_interrupter(self):
   
     <div class="desc"><p>Send data received to stdin (command input).</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.input_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginCommand.input_callback" class="source">
-    <pre><code>def input_callback(self, data):
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.consumer', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginCommand.consumer" class="source">
+    <pre><code>def consumer(self, data):
     """Send data received to stdin (command input)."""
     data = self.enc.encode(data)
     self.log.trace("Appending to stdin: {}".format(data))
@@ -5332,8 +5535,31 @@ def input_interrupter(self):
   
             
   <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginCommand.input_generator">
-    <p>def <span class="ident">input_generator</span>(</p><p>self)</p>
+    <div class="name def" id="pwncat.NetcatPluginCommand.interrupt">
+    <p>def <span class="ident">interrupt</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Stop function that can be called externally to close this instance.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.interrupt', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginCommand.interrupt" class="source">
+    <pre><code>def interrupt(self):
+    """Stop function that can be called externally to close this instance."""
+    self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
+    self.p.kill()
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.NetcatPluginCommand.producer">
+    <p>def <span class="ident">producer</span>(</p><p>self, ssig)</p>
     </div>
     
 
@@ -5341,11 +5567,14 @@ def input_interrupter(self):
   
     <div class="desc"><p>Constantly ask for input.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.input_generator', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginCommand.input_generator" class="source">
-    <pre><code>def input_generator(self):
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.producer', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginCommand.producer" class="source">
+    <pre><code>def producer(self, ssig):
     """Constantly ask for input."""
     while True:
+        if ssig.has_stop():
+            self.log.trace("Stop signal acknowledged in Command")
+            return
         self.log.trace("Reading command output")
         # TODO: non-blocking read does not seem to work or?
         # try:
@@ -5364,29 +5593,6 @@ def input_interrupter(self):
             self.log.trace("Command output was empty. Exiting loop.")
             break
         yield data
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginCommand.input_interrupter">
-    <p>def <span class="ident">input_interrupter</span>(</p><p>self)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Stop function that can be called externally to close this instance.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginCommand.input_interrupter', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginCommand.input_interrupter" class="source">
-    <pre><code>def input_interrupter(self):
-    """Stop function that can be called externally to close this instance."""
-    self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
-    self.p.kill()
 </code></pre>
   </div>
 </div>
@@ -5453,10 +5659,6 @@ callback that writes to stdout.</p></div>
     # Specify timeout in seconds.
     input_timeout = None
 
-    # Used by the input_interrupter to set this to true.
-    # The input_generator will frequently check this value
-    __quit = False
-
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
@@ -5495,19 +5697,15 @@ callback that writes to stdout.</p></div>
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
-    def input_interrupter(self):
-        global THREAD_TERMINATE
-        """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatOutputCommand] quit flag was set by input_interrupter()")
-        self.__quit = True
 
-    def input_generator(self):
+    def producer(self, ssig):
         """Constantly ask for user input."""
         # https://stackoverflow.com/questions/1450393/#38670261
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
         # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
-            if self.__quit:
+            if ssig.has_stop():
+                self.log.trace("Stop signal acknowledged for reading STDIN-1")
                 return
             try:
                 # TODO: select() does not work for windows on stdin/stdout
@@ -5518,8 +5716,8 @@ callback that writes to stdout.</p></div>
                 # When using select() with timeout, we don't have any input
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
-                if THREAD_TERMINATE:
-                    self.log.trace("STDIN: terminate")
+                if ssig.has_stop():
+                    self.log.trace("Stop signal acknowledged for reading STDIN-2")
                     return
                 # TODO: Re-enable this for very verbose logging
                 # self.log.trace("STDIN: timeout. Waiting for input...")
@@ -5530,16 +5728,20 @@ callback that writes to stdout.</p></div>
             # EOF or <Ctrl>+<d>
             else:
                 # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
-                if THREAD_TERMINATE:
-                    self.log.trace("No more input generated, quitting.")
+                if ssig.has_stop():
+                    self.log.trace("Stop signal acknowledged for reading STDIN-3")
                     return
                 # TODO: Re-enable this for very verbose logging
                 # self.log.trace("STDIN: Reached EOF, repeating")
 
-    def input_callback(self, data):
+    def consumer(self, data):
         """Print received data to stdout."""
         print(data, end="")
         sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
+
+    def interrupt(self):
+        """Empty interrupt."""
+        pass
 </code></pre>
   </div>
 </div>
@@ -5608,8 +5810,8 @@ callback that writes to stdout.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginOutput.input_callback">
-    <p>def <span class="ident">input_callback</span>(</p><p>self, data)</p>
+    <div class="name def" id="pwncat.NetcatPluginOutput.consumer">
+    <p>def <span class="ident">consumer</span>(</p><p>self, data)</p>
     </div>
     
 
@@ -5617,9 +5819,9 @@ callback that writes to stdout.</p></div>
   
     <div class="desc"><p>Print received data to stdout.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.input_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginOutput.input_callback" class="source">
-    <pre><code>def input_callback(self, data):
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.consumer', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginOutput.consumer" class="source">
+    <pre><code>def consumer(self, data):
     """Print received data to stdout."""
     print(data, end="")
     sys.stdout.flush()  # TODO:Is this required? What does this do? Test this!
@@ -5631,8 +5833,30 @@ callback that writes to stdout.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginOutput.input_generator">
-    <p>def <span class="ident">input_generator</span>(</p><p>self)</p>
+    <div class="name def" id="pwncat.NetcatPluginOutput.interrupt">
+    <p>def <span class="ident">interrupt</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Empty interrupt.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.interrupt', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginOutput.interrupt" class="source">
+    <pre><code>def interrupt(self):
+    """Empty interrupt."""
+    pass
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.NetcatPluginOutput.producer">
+    <p>def <span class="ident">producer</span>(</p><p>self, ssig)</p>
     </div>
     
 
@@ -5640,15 +5864,16 @@ callback that writes to stdout.</p></div>
   
     <div class="desc"><p>Constantly ask for user input.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.input_generator', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginOutput.input_generator" class="source">
-    <pre><code>def input_generator(self):
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.producer', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.NetcatPluginOutput.producer" class="source">
+    <pre><code>def producer(self, ssig):
     """Constantly ask for user input."""
     # https://stackoverflow.com/questions/1450393/#38670261
     # while True: line = sys.stdin.readline() <- reads a whole line (faster)
     # for line in sys.stdin.readlin():        <- reads one byte at a time
     while True:
-        if self.__quit:
+        if ssig.has_stop():
+            self.log.trace("Stop signal acknowledged for reading STDIN-1")
             return
         try:
             # TODO: select() does not work for windows on stdin/stdout
@@ -5659,8 +5884,8 @@ callback that writes to stdout.</p></div>
             # When using select() with timeout, we don't have any input
             # at this point and simply continue the loop or quit if
             # a terminate request has been made by other threads.
-            if THREAD_TERMINATE:
-                self.log.trace("STDIN: terminate")
+            if ssig.has_stop():
+                self.log.trace("Stop signal acknowledged for reading STDIN-2")
                 return
             # TODO: Re-enable this for very verbose logging
             # self.log.trace("STDIN: timeout. Waiting for input...")
@@ -5671,33 +5896,9 @@ callback that writes to stdout.</p></div>
         # EOF or <Ctrl>+<d>
         else:
             # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
-            if THREAD_TERMINATE:
-                self.log.trace("No more input generated, quitting.")
+            if ssig.has_stop():
+                self.log.trace("Stop signal acknowledged for reading STDIN-3")
                 return
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.NetcatPluginOutput.input_interrupter">
-    <p>def <span class="ident">input_interrupter</span>(</p><p>self)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Implement a method, which quits the input_generator.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatPluginOutput.input_interrupter', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.NetcatPluginOutput.input_interrupter" class="source">
-    <pre><code>def input_interrupter(self):
-    global THREAD_TERMINATE
-    """Stop function that can be called externally to close this instance."""
-    self.log.trace("[NetcatOutputCommand] quit flag was set by input_interrupter()")
-    self.__quit = True
 </code></pre>
   </div>
 </div>
@@ -5828,6 +6029,16 @@ callback that writes to stdout.</p></div>
 
             </div>
             <div class="item">
+            <p id="pwncat.NetcatServer.remote_port" class="name">var <span class="ident">remote_port</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
             <p id="pwncat.NetcatServer.role" class="name">var <span class="ident">role</span></p>
             
 
@@ -5839,26 +6050,6 @@ callback that writes to stdout.</p></div>
             </div>
             <div class="item">
             <p id="pwncat.NetcatServer.sock" class="name">var <span class="ident">sock</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="pwncat.NetcatServer.udp_client_addr" class="name">var <span class="ident">udp_client_addr</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="pwncat.NetcatServer.udp_client_port" class="name">var <span class="ident">udp_client_port</span></p>
             
 
             
@@ -6099,18 +6290,22 @@ callback that writes to stdout.</p></div>
             
   <div class="item">
     <div class="name def" id="pwncat.NetcatServer.receive">
-    <p>def <span class="ident">receive</span>(</p><p>self)</p>
+    <p>def <span class="ident">receive</span>(</p><p>self, ssig)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>Generator function to receive data endlessly by yielding it.</p></div>
+    <div class="desc"><p>Generator function to receive data endlessly by yielding it.</p>
+<p>:param function interrupter: A Func that returns True/False to tell us to stop or not.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.NetcatServer.receive', this);">Show source &equiv;</a></p>
   <div id="source-pwncat.NetcatServer.receive" class="source">
-    <pre><code>def receive(self):
-    """Generator function to receive data endlessly by yielding it."""
+    <pre><code>def receive(self, ssig):
+    """
+    Generator function to receive data endlessly by yielding it.
+    :param function interrupter: A Func that returns True/False to tell us to stop or not.
+    """
     # Set current receive timeout
     self.conn.settimeout(self.recv_timeout)
     self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
@@ -6118,8 +6313,14 @@ callback that writes to stdout.</p></div>
     # if we exceeded maximum retires
     curr_recv_timeout_retry = 0
     while True:
+        # Ensure to signal that we do not stop receiving data
+        self.__stop_recv = False
+        if ssig.has_stop():
+            self.log.debug("Interrupt has been requested for receive()")
+            return
         if self.conn is None:
             self.log.error("Exit. Socket is gone in receive()")
+            ssig.raise_stop()
             return
         # Non-blocking socket with timeout. If the timeout threshold is hit,
         # it will throw an socket.timeout exception. This is required to see if other
@@ -6130,17 +6331,22 @@ callback that writes to stdout.</p></div>
         # [1/5] NOTE: This is the place where we can do any checks in between reads as the
         # socket has been changed from blocking to time-out based.
         except socket.timeout:
-            # No other thread has terminated yet, and thus not asked us to quit.
-            # so we can continue waiting for input on the socket
-            if not THREAD_TERMINATE:
+            # Let's ask the interrupter() function if we should terminate?
+            if not ssig.has_stop():
                 # No action required, continue the loop and read again.
                 continue
+            self.log.debug("Interrupt has been requested for receive()")
             # Other threads are done. Let's try to read a few more times before
             # returning and ending this function (might be data left)
             if curr_recv_timeout_retry < self.recv_timeout_retry:
-                self.log.trace("RECV EOF TIMEOUT: AND THREAD_TERMINATE REQUESTED")
+                self.log.trace(
+                    "Final socket read: {}/{} before quitting.".format(
+                        curr_recv_timeout_retry, self.recv_timeout_retry
+                    )
+                )
                 curr_recv_timeout_retry += 1
                 continue
+            ssig.raise_stop()
             return
         # [2/5] Connection was forcibly closed
         # [Errno 10054] An existing connection was forcibly closed by the remote host
@@ -6155,43 +6361,39 @@ callback that writes to stdout.</p></div>
         # [3/5] TODO: Still need to figure out what this error is and when it is thrown
         except AttributeError as error:
             self.log.error("TODO: What happens here?Attribute Receive Error: {}".format(error))
+            ssig.raise_stop()
             return
         # We're receiving data again, so let's reset the retry/terminate counter
         # The counter is incremented in 'except socket.timeout' above.
         curr_recv_timeout_retry = 0
+        # If we're receiving data from a UDP client
+        # we can firstly/finally set its addr/port in order
+        # to send data back to it (see send() function)
+        if self.options["udp"]:
+            self.remote_addr, self.remote_port = addr
+            self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
         # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
         if not byte:
             self.log.trace("Socket: Empty data received or otherwise caught.")
             if self.role == "server":
                 # Yay, we want to continue and allow new clients
                 if self.__reaccept_from_client():
-                    self.log.trace("Server can continue, because of --keep")
+                    self.log.trace("Server can continue, because of --keep-open")
                     continue
             if self.role == "client":
                 # Yay, we want to continue and our client will re-connect upstream again
                 if self.__reconnect_to_server():
                     self.log.trace("Client can continue, because of --reconn")
                     continue
-            self.log.warning("Exit. Upstream connection gone. No --keep/--reconn specified.")
+            self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
+            ssig.raise_stop()
             return
         # [5/5] We have data to process
         data = self.enc.decode(byte)
+        self.log.debug(
+            "Received {} bytes from {}:{}".format(len(data), self.remote_addr, self.remote_port)
+        )
         self.log.trace("Received: {}".format(repr(data)))
-        # If we're receiving data from a UDP client
-        # we can firstly/finally set its addr/port in order
-        # to send data back to it (see send() function)
-        if self.options["udp"]:
-            self.udp_client_addr, self.udp_client_port = addr
-            # Avoid the noise on UDP connections to spam on every send
-            if self.udp_client_addr is None or self.udp_client_port is None:
-                self.log.info(
-                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                )
-            # Find for debug
-            else:
-                self.log.debug(
-                    "Client connected: {}:{}".format(self.udp_client_addr, self.udp_client_port)
-                )
         yield data
 </code></pre>
   </div>
@@ -6216,10 +6418,10 @@ callback that writes to stdout.</p></div>
     """Send data."""
     # In case of sending data back to an udp client we need to wait
     # until the client has first connected and told us its addr/port
-    if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
-        self.log.info("Waiting for UDP client to connect")
-        while self.udp_client_addr is None and self.udp_client_port is None:
-            time.sleep(0.2)  # Less wastefull than using 'pass'
+    if self.options["udp"] and self.remote_addr is None and self.remote_port is None:
+        self.log.warning("UDP client has not yet connected. Queueing message")
+        while self.remote_addr is None and self.remote_port is None:
+            time.sleep(0.1)  # Less wastefull than using 'pass'
     curr = 0  # bytes send during one loop iteration
     send = 0  # total bytes send
     size = len(data)  # bytes of data that needs to be send
@@ -6228,9 +6430,14 @@ callback that writes to stdout.</p></div>
     # Loop until all bytes have been send
     while send < size:
         try:
-            self.log.trace("Trying to send {} bytes".format(size - send))
+            self.log.debug(
+                "Trying to send {} bytes to {}:{}".format(
+                    size - send, self.remote_addr, self.remote_port
+                )
+            )
+            self.log.trace("Trying to send: {}".format(repr(data)))
             if self.options["udp"]:
-                curr = self.conn.sendto(data, (self.udp_client_addr, self.udp_client_port))
+                curr = self.conn.sendto(data, (self.remote_addr, self.remote_port))
                 send += curr
             else:
                 curr = self.conn.send(data)
@@ -6240,7 +6447,11 @@ callback that writes to stdout.</p></div>
                 return
             # Remove 'curr' many bytes from data for the next round
             data = data[curr:]
-            self.log.trace("Send {} bytes ({} bytes remaining)".format(curr, size - send))
+            self.log.debug(
+                "Sent {} bytes to {}:{} ({} bytes remaining)".format(
+                    curr, self.remote_addr, self.remote_port, size - send
+                )
+            )
         except socket.error as error:
             if error.errno == socket.errno.EPIPE:
                 self.log.error("TODO:Add desc. Socket error({}): {}".format(error.errno, error))
@@ -6276,6 +6487,24 @@ callback that writes to stdout.</p></div>
     <pre><code>class Runner(object):
     """Runner class that takes care about putting everything into threads."""
 
+    # Dict of producer/consumer action to run in a Thread.
+    # Each list item will be run in a single thread
+    # {
+    #   "name": {
+    #     {
+    #       "producer": "function",     # A func which yields data
+    #       "consumer": "function",     # A callback func to process the data
+    #       "interrupter": "function",  # A interrupt func to tell the producer to stop
+    #   }
+    # }
+    __actions = {}
+    __timers = {}
+
+    # A dict which holds the threads created from actions.
+    # The name is based on the __actions name
+    # {"name": "<thread>"}
+    __threads = {}
+
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
@@ -6283,135 +6512,141 @@ callback that writes to stdout.</p></div>
         """Constructor."""
         self.log = logging.getLogger(__name__)
 
-    # Generator
-    [
-        {
-            "name": "",
-            "input_generator": {"fnc": "", "args": "", "kwargs": ""},
-            "input_interrupter": {"fnc": "", "args": "", "kwargs": ""},
-            "input_callback": {"fnc": "", "args": "", "kwargs": ""},
-        }
-    ]
-    # Timebased
-
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
-    def set_recv_generator(self, func):
-        """Set generator func which constantly receives network data."""
-        self.recv_generator = func
+    def add_action(self, action):
+        """
+        Enables a function to run threaded by the producer/consumer runner.
 
-    def set_input_generator(self, func):
-        """Set generator func which constantly receives input (shell output/user input)."""
-        self.input_generator = func
+        :param str      name:        Name for logging output
+        :param function producer:    A generator function which yields data
+        :param function consumer:    A callback which consumes data from the generator
+        :param function interrupter: A func that signals a stop event to the producer
+        """
+        assert "name" in action
+        assert "producer" in action
+        assert "consumer" in action
+        assert "signal" in action
+        assert "interrupt" in action
+        self.__actions[action["name"]] = {
+            "name": action["name"],
+            "producer": action["producer"],
+            "consumer": action["consumer"],
+            "signal": action["signal"],
+            "interrupt": action["interrupt"],
+        }
 
-    def set_send_callback(self, func):
-        """Set the callback for sending data to a socket."""
-        self.send_callback = func
-
-    def set_output_callback(self, func):
-        """Set the callback for outputting data to stdin/stdout."""
-        self.output_callback = func
-
-    def set_revc_generator_stop_function(self, func):
-        self.recv_generator_stop_fn = func
-
-    def set_input_generator_stop_function(self, func):
-        self.input_generator_stop_fn = func
-
-    def set_timed_action(self, intvl, func, *args, **kwargs):
-        """Set a function that should be called periodically."""
-        self.timed_action_intvl = intvl
-        self.timed_action_func = func
-        self.timed_action_args = args
-        self.timed_action_kwargs = kwargs
+    def add_timer(self, timer):
+        self.__timers[timer["name"]] = {
+            "action": timer["action"],
+            "intvl": timer["intvl"],
+            "args": timer["args"] if "args" in timer else None,
+            "kwargs": timer["kwargs"] if "kwargs" in timer else {},
+            "signal": timer["signal"],
+        }
 
     def run(self):
         """Run threaded NetCat."""
-        global THREAD_TERMINATE
 
-        assert hasattr(self, "recv_generator"), "Error, recv_generator not set"
-        assert hasattr(self, "input_generator"), "Error, input_generator not set"
-        assert hasattr(self, "send_callback"), "Error, send_callback not set"
-        assert hasattr(self, "output_callback"), "Error, output_callback not set"
-
-        def receiver():
-            """Receive data from a socket and process it with a callback.
-
-            receive: Must be a generator function to receive network data.
-            callback: Must be a callback to process received data, e.g.: print to stdin/stdout.
+        def run_action(name, producer, consumer, ssig):
             """
-            self.log.trace("[Thread-Recv] START")
-            for data in self.recv_generator():
-                self.log.trace("[Thread-Recv] recv_generator() received: {}".format(repr(data)))
-                self.output_callback(data)
-            self.log.trace("[Thread-Recv] STOP")
+            Receive data (network, user-input, shell-output) and process it (send, output).
 
-        def sender():
-            """Receive data from user-input/command-output and process it with a callback.
-
-            receive: Must be a generator function to receive user-input or command output.
-            callback: Must be a callback to send this data to a socket.
+            :param str        name:        Name for logging output
+            :param function   producer:    A generator function which yields data
+            :param function   consumer:    A callback which consumes data from the generator
+            :param StopSignal ssig:        Providing has_stop() and raise_stop()
             """
-            self.log.trace("[Thread-Send] START")
-            for data in self.input_generator():
-                self.log.trace("[Thread-Send] input_generator() received: {}".format(repr(data)))
-                self.send_callback(data)
-            self.log.trace("[Thread-Send] STOP")
+            self.log.trace("[{}] Producer Start".format(name))
+            for data in producer(ssig):
+                self.log.trace("[{}] Producer received: {}".format(name, repr(data)))
+                consumer(data)
+            self.log.trace("[{}] Producer Stop".format(name))
 
-        def timer():
+        def run_timer(name, action, intvl, ssig, *args, **kwargs):
             """Execute periodic tasks by an optional provided time_action."""
-            self.log.trace("[Thread-Time] START")
-            self.log.debug(
-                "Ready for timed action every {} seconds".format(self.timed_action_intvl)
-            )
+            self.log.trace("[{}] Timer Start (exec every {} sec)".format(name, intvl))
             time_last = int(time.time())
             while True:
+                if ssig.has_stop():
+                    self.log.trace("Stop signal acknowledged for timer {}".format(name))
+                    return
                 time_now = int(time.time())
-                if time_now > time_last + self.timed_action_intvl:
+                if time_now > time_last + intvl:
                     self.log.debug("[{}] Executing timed function".format(time_now))
-                    self.timed_action_func(*self.timed_action_args, **self.timed_action_kwargs)
+                    if args is not None:
+                        if kwargs:
+                            action(*args, **kwargs)
+                        else:
+                            action(*args)
+                    else:
+                        if kwargs:
+                            action(**kwargs)
+                        else:
+                            action()
                     time_last = time_now  # Reset previous time
                 time.sleep(1)
 
-        # Start sending and receiving threads
-        self.tr = threading.Thread(target=receiver, name="Thread-Recv")
-        self.ts = threading.Thread(target=sender, name="Thread-Send")
-        # If the main thread kills, this thread will be killed too.
-        self.tr.daemon = False  # No daemon, wait for each other (e.g.: data received
-        self.ts.daemon = False  # should also be outputted)
-        # Start threads
-        self.tr.start()
-        # time.sleep(0.1)
-        self.ts.start()
+        # Start available action in a thread
+        for key in self.__actions:
+            # Create Thread object
+            thread = threading.Thread(
+                target=run_action,
+                name=key,
+                args=(
+                    key,
+                    self.__actions[key]["producer"],
+                    self.__actions[key]["consumer"],
+                    self.__actions[key]["signal"],
+                ),
+            )
+            thread.daemon = False
+            thread.start()
+            self.__threads[key] = thread
+        # Start available timers in a thread
+        for key in self.__timers:
+            # Create Thread object
+            thread = threading.Thread(
+                target=run_timer,
+                name=key,
+                args=(
+                    key,
+                    self.__timers[key]["action"],
+                    self.__timers[key]["intvl"],
+                    self.__timers[key]["signal"],
+                    self.__timers[key]["args"],
+                ),
+                kwargs=self.__timers[key]["kwargs"],
+            )
+            thread.daemon = False
+            thread.start()
 
-        if hasattr(self, "timed_action_intvl"):
-            self.tt = threading.Thread(target=timer, name="Thread-Time")
-            self.tt.daemon = True
-            self.tt.start()
+        def stop(force):
+            """Stop threads."""
+            for key in self.__threads:
+                if not self.__threads[key].is_alive() or force:
+                    self.log.trace("Raise stop signal for {}".format(self.__threads[key].getName()))
+                    self.__actions[key]["signal"].raise_stop()
+                    self.log.trace("Call interrupt for {}".format(self.__threads[key].getName()))
+                    self.__actions[key]["interrupt"]()
+                    self.log.trace("Joining {}".format(self.__threads[key].getName()))
+                    self.__threads[key].join(timeout=0.1)
+            # If all threads have died, exit
+            if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
+                if force:
+                    sys.exit(1)
+                else:
+                    sys.exit(0)
 
-        # Cleanup the main program
-        while True:
-            # TODO: is this required? (check if need to press Ctrl+c twice)
-            # if not THREAD_TERMINATE:
-            #     self.input_generator_stop_fn()
-            #     self.recv_generator_stop_fn()
-            if not self.tr.is_alive():
-                self.log.trace("Setting THREAD_TERMINATE=True from Thread-Recv death")
-                self.log.trace("Waiting for Thread-Send to finish")
-                # time.sleep(0.1)
-                THREAD_TERMINATE = True
-                self.input_generator_stop_fn()
-                self.ts.join()
-                sys.exit(0)
-            if not self.ts.is_alive():
-                self.log.trace("Setting THREAD_TERMINATE=True from Thread-Send death")
-                self.log.trace("Waiting for Thread-Recv to finish")
-                # time.sleep(0.1)
-                THREAD_TERMINATE = True
-                self.recv_generator_stop_fn()
-                self.tr.join()
-                sys.exit(0)
+        try:
+            while True:
+                stop(False)
+                # Need a timeout to not skyrocket the CPU
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            print()
+            stop(True)
 </code></pre>
   </div>
 </div>
@@ -6448,6 +6683,75 @@ callback that writes to stdout.</p></div>
   
             
   <div class="item">
+    <div class="name def" id="pwncat.Runner.add_action">
+    <p>def <span class="ident">add_action</span>(</p><p>self, action)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Enables a function to run threaded by the producer/consumer runner.</p>
+<p>:param str      name:        Name for logging output
+:param function producer:    A generator function which yields data
+:param function consumer:    A callback which consumes data from the generator
+:param function interrupter: A func that signals a stop event to the producer</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.add_action', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.Runner.add_action" class="source">
+    <pre><code>def add_action(self, action):
+    """
+    Enables a function to run threaded by the producer/consumer runner.
+    :param str      name:        Name for logging output
+    :param function producer:    A generator function which yields data
+    :param function consumer:    A callback which consumes data from the generator
+    :param function interrupter: A func that signals a stop event to the producer
+    """
+    assert "name" in action
+    assert "producer" in action
+    assert "consumer" in action
+    assert "signal" in action
+    assert "interrupt" in action
+    self.__actions[action["name"]] = {
+        "name": action["name"],
+        "producer": action["producer"],
+        "consumer": action["consumer"],
+        "signal": action["signal"],
+        "interrupt": action["interrupt"],
+    }
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.Runner.add_timer">
+    <p>def <span class="ident">add_timer</span>(</p><p>self, timer)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.add_timer', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.Runner.add_timer" class="source">
+    <pre><code>def add_timer(self, timer):
+    self.__timers[timer["name"]] = {
+        "action": timer["action"],
+        "intvl": timer["intvl"],
+        "args": timer["args"] if "args" in timer else None,
+        "kwargs": timer["kwargs"] if "kwargs" in timer else {},
+        "signal": timer["signal"],
+    }
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
     <div class="name def" id="pwncat.Runner.run">
     <p>def <span class="ident">run</span>(</p><p>self)</p>
     </div>
@@ -6461,234 +6765,99 @@ callback that writes to stdout.</p></div>
   <div id="source-pwncat.Runner.run" class="source">
     <pre><code>def run(self):
     """Run threaded NetCat."""
-    global THREAD_TERMINATE
-    assert hasattr(self, "recv_generator"), "Error, recv_generator not set"
-    assert hasattr(self, "input_generator"), "Error, input_generator not set"
-    assert hasattr(self, "send_callback"), "Error, send_callback not set"
-    assert hasattr(self, "output_callback"), "Error, output_callback not set"
-    def receiver():
-        """Receive data from a socket and process it with a callback.
-        receive: Must be a generator function to receive network data.
-        callback: Must be a callback to process received data, e.g.: print to stdin/stdout.
+    def run_action(name, producer, consumer, ssig):
         """
-        self.log.trace("[Thread-Recv] START")
-        for data in self.recv_generator():
-            self.log.trace("[Thread-Recv] recv_generator() received: {}".format(repr(data)))
-            self.output_callback(data)
-        self.log.trace("[Thread-Recv] STOP")
-    def sender():
-        """Receive data from user-input/command-output and process it with a callback.
-        receive: Must be a generator function to receive user-input or command output.
-        callback: Must be a callback to send this data to a socket.
+        Receive data (network, user-input, shell-output) and process it (send, output).
+        :param str        name:        Name for logging output
+        :param function   producer:    A generator function which yields data
+        :param function   consumer:    A callback which consumes data from the generator
+        :param StopSignal ssig:        Providing has_stop() and raise_stop()
         """
-        self.log.trace("[Thread-Send] START")
-        for data in self.input_generator():
-            self.log.trace("[Thread-Send] input_generator() received: {}".format(repr(data)))
-            self.send_callback(data)
-        self.log.trace("[Thread-Send] STOP")
-    def timer():
+        self.log.trace("[{}] Producer Start".format(name))
+        for data in producer(ssig):
+            self.log.trace("[{}] Producer received: {}".format(name, repr(data)))
+            consumer(data)
+        self.log.trace("[{}] Producer Stop".format(name))
+    def run_timer(name, action, intvl, ssig, *args, **kwargs):
         """Execute periodic tasks by an optional provided time_action."""
-        self.log.trace("[Thread-Time] START")
-        self.log.debug(
-            "Ready for timed action every {} seconds".format(self.timed_action_intvl)
-        )
+        self.log.trace("[{}] Timer Start (exec every {} sec)".format(name, intvl))
         time_last = int(time.time())
         while True:
+            if ssig.has_stop():
+                self.log.trace("Stop signal acknowledged for timer {}".format(name))
+                return
             time_now = int(time.time())
-            if time_now > time_last + self.timed_action_intvl:
+            if time_now > time_last + intvl:
                 self.log.debug("[{}] Executing timed function".format(time_now))
-                self.timed_action_func(*self.timed_action_args, **self.timed_action_kwargs)
+                if args is not None:
+                    if kwargs:
+                        action(*args, **kwargs)
+                    else:
+                        action(*args)
+                else:
+                    if kwargs:
+                        action(**kwargs)
+                    else:
+                        action()
                 time_last = time_now  # Reset previous time
             time.sleep(1)
-    # Start sending and receiving threads
-    self.tr = threading.Thread(target=receiver, name="Thread-Recv")
-    self.ts = threading.Thread(target=sender, name="Thread-Send")
-    # If the main thread kills, this thread will be killed too.
-    self.tr.daemon = False  # No daemon, wait for each other (e.g.: data received
-    self.ts.daemon = False  # should also be outputted)
-    # Start threads
-    self.tr.start()
-    # time.sleep(0.1)
-    self.ts.start()
-    if hasattr(self, "timed_action_intvl"):
-        self.tt = threading.Thread(target=timer, name="Thread-Time")
-        self.tt.daemon = True
-        self.tt.start()
-    # Cleanup the main program
-    while True:
-        # TODO: is this required? (check if need to press Ctrl+c twice)
-        # if not THREAD_TERMINATE:
-        #     self.input_generator_stop_fn()
-        #     self.recv_generator_stop_fn()
-        if not self.tr.is_alive():
-            self.log.trace("Setting THREAD_TERMINATE=True from Thread-Recv death")
-            self.log.trace("Waiting for Thread-Send to finish")
-            # time.sleep(0.1)
-            THREAD_TERMINATE = True
-            self.input_generator_stop_fn()
-            self.ts.join()
-            sys.exit(0)
-        if not self.ts.is_alive():
-            self.log.trace("Setting THREAD_TERMINATE=True from Thread-Send death")
-            self.log.trace("Waiting for Thread-Recv to finish")
-            # time.sleep(0.1)
-            THREAD_TERMINATE = True
-            self.recv_generator_stop_fn()
-            self.tr.join()
-            sys.exit(0)
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.Runner.set_input_generator">
-    <p>def <span class="ident">set_input_generator</span>(</p><p>self, func)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Set generator func which constantly receives input (shell output/user input).</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.set_input_generator', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.Runner.set_input_generator" class="source">
-    <pre><code>def set_input_generator(self, func):
-    """Set generator func which constantly receives input (shell output/user input)."""
-    self.input_generator = func
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.Runner.set_input_generator_stop_function">
-    <p>def <span class="ident">set_input_generator_stop_function</span>(</p><p>self, func)</p>
-    </div>
-    
-
-    
-  
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.set_input_generator_stop_function', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.Runner.set_input_generator_stop_function" class="source">
-    <pre><code>def set_input_generator_stop_function(self, func):
-    self.input_generator_stop_fn = func
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.Runner.set_output_callback">
-    <p>def <span class="ident">set_output_callback</span>(</p><p>self, func)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Set the callback for outputting data to stdin/stdout.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.set_output_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.Runner.set_output_callback" class="source">
-    <pre><code>def set_output_callback(self, func):
-    """Set the callback for outputting data to stdin/stdout."""
-    self.output_callback = func
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.Runner.set_recv_generator">
-    <p>def <span class="ident">set_recv_generator</span>(</p><p>self, func)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Set generator func which constantly receives network data.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.set_recv_generator', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.Runner.set_recv_generator" class="source">
-    <pre><code>def set_recv_generator(self, func):
-    """Set generator func which constantly receives network data."""
-    self.recv_generator = func
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.Runner.set_revc_generator_stop_function">
-    <p>def <span class="ident">set_revc_generator_stop_function</span>(</p><p>self, func)</p>
-    </div>
-    
-
-    
-  
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.set_revc_generator_stop_function', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.Runner.set_revc_generator_stop_function" class="source">
-    <pre><code>def set_revc_generator_stop_function(self, func):
-    self.recv_generator_stop_fn = func
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.Runner.set_send_callback">
-    <p>def <span class="ident">set_send_callback</span>(</p><p>self, func)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Set the callback for sending data to a socket.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.set_send_callback', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.Runner.set_send_callback" class="source">
-    <pre><code>def set_send_callback(self, func):
-    """Set the callback for sending data to a socket."""
-    self.send_callback = func
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="pwncat.Runner.set_timed_action">
-    <p>def <span class="ident">set_timed_action</span>(</p><p>self, intvl, func, *args, **kwargs)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Set a function that should be called periodically.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.Runner.set_timed_action', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.Runner.set_timed_action" class="source">
-    <pre><code>def set_timed_action(self, intvl, func, *args, **kwargs):
-    """Set a function that should be called periodically."""
-    self.timed_action_intvl = intvl
-    self.timed_action_func = func
-    self.timed_action_args = args
-    self.timed_action_kwargs = kwargs
+    # Start available action in a thread
+    for key in self.__actions:
+        # Create Thread object
+        thread = threading.Thread(
+            target=run_action,
+            name=key,
+            args=(
+                key,
+                self.__actions[key]["producer"],
+                self.__actions[key]["consumer"],
+                self.__actions[key]["signal"],
+            ),
+        )
+        thread.daemon = False
+        thread.start()
+        self.__threads[key] = thread
+    # Start available timers in a thread
+    for key in self.__timers:
+        # Create Thread object
+        thread = threading.Thread(
+            target=run_timer,
+            name=key,
+            args=(
+                key,
+                self.__timers[key]["action"],
+                self.__timers[key]["intvl"],
+                self.__timers[key]["signal"],
+                self.__timers[key]["args"],
+            ),
+            kwargs=self.__timers[key]["kwargs"],
+        )
+        thread.daemon = False
+        thread.start()
+    def stop(force):
+        """Stop threads."""
+        for key in self.__threads:
+            if not self.__threads[key].is_alive() or force:
+                self.log.trace("Raise stop signal for {}".format(self.__threads[key].getName()))
+                self.__actions[key]["signal"].raise_stop()
+                self.log.trace("Call interrupt for {}".format(self.__threads[key].getName()))
+                self.__actions[key]["interrupt"]()
+                self.log.trace("Joining {}".format(self.__threads[key].getName()))
+                self.__threads[key].join(timeout=0.1)
+        # If all threads have died, exit
+        if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
+            if force:
+                sys.exit(1)
+            else:
+                sys.exit(0)
+    try:
+        while True:
+            stop(False)
+            # Need a timeout to not skyrocket the CPU
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print()
+        stop(True)
 </code></pre>
   </div>
 </div>
@@ -6706,6 +6875,77 @@ callback that writes to stdout.</p></div>
 </div>
 
             </div>
+      </div>
+      </div>
+      
+      <div class="item">
+      <p id="pwncat.StopSignal" class="name">class <span class="ident">StopSignal</span></p>
+      
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.StopSignal', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.StopSignal" class="source">
+    <pre><code>class StopSignal(object):
+
+    __stop = False
+
+    def has_stop(self):
+        return self.__stop
+
+    def raise_stop(self):
+        self.__stop = True
+</code></pre>
+  </div>
+</div>
+
+
+      <div class="class">
+          <h3>Ancestors (in MRO)</h3>
+          <ul class="class_list">
+          <li><a href="#pwncat.StopSignal">StopSignal</a></li>
+          <li><a href="/builtins.object.ext">builtins.object</a></li>
+          </ul>
+          <h3>Static methods</h3>
+            
+  <div class="item">
+    <div class="name def" id="pwncat.StopSignal.has_stop">
+    <p>def <span class="ident">has_stop</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.StopSignal.has_stop', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.StopSignal.has_stop" class="source">
+    <pre><code>def has_stop(self):
+    return self.__stop
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.StopSignal.raise_stop">
+    <p>def <span class="ident">raise_stop</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.StopSignal.raise_stop', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.StopSignal.raise_stop" class="source">
+    <pre><code>def raise_stop(self):
+    self.__stop = True
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
       </div>
       </div>
       
@@ -6736,13 +6976,13 @@ classes or functions as strings to keep full Python 2/3 compat.</p></div>
     def encode(self, data):
         """Convert string into a byte type for Python3."""
         if self.py3:
-            data = data.encode("cp437")
+            data = data.encode(self.codec)
         return data
 
     def decode(self, data):
         """Convert bytes into a string type for Python3."""
         if self.py3:
-            data = data.decode("cp437")
+            data = data.decode(self.codec)
         return data
 </code></pre>
   </div>
@@ -6804,7 +7044,7 @@ classes or functions as strings to keep full Python 2/3 compat.</p></div>
     <pre><code>def decode(self, data):
     """Convert bytes into a string type for Python3."""
     if self.py3:
-        data = data.decode("cp437")
+        data = data.decode(self.codec)
     return data
 </code></pre>
   </div>
@@ -6828,7 +7068,7 @@ classes or functions as strings to keep full Python 2/3 compat.</p></div>
     <pre><code>def encode(self, data):
     """Convert string into a byte type for Python3."""
     if self.py3:
-        data = data.encode("cp437")
+        data = data.encode(self.codec)
     return data
 </code></pre>
   </div>
