@@ -48,8 +48,8 @@ VERSION = "0.0.6-alpha"
 LOGLEVEL_TRACE_NUM = 9
 
 # Default timeout for timeout-based sys.stdin and socket.recv
-TIMEOUT_READ_STDIN = 0.3
-TIMEOUT_RECV_SOCKET = 0.3
+TIMEOUT_READ_STDIN = 0.1
+TIMEOUT_RECV_SOCKET = 0.1
 TIMEOUT_RECV_SOCKET_RETRY = 1
 
 
@@ -351,7 +351,7 @@ class AbstractSocket(object):
         if self.options["udp"] and self.udp_client_addr is None and self.udp_client_port is None:
             self.log.info("Waiting for UDP client to connect")
             while self.udp_client_addr is None and self.udp_client_port is None:
-                time.sleep(0.2)  # Less wastefull than using 'pass'
+                time.sleep(0.1)  # Less wastefull than using 'pass'
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
@@ -1019,6 +1019,8 @@ class Runner(object):
         try:
             while True:
                 stop(False)
+                # Need a timeout to not skyrocket the CPU
+                time.sleep(0.1)
         except KeyboardInterrupt:
             print()
             stop(True)
@@ -1713,7 +1715,7 @@ def main():
                 "producer": net.receive,
                 "consumer": mod.consumer,
                 "signal": ssig,
-                "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
+                "interrupt": mod.interrupt,  # Also force the producer to stop on net error
             }
         )
         run.add_action(
@@ -1722,7 +1724,7 @@ def main():
                 "producer": mod.producer,
                 "consumer": net.send,
                 "signal": ssig,
-                "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
+                "interrupt": mod.interrupt,  # Externally stop the produer itself
             }
         )
         run.run()
@@ -1740,7 +1742,7 @@ def main():
                 "producer": net.receive,
                 "consumer": mod.consumer,
                 "signal": ssig,
-                "interrupt": mod.interrupt,  # We also want to force the producer to stop on net error
+                "interrupt": mod.interrupt,  # Also force the producer to stop on net error
             }
         )
         run.add_action(
@@ -1749,7 +1751,7 @@ def main():
                 "producer": mod.producer,
                 "consumer": net.send,
                 "signal": ssig,
-                "interrupt": mod.interrupt,
+                "interrupt": mod.interrupt,  # Externally stop the produer itself
             }
         )
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
