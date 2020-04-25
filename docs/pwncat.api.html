@@ -1192,7 +1192,7 @@ LOGLEVEL_TRACE_NUM = 9
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
 TIMEOUT_RECV_SOCKET = 0.1
-TIMEOUT_RECV_SOCKET_RETRY = 1
+TIMEOUT_RECV_SOCKET_RETRY = 2
 
 
 # #################################################################################################
@@ -1461,6 +1461,8 @@ class AbstractSocket(object):
             self.log.debug("Waiting for TCP client")
             self.conn, client = self.sock.accept()
             addr, port = client
+            self.remote_addr = addr
+            self.remote_port = port
             self.log.info("Client connected from {}:{}".format(addr, port))
         except (socket.gaierror, socket.error) as error:
             self.log.error("Accept failed: {}".format(error))
@@ -1545,17 +1547,16 @@ class AbstractSocket(object):
         """
         # Set current receive timeout
         self.conn.settimeout(self.recv_timeout)
-        self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
+        self.log.trace("Socket Timeout: {}".format(self.recv_timeout))
         # Counts how many times we had a ready timeout for later to decide
         # if we exceeded maximum retires
         curr_recv_timeout_retry = 0
 
         while True:
             # Ensure to signal that we do not stop receiving data
-            self.__stop_recv = False
-            if ssig.has_stop():
-                self.log.debug("Interrupt has been requested for receive()")
-                return
+            # if ssig.has_stop():
+            #    self.log.debug("Interrupt has been requested for receive()")
+            #    return
 
             if self.conn is None:
                 self.log.error("Exit. Socket is gone in receive()")
@@ -1569,8 +1570,10 @@ class AbstractSocket(object):
                 # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
 
-            # [1/5] NOTE: This is the place where we can do any checks in between reads as the
+            # [1/5] Finished receiving all data
+            # NOTE: This is the place where we can do any checks in between reads as the
             # socket has been changed from blocking to time-out based.
+            # NOTE: This is also the place, where we quit in case --wait was specified.
             except socket.timeout:
                 # Let's ask the interrupter() function if we should terminate?
                 if not ssig.has_stop():
@@ -1787,8 +1790,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     callback that writes to stdout.
     """
 
-    # Line feeds to use for user input
-    linefeed = "\n"
+    # Replace '\n' linefeeds (if they exist) with CRLF ('\r\n')?
+    crlf = False
 
     # Non-blocking read from stdin achieved via timeout.
     # Specify timeout in seconds.
@@ -1802,25 +1805,31 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
         super(AbstractNetcatPlugin, self).__init__()
         assert "encoder" in options
         assert "input_timeout" in options
-        assert "linefeed" in options
+        assert "crlf" in options
 
         self.log = logging.getLogger(__name__)
         self.enc = options["encoder"]
         if "input_timeout" in options:
             self.input_timeout = options["input_timeout"]
-        if "linefeed" in options:
-            self.linefeed = options["linefeed"]
+        if "crlf" in options:
+            self.crlf = options["crlf"]
 
     # ------------------------------------------------------------------------------
     # Private Functions
     # ------------------------------------------------------------------------------
     def __use_linefeeds(self, data):
         """Ensure the user input has the desired linefeeds --crlf or not."""
+        # No replacement requested
+        if not self.crlf:
+            return data
+        # Already have CRLF at the end
         if data.endswith("\r\n"):
-            data = data[:-2]
-        elif data.endswith("\n") or data.endswith("\r"):
-            data = data[:-1]
-        data += self.linefeed
+            return data
+        # Replace current newline character with CRLF
+        if data.endswith("\n"):
+            self.log.debug("Replacing LF with CRLF")
+            return data[:-1] + "\r\n"
+        # Otherwise just return as it is
         return data
 
     def __set_input_timeout(self):
@@ -1858,7 +1867,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 # self.log.trace("STDIN: timeout. Waiting for input...")
                 continue
             if line:
-                self.log.trace("Yielding stdin")
+                self.log.debug("Received {} bytes from STDIN".format(len(line)))
+                self.log.trace("Received: {}".format(repr(line)))
                 yield self.__use_linefeeds(line)
             # EOF or <Ctrl>+<d>
             else:
@@ -2467,7 +2477,7 @@ address given via -L/--local addr:port.
         "--crlf",
         action="store_true",
         default=False,
-        help="Send CRLF line-endings in connect mode (default: LF)",
+        help="Replace LF with CRLF from stdin (default: don't)",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
@@ -2786,7 +2796,7 @@ def main():
     if args.verbose > 2:
         logformat = "%(levelname)s [%(threadName)s]: %(message)s"
     if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(funcName)s(): %(message)s"
+        logformat = "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
     logging.basicConfig(format=logformat, level=loglevel)
 
     # Initialize encoder
@@ -2803,7 +2813,7 @@ def main():
     else:
         module_opts = {
             "encoder": encoder,
-            "linefeed": "\r\n" if args.crlf else "\n",
+            "crlf": args.crlf,
             "input_timeout": TIMEOUT_READ_STDIN,
         }
         mod = NetcatPluginOutput(module_opts)
@@ -3097,7 +3107,7 @@ address given via -L/--local addr:port.
         "--crlf",
         action="store_true",
         default=False,
-        help="Send CRLF line-endings in connect mode (default: LF)",
+        help="Replace LF with CRLF from stdin (default: don't)",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
@@ -3468,7 +3478,7 @@ accidentally by other input.
     if args.verbose > 2:
         logformat = "%(levelname)s [%(threadName)s]: %(message)s"
     if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(funcName)s(): %(message)s"
+        logformat = "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
     logging.basicConfig(format=logformat, level=loglevel)
 
     # Initialize encoder
@@ -3485,7 +3495,7 @@ accidentally by other input.
     else:
         module_opts = {
             "encoder": encoder,
-            "linefeed": "\r\n" if args.crlf else "\n",
+            "crlf": args.crlf,
             "input_timeout": TIMEOUT_READ_STDIN,
         }
         mod = NetcatPluginOutput(module_opts)
@@ -4064,6 +4074,8 @@ def producer(self, ssig):
             self.log.debug("Waiting for TCP client")
             self.conn, client = self.sock.accept()
             addr, port = client
+            self.remote_addr = addr
+            self.remote_port = port
             self.log.info("Client connected from {}:{}".format(addr, port))
         except (socket.gaierror, socket.error) as error:
             self.log.error("Accept failed: {}".format(error))
@@ -4148,17 +4160,16 @@ def producer(self, ssig):
         """
         # Set current receive timeout
         self.conn.settimeout(self.recv_timeout)
-        self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
+        self.log.trace("Socket Timeout: {}".format(self.recv_timeout))
         # Counts how many times we had a ready timeout for later to decide
         # if we exceeded maximum retires
         curr_recv_timeout_retry = 0
 
         while True:
             # Ensure to signal that we do not stop receiving data
-            self.__stop_recv = False
-            if ssig.has_stop():
-                self.log.debug("Interrupt has been requested for receive()")
-                return
+            # if ssig.has_stop():
+            #    self.log.debug("Interrupt has been requested for receive()")
+            #    return
 
             if self.conn is None:
                 self.log.error("Exit. Socket is gone in receive()")
@@ -4172,8 +4183,10 @@ def producer(self, ssig):
                 # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
                 (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
 
-            # [1/5] NOTE: This is the place where we can do any checks in between reads as the
+            # [1/5] Finished receiving all data
+            # NOTE: This is the place where we can do any checks in between reads as the
             # socket has been changed from blocking to time-out based.
+            # NOTE: This is also the place, where we quit in case --wait was specified.
             except socket.timeout:
                 # Let's ask the interrupter() function if we should terminate?
                 if not ssig.has_stop():
@@ -4397,6 +4410,8 @@ def producer(self, ssig):
         self.log.debug("Waiting for TCP client")
         self.conn, client = self.sock.accept()
         addr, port = client
+        self.remote_addr = addr
+        self.remote_port = port
         self.log.info("Client connected from {}:{}".format(addr, port))
     except (socket.gaierror, socket.error) as error:
         self.log.error("Accept failed: {}".format(error))
@@ -4581,16 +4596,15 @@ def producer(self, ssig):
     """
     # Set current receive timeout
     self.conn.settimeout(self.recv_timeout)
-    self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
+    self.log.trace("Socket Timeout: {}".format(self.recv_timeout))
     # Counts how many times we had a ready timeout for later to decide
     # if we exceeded maximum retires
     curr_recv_timeout_retry = 0
     while True:
         # Ensure to signal that we do not stop receiving data
-        self.__stop_recv = False
-        if ssig.has_stop():
-            self.log.debug("Interrupt has been requested for receive()")
-            return
+        # if ssig.has_stop():
+        #    self.log.debug("Interrupt has been requested for receive()")
+        #    return
         if self.conn is None:
             self.log.error("Exit. Socket is gone in receive()")
             ssig.raise_stop()
@@ -4601,8 +4615,10 @@ def producer(self, ssig):
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
             (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
-        # [1/5] NOTE: This is the place where we can do any checks in between reads as the
+        # [1/5] Finished receiving all data
+        # NOTE: This is the place where we can do any checks in between reads as the
         # socket has been changed from blocking to time-out based.
+        # NOTE: This is also the place, where we quit in case --wait was specified.
         except socket.timeout:
             # Let's ask the interrupter() function if we should terminate?
             if not ssig.has_stop():
@@ -4949,6 +4965,8 @@ def producer(self, ssig):
         self.log.debug("Waiting for TCP client")
         self.conn, client = self.sock.accept()
         addr, port = client
+        self.remote_addr = addr
+        self.remote_port = port
         self.log.info("Client connected from {}:{}".format(addr, port))
     except (socket.gaierror, socket.error) as error:
         self.log.error("Accept failed: {}".format(error))
@@ -5133,16 +5151,15 @@ def producer(self, ssig):
     """
     # Set current receive timeout
     self.conn.settimeout(self.recv_timeout)
-    self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
+    self.log.trace("Socket Timeout: {}".format(self.recv_timeout))
     # Counts how many times we had a ready timeout for later to decide
     # if we exceeded maximum retires
     curr_recv_timeout_retry = 0
     while True:
         # Ensure to signal that we do not stop receiving data
-        self.__stop_recv = False
-        if ssig.has_stop():
-            self.log.debug("Interrupt has been requested for receive()")
-            return
+        # if ssig.has_stop():
+        #    self.log.debug("Interrupt has been requested for receive()")
+        #    return
         if self.conn is None:
             self.log.error("Exit. Socket is gone in receive()")
             ssig.raise_stop()
@@ -5153,8 +5170,10 @@ def producer(self, ssig):
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
             (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
-        # [1/5] NOTE: This is the place where we can do any checks in between reads as the
+        # [1/5] Finished receiving all data
+        # NOTE: This is the place where we can do any checks in between reads as the
         # socket has been changed from blocking to time-out based.
+        # NOTE: This is also the place, where we quit in case --wait was specified.
         except socket.timeout:
             # Let's ask the interrupter() function if we should terminate?
             if not ssig.has_stop():
@@ -5652,8 +5671,8 @@ callback that writes to stdout.</p></div>
     callback that writes to stdout.
     """
 
-    # Line feeds to use for user input
-    linefeed = "\n"
+    # Replace '\n' linefeeds (if they exist) with CRLF ('\r\n')?
+    crlf = False
 
     # Non-blocking read from stdin achieved via timeout.
     # Specify timeout in seconds.
@@ -5667,25 +5686,31 @@ callback that writes to stdout.</p></div>
         super(AbstractNetcatPlugin, self).__init__()
         assert "encoder" in options
         assert "input_timeout" in options
-        assert "linefeed" in options
+        assert "crlf" in options
 
         self.log = logging.getLogger(__name__)
         self.enc = options["encoder"]
         if "input_timeout" in options:
             self.input_timeout = options["input_timeout"]
-        if "linefeed" in options:
-            self.linefeed = options["linefeed"]
+        if "crlf" in options:
+            self.crlf = options["crlf"]
 
     # ------------------------------------------------------------------------------
     # Private Functions
     # ------------------------------------------------------------------------------
     def __use_linefeeds(self, data):
         """Ensure the user input has the desired linefeeds --crlf or not."""
+        # No replacement requested
+        if not self.crlf:
+            return data
+        # Already have CRLF at the end
         if data.endswith("\r\n"):
-            data = data[:-2]
-        elif data.endswith("\n") or data.endswith("\r"):
-            data = data[:-1]
-        data += self.linefeed
+            return data
+        # Replace current newline character with CRLF
+        if data.endswith("\n"):
+            self.log.debug("Replacing LF with CRLF")
+            return data[:-1] + "\r\n"
+        # Otherwise just return as it is
         return data
 
     def __set_input_timeout(self):
@@ -5723,7 +5748,8 @@ callback that writes to stdout.</p></div>
                 # self.log.trace("STDIN: timeout. Waiting for input...")
                 continue
             if line:
-                self.log.trace("Yielding stdin")
+                self.log.debug("Received {} bytes from STDIN".format(len(line)))
+                self.log.trace("Received: {}".format(repr(line)))
                 yield self.__use_linefeeds(line)
             # EOF or <Ctrl>+<d>
             else:
@@ -5757,7 +5783,7 @@ callback that writes to stdout.</p></div>
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="pwncat.NetcatPluginOutput.input_timeout" class="name">var <span class="ident">input_timeout</span></p>
+            <p id="pwncat.NetcatPluginOutput.crlf" class="name">var <span class="ident">crlf</span></p>
             
 
             
@@ -5767,7 +5793,7 @@ callback that writes to stdout.</p></div>
 
             </div>
             <div class="item">
-            <p id="pwncat.NetcatPluginOutput.linefeed" class="name">var <span class="ident">linefeed</span></p>
+            <p id="pwncat.NetcatPluginOutput.input_timeout" class="name">var <span class="ident">input_timeout</span></p>
             
 
             
@@ -5795,13 +5821,13 @@ callback that writes to stdout.</p></div>
     super(AbstractNetcatPlugin, self).__init__()
     assert "encoder" in options
     assert "input_timeout" in options
-    assert "linefeed" in options
+    assert "crlf" in options
     self.log = logging.getLogger(__name__)
     self.enc = options["encoder"]
     if "input_timeout" in options:
         self.input_timeout = options["input_timeout"]
-    if "linefeed" in options:
-        self.linefeed = options["linefeed"]
+    if "crlf" in options:
+        self.crlf = options["crlf"]
 </code></pre>
   </div>
 </div>
@@ -5891,7 +5917,8 @@ callback that writes to stdout.</p></div>
             # self.log.trace("STDIN: timeout. Waiting for input...")
             continue
         if line:
-            self.log.trace("Yielding stdin")
+            self.log.debug("Received {} bytes from STDIN".format(len(line)))
+            self.log.trace("Received: {}".format(repr(line)))
             yield self.__use_linefeeds(line)
         # EOF or <Ctrl>+<d>
         else:
@@ -6124,6 +6151,8 @@ callback that writes to stdout.</p></div>
         self.log.debug("Waiting for TCP client")
         self.conn, client = self.sock.accept()
         addr, port = client
+        self.remote_addr = addr
+        self.remote_port = port
         self.log.info("Client connected from {}:{}".format(addr, port))
     except (socket.gaierror, socket.error) as error:
         self.log.error("Accept failed: {}".format(error))
@@ -6308,16 +6337,15 @@ callback that writes to stdout.</p></div>
     """
     # Set current receive timeout
     self.conn.settimeout(self.recv_timeout)
-    self.log.trace("Socket Timeout: {}".format(self.recv_timeout_retry))
+    self.log.trace("Socket Timeout: {}".format(self.recv_timeout))
     # Counts how many times we had a ready timeout for later to decide
     # if we exceeded maximum retires
     curr_recv_timeout_retry = 0
     while True:
         # Ensure to signal that we do not stop receiving data
-        self.__stop_recv = False
-        if ssig.has_stop():
-            self.log.debug("Interrupt has been requested for receive()")
-            return
+        # if ssig.has_stop():
+        #    self.log.debug("Interrupt has been requested for receive()")
+        #    return
         if self.conn is None:
             self.log.error("Exit. Socket is gone in receive()")
             ssig.raise_stop()
@@ -6328,8 +6356,10 @@ callback that writes to stdout.</p></div>
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
             (byte, addr) = self.conn.recvfrom(self.options["bufsize"])
-        # [1/5] NOTE: This is the place where we can do any checks in between reads as the
+        # [1/5] Finished receiving all data
+        # NOTE: This is the place where we can do any checks in between reads as the
         # socket has been changed from blocking to time-out based.
+        # NOTE: This is also the place, where we quit in case --wait was specified.
         except socket.timeout:
             # Let's ask the interrupter() function if we should terminate?
             if not ssig.has_stop():
