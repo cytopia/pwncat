@@ -648,8 +648,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     callback that writes to stdout.
     """
 
-    # Line feeds to use for user input
-    linefeed = "\n"
+    # Replace '\n' linefeeds (if they exist) with CRLF ('\r\n')?
+    crlf = False
 
     # Non-blocking read from stdin achieved via timeout.
     # Specify timeout in seconds.
@@ -663,25 +663,31 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
         super(AbstractNetcatPlugin, self).__init__()
         assert "encoder" in options
         assert "input_timeout" in options
-        assert "linefeed" in options
+        assert "crlf" in options
 
         self.log = logging.getLogger(__name__)
         self.enc = options["encoder"]
         if "input_timeout" in options:
             self.input_timeout = options["input_timeout"]
-        if "linefeed" in options:
-            self.linefeed = options["linefeed"]
+        if "crlf" in options:
+            self.crlf = options["crlf"]
 
     # ------------------------------------------------------------------------------
     # Private Functions
     # ------------------------------------------------------------------------------
     def __use_linefeeds(self, data):
         """Ensure the user input has the desired linefeeds --crlf or not."""
+        # No replacement requested
+        if not self.crlf:
+            return data
+        # Already have CRLF at the end
         if data.endswith("\r\n"):
-            data = data[:-2]
-        elif data.endswith("\n") or data.endswith("\r"):
-            data = data[:-1]
-        data += self.linefeed
+            return data
+        # Replace current newline character with CRLF
+        if data.endswith("\n"):
+            self.log.debug("Replacing LF with CRLF")
+            return data[:-1] + "\r\n"
+        # Otherwise just return as it is
         return data
 
     def __set_input_timeout(self):
@@ -719,7 +725,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 # self.log.trace("STDIN: timeout. Waiting for input...")
                 continue
             if line:
-                self.log.trace("Yielding stdin")
+                self.log.debug("Received {} bytes from STDIN".format(len(line)))
+                self.log.trace("Received: {}".format(repr(line)))
                 yield self.__use_linefeeds(line)
             # EOF or <Ctrl>+<d>
             else:
@@ -1328,7 +1335,7 @@ address given via -L/--local addr:port.
         "--crlf",
         action="store_true",
         default=False,
-        help="Send CRLF line-endings in connect mode (default: LF)",
+        help="Replace LF with CRLF from stdin (default: don't)",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
@@ -1664,7 +1671,7 @@ def main():
     else:
         module_opts = {
             "encoder": encoder,
-            "linefeed": "\r\n" if args.crlf else "\n",
+            "crlf": args.crlf,
             "input_timeout": TIMEOUT_READ_STDIN,
         }
         mod = NetcatPluginOutput(module_opts)
