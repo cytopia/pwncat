@@ -110,7 +110,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306
 # Same, but convert traffic on your end to UDP
 pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 ```
-Have a look at a more detailed **[port forwarding example with scenarios](#port-forwarding)**.
+Have a look at a more detailed **[port forwarding example with scenarios](#zap-port-forwarding)**.
 
 
 ## :star: Features
