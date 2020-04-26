@@ -147,7 +147,8 @@ See all available options below.
 usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
        pwncat [-Cnuv] -z hostname port
-       pwncat [-Cnuv] -L addr:port [hostname] port
+       pwncat [-Cnuv] -L addr:port hostname port
+       pwncat [-Cnuv] -R addr:port hostname port
        pwncat -V, --version
        pwncat -h, --help
 
@@ -185,6 +186,19 @@ mode arguments:
                         client which connects to another server specified by
                         address given via -L/--local addr:port.
                         (I.e.: proxies a remote service to a local address)
+
+  -R addr:port, --remote addr:port
+                        [Remote forward mode]:
+                        This mode will start two clients internally. One is
+                        connecting to the target and one is connecting to
+                        another pwncat/netcat server you have started some-
+                        where. Once connected, it will then proxy traffic
+                        between you and the target.
+                        This mode should be applied on machines that block
+                        incoming traffic and only allow outbound.
+                        The connection to your listening server is given by
+                        -R/--remote addr:port and the connection to the
+                        target machine via the positional arguments.
 
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
