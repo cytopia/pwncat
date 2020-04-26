@@ -7,7 +7,8 @@ usage: pwncat [\-Cnuv] [\-e cmd] hostname port
 .IP
 pwncat [\-Cnuv] [\-e cmd] \fB\-l\fR [hostname] port
 pwncat [\-Cnuv] \fB\-z\fR hostname port
-pwncat [\-Cnuv] \fB\-L\fR addr:port [hostname] port
+pwncat [\-Cnuv] \fB\-L\fR addr:port hostname port
+pwncat [\-Cnuv] \fB\-R\fR addr:port hostname port
 pwncat \fB\-V\fR, \fB\-\-version\fR
 pwncat \fB\-h\fR, \fB\-\-help\fR
 .PP
@@ -49,6 +50,18 @@ The server will then forward traffic to the internal
 client which connects to another server specified by
 address given via \fB\-L\fR/\-\-local addr:port.
 (I.e.: proxies a remote service to a local address)
+.TP
+\fB\-R\fR addr:port, \fB\-\-remote\fR addr:port
+[Remote forward mode]:
+This mode will start two clients internally. One is
+connecting to the target and one is connecting to
+another pwncat/netcat server you have started somewhere. Once connected, it will then proxy traffic
+between you and the target.
+This mode should be applied on machines that block
+incoming traffic and only allow outbound.
+The connection to your listening server is given by
+\fB\-R\fR/\-\-remote addr:port and the connection to the
+target machine via the positional arguments.
 .SS "optional arguments:"
 .TP
 \fB\-e\fR cmd, \fB\-\-exec\fR cmd

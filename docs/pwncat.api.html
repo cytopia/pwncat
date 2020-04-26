@@ -1177,7 +1177,7 @@ if os.name != "nt":
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.7-alpha"
+VERSION = "0.0.8-alpha"
 
 # Custom loglevel numer for TRACE
 LOGLEVEL_TRACE_NUM = 9
@@ -2255,40 +2255,49 @@ def _args_check_mutually_exclusive(parser, args):
     """Check mutually exclusive arguments."""
 
     # This is connect mode
-    connect_mode = not args.listen and not args.zero and not args.local
+    connect_mode = not args.listen and not args.zero and not args.local and not args.remote
 
     # [MODE] --listen
-    if args.listen and (args.zero or args.local):
+    if args.listen and (args.zero or args.local or args.remote):
         parser.print_usage()
         print(
-            "%s: error: -l/--listen mutually exclusive with -z/-zero or -L/--local" % (APPNAME),
+            "%s: error: -l/--listen mutually excl. with -z/-zero, -L or -R" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
 
     # [MODE] --zero
-    if args.zero and (args.listen or args.local):
+    if args.zero and (args.listen or args.local or args.remote):
         parser.print_usage()
         print(
-            "%s: error: -z/--zero mutually exclusive with -l/--listen or -L/--local" % (APPNAME),
+            "%s: error: -z/--zero mutually excl. with -l/--listen, -L or -R" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
 
     # [MODE --local
-    if args.local and (args.listen or args.zero):
+    if args.local and (args.listen or args.zero or args.remote):
         parser.print_usage()
         print(
-            "%s: error: -L/--local mutually exclusive with -l/--listen or -z/--zero" % (APPNAME),
+            "%s: error: -L/--local mutually excl. with -l/--listen, -z/--zero or -R" % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [MODE --remote
+    if args.remote and (args.listen or args.zero or args.local):
+        parser.print_usage()
+        print(
+            "%s: error: -R/--remote mutually excl. with -l/--listen, -z/--zero or -L" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
 
     # [MODULE] --exec
-    if args.cmd and (args.local or args.zero):
+    if args.cmd and (args.local or args.remote or args.zero):
         parser.print_usage()
         print(
-            "%s: error: -e/--exec mutually exclusive with -L/--local or -z/--zero" % (APPNAME),
+            "%s: error: -e/--exec mutually excl. with -L, -R or -z/--zero" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -2297,7 +2306,7 @@ def _args_check_mutually_exclusive(parser, args):
     if args.udp and args.zero:
         parser.print_usage()
         print(
-            "%s: error: -u/--udp mutually exclusive with -z/--zero" % (APPNAME), file=sys.stderr,
+            "%s: error: -u/--udp mutually excl. with -z/--zero" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
 
@@ -2305,7 +2314,7 @@ def _args_check_mutually_exclusive(parser, args):
     if args.http and (args.https or args.udp or args.zero):
         parser.print_usage()
         print(
-            "%s: error: --http mutually exclusive with --https, -u/--udp or -z/--zero" % (APPNAME),
+            "%s: error: --http mutually excl. with --https, -u/--udp or -z/--zero" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -2314,7 +2323,7 @@ def _args_check_mutually_exclusive(parser, args):
     if args.https and (args.http or args.udp or args.zero):
         parser.print_usage()
         print(
-            "%s: error: --https mutually exclusive with --http, -z/--udp or -z/--zero" % (APPNAME),
+            "%s: error: --https mutually excl. with --http, -z/--udp or -z/--zero" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -2323,7 +2332,7 @@ def _args_check_mutually_exclusive(parser, args):
     if args.keep_open and (args.udp):
         parser.print_usage()
         print(
-            "%s: error: --keep-open mutually exclusive with -u/--udp" % (APPNAME), file=sys.stderr,
+            "%s: error: --keep-open mutually excl. with -u/--udp" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
     if args.keep_open and not args.listen:
@@ -2394,7 +2403,8 @@ def get_args():
         usage="""%(prog)s [-Cnuv] [-e cmd] hostname port
        %(prog)s [-Cnuv] [-e cmd] -l [hostname] port
        %(prog)s [-Cnuv] -z hostname port
-       %(prog)s [-Cnuv] -L addr:port [hostname] port
+       %(prog)s [-Cnuv] -L addr:port hostname port
+       %(prog)s [-Cnuv] -R addr:port hostname port
        %(prog)s -V, --version
        %(prog)s -h, --help
        """
@@ -2461,6 +2471,27 @@ The server will then forward traffic to the internal
 client which connects to another server specified by
 address given via -L/--local addr:port.
 (I.e.: proxies a remote service to a local address)
+
+"""
+        % ({"prog": APPNAME}),
+    )
+    mode.add_argument(
+        "-R",
+        "--remote",
+        metavar="addr:port",
+        default=False,
+        type=_args_check_forwards,
+        help="""[Remote forward mode]:
+This mode will start two clients internally. One is
+connecting to the target and one is connecting to
+another pwncat/netcat server you have started some-
+where. Once connected, it will then proxy traffic
+between you and the target.
+This mode should be applied on machines that block
+incoming traffic and only allow outbound.
+The connection to your listening server is given by
+-R/--remote addr:port and the connection to the
+target machine via the positional arguments.
 """
         % ({"prog": APPNAME}),
     )
@@ -2721,7 +2752,7 @@ accidentally by other input.
     _args_check_mutually_exclusive(parser, args)
 
     # Connect mode and Zero-I/O mode require hostname and port to be set
-    connect_mode = not (args.listen or args.zero or args.local)
+    connect_mode = not (args.listen or args.zero or args.local or args.remote)
     if (connect_mode or args.zero) and not (args.hostname):
         parser.print_usage()
         print(
@@ -2853,6 +2884,44 @@ def main():
                 "name": "RECEIVE",
                 "producer": net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
                 "consumer": net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
+        run.run()
+    # Run remote port-forward
+    # -> connect to client, connect to target and proxy traffic in between.
+    if args.remote:
+        ssig = StopSignal()
+        # TODO: Make the listen address optional!
+        srv_opts = net_opts.copy()
+        srv_opts["reconn"] = True
+        srv_opts["reconn_wait"] = 0.2
+        lhost = args.remote.split(":")[0]
+        lport = int(args.remote.split(":")[1])
+        # Create local and remote client
+        net_cli_l = NetcatClient(
+            encoder, lhost, lport, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
+        )
+        net_cli_r = NetcatClient(
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
+        )
+        # Create Runner
+        run = Runner()
+        run.add_action(
+            {
+                "name": "TRANSMIT",
+                "producer": net_cli_l.receive,  # USER sends data to PC-SERVER
+                "consumer": net_cli_r.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
+        run.add_action(
+            {
+                "name": "RECEIVE",
+                "producer": net_cli_r.receive,  # Data comes back from TARGET to PC-CLIENT
+                "consumer": net_cli_l.send,  # Data parsed on to PC-SERVER to back send to USER
                 "signal": ssig,
                 "interrupt": object,
             }
@@ -3024,7 +3093,8 @@ if __name__ == "__main__":
         usage="""%(prog)s [-Cnuv] [-e cmd] hostname port
        %(prog)s [-Cnuv] [-e cmd] -l [hostname] port
        %(prog)s [-Cnuv] -z hostname port
-       %(prog)s [-Cnuv] -L addr:port [hostname] port
+       %(prog)s [-Cnuv] -L addr:port hostname port
+       %(prog)s [-Cnuv] -R addr:port hostname port
        %(prog)s -V, --version
        %(prog)s -h, --help
        """
@@ -3091,6 +3161,27 @@ The server will then forward traffic to the internal
 client which connects to another server specified by
 address given via -L/--local addr:port.
 (I.e.: proxies a remote service to a local address)
+
+"""
+        % ({"prog": APPNAME}),
+    )
+    mode.add_argument(
+        "-R",
+        "--remote",
+        metavar="addr:port",
+        default=False,
+        type=_args_check_forwards,
+        help="""[Remote forward mode]:
+This mode will start two clients internally. One is
+connecting to the target and one is connecting to
+another pwncat/netcat server you have started some-
+where. Once connected, it will then proxy traffic
+between you and the target.
+This mode should be applied on machines that block
+incoming traffic and only allow outbound.
+The connection to your listening server is given by
+-R/--remote addr:port and the connection to the
+target machine via the positional arguments.
 """
         % ({"prog": APPNAME}),
     )
@@ -3351,7 +3442,7 @@ accidentally by other input.
     _args_check_mutually_exclusive(parser, args)
 
     # Connect mode and Zero-I/O mode require hostname and port to be set
-    connect_mode = not (args.listen or args.zero or args.local)
+    connect_mode = not (args.listen or args.zero or args.local or args.remote)
     if (connect_mode or args.zero) and not (args.hostname):
         parser.print_usage()
         print(
@@ -3535,6 +3626,44 @@ accidentally by other input.
                 "name": "RECEIVE",
                 "producer": net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
                 "consumer": net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
+        run.run()
+    # Run remote port-forward
+    # -> connect to client, connect to target and proxy traffic in between.
+    if args.remote:
+        ssig = StopSignal()
+        # TODO: Make the listen address optional!
+        srv_opts = net_opts.copy()
+        srv_opts["reconn"] = True
+        srv_opts["reconn_wait"] = 0.2
+        lhost = args.remote.split(":")[0]
+        lport = int(args.remote.split(":")[1])
+        # Create local and remote client
+        net_cli_l = NetcatClient(
+            encoder, lhost, lport, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
+        )
+        net_cli_r = NetcatClient(
+            encoder, host, port, TIMEOUT_RECV_SOCKET, TIMEOUT_RECV_SOCKET_RETRY, srv_opts
+        )
+        # Create Runner
+        run = Runner()
+        run.add_action(
+            {
+                "name": "TRANSMIT",
+                "producer": net_cli_l.receive,  # USER sends data to PC-SERVER
+                "consumer": net_cli_r.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                "signal": ssig,
+                "interrupt": object,
+            }
+        )
+        run.add_action(
+            {
+                "name": "RECEIVE",
+                "producer": net_cli_r.receive,  # Data comes back from TARGET to PC-CLIENT
+                "consumer": net_cli_l.send,  # Data parsed on to PC-SERVER to back send to USER
                 "signal": ssig,
                 "interrupt": object,
             }
