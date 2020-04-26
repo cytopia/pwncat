@@ -1143,19 +1143,12 @@ table {
     <pre><code>#!/usr/bin/env python3
 """Python netcat implementation."""
 
-#
-# TODO: where to use sys.stdout.flush ??
 # TODO: change docstring to this format: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/
 #
 # Behaviour Server
 # 1. (tty and non-tty mode) TCP Server should always quit if client disconnects
 # 2. (tty and non-tty mode) TCP Server should always quit if connection is gone/broken
 # 3. (tty and non-tty mode) UDP Will always stay open (can't determine if connection is gone)
-#
-#
-# Behaviour Client
-# 1. (tty and non-tty mode) Client will always stay open until manually quit
-##
 
 from __future__ import print_function
 from abc import ABCMeta, abstractmethod
@@ -1819,11 +1812,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     def __use_linefeeds(self, data):
         """Ensure the user input has the desired linefeeds --crlf or not."""
-        # No replacement requested
-        if not self.crlf:
-            return data
-        # Already have CRLF at the end
-        if data.endswith("\r\n"):
+        # No replacement requested or already CRLF
+        if not self.crlf or data.endswith("\r\n"):
             return data
         # Replace current newline character with CRLF
         if data.endswith("\n"):
@@ -1863,8 +1853,6 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 if ssig.has_stop():
                     self.log.trace("Stop signal acknowledged for reading STDIN-2")
                     return
-                # TODO: Re-enable this for very verbose logging
-                # self.log.trace("STDIN: timeout. Waiting for input...")
                 continue
             if line:
                 self.log.debug("Received {} bytes from STDIN".format(len(line)))
@@ -1876,8 +1864,6 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                 if ssig.has_stop():
                     self.log.trace("Stop signal acknowledged for reading STDIN-3")
                     return
-                # TODO: Re-enable this for very verbose logging
-                # self.log.trace("STDIN: Reached EOF, repeating")
 
     def consumer(self, data):
         """Print received data to stdout."""
@@ -2014,17 +2000,31 @@ class StopSignal(object):
 class Runner(object):
     """Runner class that takes care about putting everything into threads."""
 
-    # Dict of producer/consumer action to run in a Thread.
-    # Each list item will be run in a single thread
+    # Dict of producer/consumer action to run in a thread.
+    # Each list item will be run in its own thread
     # {
     #   "name": {
     #     {
-    #       "producer": "function",     # A func which yields data
-    #       "consumer": "function",     # A callback func to process the data
-    #       "interrupter": "function",  # A interrupt func to tell the producer to stop
+    #       "producer": "function",  # A func which yields data
+    #       "consumer": "function",  # A callback func to process the data
+    #       "signal": "StopSignal",  # An instance providing has_stop() and raise_stop()
+    #       "interrupt": "function", # A interrupt func to be called outside the thread to stop it
     #   }
     # }
     __actions = {}
+
+    # Dict of timed function definition to run in a thread.
+    # Each list item will be run in its own thread.
+    # {
+    #   "name": {
+    #     {
+    #       "action": "function",   # A func which does any action
+    #       "intvl": "function",    # The action func will be called at this intervall
+    #       "args": "function",     # args for the action func
+    #       "kwargs": "function",   # kwargs for the action func
+    #       "signal": "StopSignal", # An instance providing has_stop() and raise_stop()
+    #   }
+    # }
     __timers = {}
 
     # A dict which holds the threads created from actions.
@@ -2102,6 +2102,7 @@ class Runner(object):
                 time_now = int(time.time())
                 if time_now > time_last + intvl:
                     self.log.debug("[{}] Executing timed function".format(time_now))
+                    # TODO: The following if/else could probably be simplified somehow
                     if args is not None:
                         if kwargs:
                             action(*args, **kwargs)
@@ -2113,7 +2114,7 @@ class Runner(object):
                         else:
                             action()
                     time_last = time_now  # Reset previous time
-                time.sleep(1)
+                time.sleep(0.1)
 
         # Start available action in a thread
         for key in self.__actions:
@@ -5700,11 +5701,8 @@ callback that writes to stdout.</p></div>
     # ------------------------------------------------------------------------------
     def __use_linefeeds(self, data):
         """Ensure the user input has the desired linefeeds --crlf or not."""
-        # No replacement requested
-        if not self.crlf:
-            return data
-        # Already have CRLF at the end
-        if data.endswith("\r\n"):
+        # No replacement requested or already CRLF
+        if not self.crlf or data.endswith("\r\n"):
             return data
         # Replace current newline character with CRLF
         if data.endswith("\n"):
@@ -5744,8 +5742,6 @@ callback that writes to stdout.</p></div>
                 if ssig.has_stop():
                     self.log.trace("Stop signal acknowledged for reading STDIN-2")
                     return
-                # TODO: Re-enable this for very verbose logging
-                # self.log.trace("STDIN: timeout. Waiting for input...")
                 continue
             if line:
                 self.log.debug("Received {} bytes from STDIN".format(len(line)))
@@ -5757,8 +5753,6 @@ callback that writes to stdout.</p></div>
                 if ssig.has_stop():
                     self.log.trace("Stop signal acknowledged for reading STDIN-3")
                     return
-                # TODO: Re-enable this for very verbose logging
-                # self.log.trace("STDIN: Reached EOF, repeating")
 
     def consumer(self, data):
         """Print received data to stdout."""
@@ -5913,8 +5907,6 @@ callback that writes to stdout.</p></div>
             if ssig.has_stop():
                 self.log.trace("Stop signal acknowledged for reading STDIN-2")
                 return
-            # TODO: Re-enable this for very verbose logging
-            # self.log.trace("STDIN: timeout. Waiting for input...")
             continue
         if line:
             self.log.debug("Received {} bytes from STDIN".format(len(line)))
@@ -6517,17 +6509,31 @@ callback that writes to stdout.</p></div>
     <pre><code>class Runner(object):
     """Runner class that takes care about putting everything into threads."""
 
-    # Dict of producer/consumer action to run in a Thread.
-    # Each list item will be run in a single thread
+    # Dict of producer/consumer action to run in a thread.
+    # Each list item will be run in its own thread
     # {
     #   "name": {
     #     {
-    #       "producer": "function",     # A func which yields data
-    #       "consumer": "function",     # A callback func to process the data
-    #       "interrupter": "function",  # A interrupt func to tell the producer to stop
+    #       "producer": "function",  # A func which yields data
+    #       "consumer": "function",  # A callback func to process the data
+    #       "signal": "StopSignal",  # An instance providing has_stop() and raise_stop()
+    #       "interrupt": "function", # A interrupt func to be called outside the thread to stop it
     #   }
     # }
     __actions = {}
+
+    # Dict of timed function definition to run in a thread.
+    # Each list item will be run in its own thread.
+    # {
+    #   "name": {
+    #     {
+    #       "action": "function",   # A func which does any action
+    #       "intvl": "function",    # The action func will be called at this intervall
+    #       "args": "function",     # args for the action func
+    #       "kwargs": "function",   # kwargs for the action func
+    #       "signal": "StopSignal", # An instance providing has_stop() and raise_stop()
+    #   }
+    # }
     __timers = {}
 
     # A dict which holds the threads created from actions.
@@ -6605,6 +6611,7 @@ callback that writes to stdout.</p></div>
                 time_now = int(time.time())
                 if time_now > time_last + intvl:
                     self.log.debug("[{}] Executing timed function".format(time_now))
+                    # TODO: The following if/else could probably be simplified somehow
                     if args is not None:
                         if kwargs:
                             action(*args, **kwargs)
@@ -6616,7 +6623,7 @@ callback that writes to stdout.</p></div>
                         else:
                             action()
                     time_last = time_now  # Reset previous time
-                time.sleep(1)
+                time.sleep(0.1)
 
         # Start available action in a thread
         for key in self.__actions:
@@ -6819,6 +6826,7 @@ callback that writes to stdout.</p></div>
             time_now = int(time.time())
             if time_now > time_last + intvl:
                 self.log.debug("[{}] Executing timed function".format(time_now))
+                # TODO: The following if/else could probably be simplified somehow
                 if args is not None:
                     if kwargs:
                         action(*args, **kwargs)
@@ -6830,7 +6838,7 @@ callback that writes to stdout.</p></div>
                     else:
                         action()
                 time_last = time_now  # Reset previous time
-            time.sleep(1)
+            time.sleep(0.1)
     # Start available action in a thread
     for key in self.__actions:
         # Create Thread object
