@@ -137,10 +137,9 @@ advanced arguments:
                         (default: server will quit after connection is gone)
 
   --rebind x            Listen mode (TCP and UDP):
-                        If the server is unable to bind or accept clients, it
-                        will re-initialize itself x many times before giving up.
-                        Use 0 to re-initialize endlessly. (default: fail after
-                        first unsuccessful try).
+                        If the server is unable to bind, it will re-initialize
+                        itself x many times before giving up. Use 0 to re-init
+                        endlessly. (default: fail after first unsuccessful try).
 
   --rebind-wait s       Listen mode (TCP and UDP):
                         Wait x seconds between re-initialization. (default: 1)
