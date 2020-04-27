@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pwncat",
-    version="0.0.7-alpha",
+    version="0.0.8-alpha",
     description="Netcat on steroids with Firewall and IPS evasion, bind and reverse shell and port-forwarding.",
     license="MIT",
     long_description=long_description,

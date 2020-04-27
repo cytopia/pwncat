@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.8-alpha
+
+#### Added
+- Feature: implemented remote port forwarding mode: `-R`/`--remote`
+
+
 ## Release 0.0.7-alpha
 
 #### Fixed
@@ -36,7 +42,7 @@
 - Changed daemon threads to non-daemon threads
 - Use Python's `logging` module instead of self-written one
 - Usage options have changed drastically
-- Changed `--reconnect` and `--reconnect-wait` to keep open (`-k`/`--keep`)
+- Changed `--reconn` and `--reconn-wait` to keep open (`-k`/`--keep`)
 
 #### Removed
 - Removed `builtins` import for cross-os base install compatibility

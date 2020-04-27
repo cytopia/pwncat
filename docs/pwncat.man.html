@@ -45,8 +45,9 @@ pwncat</p>
 <p style="margin-left:22%; margin-top: 1em">pwncat
 [&minus;Cnuv] [&minus;e cmd] <b>&minus;l</b> [hostname] port
 pwncat [&minus;Cnuv] <b>&minus;z</b> hostname port pwncat
-[&minus;Cnuv] <b>&minus;L</b> addr:port [hostname] port
-pwncat <b>&minus;V</b>, <b>&minus;&minus;version</b> pwncat
+[&minus;Cnuv] <b>&minus;L</b> addr:port hostname port pwncat
+[&minus;Cnuv] <b>&minus;R</b> addr:port hostname port pwncat
+<b>&minus;V</b>, <b>&minus;&minus;version</b> pwncat
 <b>&minus;h</b>, <b>&minus;&minus;help</b></p>
 
 <p style="margin-left:11%; margin-top: 1em">Enhanced and
@@ -114,6 +115,20 @@ server will then forward traffic to the internal client
 which connects to another server specified by address given
 via <b>&minus;L</b>/&minus;&minus;local addr:port. (I.e.:
 proxies a remote service to a local address)</p>
+
+<p style="margin-left:11%;"><b>&minus;R</b> addr:port,
+<b>&minus;&minus;remote</b> addr:port</p>
+
+<p style="margin-left:22%;">[Remote forward mode]: This
+mode will start two clients internally. One is connecting to
+the target and one is connecting to another pwncat/netcat
+server you have started somewhere. Once connected, it will
+then proxy traffic between you and the target. This mode
+should be applied on machines that block incoming traffic
+and only allow outbound. The connection to your listening
+server is given by <b>&minus;R</b>/&minus;&minus;remote
+addr:port and the connection to the target machine via the
+positional arguments.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>optional
 arguments: <br>
@@ -185,10 +200,9 @@ has disconnected or the connection is unterrupted otherwise.
 x</p>
 
 <p style="margin-left:22%;">Listen mode (TCP and UDP): If
-the server is unable to bind or accept clients, it will
-re&minus;initialize itself x many times before giving up.
-Use 0 to re&minus;initialize endlessly. (default: fail after
-first unsuccessful try).</p>
+the server is unable to bind, it will re&minus;initialize
+itself x many times before giving up. Use 0 to re&minus;init
+endlessly. (default: fail after first unsuccessful try).</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;rebind&minus;wait</b>
