@@ -974,7 +974,6 @@ table {
   <ul>
     <li class="mono"><a href="#pwncat.APPNAME">APPNAME</a></li>
     <li class="mono"><a href="#pwncat.APPREPO">APPREPO</a></li>
-    <li class="mono"><a href="#pwncat.LOGLEVEL_TRACE_NUM">LOGLEVEL_TRACE_NUM</a></li>
     <li class="mono"><a href="#pwncat.PIPE">PIPE</a></li>
     <li class="mono"><a href="#pwncat.TIMEOUT_READ_STDIN">TIMEOUT_READ_STDIN</a></li>
     <li class="mono"><a href="#pwncat.TIMEOUT_RECV_SOCKET">TIMEOUT_RECV_SOCKET</a></li>
@@ -989,7 +988,6 @@ table {
   <ul>
     <li class="mono"><a href="#pwncat.get_args">get_args</a></li>
     <li class="mono"><a href="#pwncat.get_version">get_version</a></li>
-    <li class="mono"><a href="#pwncat.logtrace">logtrace</a></li>
     <li class="mono"><a href="#pwncat.main">main</a></li>
   </ul>
 
@@ -1027,6 +1025,21 @@ table {
     <li class="mono"><a href="#pwncat.AbstractSocket.listen">listen</a></li>
     <li class="mono"><a href="#pwncat.AbstractSocket.receive">receive</a></li>
     <li class="mono"><a href="#pwncat.AbstractSocket.send">send</a></li>
+  </ul>
+
+        </li>
+        <li class="mono">
+        <span class="class_name"><a href="#pwncat.ColoredLogFormatter">ColoredLogFormatter</a></span>
+        
+          
+  <ul>
+    <li class="mono"><a href="#pwncat.ColoredLogFormatter.__init__">__init__</a></li>
+    <li class="mono"><a href="#pwncat.ColoredLogFormatter.format">format</a></li>
+    <li class="mono"><a href="#pwncat.ColoredLogFormatter.formatException">formatException</a></li>
+    <li class="mono"><a href="#pwncat.ColoredLogFormatter.formatMessage">formatMessage</a></li>
+    <li class="mono"><a href="#pwncat.ColoredLogFormatter.formatStack">formatStack</a></li>
+    <li class="mono"><a href="#pwncat.ColoredLogFormatter.formatTime">formatTime</a></li>
+    <li class="mono"><a href="#pwncat.ColoredLogFormatter.usesTime">usesTime</a></li>
   </ul>
 
         </li>
@@ -1121,6 +1134,39 @@ table {
   </ul>
 
         </li>
+        <li class="mono">
+        <span class="class_name"><a href="#pwncat.TraceLogger">TraceLogger</a></span>
+        
+          
+  <ul>
+    <li class="mono"><a href="#pwncat.TraceLogger.__init__">__init__</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.addFilter">addFilter</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.addHandler">addHandler</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.callHandlers">callHandlers</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.critical">critical</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.debug">debug</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.error">error</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.exception">exception</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.fatal">fatal</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.filter">filter</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.findCaller">findCaller</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.getChild">getChild</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.getEffectiveLevel">getEffectiveLevel</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.handle">handle</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.hasHandlers">hasHandlers</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.info">info</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.isEnabledFor">isEnabledFor</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.log">log</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.makeRecord">makeRecord</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.removeFilter">removeFilter</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.removeHandler">removeHandler</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.setLevel">setLevel</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.trace">trace</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.warn">warn</a></li>
+    <li class="mono"><a href="#pwncat.TraceLogger.warning">warning</a></li>
+  </ul>
+
+        </li>
       </ul>
     </li>
 
@@ -1179,9 +1225,6 @@ APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
 VERSION = "0.0.8-alpha"
 
-# Custom loglevel numer for TRACE
-LOGLEVEL_TRACE_NUM = 9
-
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
 TIMEOUT_RECV_SOCKET = 0.1
@@ -1195,6 +1238,75 @@ TIMEOUT_RECV_SOCKET_RETRY = 2
 # ###
 # #################################################################################################
 # #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: TraceLogger
+# -------------------------------------------------------------------------------------------------
+class TraceLogger(logging.Logger):
+    """Logger class with additional TRACE level logging."""
+
+    LEVEL_NUM = 9
+    LEVEL_NAME = "TRACE"
+
+    def __init__(self, name, level=logging.NOTSET):
+        super(TraceLogger, self).__init__(name, level)
+        logging.addLevelName(self.LEVEL_NUM, self.LEVEL_NAME)
+
+    def trace(self, msg, *args, **kwargs):
+        """Set custom log level for TRACE."""
+        if self.isEnabledFor(self.LEVEL_NUM):
+            self._log(self.LEVEL_NUM, msg, args, **kwargs)
+
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: ColoredLogFormatter
+# -------------------------------------------------------------------------------------------------
+class ColoredLogFormatter(logging.Formatter):
+    """Logging Formatter to add colors and count warning / errors"""
+
+    COLORS = {
+        logging.CRITICAL: "\x1b[31;1m",  # bold red
+        logging.ERROR: "\x1b[31;21m",  # red
+        logging.WARNING: "\x1b[33;21m",  # yellow
+        logging.INFO: "\x1b[32;21m",  # green
+        logging.DEBUG: "\x1b[30;21m",  # gray
+    }
+    COLOR_DEF = COLORS[logging.DEBUG]
+    COLOR_RST = "\x1b[0m"
+
+    def __init__(self, color, loglevel):
+        super(ColoredLogFormatter, self).__init__()
+        self.color = color
+        self.loglevel = loglevel
+        self.tty = sys.stderr.isatty()
+
+    def __get_format(self):
+        """Return format string based on currently applied log level."""
+        # In debug logging we add slightly more info to all formats
+        if self.loglevel == logging.DEBUG:
+            return "%(levelname)s [%(threadName)s]: %(message)s"
+        # In lower than debug logging we will add even more info to all log formats
+        if self.loglevel < logging.DEBUG:
+            return "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
+        # By default, we will only add basic info
+        return "%(levelname)s: %(message)s"
+
+    def __colorize(self, level, fmt):
+        if self.color == "never":
+            return fmt
+
+        # If stderr is redirected to a file or we're running on windows, do not do colorize
+        if self.color == "auto" and (not self.tty or os.name == "nt"):
+            return fmt
+
+        return self.COLORS.get(level, self.COLOR_DEF) + fmt + self.COLOR_RST
+
+    def format(self, record):
+        log_fmt = self.__get_format()
+        log_fmt = self.__colorize(record.levelno, log_fmt)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
 
 # -------------------------------------------------------------------------------------------------
 # CLASS: StringEncoder
@@ -1616,7 +1728,8 @@ class AbstractSocket(object):
 
             # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
             if not byte:
-                self.log.trace("Socket: Empty data received or otherwise caught.")
+                self.log.trace("Socket: Empty data received.")
+                self.log.info("Upstream connection closed.")
 
                 if self.role == "server":
                     # Yay, we want to continue and allow new clients
@@ -1629,7 +1742,6 @@ class AbstractSocket(object):
                         self.log.trace("Client can continue, because of --reconn")
                         continue
 
-                self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
                 ssig.raise_stop()
                 return
 
@@ -2187,6 +2299,12 @@ def get_version():
     )
 
 
+def _args_check_color(value):
+    if value not in ["auto", "always", "never"]:
+        raise argparse.ArgumentTypeError("%s is an invalid color definition" % value)
+    return value
+
+
 def _args_check_port(value):
     """Check arguments for invalid port number."""
     min_port = 1
@@ -2530,6 +2648,19 @@ target machine via the positional arguments.
 or -vvvv for more verbosity. The server performance will
 decrease drastically if you use more than three times.""",
     )
+    optional.add_argument(
+        "-c",
+        "--color",
+        metavar="str",
+        default="auto",
+        type=_args_check_color,
+        help="""Colored log output. Specify 'always', 'never' or 'auto'.
+In 'auto' mode, color is displayed as long as the output
+goes to a terminal. If it is piped into a file, color
+will automatically be disabled. This mode also disables
+color on Windows by default. (default: auto)
+""",
+    )
 
     advanced.add_argument(
         "--http",
@@ -2769,15 +2900,6 @@ accidentally by other input.
 
 
 # -------------------------------------------------------------------------------------------------
-# CUSTOM FUNCTIONS
-# -------------------------------------------------------------------------------------------------
-def logtrace(self, message, *args, **kws):
-    """Set custom log level for TRACE."""
-    if self.isEnabledFor(LOGLEVEL_TRACE_NUM):
-        self._log(LOGLEVEL_TRACE_NUM, message, args, **kws)
-
-
-# -------------------------------------------------------------------------------------------------
 # MAIN ENTRYPOINT
 # -------------------------------------------------------------------------------------------------
 def main():
@@ -2809,26 +2931,26 @@ def main():
         "safe_word": args.safe_word,
     }
 
-    # Initialize logger
-    if args.verbose == 0:
-        loglevel = logging.ERROR
-    elif args.verbose == 1:
-        loglevel = logging.WARNING
-    elif args.verbose == 2:
-        loglevel = logging.INFO
-    elif args.verbose == 3:
-        loglevel = logging.DEBUG
-    else:
-        loglevel = LOGLEVEL_TRACE_NUM
+    # Map pwncat verbosity to Python's Logger loglevel
+    logmap = {
+        0: logging.ERROR,
+        1: logging.WARNING,
+        2: logging.INFO,
+        3: logging.DEBUG,
+    }
+    loglevel = logmap.get(args.verbose, TraceLogger.LEVEL_NUM)
 
-    logging.addLevelName(LOGLEVEL_TRACE_NUM, "TRACE")
-    logging.Logger.trace = logtrace
-    logformat = "%(levelname)s %(message)s"
-    if args.verbose > 2:
-        logformat = "%(levelname)s [%(threadName)s]: %(message)s"
-    if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
-    logging.basicConfig(format=logformat, level=loglevel)
+    # Use a colored log formatter
+    formatter = ColoredLogFormatter(args.color, loglevel)
+    handler = logging.StreamHandler()
+    handler.setLevel(loglevel)
+    handler.setFormatter(formatter)
+
+    # Use a custom logger with TRACE level
+    logging.setLoggerClass(TraceLogger)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(loglevel)
+    logger.addHandler(handler)
 
     # Initialize encoder
     encoder = StringEncoder()
@@ -3015,14 +3137,6 @@ if __name__ == "__main__":
       </div>
       <div class="item">
       <p id="pwncat.APPREPO" class="name">var <span class="ident">APPREPO</span></p>
-      
-  
-  <div class="source_cont">
-</div>
-
-      </div>
-      <div class="item">
-      <p id="pwncat.LOGLEVEL_TRACE_NUM" class="name">var <span class="ident">LOGLEVEL_TRACE_NUM</span></p>
       
   
   <div class="source_cont">
@@ -3218,6 +3332,19 @@ target machine via the positional arguments.
         help="""Be verbose and print info to stderr. Use -v, -vv, -vvv
 or -vvvv for more verbosity. The server performance will
 decrease drastically if you use more than three times.""",
+    )
+    optional.add_argument(
+        "-c",
+        "--color",
+        metavar="str",
+        default="auto",
+        type=_args_check_color,
+        help="""Colored log output. Specify 'always', 'never' or 'auto'.
+In 'auto' mode, color is displayed as long as the output
+goes to a terminal. If it is piped into a file, color
+will automatically be disabled. This mode also disables
+color on Windows by default. (default: auto)
+""",
     )
 
     advanced.add_argument(
@@ -3487,29 +3614,6 @@ accidentally by other input.
   
       
   <div class="item">
-    <div class="name def" id="pwncat.logtrace">
-    <p>def <span class="ident">logtrace</span>(</p><p>self, message, *args, **kws)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Set custom log level for TRACE.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.logtrace', this);">Show source &equiv;</a></p>
-  <div id="source-pwncat.logtrace" class="source">
-    <pre><code>def logtrace(self, message, *args, **kws):
-    """Set custom log level for TRACE."""
-    if self.isEnabledFor(LOGLEVEL_TRACE_NUM):
-        self._log(LOGLEVEL_TRACE_NUM, message, args, **kws)
-</code></pre>
-  </div>
-</div>
-
-  </div>
-  
-      
-  <div class="item">
     <div class="name def" id="pwncat.main">
     <p>def <span class="ident">main</span>(</p><p>)</p>
     </div>
@@ -3550,26 +3654,26 @@ accidentally by other input.
         "safe_word": args.safe_word,
     }
 
-    # Initialize logger
-    if args.verbose == 0:
-        loglevel = logging.ERROR
-    elif args.verbose == 1:
-        loglevel = logging.WARNING
-    elif args.verbose == 2:
-        loglevel = logging.INFO
-    elif args.verbose == 3:
-        loglevel = logging.DEBUG
-    else:
-        loglevel = LOGLEVEL_TRACE_NUM
+    # Map pwncat verbosity to Python's Logger loglevel
+    logmap = {
+        0: logging.ERROR,
+        1: logging.WARNING,
+        2: logging.INFO,
+        3: logging.DEBUG,
+    }
+    loglevel = logmap.get(args.verbose, TraceLogger.LEVEL_NUM)
 
-    logging.addLevelName(LOGLEVEL_TRACE_NUM, "TRACE")
-    logging.Logger.trace = logtrace
-    logformat = "%(levelname)s %(message)s"
-    if args.verbose > 2:
-        logformat = "%(levelname)s [%(threadName)s]: %(message)s"
-    if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
-    logging.basicConfig(format=logformat, level=loglevel)
+    # Use a colored log formatter
+    formatter = ColoredLogFormatter(args.color, loglevel)
+    handler = logging.StreamHandler()
+    handler.setLevel(loglevel)
+    handler.setFormatter(formatter)
+
+    # Use a custom logger with TRACE level
+    logging.setLoggerClass(TraceLogger)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(loglevel)
+    logger.addHandler(handler)
 
     # Initialize encoder
     encoder = StringEncoder()
@@ -4364,7 +4468,8 @@ def producer(self, ssig):
 
             # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
             if not byte:
-                self.log.trace("Socket: Empty data received or otherwise caught.")
+                self.log.trace("Socket: Empty data received.")
+                self.log.info("Upstream connection closed.")
 
                 if self.role == "server":
                     # Yay, we want to continue and allow new clients
@@ -4377,7 +4482,6 @@ def producer(self, ssig):
                         self.log.trace("Client can continue, because of --reconn")
                         continue
 
-                self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
                 ssig.raise_stop()
                 return
 
@@ -4791,7 +4895,8 @@ def producer(self, ssig):
             self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
         # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
         if not byte:
-            self.log.trace("Socket: Empty data received or otherwise caught.")
+            self.log.trace("Socket: Empty data received.")
+            self.log.info("Upstream connection closed.")
             if self.role == "server":
                 # Yay, we want to continue and allow new clients
                 if self.__reaccept_from_client():
@@ -4802,7 +4907,6 @@ def producer(self, ssig):
                 if self.__reconnect_to_server():
                     self.log.trace("Client can continue, because of --reconn")
                     continue
-            self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
             ssig.raise_stop()
             return
         # [5/5] We have data to process
@@ -4933,6 +5037,394 @@ def producer(self, ssig):
             </div>
             <div class="item">
             <p id="pwncat.AbstractSocket.role" class="name">var <span class="ident">role</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+      </div>
+      </div>
+      
+      <div class="item">
+      <p id="pwncat.ColoredLogFormatter" class="name">class <span class="ident">ColoredLogFormatter</span></p>
+      
+  
+    <div class="desc"><p>Logging Formatter to add colors and count warning / errors</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter" class="source">
+    <pre><code>class ColoredLogFormatter(logging.Formatter):
+    """Logging Formatter to add colors and count warning / errors"""
+
+    COLORS = {
+        logging.CRITICAL: "\x1b[31;1m",  # bold red
+        logging.ERROR: "\x1b[31;21m",  # red
+        logging.WARNING: "\x1b[33;21m",  # yellow
+        logging.INFO: "\x1b[32;21m",  # green
+        logging.DEBUG: "\x1b[30;21m",  # gray
+    }
+    COLOR_DEF = COLORS[logging.DEBUG]
+    COLOR_RST = "\x1b[0m"
+
+    def __init__(self, color, loglevel):
+        super(ColoredLogFormatter, self).__init__()
+        self.color = color
+        self.loglevel = loglevel
+        self.tty = sys.stderr.isatty()
+
+    def __get_format(self):
+        """Return format string based on currently applied log level."""
+        # In debug logging we add slightly more info to all formats
+        if self.loglevel == logging.DEBUG:
+            return "%(levelname)s [%(threadName)s]: %(message)s"
+        # In lower than debug logging we will add even more info to all log formats
+        if self.loglevel < logging.DEBUG:
+            return "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
+        # By default, we will only add basic info
+        return "%(levelname)s: %(message)s"
+
+    def __colorize(self, level, fmt):
+        if self.color == "never":
+            return fmt
+
+        # If stderr is redirected to a file or we're running on windows, do not do colorize
+        if self.color == "auto" and (not self.tty or os.name == "nt"):
+            return fmt
+
+        return self.COLORS.get(level, self.COLOR_DEF) + fmt + self.COLOR_RST
+
+    def format(self, record):
+        log_fmt = self.__get_format()
+        log_fmt = self.__colorize(record.levelno, log_fmt)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+</code></pre>
+  </div>
+</div>
+
+
+      <div class="class">
+          <h3>Ancestors (in MRO)</h3>
+          <ul class="class_list">
+          <li><a href="#pwncat.ColoredLogFormatter">ColoredLogFormatter</a></li>
+          <li><a href="/logging.Formatter.ext">logging.Formatter</a></li>
+          <li><a href="/builtins.object.ext">builtins.object</a></li>
+          </ul>
+          <h3>Class variables</h3>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.COLORS" class="name">var <span class="ident">COLORS</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.COLOR_DEF" class="name">var <span class="ident">COLOR_DEF</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.COLOR_RST" class="name">var <span class="ident">COLOR_RST</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.default_msec_format" class="name">var <span class="ident">default_msec_format</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.default_time_format" class="name">var <span class="ident">default_time_format</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+          <h3>Static methods</h3>
+            
+  <div class="item">
+    <div class="name def" id="pwncat.ColoredLogFormatter.__init__">
+    <p>def <span class="ident">__init__</span>(</p><p>self, color, loglevel)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Initialize the formatter with specified format strings.</p>
+<p>Initialize the formatter either with the specified format string, or a
+default as described above. Allow for specialized date formatting with
+the optional datefmt argument. If datefmt is omitted, you get an
+ISO8601-like (or RFC 3339-like) format.</p>
+<p>Use a style parameter of '%', '{' or '$' to specify that you want to
+use one of %-formatting, :meth:<a href="/str.format.ext"><code>str.format</code></a> (<code>{}</code>) formatting or
+:class:<code>string.Template</code> formatting in your format string.</p>
+<p>.. versionchanged:: 3.2
+   Added the <code>style</code> parameter.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter.__init__" class="source">
+    <pre><code>def __init__(self, color, loglevel):
+    super(ColoredLogFormatter, self).__init__()
+    self.color = color
+    self.loglevel = loglevel
+    self.tty = sys.stderr.isatty()
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.ColoredLogFormatter.format">
+    <p>def <span class="ident">format</span>(</p><p>self, record)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Format the specified record as text.</p>
+<p>The record's attribute dictionary is used as the operand to a
+string formatting operation which yields the returned string.
+Before formatting the dictionary, a couple of preparatory steps
+are carried out. The message attribute of the record is computed
+using LogRecord.getMessage(). If the formatting string uses the
+time (as determined by a call to usesTime(), formatTime() is
+called to format the event time. If there is exception information,
+it is formatted using formatException() and appended to the message.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter.format', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter.format" class="source">
+    <pre><code>def format(self, record):
+    log_fmt = self.__get_format()
+    log_fmt = self.__colorize(record.levelno, log_fmt)
+    formatter = logging.Formatter(log_fmt)
+    return formatter.format(record)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.ColoredLogFormatter.formatException">
+    <p>def <span class="ident">formatException</span>(</p><p>self, ei)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Format and return the specified exception information as a string.</p>
+<p>This default implementation just uses
+traceback.print_exception()</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter.formatException', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter.formatException" class="source">
+    <pre><code>def formatException(self, ei):
+    """
+    Format and return the specified exception information as a string.
+    This default implementation just uses
+    traceback.print_exception()
+    """
+    sio = io.StringIO()
+    tb = ei[2]
+    # See issues #9427, #1553375. Commented out for now.
+    #if getattr(self, 'fullstack', False):
+    #    traceback.print_stack(tb.tb_frame.f_back, file=sio)
+    traceback.print_exception(ei[0], ei[1], tb, None, sio)
+    s = sio.getvalue()
+    sio.close()
+    if s[-1:] == "\n":
+        s = s[:-1]
+    return s
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.ColoredLogFormatter.formatMessage">
+    <p>def <span class="ident">formatMessage</span>(</p><p>self, record)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter.formatMessage', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter.formatMessage" class="source">
+    <pre><code>def formatMessage(self, record):
+    return self._style.format(record)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.ColoredLogFormatter.formatStack">
+    <p>def <span class="ident">formatStack</span>(</p><p>self, stack_info)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>This method is provided as an extension point for specialized
+formatting of stack information.</p>
+<p>The input data is a string as returned from a call to
+:func:<a href="/traceback.print_stack.ext"><code>traceback.print_stack</code></a>, but with the last trailing newline
+removed.</p>
+<p>The base implementation just returns the value passed in.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter.formatStack', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter.formatStack" class="source">
+    <pre><code>def formatStack(self, stack_info):
+    """
+    This method is provided as an extension point for specialized
+    formatting of stack information.
+    The input data is a string as returned from a call to
+    :func:`traceback.print_stack`, but with the last trailing newline
+    removed.
+    The base implementation just returns the value passed in.
+    """
+    return stack_info
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.ColoredLogFormatter.formatTime">
+    <p>def <span class="ident">formatTime</span>(</p><p>self, record, datefmt=None)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Return the creation time of the specified LogRecord as formatted text.</p>
+<p>This method should be called from format() by a formatter which
+wants to make use of a formatted time. This method can be overridden
+in formatters to provide for any specific requirement, but the
+basic behaviour is as follows: if datefmt (a string) is specified,
+it is used with time.strftime() to format the creation time of the
+record. Otherwise, an ISO8601-like (or RFC 3339-like) format is used.
+The resulting string is returned. This function uses a user-configurable
+function to convert the creation time to a tuple. By default,
+time.localtime() is used; to change this for a particular formatter
+instance, set the 'converter' attribute to a function with the same
+signature as time.localtime() or time.gmtime(). To change it for all
+formatters, for example if you want all logging times to be shown in GMT,
+set the 'converter' attribute in the Formatter class.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter.formatTime', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter.formatTime" class="source">
+    <pre><code>def formatTime(self, record, datefmt=None):
+    """
+    Return the creation time of the specified LogRecord as formatted text.
+    This method should be called from format() by a formatter which
+    wants to make use of a formatted time. This method can be overridden
+    in formatters to provide for any specific requirement, but the
+    basic behaviour is as follows: if datefmt (a string) is specified,
+    it is used with time.strftime() to format the creation time of the
+    record. Otherwise, an ISO8601-like (or RFC 3339-like) format is used.
+    The resulting string is returned. This function uses a user-configurable
+    function to convert the creation time to a tuple. By default,
+    time.localtime() is used; to change this for a particular formatter
+    instance, set the 'converter' attribute to a function with the same
+    signature as time.localtime() or time.gmtime(). To change it for all
+    formatters, for example if you want all logging times to be shown in GMT,
+    set the 'converter' attribute in the Formatter class.
+    """
+    ct = self.converter(record.created)
+    if datefmt:
+        s = time.strftime(datefmt, ct)
+    else:
+        t = time.strftime(self.default_time_format, ct)
+        s = self.default_msec_format % (t, record.msecs)
+    return s
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.ColoredLogFormatter.usesTime">
+    <p>def <span class="ident">usesTime</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Check if the format uses the creation time of the record.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.ColoredLogFormatter.usesTime', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.ColoredLogFormatter.usesTime" class="source">
+    <pre><code>def usesTime(self):
+    """
+    Check if the format uses the creation time of the record.
+    """
+    return self._style.usesTime()
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+          <h3>Instance variables</h3>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.color" class="name">var <span class="ident">color</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.loglevel" class="name">var <span class="ident">loglevel</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.ColoredLogFormatter.tty" class="name">var <span class="ident">tty</span></p>
             
 
             
@@ -5346,7 +5838,8 @@ def producer(self, ssig):
             self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
         # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
         if not byte:
-            self.log.trace("Socket: Empty data received or otherwise caught.")
+            self.log.trace("Socket: Empty data received.")
+            self.log.info("Upstream connection closed.")
             if self.role == "server":
                 # Yay, we want to continue and allow new clients
                 if self.__reaccept_from_client():
@@ -5357,7 +5850,6 @@ def producer(self, ssig):
                 if self.__reconnect_to_server():
                     self.log.trace("Client can continue, because of --reconn")
                     continue
-            self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
             ssig.raise_stop()
             return
         # [5/5] We have data to process
@@ -6523,7 +7015,8 @@ callback that writes to stdout.</p></div>
             self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
         # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
         if not byte:
-            self.log.trace("Socket: Empty data received or otherwise caught.")
+            self.log.trace("Socket: Empty data received.")
+            self.log.info("Upstream connection closed.")
             if self.role == "server":
                 # Yay, we want to continue and allow new clients
                 if self.__reaccept_from_client():
@@ -6534,7 +7027,6 @@ callback that writes to stdout.</p></div>
                 if self.__reconnect_to_server():
                     self.log.trace("Client can continue, because of --reconn")
                     continue
-            self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
             ssig.raise_stop()
             return
         # [5/5] We have data to process
@@ -7252,6 +7744,899 @@ classes or functions as strings to keep full Python 2/3 compat.</p></div>
 </div>
 
             </div>
+      </div>
+      </div>
+      
+      <div class="item">
+      <p id="pwncat.TraceLogger" class="name">class <span class="ident">TraceLogger</span></p>
+      
+  
+    <div class="desc"><p>Logger class with additional TRACE level logging.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger" class="source">
+    <pre><code>class TraceLogger(logging.Logger):
+    """Logger class with additional TRACE level logging."""
+
+    LEVEL_NUM = 9
+    LEVEL_NAME = "TRACE"
+
+    def __init__(self, name, level=logging.NOTSET):
+        super(TraceLogger, self).__init__(name, level)
+        logging.addLevelName(self.LEVEL_NUM, self.LEVEL_NAME)
+
+    def trace(self, msg, *args, **kwargs):
+        """Set custom log level for TRACE."""
+        if self.isEnabledFor(self.LEVEL_NUM):
+            self._log(self.LEVEL_NUM, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+
+      <div class="class">
+          <h3>Ancestors (in MRO)</h3>
+          <ul class="class_list">
+          <li><a href="#pwncat.TraceLogger">TraceLogger</a></li>
+          <li><a href="/logging.Logger.ext">logging.Logger</a></li>
+          <li><a href="/logging.Filterer.ext">logging.Filterer</a></li>
+          <li><a href="/builtins.object.ext">builtins.object</a></li>
+          </ul>
+          <h3>Class variables</h3>
+            <div class="item">
+            <p id="pwncat.TraceLogger.LEVEL_NAME" class="name">var <span class="ident">LEVEL_NAME</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.TraceLogger.LEVEL_NUM" class="name">var <span class="ident">LEVEL_NUM</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.TraceLogger.manager" class="name">var <span class="ident">manager</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pwncat.TraceLogger.root" class="name">var <span class="ident">root</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+          <h3>Static methods</h3>
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.__init__">
+    <p>def <span class="ident">__init__</span>(</p><p>self, name, level=0)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Initialize the logger with a name and an optional level.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.__init__" class="source">
+    <pre><code>def __init__(self, name, level=logging.NOTSET):
+    super(TraceLogger, self).__init__(name, level)
+    logging.addLevelName(self.LEVEL_NUM, self.LEVEL_NAME)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.addFilter">
+    <p>def <span class="ident">addFilter</span>(</p><p>self, filter)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Add the specified filter to this handler.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.addFilter', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.addFilter" class="source">
+    <pre><code>def addFilter(self, filter):
+    """
+    Add the specified filter to this handler.
+    """
+    if not (filter in self.filters):
+        self.filters.append(filter)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.addHandler">
+    <p>def <span class="ident">addHandler</span>(</p><p>self, hdlr)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Add the specified handler to this logger.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.addHandler', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.addHandler" class="source">
+    <pre><code>def addHandler(self, hdlr):
+    """
+    Add the specified handler to this logger.
+    """
+    _acquireLock()
+    try:
+        if not (hdlr in self.handlers):
+            self.handlers.append(hdlr)
+    finally:
+        _releaseLock()
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.callHandlers">
+    <p>def <span class="ident">callHandlers</span>(</p><p>self, record)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Pass a record to all relevant handlers.</p>
+<p>Loop through all handlers for this logger and its parents in the
+logger hierarchy. If no handler was found, output a one-off error
+message to sys.stderr. Stop searching up the hierarchy whenever a
+logger with the "propagate" attribute set to zero is found - that
+will be the last logger whose handlers are called.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.callHandlers', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.callHandlers" class="source">
+    <pre><code>def callHandlers(self, record):
+    """
+    Pass a record to all relevant handlers.
+    Loop through all handlers for this logger and its parents in the
+    logger hierarchy. If no handler was found, output a one-off error
+    message to sys.stderr. Stop searching up the hierarchy whenever a
+    logger with the "propagate" attribute set to zero is found - that
+    will be the last logger whose handlers are called.
+    """
+    c = self
+    found = 0
+    while c:
+        for hdlr in c.handlers:
+            found = found + 1
+            if record.levelno >= hdlr.level:
+                hdlr.handle(record)
+        if not c.propagate:
+            c = None    #break out
+        else:
+            c = c.parent
+    if (found == 0):
+        if lastResort:
+            if record.levelno >= lastResort.level:
+                lastResort.handle(record)
+        elif raiseExceptions and not self.manager.emittedNoHandlerWarning:
+            sys.stderr.write("No handlers could be found for logger"
+                             " \"%s\"\n" % self.name)
+            self.manager.emittedNoHandlerWarning = True
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.critical">
+    <p>def <span class="ident">critical</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Log 'msg % args' with severity 'CRITICAL'.</p>
+<p>To pass exception information, use the keyword argument exc_info with
+a true value, e.g.</p>
+<p>logger.critical("Houston, we have a %s", "major disaster", exc_info=1)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.critical', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.critical" class="source">
+    <pre><code>def critical(self, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with severity 'CRITICAL'.
+    To pass exception information, use the keyword argument exc_info with
+    a true value, e.g.
+    logger.critical("Houston, we have a %s", "major disaster", exc_info=1)
+    """
+    if self.isEnabledFor(CRITICAL):
+        self._log(CRITICAL, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.debug">
+    <p>def <span class="ident">debug</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Log 'msg % args' with severity 'DEBUG'.</p>
+<p>To pass exception information, use the keyword argument exc_info with
+a true value, e.g.</p>
+<p>logger.debug("Houston, we have a %s", "thorny problem", exc_info=1)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.debug', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.debug" class="source">
+    <pre><code>def debug(self, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with severity 'DEBUG'.
+    To pass exception information, use the keyword argument exc_info with
+    a true value, e.g.
+    logger.debug("Houston, we have a %s", "thorny problem", exc_info=1)
+    """
+    if self.isEnabledFor(DEBUG):
+        self._log(DEBUG, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.error">
+    <p>def <span class="ident">error</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Log 'msg % args' with severity 'ERROR'.</p>
+<p>To pass exception information, use the keyword argument exc_info with
+a true value, e.g.</p>
+<p>logger.error("Houston, we have a %s", "major problem", exc_info=1)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.error', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.error" class="source">
+    <pre><code>def error(self, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with severity 'ERROR'.
+    To pass exception information, use the keyword argument exc_info with
+    a true value, e.g.
+    logger.error("Houston, we have a %s", "major problem", exc_info=1)
+    """
+    if self.isEnabledFor(ERROR):
+        self._log(ERROR, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.exception">
+    <p>def <span class="ident">exception</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Convenience method for logging an ERROR with exception information.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.exception', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.exception" class="source">
+    <pre><code>def exception(self, msg, *args, exc_info=True, **kwargs):
+    """
+    Convenience method for logging an ERROR with exception information.
+    """
+    self.error(msg, *args, exc_info=exc_info, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.fatal">
+    <p>def <span class="ident">fatal</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Log 'msg % args' with severity 'CRITICAL'.</p>
+<p>To pass exception information, use the keyword argument exc_info with
+a true value, e.g.</p>
+<p>logger.critical("Houston, we have a %s", "major disaster", exc_info=1)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.fatal', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.fatal" class="source">
+    <pre><code>def critical(self, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with severity 'CRITICAL'.
+    To pass exception information, use the keyword argument exc_info with
+    a true value, e.g.
+    logger.critical("Houston, we have a %s", "major disaster", exc_info=1)
+    """
+    if self.isEnabledFor(CRITICAL):
+        self._log(CRITICAL, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.filter">
+    <p>def <span class="ident">filter</span>(</p><p>self, record)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Determine if a record is loggable by consulting all the filters.</p>
+<p>The default is to allow the record to be logged; any filter can veto
+this and the record is then dropped. Returns a zero value if a record
+is to be dropped, else non-zero.</p>
+<p>.. versionchanged:: 3.2</p>
+<p>Allow filters to be just callables.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.filter', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.filter" class="source">
+    <pre><code>def filter(self, record):
+    """
+    Determine if a record is loggable by consulting all the filters.
+    The default is to allow the record to be logged; any filter can veto
+    this and the record is then dropped. Returns a zero value if a record
+    is to be dropped, else non-zero.
+    .. versionchanged:: 3.2
+       Allow filters to be just callables.
+    """
+    rv = True
+    for f in self.filters:
+        if hasattr(f, 'filter'):
+            result = f.filter(record)
+        else:
+            result = f(record) # assume callable - will raise if not
+        if not result:
+            rv = False
+            break
+    return rv
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.findCaller">
+    <p>def <span class="ident">findCaller</span>(</p><p>self, stack_info=False, stacklevel=1)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Find the stack frame of the caller so that we can note the source
+file name, line number and function name.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.findCaller', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.findCaller" class="source">
+    <pre><code>def findCaller(self, stack_info=False, stacklevel=1):
+    """
+    Find the stack frame of the caller so that we can note the source
+    file name, line number and function name.
+    """
+    f = currentframe()
+    #On some versions of IronPython, currentframe() returns None if
+    #IronPython isn't run with -X:Frames.
+    if f is not None:
+        f = f.f_back
+    orig_f = f
+    while f and stacklevel > 1:
+        f = f.f_back
+        stacklevel -= 1
+    if not f:
+        f = orig_f
+    rv = "(unknown file)", 0, "(unknown function)", None
+    while hasattr(f, "f_code"):
+        co = f.f_code
+        filename = os.path.normcase(co.co_filename)
+        if filename == _srcfile:
+            f = f.f_back
+            continue
+        sinfo = None
+        if stack_info:
+            sio = io.StringIO()
+            sio.write('Stack (most recent call last):\n')
+            traceback.print_stack(f, file=sio)
+            sinfo = sio.getvalue()
+            if sinfo[-1] == '\n':
+                sinfo = sinfo[:-1]
+            sio.close()
+        rv = (co.co_filename, f.f_lineno, co.co_name, sinfo)
+        break
+    return rv
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.getChild">
+    <p>def <span class="ident">getChild</span>(</p><p>self, suffix)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Get a logger which is a descendant to this one.</p>
+<p>This is a convenience method, such that</p>
+<p>logging.getLogger('abc').getChild('def.ghi')</p>
+<p>is the same as</p>
+<p>logging.getLogger('abc.def.ghi')</p>
+<p>It's useful, for example, when the parent logger is named using
+<strong>name</strong> rather than a literal string.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.getChild', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.getChild" class="source">
+    <pre><code>def getChild(self, suffix):
+    """
+    Get a logger which is a descendant to this one.
+    This is a convenience method, such that
+    logging.getLogger('abc').getChild('def.ghi')
+    is the same as
+    logging.getLogger('abc.def.ghi')
+    It's useful, for example, when the parent logger is named using
+    __name__ rather than a literal string.
+    """
+    if self.root is not self:
+        suffix = '.'.join((self.name, suffix))
+    return self.manager.getLogger(suffix)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.getEffectiveLevel">
+    <p>def <span class="ident">getEffectiveLevel</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Get the effective level for this logger.</p>
+<p>Loop through this logger and its parents in the logger hierarchy,
+looking for a non-zero logging level. Return the first one found.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.getEffectiveLevel', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.getEffectiveLevel" class="source">
+    <pre><code>def getEffectiveLevel(self):
+    """
+    Get the effective level for this logger.
+    Loop through this logger and its parents in the logger hierarchy,
+    looking for a non-zero logging level. Return the first one found.
+    """
+    logger = self
+    while logger:
+        if logger.level:
+            return logger.level
+        logger = logger.parent
+    return NOTSET
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.handle">
+    <p>def <span class="ident">handle</span>(</p><p>self, record)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Call the handlers for the specified record.</p>
+<p>This method is used for unpickled records received from a socket, as
+well as those created locally. Logger-level filtering is applied.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.handle', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.handle" class="source">
+    <pre><code>def handle(self, record):
+    """
+    Call the handlers for the specified record.
+    This method is used for unpickled records received from a socket, as
+    well as those created locally. Logger-level filtering is applied.
+    """
+    if (not self.disabled) and self.filter(record):
+        self.callHandlers(record)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.hasHandlers">
+    <p>def <span class="ident">hasHandlers</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>See if this logger has any handlers configured.</p>
+<p>Loop through all handlers for this logger and its parents in the
+logger hierarchy. Return True if a handler was found, else False.
+Stop searching up the hierarchy whenever a logger with the "propagate"
+attribute set to zero is found - that will be the last logger which
+is checked for the existence of handlers.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.hasHandlers', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.hasHandlers" class="source">
+    <pre><code>def hasHandlers(self):
+    """
+    See if this logger has any handlers configured.
+    Loop through all handlers for this logger and its parents in the
+    logger hierarchy. Return True if a handler was found, else False.
+    Stop searching up the hierarchy whenever a logger with the "propagate"
+    attribute set to zero is found - that will be the last logger which
+    is checked for the existence of handlers.
+    """
+    c = self
+    rv = False
+    while c:
+        if c.handlers:
+            rv = True
+            break
+        if not c.propagate:
+            break
+        else:
+            c = c.parent
+    return rv
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.info">
+    <p>def <span class="ident">info</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Log 'msg % args' with severity 'INFO'.</p>
+<p>To pass exception information, use the keyword argument exc_info with
+a true value, e.g.</p>
+<p>logger.info("Houston, we have a %s", "interesting problem", exc_info=1)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.info', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.info" class="source">
+    <pre><code>def info(self, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with severity 'INFO'.
+    To pass exception information, use the keyword argument exc_info with
+    a true value, e.g.
+    logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
+    """
+    if self.isEnabledFor(INFO):
+        self._log(INFO, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.isEnabledFor">
+    <p>def <span class="ident">isEnabledFor</span>(</p><p>self, level)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Is this logger enabled for level 'level'?</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.isEnabledFor', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.isEnabledFor" class="source">
+    <pre><code>def isEnabledFor(self, level):
+    """
+    Is this logger enabled for level 'level'?
+    """
+    if self.disabled:
+        return False
+    try:
+        return self._cache[level]
+    except KeyError:
+        _acquireLock()
+        try:
+            if self.manager.disable >= level:
+                is_enabled = self._cache[level] = False
+            else:
+                is_enabled = self._cache[level] = (
+                    level >= self.getEffectiveLevel()
+                )
+        finally:
+            _releaseLock()
+        return is_enabled
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.log">
+    <p>def <span class="ident">log</span>(</p><p>self, level, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Log 'msg % args' with the integer severity 'level'.</p>
+<p>To pass exception information, use the keyword argument exc_info with
+a true value, e.g.</p>
+<p>logger.log(level, "We have a %s", "mysterious problem", exc_info=1)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.log', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.log" class="source">
+    <pre><code>def log(self, level, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with the integer severity 'level'.
+    To pass exception information, use the keyword argument exc_info with
+    a true value, e.g.
+    logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
+    """
+    if not isinstance(level, int):
+        if raiseExceptions:
+            raise TypeError("level must be an integer")
+        else:
+            return
+    if self.isEnabledFor(level):
+        self._log(level, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.makeRecord">
+    <p>def <span class="ident">makeRecord</span>(</p><p>self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None, sinfo=None)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>A factory method which can be overridden in subclasses to create
+specialized LogRecords.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.makeRecord', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.makeRecord" class="source">
+    <pre><code>def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
+               func=None, extra=None, sinfo=None):
+    """
+    A factory method which can be overridden in subclasses to create
+    specialized LogRecords.
+    """
+    rv = _logRecordFactory(name, level, fn, lno, msg, args, exc_info, func,
+                         sinfo)
+    if extra is not None:
+        for key in extra:
+            if (key in ["message", "asctime"]) or (key in rv.__dict__):
+                raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+            rv.__dict__[key] = extra[key]
+    return rv
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.removeFilter">
+    <p>def <span class="ident">removeFilter</span>(</p><p>self, filter)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Remove the specified filter from this handler.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.removeFilter', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.removeFilter" class="source">
+    <pre><code>def removeFilter(self, filter):
+    """
+    Remove the specified filter from this handler.
+    """
+    if filter in self.filters:
+        self.filters.remove(filter)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.removeHandler">
+    <p>def <span class="ident">removeHandler</span>(</p><p>self, hdlr)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Remove the specified handler from this logger.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.removeHandler', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.removeHandler" class="source">
+    <pre><code>def removeHandler(self, hdlr):
+    """
+    Remove the specified handler from this logger.
+    """
+    _acquireLock()
+    try:
+        if hdlr in self.handlers:
+            self.handlers.remove(hdlr)
+    finally:
+        _releaseLock()
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.setLevel">
+    <p>def <span class="ident">setLevel</span>(</p><p>self, level)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Set the logging level of this logger.  level must be an int or a str.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.setLevel', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.setLevel" class="source">
+    <pre><code>def setLevel(self, level):
+    """
+    Set the logging level of this logger.  level must be an int or a str.
+    """
+    self.level = _checkLevel(level)
+    self.manager._clear_cache()
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.trace">
+    <p>def <span class="ident">trace</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Set custom log level for TRACE.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.trace', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.trace" class="source">
+    <pre><code>def trace(self, msg, *args, **kwargs):
+    """Set custom log level for TRACE."""
+    if self.isEnabledFor(self.LEVEL_NUM):
+        self._log(self.LEVEL_NUM, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.warn">
+    <p>def <span class="ident">warn</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.warn', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.warn" class="source">
+    <pre><code>def warn(self, msg, *args, **kwargs):
+    warnings.warn("The 'warn' method is deprecated, "
+        "use 'warning' instead", DeprecationWarning, 2)
+    self.warning(msg, *args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="pwncat.TraceLogger.warning">
+    <p>def <span class="ident">warning</span>(</p><p>self, msg, *args, **kwargs)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Log 'msg % args' with severity 'WARNING'.</p>
+<p>To pass exception information, use the keyword argument exc_info with
+a true value, e.g.</p>
+<p>logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pwncat.TraceLogger.warning', this);">Show source &equiv;</a></p>
+  <div id="source-pwncat.TraceLogger.warning" class="source">
+    <pre><code>def warning(self, msg, *args, **kwargs):
+    """
+    Log 'msg % args' with severity 'WARNING'.
+    To pass exception information, use the keyword argument exc_info with
+    a true value, e.g.
+    logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)
+    """
+    if self.isEnabledFor(WARNING):
+        self._log(WARNING, msg, args, **kwargs)
+</code></pre>
+  </div>
+</div>
+
+  </div>
+  
       </div>
       </div>
 

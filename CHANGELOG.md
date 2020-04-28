@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.9-alpha
+
+#### Added
+- Feature: colorized logging (`-c`/`--color`): #56
+
+
 ## Release 0.0.8-alpha
 
 #### Added

@@ -80,6 +80,13 @@ Use UDP for the connection instead of TCP.
 Be verbose and print info to stderr. Use \fB\-v\fR, \fB\-vv\fR, \fB\-vvv\fR
 or \fB\-vvvv\fR for more verbosity. The server performance will
 decrease drastically if you use more than three times.
+.TP
+\fB\-c\fR str, \fB\-\-color\fR str
+Colored log output. Specify 'always', 'never' or 'auto'.
+In 'auto' mode, color is displayed as long as the output
+goes to a terminal. If it is piped into a file, color
+will automatically be disabled. This mode also disables
+color on Windows by default. (default: auto)
 .SS "advanced arguments:"
 .TP
 \fB\-\-http\fR

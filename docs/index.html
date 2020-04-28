@@ -121,6 +121,11 @@ optional arguments:
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
                         or -vvvv for more verbosity. The server performance will
                         decrease drastically if you use more than three times.
+  -c str, --color str   Colored log output. Specify 'always', 'never' or 'auto'.
+                        In 'auto' mode, color is displayed as long as the output
+                        goes to a terminal. If it is piped into a file, color
+                        will automatically be disabled. This mode also disables
+                        color on Windows by default. (default: auto)
 
 </code></pre>
 <pre class="hi"><code>

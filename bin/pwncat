@@ -37,9 +37,6 @@ APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
 VERSION = "0.0.8-alpha"
 
-# Custom loglevel numer for TRACE
-LOGLEVEL_TRACE_NUM = 9
-
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
 TIMEOUT_RECV_SOCKET = 0.1
@@ -53,6 +50,75 @@ TIMEOUT_RECV_SOCKET_RETRY = 2
 # ###
 # #################################################################################################
 # #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: TraceLogger
+# -------------------------------------------------------------------------------------------------
+class TraceLogger(logging.Logger):
+    """Logger class with additional TRACE level logging."""
+
+    LEVEL_NUM = 9
+    LEVEL_NAME = "TRACE"
+
+    def __init__(self, name, level=logging.NOTSET):
+        super(TraceLogger, self).__init__(name, level)
+        logging.addLevelName(self.LEVEL_NUM, self.LEVEL_NAME)
+
+    def trace(self, msg, *args, **kwargs):
+        """Set custom log level for TRACE."""
+        if self.isEnabledFor(self.LEVEL_NUM):
+            self._log(self.LEVEL_NUM, msg, args, **kwargs)
+
+
+# -------------------------------------------------------------------------------------------------
+# CLASS: ColoredLogFormatter
+# -------------------------------------------------------------------------------------------------
+class ColoredLogFormatter(logging.Formatter):
+    """Logging Formatter to add colors and count warning / errors"""
+
+    COLORS = {
+        logging.CRITICAL: "\x1b[31;1m",  # bold red
+        logging.ERROR: "\x1b[31;21m",  # red
+        logging.WARNING: "\x1b[33;21m",  # yellow
+        logging.INFO: "\x1b[32;21m",  # green
+        logging.DEBUG: "\x1b[30;21m",  # gray
+    }
+    COLOR_DEF = COLORS[logging.DEBUG]
+    COLOR_RST = "\x1b[0m"
+
+    def __init__(self, color, loglevel):
+        super(ColoredLogFormatter, self).__init__()
+        self.color = color
+        self.loglevel = loglevel
+        self.tty = sys.stderr.isatty()
+
+    def __get_format(self):
+        """Return format string based on currently applied log level."""
+        # In debug logging we add slightly more info to all formats
+        if self.loglevel == logging.DEBUG:
+            return "%(levelname)s [%(threadName)s]: %(message)s"
+        # In lower than debug logging we will add even more info to all log formats
+        if self.loglevel < logging.DEBUG:
+            return "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
+        # By default, we will only add basic info
+        return "%(levelname)s: %(message)s"
+
+    def __colorize(self, level, fmt):
+        if self.color == "never":
+            return fmt
+
+        # If stderr is redirected to a file or we're running on windows, do not do colorize
+        if self.color == "auto" and (not self.tty or os.name == "nt"):
+            return fmt
+
+        return self.COLORS.get(level, self.COLOR_DEF) + fmt + self.COLOR_RST
+
+    def format(self, record):
+        log_fmt = self.__get_format()
+        log_fmt = self.__colorize(record.levelno, log_fmt)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
 
 # -------------------------------------------------------------------------------------------------
 # CLASS: StringEncoder
@@ -474,7 +540,8 @@ class AbstractSocket(object):
 
             # [4/5] Upstream (server or client) is gone. Do we reconnect or quit?
             if not byte:
-                self.log.trace("Socket: Empty data received or otherwise caught.")
+                self.log.trace("Socket: Empty data received.")
+                self.log.info("Upstream connection closed.")
 
                 if self.role == "server":
                     # Yay, we want to continue and allow new clients
@@ -487,7 +554,6 @@ class AbstractSocket(object):
                         self.log.trace("Client can continue, because of --reconn")
                         continue
 
-                self.log.warning("Exit. Upstream connection gone. No --keep-open/--reconn set.")
                 ssig.raise_stop()
                 return
 
@@ -1045,6 +1111,12 @@ def get_version():
     )
 
 
+def _args_check_color(value):
+    if value not in ["auto", "always", "never"]:
+        raise argparse.ArgumentTypeError("%s is an invalid color definition" % value)
+    return value
+
+
 def _args_check_port(value):
     """Check arguments for invalid port number."""
     min_port = 1
@@ -1388,6 +1460,19 @@ target machine via the positional arguments.
 or -vvvv for more verbosity. The server performance will
 decrease drastically if you use more than three times.""",
     )
+    optional.add_argument(
+        "-c",
+        "--color",
+        metavar="str",
+        default="auto",
+        type=_args_check_color,
+        help="""Colored log output. Specify 'always', 'never' or 'auto'.
+In 'auto' mode, color is displayed as long as the output
+goes to a terminal. If it is piped into a file, color
+will automatically be disabled. This mode also disables
+color on Windows by default. (default: auto)
+""",
+    )
 
     advanced.add_argument(
         "--http",
@@ -1627,15 +1712,6 @@ accidentally by other input.
 
 
 # -------------------------------------------------------------------------------------------------
-# CUSTOM FUNCTIONS
-# -------------------------------------------------------------------------------------------------
-def logtrace(self, message, *args, **kws):
-    """Set custom log level for TRACE."""
-    if self.isEnabledFor(LOGLEVEL_TRACE_NUM):
-        self._log(LOGLEVEL_TRACE_NUM, message, args, **kws)
-
-
-# -------------------------------------------------------------------------------------------------
 # MAIN ENTRYPOINT
 # -------------------------------------------------------------------------------------------------
 def main():
@@ -1667,26 +1743,26 @@ def main():
         "safe_word": args.safe_word,
     }
 
-    # Initialize logger
-    if args.verbose == 0:
-        loglevel = logging.ERROR
-    elif args.verbose == 1:
-        loglevel = logging.WARNING
-    elif args.verbose == 2:
-        loglevel = logging.INFO
-    elif args.verbose == 3:
-        loglevel = logging.DEBUG
-    else:
-        loglevel = LOGLEVEL_TRACE_NUM
+    # Map pwncat verbosity to Python's Logger loglevel
+    logmap = {
+        0: logging.ERROR,
+        1: logging.WARNING,
+        2: logging.INFO,
+        3: logging.DEBUG,
+    }
+    loglevel = logmap.get(args.verbose, TraceLogger.LEVEL_NUM)
 
-    logging.addLevelName(LOGLEVEL_TRACE_NUM, "TRACE")
-    logging.Logger.trace = logtrace
-    logformat = "%(levelname)s %(message)s"
-    if args.verbose > 2:
-        logformat = "%(levelname)s [%(threadName)s]: %(message)s"
-    if args.verbose > 3:
-        logformat = "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
-    logging.basicConfig(format=logformat, level=loglevel)
+    # Use a colored log formatter
+    formatter = ColoredLogFormatter(args.color, loglevel)
+    handler = logging.StreamHandler()
+    handler.setLevel(loglevel)
+    handler.setFormatter(formatter)
+
+    # Use a custom logger with TRACE level
+    logging.setLoggerClass(TraceLogger)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(loglevel)
+    logger.addHandler(handler)
 
     # Initialize encoder
     encoder = StringEncoder()
