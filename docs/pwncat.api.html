@@ -558,13 +558,14 @@ class Pwncat(LibSocket):
         # self.ssig = None  # type: StopSignal
 
         super(Pwncat, self).__init__(
-            encoder, {
+            encoder,
+            {
                 &#34;bufsize&#34;: sock_opts[&#34;bufsize&#34;],
                 &#34;backlog&#34;: sock_opts[&#34;backlog&#34;],
                 &#34;recv_timeout&#34;: sock_opts[&#34;recv_timeout&#34;],
                 &#34;nodns&#34;: sock_opts[&#34;nodns&#34;],
-                &#34;udp&#34;: sock_opts[&#34;udp&#34;]
-            }
+                &#34;udp&#34;: sock_opts[&#34;udp&#34;],
+            },
         )
         self.__sock_opts = {
             &#34;udp&#34;: sock_opts[&#34;udp&#34;],
@@ -648,7 +649,7 @@ class Pwncat(LibSocket):
                 if curr_recv_timeout_retry &lt; recv_retry:
                     self.log.trace(
                         &#34;Final socket read: {}/{} before quitting.&#34;.format(
-                            curr_recv_timeout_retry+1, recv_retry
+                            curr_recv_timeout_retry + 1, recv_retry
                         )
                     )
                     curr_recv_timeout_retry += 1
@@ -699,8 +700,7 @@ class Pwncat(LibSocket):
             if type(self.__cli_opts[&#34;reconn&#34;]) is int:
                 self.log.info(
                     &#34;Reconnecting in {} sec ({} more times left)&#34;.format(
-                        self.__cli_opts[&#34;reconn_wait&#34;],
-                        self.__cli_opts[&#34;reconn&#34;]
+                        self.__cli_opts[&#34;reconn_wait&#34;], self.__cli_opts[&#34;reconn&#34;]
                     )
                 )
             else:
@@ -1302,21 +1302,25 @@ class Runner(object):
                 if not self.__threads[key].is_alive() or force:
                     # [1/3] Inform all threads (inside) about a stop signal.
                     # All threads with non-blocking funcs will be able to stop themselves
-                    self.log.trace(&#34;Raise stop signal: {}.{}() for {}&#34;.format(
-                        self.__actions[key][&#34;signal&#34;].raise_stop.__self__.__class__.__name__,
-                        self.__actions[key][&#34;signal&#34;].raise_stop.__name__,
-                        self.__threads[key].getName()
-                    ))
+                    self.log.trace(
+                        &#34;Raise stop signal: {}.{}() for {}&#34;.format(
+                            self.__actions[key][&#34;signal&#34;].raise_stop.__self__.__class__.__name__,
+                            self.__actions[key][&#34;signal&#34;].raise_stop.__name__,
+                            self.__threads[key].getName(),
+                        )
+                    )
                     self.__actions[key][&#34;signal&#34;].raise_stop()
                     # [2/3] Call external interrupters
                     # These will shutdown all blocking functions inside a thread,
                     # so that they are actually able to join
                     for interrupt in self.__actions[key][&#34;interrupts&#34;]:
-                        self.log.trace(&#34;Call INTERRUPT: {}.{}() for {}&#34;.format(
-                            interrupt.__self__.__class__.__name__,
-                            interrupt.__name__,
-                            self.__threads[key].getName()
-                        ))
+                        self.log.trace(
+                            &#34;Call INTERRUPT: {}.{}() for {}&#34;.format(
+                                interrupt.__self__.__class__.__name__,
+                                interrupt.__name__,
+                                self.__threads[key].getName(),
+                            )
+                        )
                         interrupt()
                     # [3/3] All blocking events inside the threads are gone, now join them
                     self.log.trace(&#34;Joining {}&#34;.format(self.__threads[key].getName()))
@@ -1963,7 +1967,7 @@ def main():
         &#34;backlog&#34;: 0,
         &#34;recv_timeout&#34;: TIMEOUT_RECV_SOCKET,
         &#34;nodns&#34;: args.nodns,
-        &#34;udp&#34;: args.udp
+        &#34;udp&#34;: args.udp,
     }
     srv_opts = {
         &#34;keep_open&#34;: args.keep_open,
@@ -2600,7 +2604,7 @@ accidentally by other input.
         &#34;backlog&#34;: 0,
         &#34;recv_timeout&#34;: TIMEOUT_RECV_SOCKET,
         &#34;nodns&#34;: args.nodns,
-        &#34;udp&#34;: args.udp
+        &#34;udp&#34;: args.udp,
     }
     srv_opts = {
         &#34;keep_open&#34;: args.keep_open,
@@ -4428,13 +4432,14 @@ callback that writes to stdout.</p>
         # self.ssig = None  # type: StopSignal
 
         super(Pwncat, self).__init__(
-            encoder, {
+            encoder,
+            {
                 &#34;bufsize&#34;: sock_opts[&#34;bufsize&#34;],
                 &#34;backlog&#34;: sock_opts[&#34;backlog&#34;],
                 &#34;recv_timeout&#34;: sock_opts[&#34;recv_timeout&#34;],
                 &#34;nodns&#34;: sock_opts[&#34;nodns&#34;],
-                &#34;udp&#34;: sock_opts[&#34;udp&#34;]
-            }
+                &#34;udp&#34;: sock_opts[&#34;udp&#34;],
+            },
         )
         self.__sock_opts = {
             &#34;udp&#34;: sock_opts[&#34;udp&#34;],
@@ -4518,7 +4523,7 @@ callback that writes to stdout.</p>
                 if curr_recv_timeout_retry &lt; recv_retry:
                     self.log.trace(
                         &#34;Final socket read: {}/{} before quitting.&#34;.format(
-                            curr_recv_timeout_retry+1, recv_retry
+                            curr_recv_timeout_retry + 1, recv_retry
                         )
                     )
                     curr_recv_timeout_retry += 1
@@ -4569,8 +4574,7 @@ callback that writes to stdout.</p>
             if type(self.__cli_opts[&#34;reconn&#34;]) is int:
                 self.log.info(
                     &#34;Reconnecting in {} sec ({} more times left)&#34;.format(
-                        self.__cli_opts[&#34;reconn_wait&#34;],
-                        self.__cli_opts[&#34;reconn&#34;]
+                        self.__cli_opts[&#34;reconn_wait&#34;], self.__cli_opts[&#34;reconn&#34;]
                     )
                 )
             else:
@@ -4766,7 +4770,7 @@ callback that writes to stdout.</p>
             if curr_recv_timeout_retry &lt; recv_retry:
                 self.log.trace(
                     &#34;Final socket read: {}/{} before quitting.&#34;.format(
-                        curr_recv_timeout_retry+1, recv_retry
+                        curr_recv_timeout_retry + 1, recv_retry
                     )
                 )
                 curr_recv_timeout_retry += 1
@@ -4996,21 +5000,25 @@ callback that writes to stdout.</p>
                 if not self.__threads[key].is_alive() or force:
                     # [1/3] Inform all threads (inside) about a stop signal.
                     # All threads with non-blocking funcs will be able to stop themselves
-                    self.log.trace(&#34;Raise stop signal: {}.{}() for {}&#34;.format(
-                        self.__actions[key][&#34;signal&#34;].raise_stop.__self__.__class__.__name__,
-                        self.__actions[key][&#34;signal&#34;].raise_stop.__name__,
-                        self.__threads[key].getName()
-                    ))
+                    self.log.trace(
+                        &#34;Raise stop signal: {}.{}() for {}&#34;.format(
+                            self.__actions[key][&#34;signal&#34;].raise_stop.__self__.__class__.__name__,
+                            self.__actions[key][&#34;signal&#34;].raise_stop.__name__,
+                            self.__threads[key].getName(),
+                        )
+                    )
                     self.__actions[key][&#34;signal&#34;].raise_stop()
                     # [2/3] Call external interrupters
                     # These will shutdown all blocking functions inside a thread,
                     # so that they are actually able to join
                     for interrupt in self.__actions[key][&#34;interrupts&#34;]:
-                        self.log.trace(&#34;Call INTERRUPT: {}.{}() for {}&#34;.format(
-                            interrupt.__self__.__class__.__name__,
-                            interrupt.__name__,
-                            self.__threads[key].getName()
-                        ))
+                        self.log.trace(
+                            &#34;Call INTERRUPT: {}.{}() for {}&#34;.format(
+                                interrupt.__self__.__class__.__name__,
+                                interrupt.__name__,
+                                self.__threads[key].getName(),
+                            )
+                        )
                         interrupt()
                     # [3/3] All blocking events inside the threads are gone, now join them
                     self.log.trace(&#34;Joining {}&#34;.format(self.__threads[key].getName()))
@@ -5188,21 +5196,25 @@ callback that writes to stdout.</p>
             if not self.__threads[key].is_alive() or force:
                 # [1/3] Inform all threads (inside) about a stop signal.
                 # All threads with non-blocking funcs will be able to stop themselves
-                self.log.trace(&#34;Raise stop signal: {}.{}() for {}&#34;.format(
-                    self.__actions[key][&#34;signal&#34;].raise_stop.__self__.__class__.__name__,
-                    self.__actions[key][&#34;signal&#34;].raise_stop.__name__,
-                    self.__threads[key].getName()
-                ))
+                self.log.trace(
+                    &#34;Raise stop signal: {}.{}() for {}&#34;.format(
+                        self.__actions[key][&#34;signal&#34;].raise_stop.__self__.__class__.__name__,
+                        self.__actions[key][&#34;signal&#34;].raise_stop.__name__,
+                        self.__threads[key].getName(),
+                    )
+                )
                 self.__actions[key][&#34;signal&#34;].raise_stop()
                 # [2/3] Call external interrupters
                 # These will shutdown all blocking functions inside a thread,
                 # so that they are actually able to join
                 for interrupt in self.__actions[key][&#34;interrupts&#34;]:
-                    self.log.trace(&#34;Call INTERRUPT: {}.{}() for {}&#34;.format(
-                        interrupt.__self__.__class__.__name__,
-                        interrupt.__name__,
-                        self.__threads[key].getName()
-                    ))
+                    self.log.trace(
+                        &#34;Call INTERRUPT: {}.{}() for {}&#34;.format(
+                            interrupt.__self__.__class__.__name__,
+                            interrupt.__name__,
+                            self.__threads[key].getName(),
+                        )
+                    )
                     interrupt()
                 # [3/3] All blocking events inside the threads are gone, now join them
                 self.log.trace(&#34;Joining {}&#34;.format(self.__threads[key].getName()))
