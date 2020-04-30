@@ -51,24 +51,24 @@
      </thead>
      <tbody>
       <tr>
-       <td>[Black](https://github.com/psf/black)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/black/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=black)</td>
+       <td><a href="https://github.com/psf/black">Black</a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=black"><img src="https://github.com/cytopia/pwncat/workflows/black/badge.svg" /></a></td>
       </tr>
       <tr>
-       <td>[mypy](https://github.com/python/mypy)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mypy/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mypy)</td>
+       <td><a href="https://github.com/python/mypy">mypy</a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mypy"><img src="https://github.com/cytopia/pwncat/workflows/mypy/badge.svg" /></a></td>
       </tr>
       <tr>
-       <td>[pycodestyle](https://github.com/PyCQA/pycodestyle)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/pycodestyle/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=pycodestyle)</td>
+       <td><a href="https://github.com/PyCQA/pycodestyle">pycodestyle</a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=pycodestyle"><img src="https://github.com/cytopia/pwncat/workflows/pycodestyle/badge.svg" /></a></td>
       </tr>
       <tr>
-       <td>[pydocstyle](https://github.com/PyCQA/pydocstyle)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/pydocstyle/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=pydocstyle)</td>
+       <td><a href="https://github.com/PyCQA/pydocstyle">pydocstyle</a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=pydocstyle"><img src="https://github.com/cytopia/pwncat/workflows/pydocstyle/badge.svg" /></a></td>
       </tr>
       <tr>
-       <td>[Pylint](https://github.com/PyCQA/pylint)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/pylint/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=pylint)</td>
+       <td><a href="https://github.com/PyCQA/pylint">pylint</a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=pylint"><img src="https://github.com/cytopia/pwncat/workflows/pylint/badge.svg" /></a></td>
       </tr>
      </tbody>
     </table>
