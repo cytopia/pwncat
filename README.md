@@ -87,27 +87,27 @@
      <tbody>
       <tr>
        <th>2.7</th>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-2.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-2.7)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-2.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-2.7)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-2.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-2.7)</td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-2.7"><img src="https://github.com/cytopia/pwncat/workflows/lin-2.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-2.7"><img src="https://github.com/cytopia/pwncat/workflows/mac-2.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-2.7"><img src="https://github.com/cytopia/pwncat/workflows/win-2.7/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.6</th>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-3.6/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-3.6)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-3.6/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-3.6)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-3.6/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-3.6)</td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.6"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.6/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.6"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.6/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.6"><img src="https://github.com/cytopia/pwncat/workflows/win-3.6/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.7</th>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-3.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-3.7)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-3.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-3.7)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-3.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-3.7)</td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.7"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.7"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.7"><img src="https://github.com/cytopia/pwncat/workflows/win-3.7/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.8</th>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-3.8/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-3.8)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-3.8/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-3.8)</td>
-       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-3.8/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-3.8)</td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.8"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.8/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.8"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.8/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.8"><img src="https://github.com/cytopia/pwncat/workflows/win-3.8/badge.svg" /></a></td>
       </tr>
      </tbody>
     </table>
