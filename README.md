@@ -22,9 +22,6 @@
 
 [![Build Status](https://github.com/cytopia/pwncat/workflows/linting/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=linting)
 [![Build Status](https://github.com/cytopia/pwncat/workflows/building/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=building)
-[![Build Status](https://github.com/cytopia/pwncat/workflows/Linux/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=Linux)
-[![Build Status](https://github.com/cytopia/pwncat/workflows/MacOS/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=MacOS)
-[![Build Status](https://github.com/cytopia/pwncat/workflows/Windows/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=Windows)
 
 
 > &nbsp;
@@ -33,6 +30,92 @@
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
 |---|
+
+<table border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:none;">
+ <thead>
+  <tr valign="top" border="0" cellpadding="0" cellspacing="0" style="border:none;">
+   <th border="0" cellpadding="0" cellspacing="0" style="border:none;">Code Style</td>
+   <th border="0" cellpadding="0" cellspacing="0" style="border:none;"></td>
+   <th border="0" cellpadding="0" cellspacing="0" style="border:none;">Integration Tests</td>
+  </tr>
+ </thead>
+ <tbody>
+  <tr valign="top" border="0" cellpadding="0" cellspacing="0" style="border:none;">
+   <td border="0" cellpadding="0" cellspacing="0" style="border:none;">
+    <table>
+     <thead>
+      <tr>
+       <th>Styler</th>
+       <th>Status</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td>[Black](https://github.com/psf/black)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/black/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=black)</td>
+      </tr>
+      <tr>
+       <td>[mypy](https://github.com/python/mypy)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mypy/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mypy)</td>
+      </tr>
+      <tr>
+       <td>[pycodestyle](https://github.com/PyCQA/pycodestyle)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/pycodestyle/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=pycodestyle)</td>
+      </tr>
+      <tr>
+       <td>[pydocstyle](https://github.com/PyCQA/pydocstyle)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/pydocstyle/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=pydocstyle)</td>
+      </tr>
+      <tr>
+       <td>[Pylint](https://github.com/PyCQA/pylint)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/pylint/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=pylint)</td>
+      </tr>
+     </tbody>
+    </table>
+   </td>
+   <td border="0" cellpadding="0" cellspacing="0" style="border:none;"></td>
+   <td border="0" cellpadding="0" cellspacing="0" style="border:none;">
+    <table>
+     <thead>
+      <tr>
+       <th><sub>Python</sub><sup>OS</sup></th>
+       <th>Linux</th>
+       <th>MacOS</th>
+       <th>Windows</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <th>2.7</th>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-2.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-2.7)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-2.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-2.7)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-2.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-2.7)</td>
+      </tr>
+      <tr>
+       <th>3.6</th>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-3.6/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-3.6)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-3.6/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-3.6)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-3.6/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-3.6)</td>
+      </tr>
+      <tr>
+       <th>3.7</th>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-3.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-3.7)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-3.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-3.7)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-3.7/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-3.7)</td>
+      </tr>
+      <tr>
+       <th>3.8</th>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/lin-3.8/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=lin-3.8)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/mac-3.8/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=mac-3.8)</td>
+       <td>[![Build Status](https://github.com/cytopia/pwncat/workflows/win-3.8/badge.svg)](https://github.com/cytopia/pwncat/actions?workflow=win-3.8)</td>
+      </tr>
+     </tbody>
+    </table>
+   </td>
+  </tr>
+ </tbody>
+<table>
+
 
 #### Motivation
 Ever accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> on your reverse shell and it was gone for good?

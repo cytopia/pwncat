@@ -5,7 +5,7 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint test pycodestyle pydocstyle black version lint-files lint-docs lint-usage docs dist sdist bdist build checkbuild deploy autoformat clean
+.PHONY: help lint code test pycodestyle pydocstyle pylint pylint mypy black version lint-files lint-docs lint-usage docs dist sdist bdist build checkbuild deploy autoformat clean
 
 VERSION = 2.7
 BINPATH = bin/
@@ -35,7 +35,8 @@ help:
 	@echo "             ░             ░ ░ ░            ░  ░         "
 	@echo "                             ░                           "
 	@echo
-	@echo "lint             Lint source code"
+	@echo "lint             Lint repository"
+	@echo "code             Lint source code"
 	@echo "test             Run integration tests"
 	@echo "autoformat       Autoformat code according to Python black"
 	@echo
@@ -50,29 +51,52 @@ help:
 
 
 # -------------------------------------------------------------------------------------------------
-# Lint Targets
+# Code Style Targets
 # -------------------------------------------------------------------------------------------------
 
-lint: pycodestyle pydocstyle black version lint-files lint-docs lint-usage
+code: pycodestyle pydocstyle pylint black mypy
 
 
 pycodestyle:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pydocstyle"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm -v $(PWD):/data cytopia/pycodestyle --show-source --show-pep8 $(BINPATH)$(BINNAME)
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pycodestyle --show-source --show-pep8 $(BINPATH)$(BINNAME)
 
 pydocstyle:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pycodestyle"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm -v $(PWD):/data cytopia/pydocstyle $(BINPATH)$(BINNAME)
+	docker run --rm -v $(PWD):/data --entrypoint= cytopia/pydocstyle sh -c ' \
+		mkdir -p /tmp \
+		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
+		&& pydocstyle -e  /tmp/$(BINNAME).py'
+
+pylint:
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Check pylint"
+	@echo "# -------------------------------------------------------------------- #"
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pylint $(BINPATH)$(BINNAME)
 
 black:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check Python Black"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
+
+mypy:
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Check mypy"
+	@echo "# -------------------------------------------------------------------- #"
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/mypy --strict --show-error-context --pretty $(BINPATH)$(BINNAME)
+
+
+# -------------------------------------------------------------------------------------------------
+# Lint Targets
+# -------------------------------------------------------------------------------------------------
+
+lint: version lint-files lint-docs lint-man lint-usage
+
 
 version:
 	@echo "# -------------------------------------------------------------------- #"
@@ -223,9 +247,11 @@ man: $(BINPATH)$(BINNAME)
 
 docs:
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
-		pip install pdoc \
-		&& pdoc --overwrite --external-links --html --html-dir $(DOCPATH) $(BINPATH)$(BINNAME) $(BINNAME) \
-		&& mv $(DOCPATH)$(BINNAME).m.html $(DOCPATH)$(BINNAME).api.html \
+		pip install pdoc3 \
+		&& mkdir -p /tmp \
+		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
+		&& pdoc -f -o $(DOCPATH) --html --config show_inherited_members=False /tmp/$(BINNAME).py \
+		&& mv $(DOCPATH)$(BINNAME).html $(DOCPATH)$(BINNAME).api.html \
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).api.html'
 
 

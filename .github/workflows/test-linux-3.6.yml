@@ -1,6 +1,6 @@
 ---
 
-name: MacOS
+name: lin-3.6
 on:
   pull_request:
   push:
@@ -10,17 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: False
       matrix:
         version:
-          - 2.7
           - 3.6
-          - 3.7
-          - 3.8
 
-    name: "[${{ matrix.version}}]"
+    name: "[lin] 3.6"
     steps:
       # ------------------------------------------------------------
       # Setup
