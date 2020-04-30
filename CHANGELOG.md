@@ -4,6 +4,18 @@
 ## Unreleased
 
 
+## Release 0.0.10-alpha
+
+#### Added
+- CI: pylinyt
+- CI: mypy
+
+#### Changed
+- Code: heavy refactoring
+- CI: separate jobs
+- API: switched from pdoc to pdoc3
+
+
 ## Release 0.0.9-alpha
 
 #### Added
