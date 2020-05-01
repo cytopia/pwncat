@@ -60,11 +60,11 @@
       </tr>
       <tr>
        <td><a href="https://github.com/PyCQA/pycodestyle">pycodestyle</a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=pycodestyle"><img src="https://github.com/cytopia/pwncat/workflows/pycodestyle/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=pycode"><img src="https://github.com/cytopia/pwncat/workflows/pycode/badge.svg" /></a></td>
       </tr>
       <tr>
        <td><a href="https://github.com/PyCQA/pydocstyle">pydocstyle</a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=pydocstyle"><img src="https://github.com/cytopia/pwncat/workflows/pydocstyle/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=pydoc"><img src="https://github.com/cytopia/pwncat/workflows/pydoc/badge.svg" /></a></td>
       </tr>
       <tr>
        <td><a href="https://github.com/PyCQA/pylint">pylint</a></td>

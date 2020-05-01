@@ -4,7 +4,7 @@
 ### Code style
 ###
 
-name: pydocstyle
+name: pydoc
 on:
   pull_request:
   push:
