@@ -7,8 +7,12 @@
 # 3. (tty and non-tty mode) UDP Will always stay open (can't determine if connection is gone)
 
 from __future__ import print_function
-from abc import ABCMeta
 from abc import abstractmethod
+from abc import ABCMeta
+
+from subprocess import PIPE
+from subprocess import Popen
+from subprocess import STDOUT
 
 import argparse
 import atexit
@@ -16,17 +20,16 @@ import logging
 import os
 import re
 import socket
-import subprocess
 import sys
 import threading
 import time
 
+# Abstract class with Python 2 + Python 3 support: https://stackoverflow.com/questions/35673474
+ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
+
 # Only used with mypy for static source code analysis
 if os.environ.get("MYPY_CHECK", False):
-    from typing import Optional, Iterator, List, Dict, Any, StringIO
-
-# Python 2 + Python 3 support
-ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
+    from typing import Optional, Iterator, List, Dict, Any, Callable
 
 # TODO: Find windows import
 if os.name != "nt":
@@ -57,7 +60,7 @@ TIMEOUT_RECV_SOCKET_RETRY = 2
 # -------------------------------------------------------------------------------------------------
 # CLASS: TraceLogger
 # -------------------------------------------------------------------------------------------------
-class TraceLogger(logging.getLoggerClass()):
+class TraceLogger(logging.getLoggerClass()):  # type: ignore
     """Logger class with additional TRACE level logging."""
 
     LEVEL_NUM = 9
@@ -166,7 +169,7 @@ class LibSocket(object):
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self, encoder, options):
-        # type: (StringEncoder, dict) -> None
+        # type: (StringEncoder, Dict[str, Any]) -> None
         """Construct a socket.
 
         Args:
@@ -213,14 +216,16 @@ class LibSocket(object):
             flags = socket.AI_NUMERICHOST
         try:
             self.log.debug("Resolving hostname: %s", host)
-            (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
-                host, port, socket.AF_INET, socktype, flags
-            )[0]
+            info = socket.getaddrinfo(host, port, socket.AF_INET, socktype, flags)[0]
+            sockaddr = info[4]
+            # (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
+            #     host, port, socket.AF_INET, socktype, flags
+            # )[0]
         except socket.gaierror as error:
             self.log.error("Resolve Error: %s", error)
-            raise socket.gaierror(error)
+            raise socket.gaierror(error)  # type: ignore
         self.log.debug("Resolved hostname: %s", sockaddr[0])
-        return sockaddr[0]
+        return str(sockaddr[0])
 
     def create_socket(self):
         # type: () -> Optional[socket.socket]
@@ -255,15 +260,15 @@ class LibSocket(object):
             # (SHUT_RD)   0 = Done receiving (disallows receiving)
             # (SHUT_WR)   1 = Done sending (disallows sending)
             # (SHUT_RDWR) 2 = Both
-            self.log.trace("Shutting down socket")
+            self.log.trace("Shutting down socket")  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
         except (AttributeError, OSError, socket.error):
-            self.log.trace("Could not shutdown socket")
+            self.log.trace("Could not shutdown socket")  # type: ignore
         try:
-            self.log.trace("Closing socket")
+            self.log.trace("Closing socket")  # type: ignore
             sock.close()
         except (AttributeError, OSError, socket.error):
-            self.log.trace("Could not close socket")
+            self.log.trace("Could not close socket")  # type: ignore
 
     def bind(self, sock, addr, port):
         # type: (socket.socket, str, int) -> bool
@@ -386,7 +391,7 @@ class LibSocket(object):
                     self.remote_addr,
                     self.remote_port,
                 )
-                self.log.trace("Trying to send: %s", repr(byte))
+                self.log.trace("Trying to send: %s", repr(byte))  # type: ignore
                 if self.__options["udp"]:
                     curr = sock.sendto(byte, (self.remote_addr, self.remote_port))
                     send += curr
@@ -416,6 +421,7 @@ class LibSocket(object):
 
         Args:
             sock (socket.socket): The socket to receive data on.
+
         Returns:
             str: data received
         Raises:
@@ -432,7 +438,7 @@ class LibSocket(object):
         # socket has been changed from blocking to time-out based.
         # NOTE: This is also the place, where we quit in case we want to.
         except socket.timeout as error:
-            raise socket.timeout(error)
+            raise socket.timeout(error)  # type: ignore
 
         # [2/5] Connection was forcibly closed
         # [Errno 107] Transport endpoint is not connected
@@ -468,7 +474,7 @@ class LibSocket(object):
         self.log.debug(
             "Received %d bytes from %s:%d", len(data), self.remote_addr, self.remote_port
         )
-        self.log.trace("Received: %s", repr(data))
+        self.log.trace("Received: %s", repr(data))  # type: ignore
         return data
 
 
@@ -476,8 +482,7 @@ class LibSocket(object):
 # CLASS: StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
-    """
-    Takes care about Python 2/3 string encoding/decoding.
+    """Takes care about Python 2/3 string encoding/decoding.
 
     This allows to parse all string/byte values internally between all
     classes or functions as strings to keep full Python 2/3 compat.
@@ -487,6 +492,7 @@ class StringEncoder(object):
     codec = "cp437"
 
     def __init__(self):
+        # type: () -> None
         """Create a StringEncoder instance which converts str/bytes according to Python version."""
         self.py3 = sys.version_info >= (3, 0)  # type: bool
 
@@ -495,14 +501,14 @@ class StringEncoder(object):
         """Convert string into a byte type for Python3."""
         if self.py3:
             return data.encode(self.codec)
-        return data
+        return data  # type: ignore
 
     def decode(self, data):
         # type: (bytes) -> str
         """Convert bytes into a string type for Python3."""
         if self.py3:
             return data.decode(self.codec)
-        return data
+        return data  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
@@ -518,8 +524,17 @@ class Pwncat(LibSocket):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, encoder, host, port, role, srv_opts, cli_opts, sock_opts):
-        # type: (StringEncoder, str, int, str, dict, dict, dict) -> None
+    def __init__(
+        self,
+        encoder,  # type: StringEncoder
+        host,  # type: str
+        port,  # type: int
+        role,  # type: str
+        srv_opts,  # type: Dict[str, Any]
+        cli_opts,  # type: Dict[str, Any]
+        sock_opts,  # type: Dict[str, Any]
+    ):
+        # type: (...) -> None
         """Create a Pwncat instance of either a server or a client.
 
         Args:
@@ -634,7 +649,7 @@ class Pwncat(LibSocket):
                 # Before quitting, we will check x many times, if there is still
                 # data left to receive, before shutting down.
                 if curr_recv_timeout_retry < recv_retry:
-                    self.log.trace(
+                    self.log.trace(  # type: ignore
                         "Final socket read: %d/%d before quitting.",
                         curr_recv_timeout_retry + 1,
                         recv_retry,
@@ -657,7 +672,7 @@ class Pwncat(LibSocket):
                 return
 
     def send(self, data):
-        # type: (bytes) -> None
+        # type: (str) -> None
         """Send data to a socket."""
         super(Pwncat, self).__send(self.conn, data)
 
@@ -833,9 +848,8 @@ class Pwncat(LibSocket):
 # -------------------------------------------------------------------------------------------------
 # ABSTRACT CLASS: AbstractNetcatPlugin
 # -------------------------------------------------------------------------------------------------
-class AbstractNetcatPlugin(ABC):
-    """
-    Abstract class to for netcat plugins.
+class AbstractNetcatPlugin(ABC):  # type: ignore
+    """Abstract class to for netcat plugins.
 
     This is a skeleton that defines how the plugins for Netcat should look like.
 
@@ -850,33 +864,34 @@ class AbstractNetcatPlugin(ABC):
     in a way that it is able to act on the event which the "interrupt" func emitted.
     """
 
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def __init__(self, options={}):
-        """
-        Set specific options for this plugin.
+    def __init__(self, options):  # pylint: disable=unused-argument
+        # type: (Dict[str, Any]) -> None
+        """Set specific options for this plugin.
 
         Args:
             options (dict):    Custom options for a plugin
         """
-        raise NotImplementedError("Should have implemented this")
+        super().__init__()
 
     @abstractmethod
     def producer(self, ssig):
-        """
-        Implement a generator function which constantly yields data.
+        # type: (StopSignal) -> Iterator[str]
+        """Implement a generator function which constantly yields data.
 
         The data could be from various sources such as: received from a socket,
         received from user input, received from shell command output or anything else.
 
         Args:
             ssig (StopSignal): A StopSignal instance providing has_stop() and raise_stop() functions
+
+        Yields:
+            str: Data generated/produced by this function
         """
         raise NotImplementedError("Should have implemented this")
 
     @abstractmethod
     def consumer(self, data):
+        # type: (str) -> None
         """Define a consumer callback which will apply an action on the producer output.
 
         Args:
@@ -886,6 +901,7 @@ class AbstractNetcatPlugin(ABC):
 
     @abstractmethod
     def interrupt(self):
+        # type: () -> None
         """Define an interrupt function which will stop the producer.
 
         Various producer might call blocking functions and they won't be able to stop themself
@@ -917,10 +933,10 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, options={}):
-        # type: (dict) -> None
+    def __init__(self, options):
+        # type: (Dict[str, Any]) -> None
         """Set specific options for this plugin."""
-        super(NetcatPluginOutput, self).__init__()
+        super(NetcatPluginOutput, self).__init__(options)
         assert "encoder" in options
         assert "input_timeout" in options
         assert "crlf" in options
@@ -950,10 +966,9 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
 
     def __set_input_timeout(self):
         # type: () -> None
-        """Throws a catchable BaseException for sys.stdin after timeout (Linux only)."""
-        i, o, e = select.select([sys.stdin], [], [], self.input_timeout)
-        if not i:
-            raise BaseException("timed out")
+        """Throws a catchable TimeoutError exception for sys.stdin after timeout (Linux only)."""
+        if not select.select([sys.stdin], [], [], self.input_timeout)[0]:
+            raise TimeoutError("timed out")
 
     # ------------------------------------------------------------------------------
     # Public Functions
@@ -961,36 +976,43 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
 
     def producer(self, ssig):
         # type: (StopSignal) -> Iterator[str]
-        """Constantly ask for user input."""
+        """Constantly ask for user input.
+
+        Args:
+            ssig (StopSignal): A StopSignal instance providing has_stop() and raise_stop() functions
+
+        Yields:
+            str: Data read from stdin
+        """
         # https://stackoverflow.com/questions/1450393/#38670261
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
         # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
             if ssig.has_stop():
-                self.log.trace("Stop signal acknowledged for reading STDIN-1")
+                self.log.trace("Stop signal acknowledged for reading STDIN-1")  # type: ignore
                 return
             try:
                 # TODO: select() does not work for windows on stdin/stdout
                 if os.name != "nt":
                     self.__set_input_timeout()
                 line = sys.stdin.readline()
-            except BaseException:
+            except TimeoutError:
                 # When using select() with timeout, we don't have any input
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
                 if ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for reading STDIN-2")
+                    self.log.trace("Stop signal acknowledged for reading STDIN-2")  # type: ignore
                     return
                 continue
             if line:
                 self.log.debug("Received %d bytes from STDIN", len(line))
-                self.log.trace("Received: %s", repr(line))
+                self.log.trace("Received: %s", repr(line))  # type: ignore
                 yield self.__use_linefeeds(line)
             # EOF or <Ctrl>+<d>
             else:
                 # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
                 if ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for reading STDIN-3")
+                    self.log.trace("Stop signal acknowledged for reading STDIN-3")  # type: ignore
                     return
 
     def consumer(self, data):
@@ -1013,8 +1035,8 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, options={}):
-        # type: (dict) -> None
+    def __init__(self, options):
+        # type: (Dict[str, Any]) -> None
         """Set specific options for this plugin.
 
         Args:
@@ -1023,11 +1045,11 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         Attributes:
             encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
             executable (str):          Executable to run
-            p (subprocess.subprocess): subprocess.Popen instance
+            p (subprocess.Popen):      subprocess.Popen instance
         """
-        super(NetcatPluginCommand, self).__init__()
         # Define destructor
         atexit.register(self.__destruct__)
+        super(NetcatPluginCommand, self).__init__(options)
 
         assert "encoder" in options
         assert "executable" in options
@@ -1040,15 +1062,15 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
-            self.p = subprocess.Popen(
+            self.proc = Popen(
                 # TODO: should I also use 'bufsize=1'?
                 self.executable,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=STDOUT,
                 shell=False,
                 env=env,
-            )  # type: StringIO
+            )
         except FileNotFoundError:
             self.log.error("Specified executable '%s' not found", self.executable)
             sys.exit(1)
@@ -1060,8 +1082,10 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
     def __destruct__(self):
         # type: () -> None
         """Destructor."""
-        self.log.trace("Killing executable: %s with pid %d", self.executable, self.p.pid)
-        self.p.kill()
+        self.log.trace(  # type: ignore
+            "Killing executable: %s with pid %d", self.executable, self.proc.pid
+        )
+        self.proc.kill()
 
     def __set_input_timeout(self, timeout=0.1):
         # type: (float) -> None
@@ -1070,9 +1094,8 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         # rlist: wait until ready for reading
         # wlist: wait until ready for writing
         # xlist: wait for an "exceptional condition"
-        i, o, e = select.select([self.p.stdout], [], [], timeout)
-        if not i:
-            raise BaseException("timed out")
+        if not select.select([self.proc.stdout], [], [], timeout)[0]:
+            raise TimeoutError("timed out")
 
     # ------------------------------------------------------------------------------
     # Public Functions
@@ -1080,42 +1103,55 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
     def interrupt(self):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
-        self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
-        self.p.kill()
+        self.log.trace(  # type: ignore
+            "[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()"
+        )
+        self.proc.kill()
 
     def producer(self, ssig):
         # type: (StopSignal) -> Iterator[str]
-        """Constantly ask for input."""
+        """Constantly ask for input.
+
+        Args:
+            ssig (StopSignal): A StopSignal instance providing has_stop() and raise_stop() functions
+
+        Yields:
+            str: Data received from command output
+        """
+        assert self.proc.stdout is not None
         while True:
             if ssig.has_stop():
-                self.log.trace("Stop signal acknowledged in Command")
+                self.log.trace("Stop signal acknowledged in Command")  # type: ignore
                 return
-            self.log.trace("Reading command output")
+            self.log.trace("Reading command output")  # type: ignore
             # TODO: non-blocking read does not seem to work or?
             # try:
             # self.__set_input_timeout(timeout=1.5)
-            data = self.p.stdout.readline()  # Much better performance than self.p.read(1)
-            self.log.trace(data)
-            # except BaseException:
+            data = self.proc.stdout.readline()  # Much better performance than self.proc.read(1)
+            # except TimeoutError:
             #    if THREAD_TERMINATE:
             #        return
             #    # No input, just check again
-            #    #self.p.stdout.flush()
+            #    #self.proc.stdout.flush()
             #    continue
-            data = self.enc.decode(data)
-            self.log.trace("Command output: %s", repr(data))
+            self.log.trace("Command output: %s", repr(data))  # type: ignore
             if not data:
-                self.log.trace("Command output was empty. Exiting loop.")
+                self.log.trace("Command output was empty. Exiting loop.")  # type: ignore
                 break
-            yield data
+            yield self.enc.decode(data)
 
     def consumer(self, data):
-        # type: (bytes) -> None
-        """Send data received to stdin (command input)."""
-        data = self.enc.encode(data)
-        self.log.trace("Appending to stdin: %s", repr(data))
-        self.p.stdin.write(data)
-        self.p.stdin.flush()
+        # type: (str) -> None
+        """Send data received to stdin (command input).
+
+        Args:
+            data (str): Command to execute.
+        """
+        assert self.proc.stdin is not None
+        byte = self.enc.encode(data)
+        self.log.trace("Appending to stdin: %s", repr(byte))  # type: ignore
+        self.proc.stdin.write(byte)
+        self.proc.stdin.flush()
 
 
 # #################################################################################################
@@ -1162,7 +1198,7 @@ class Runner(object):
     #       "interrupts": ["func"],  # List of funcs to be called outside the thread to stop it
     #   }
     # }
-    __actions = {}
+    __actions = {}  # type: Dict[str, Dict[str, Any]]
 
     # Dict of timed function definition to run in a thread.
     # Each list item will be run in its own thread.
@@ -1176,17 +1212,18 @@ class Runner(object):
     #       "signal": "StopSignal", # An instance providing has_stop() and raise_stop()
     #   }
     # }
-    __timers = {}
+    __timers = {}  # type: Dict[str, Dict[str, Any]]
 
     # A dict which holds the threads created from actions.
     # The name is based on the __actions name
     # {"name": "<thread>"}
-    __threads = {}
+    __threads = {}  # type: Dict[str, threading.Thread]
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self):
+        # type: () -> None
         """Create a new Runner object."""
         self.log = logging.getLogger(__name__)
 
@@ -1194,7 +1231,7 @@ class Runner(object):
     # Public Functions
     # ------------------------------------------------------------------------------
     def add_action(self, action):
-        # type: (dict) -> None
+        # type: (Dict[str, Any]) -> None
         """Add a function to the producer/consumer thread pool runner.
 
         Args:
@@ -1214,7 +1251,7 @@ class Runner(object):
         }
 
     def add_timer(self, timer):
-        # type: (dict) -> None
+        # type: (Dict[str, Any]) -> None
         """Add a function to the timer thread pool runner.
 
         Args:
@@ -1229,9 +1266,11 @@ class Runner(object):
         }
 
     def run(self):
+        # type: () -> None
         """Run threaded NetCat."""
 
         def run_action(name, producer, consumer, ssig):
+            # type: (str, Callable[[StopSignal], str], Callable[[str], None],StopSignal) -> None
             """Producer/consumer run function to be thrown into a thread.
 
             Args:
@@ -1240,13 +1279,14 @@ class Runner(object):
                 consumer (function): A callback which consumes data from the generator
                 ssig (StopSignal):   Providing has_stop() and raise_stop()
             """
-            self.log.trace("[%s] Producer Start", name)
+            self.log.trace("[%s] Producer Start", name)  # type: ignore
             for data in producer(ssig):
-                self.log.trace("[%s] Producer received: %s", name, repr(data))
+                self.log.trace("[%s] Producer received: %s", name, repr(data))  # type: ignore
                 consumer(data)
-            self.log.trace("[%s] Producer Stop", name)
+            self.log.trace("[%s] Producer Stop", name)  # type: ignore
 
         def run_timer(name, action, intvl, ssig, *args, **kwargs):
+            # type: (str, Callable[..., None], int, StopSignal, Any, Any) -> None
             """Timer run function to be thrown into a thread (Execs periodic tasks).
 
             Args:
@@ -1257,11 +1297,11 @@ class Runner(object):
                 args (*args):      *args for action func
                 kwargs (**kwargs): **kwargs for action func
             """
-            self.log.trace("[%s] Timer Start (exec every %f sec)", name, intvl)
+            self.log.trace("[%s] Timer Start (exec every %f sec)", name, intvl)  # type: ignore
             time_last = int(time.time())
             while True:
                 if ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for timer %s", name)
+                    self.log.trace("Stop signal acknowledged for timer %s", name)  # type: ignore
                     return
                 time_now = int(time.time())
                 if time_now > time_last + intvl:
@@ -1314,13 +1354,14 @@ class Runner(object):
             thread.daemon = False
             thread.start()
 
-        def stop(force):
+        def check_stop(force):
+            # type: (int) -> bool
             """Stop threads."""
             for key in self.__threads:
                 if not self.__threads[key].is_alive() or force:
                     # [1/3] Inform all threads (inside) about a stop signal.
                     # All threads with non-blocking funcs will be able to stop themselves
-                    self.log.trace(
+                    self.log.trace(  # type: ignore
                         "Raise stop signal: %s.%s() for %s",
                         self.__actions[key]["signal"].raise_stop.__self__.__class__.__name__,
                         self.__actions[key]["signal"].raise_stop.__name__,
@@ -1331,7 +1372,7 @@ class Runner(object):
                     # These will shutdown all blocking functions inside a thread,
                     # so that they are actually able to join
                     for interrupt in self.__actions[key]["interrupts"]:
-                        self.log.trace(
+                        self.log.trace(  # type: ignore
                             "Call INTERRUPT: %s.%s() for %s",
                             interrupt.__self__.__class__.__name__,
                             interrupt.__name__,
@@ -1339,23 +1380,23 @@ class Runner(object):
                         )
                         interrupt()
                     # [3/3] All blocking events inside the threads are gone, now join them
-                    self.log.trace("Joining %s", self.__threads[key].getName())
+                    self.log.trace("Joining %s", self.__threads[key].getName())  # type: ignore
                     self.__threads[key].join(timeout=0.1)
-            # If all threads have died, exit
+            # If all threads have died or force is requested, then exit
             if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
-                if force:
-                    sys.exit(1)
-                else:
-                    sys.exit(0)
+                return True
+            return False
 
         try:
             while True:
-                stop(False)
+                if check_stop(False):
+                    sys.exit(0)
                 # Need a timeout to not skyrocket the CPU
                 time.sleep(0.1)
         except KeyboardInterrupt:
             print()
-            stop(True)
+            check_stop(True)
+            sys.exit(1)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1449,6 +1490,7 @@ def _args_check_robin_ports(value):
 
 
 def _args_check_mutually_exclusive(parser, args):
+    # type: (argparse.ArgumentParser, argparse.Namespace) -> None
     """Check mutually exclusive arguments."""
     # This is connect mode
     connect_mode = not args.listen and not args.zero and not args.local and not args.remote
@@ -1592,6 +1634,7 @@ def _args_check_mutually_exclusive(parser, args):
 
 
 def get_args():
+    # type: () -> argparse.Namespace
     """Retrieve command line arguments."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,

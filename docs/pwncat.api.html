@@ -34,8 +34,11 @@
 # 3. (tty and non-tty mode) UDP Will always stay open (can&#39;t determine if connection is gone)
 
 from __future__ import print_function
-from abc import ABCMeta
 from abc import abstractmethod
+
+from subprocess import PIPE
+from subprocess import Popen
+from subprocess import STDOUT
 
 import argparse
 import atexit
@@ -43,17 +46,14 @@ import logging
 import os
 import re
 import socket
-import subprocess
 import sys
 import threading
 import time
 
 # Only used with mypy for static source code analysis
 if os.environ.get(&#34;MYPY_CHECK&#34;, False):
-    from typing import Optional, Iterator, List, Dict, Any, StringIO
-
-# Python 2 + Python 3 support
-ABC = ABCMeta(&#34;ABC&#34;, (object,), {&#34;__slots__&#34;: ()})
+    from typing import Optional, Iterator, List, Dict, Any, IO
+    from io import TextIOBase
 
 # TODO: Find windows import
 if os.name != &#34;nt&#34;:
@@ -443,6 +443,7 @@ class LibSocket(object):
 
         Args:
             sock (socket.socket): The socket to receive data on.
+
         Returns:
             str: data received
         Raises:
@@ -503,8 +504,7 @@ class LibSocket(object):
 # CLASS: StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
-    &#34;&#34;&#34;
-    Takes care about Python 2/3 string encoding/decoding.
+    &#34;&#34;&#34;Takes care about Python 2/3 string encoding/decoding.
 
     This allows to parse all string/byte values internally between all
     classes or functions as strings to keep full Python 2/3 compat.
@@ -522,14 +522,14 @@ class StringEncoder(object):
         &#34;&#34;&#34;Convert string into a byte type for Python3.&#34;&#34;&#34;
         if self.py3:
             return data.encode(self.codec)
-        return data
+        return data  # type: ignore
 
     def decode(self, data):
         # type: (bytes) -&gt; str
         &#34;&#34;&#34;Convert bytes into a string type for Python3.&#34;&#34;&#34;
         if self.py3:
             return data.decode(self.codec)
-        return data
+        return data  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
@@ -684,7 +684,7 @@ class Pwncat(LibSocket):
                 return
 
     def send(self, data):
-        # type: (bytes) -&gt; None
+        # type: (str) -&gt; None
         &#34;&#34;&#34;Send data to a socket.&#34;&#34;&#34;
         super(Pwncat, self).__send(self.conn, data)
 
@@ -860,9 +860,8 @@ class Pwncat(LibSocket):
 # -------------------------------------------------------------------------------------------------
 # ABSTRACT CLASS: AbstractNetcatPlugin
 # -------------------------------------------------------------------------------------------------
-class AbstractNetcatPlugin(ABC):
-    &#34;&#34;&#34;
-    Abstract class to for netcat plugins.
+class AbstractNetcatPlugin(object):
+    &#34;&#34;&#34;Abstract class to for netcat plugins.
 
     This is a skeleton that defines how the plugins for Netcat should look like.
 
@@ -877,22 +876,18 @@ class AbstractNetcatPlugin(ABC):
     in a way that it is able to act on the event which the &#34;interrupt&#34; func emitted.
     &#34;&#34;&#34;
 
-    __metaclass__ = ABCMeta
-
     @abstractmethod
-    def __init__(self, options={}):
-        &#34;&#34;&#34;
-        Set specific options for this plugin.
+    def __init__(self, options):
+        &#34;&#34;&#34;Set specific options for this plugin.
 
         Args:
             options (dict):    Custom options for a plugin
         &#34;&#34;&#34;
-        raise NotImplementedError(&#34;Should have implemented this&#34;)
+        assert type(self) is not AbstractNetcatPlugin, &#34;Cannot be instantiated directly.&#34;
 
     @abstractmethod
     def producer(self, ssig):
-        &#34;&#34;&#34;
-        Implement a generator function which constantly yields data.
+        &#34;&#34;&#34;Implement a generator function which constantly yields data.
 
         The data could be from various sources such as: received from a socket,
         received from user input, received from shell command output or anything else.
@@ -944,10 +939,10 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, options={}):
+    def __init__(self, options):
         # type: (dict) -&gt; None
         &#34;&#34;&#34;Set specific options for this plugin.&#34;&#34;&#34;
-        super(NetcatPluginOutput, self).__init__()
+        super(NetcatPluginOutput, self).__init__(options)
         assert &#34;encoder&#34; in options
         assert &#34;input_timeout&#34; in options
         assert &#34;crlf&#34; in options
@@ -1040,7 +1035,7 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, options={}):
+    def __init__(self, options):
         # type: (dict) -&gt; None
         &#34;&#34;&#34;Set specific options for this plugin.
 
@@ -1050,11 +1045,11 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         Attributes:
             encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
             executable (str):          Executable to run
-            p (subprocess.subprocess): subprocess.Popen instance
+            p (subprocess.Popen):      subprocess.Popen instance
         &#34;&#34;&#34;
-        super(NetcatPluginCommand, self).__init__()
         # Define destructor
         atexit.register(self.__destruct__)
+        super(NetcatPluginCommand, self).__init__(options)
 
         assert &#34;encoder&#34; in options
         assert &#34;executable&#34; in options
@@ -1067,15 +1062,15 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
-            self.p = subprocess.Popen(
+            self.p = Popen(
                 # TODO: should I also use &#39;bufsize=1&#39;?
                 self.executable,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=STDOUT,
                 shell=False,
                 env=env,
-            )  # type: StringIO
+            )  # type: Popen
         except FileNotFoundError:
             self.log.error(&#34;Specified executable &#39;%s&#39; not found&#34;, self.executable)
             sys.exit(1)
@@ -1137,11 +1132,15 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
             yield data
 
     def consumer(self, data):
-        # type: (bytes) -&gt; None
-        &#34;&#34;&#34;Send data received to stdin (command input).&#34;&#34;&#34;
-        data = self.enc.encode(data)
-        self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))
-        self.p.stdin.write(data)
+        # type: (str) -&gt; None
+        &#34;&#34;&#34;Send data received to stdin (command input).
+
+        Args:
+            data (str): Command to execute.
+        &#34;&#34;&#34;
+        byte = self.enc.encode(data)
+        self.log.trace(&#34;Appending to stdin: %s&#34;, repr(byte))
+        self.p.stdin.write(byte)
         self.p.stdin.flush()
 
 
@@ -1189,7 +1188,7 @@ class Runner(object):
     #       &#34;interrupts&#34;: [&#34;func&#34;],  # List of funcs to be called outside the thread to stop it
     #   }
     # }
-    __actions = {}
+    __actions = {}  # type: Dict[str, Dict[str, Any]]
 
     # Dict of timed function definition to run in a thread.
     # Each list item will be run in its own thread.
@@ -1203,12 +1202,12 @@ class Runner(object):
     #       &#34;signal&#34;: &#34;StopSignal&#34;, # An instance providing has_stop() and raise_stop()
     #   }
     # }
-    __timers = {}
+    __timers = {}  # type: Dict[str, Dict[str, Any]]
 
     # A dict which holds the threads created from actions.
     # The name is based on the __actions name
     # {&#34;name&#34;: &#34;&lt;thread&gt;&#34;}
-    __threads = {}
+    __threads = {}  # type: Dict[str, threading.Thread]
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -2069,7 +2068,7 @@ def main():
             &#34;encoder&#34;: encoder,
             &#34;executable&#34;: args.cmd,
         }
-        mod = NetcatPluginCommand(module_opts)
+        mod = NetcatPluginCommand(module_opts)  # type: AbstractNetcatPlugin
     # Use output module
     else:
         module_opts = {
@@ -2706,7 +2705,7 @@ accidentally by other input.
             &#34;encoder&#34;: encoder,
             &#34;executable&#34;: args.cmd,
         }
-        mod = NetcatPluginCommand(module_opts)
+        mod = NetcatPluginCommand(module_opts)  # type: AbstractNetcatPlugin
     # Use output module
     else:
         module_opts = {
@@ -2851,7 +2850,7 @@ accidentally by other input.
 <dl>
 <dt id="pwncat.AbstractNetcatPlugin"><code class="flex name class">
 <span>class <span class="ident">AbstractNetcatPlugin</span></span>
-<span>(</span><span>options={})</span>
+<span>(</span><span>options)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract class to for netcat plugins.</p>
@@ -2873,9 +2872,8 @@ in a way that it is able to act on the event which the "interrupt" func emitted.
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class AbstractNetcatPlugin(ABC):
-    &#34;&#34;&#34;
-    Abstract class to for netcat plugins.
+<pre><code class="python">class AbstractNetcatPlugin(object):
+    &#34;&#34;&#34;Abstract class to for netcat plugins.
 
     This is a skeleton that defines how the plugins for Netcat should look like.
 
@@ -2890,22 +2888,18 @@ in a way that it is able to act on the event which the "interrupt" func emitted.
     in a way that it is able to act on the event which the &#34;interrupt&#34; func emitted.
     &#34;&#34;&#34;
 
-    __metaclass__ = ABCMeta
-
     @abstractmethod
-    def __init__(self, options={}):
-        &#34;&#34;&#34;
-        Set specific options for this plugin.
+    def __init__(self, options):
+        &#34;&#34;&#34;Set specific options for this plugin.
 
         Args:
             options (dict):    Custom options for a plugin
         &#34;&#34;&#34;
-        raise NotImplementedError(&#34;Should have implemented this&#34;)
+        assert type(self) is not AbstractNetcatPlugin, &#34;Cannot be instantiated directly.&#34;
 
     @abstractmethod
     def producer(self, ssig):
-        &#34;&#34;&#34;
-        Implement a generator function which constantly yields data.
+        &#34;&#34;&#34;Implement a generator function which constantly yields data.
 
         The data could be from various sources such as: received from a socket,
         received from user input, received from shell command output or anything else.
@@ -2935,10 +2929,6 @@ in a way that it is able to act on the event which the "interrupt" func emitted.
         &#34;&#34;&#34;
         raise NotImplementedError(&#34;Should have implemented this&#34;)</code></pre>
 </details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>abc.ABC</li>
-</ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="pwncat.NetcatPluginCommand" href="#pwncat.NetcatPluginCommand">NetcatPluginCommand</a></li>
@@ -3013,8 +3003,7 @@ received from user input, received from shell command output or anything else.</
 </summary>
 <pre><code class="python">@abstractmethod
 def producer(self, ssig):
-    &#34;&#34;&#34;
-    Implement a generator function which constantly yields data.
+    &#34;&#34;&#34;Implement a generator function which constantly yields data.
 
     The data could be from various sources such as: received from a socket,
     received from user input, received from shell command output or anything else.
@@ -3446,6 +3435,7 @@ def producer(self, ssig):
 
         Args:
             sock (socket.socket): The socket to receive data on.
+
         Returns:
             str: data received
         Raises:
@@ -3838,7 +3828,7 @@ socket.socket: TCP or UDP socket or False on error</p></div>
 </dd>
 <dt id="pwncat.NetcatPluginCommand"><code class="flex name class">
 <span>class <span class="ident">NetcatPluginCommand</span></span>
-<span>(</span><span>options={})</span>
+<span>(</span><span>options)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Implement command execution functionality.</p>
@@ -3857,8 +3847,10 @@ socket.socket: TCP or UDP socket or False on error</p></div>
 <pre><code> Executable to run
 </code></pre>
 </dd>
-<dt><strong><code>p</code></strong> :&ensp;<code>subprocess.subprocess</code></dt>
-<dd>subprocess.Popen instance</dd>
+<dt><strong><code>p</code></strong> :&ensp;<code>subprocess.Popen</code></dt>
+<dd>
+<p>subprocess.Popen instance</p>
+</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -3870,7 +3862,7 @@ socket.socket: TCP or UDP socket or False on error</p></div>
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, options={}):
+    def __init__(self, options):
         # type: (dict) -&gt; None
         &#34;&#34;&#34;Set specific options for this plugin.
 
@@ -3880,11 +3872,11 @@ socket.socket: TCP or UDP socket or False on error</p></div>
         Attributes:
             encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
             executable (str):          Executable to run
-            p (subprocess.subprocess): subprocess.Popen instance
+            p (subprocess.Popen):      subprocess.Popen instance
         &#34;&#34;&#34;
-        super(NetcatPluginCommand, self).__init__()
         # Define destructor
         atexit.register(self.__destruct__)
+        super(NetcatPluginCommand, self).__init__(options)
 
         assert &#34;encoder&#34; in options
         assert &#34;executable&#34; in options
@@ -3897,15 +3889,15 @@ socket.socket: TCP or UDP socket or False on error</p></div>
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
-            self.p = subprocess.Popen(
+            self.p = Popen(
                 # TODO: should I also use &#39;bufsize=1&#39;?
                 self.executable,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stdin=PIPE,
+                stdout=PIPE,
+                stderr=STDOUT,
                 shell=False,
                 env=env,
-            )  # type: StringIO
+            )  # type: Popen
         except FileNotFoundError:
             self.log.error(&#34;Specified executable &#39;%s&#39; not found&#34;, self.executable)
             sys.exit(1)
@@ -3967,17 +3959,20 @@ socket.socket: TCP or UDP socket or False on error</p></div>
             yield data
 
     def consumer(self, data):
-        # type: (bytes) -&gt; None
-        &#34;&#34;&#34;Send data received to stdin (command input).&#34;&#34;&#34;
-        data = self.enc.encode(data)
-        self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))
-        self.p.stdin.write(data)
+        # type: (str) -&gt; None
+        &#34;&#34;&#34;Send data received to stdin (command input).
+
+        Args:
+            data (str): Command to execute.
+        &#34;&#34;&#34;
+        byte = self.enc.encode(data)
+        self.log.trace(&#34;Appending to stdin: %s&#34;, repr(byte))
+        self.p.stdin.write(byte)
         self.p.stdin.flush()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="pwncat.AbstractNetcatPlugin" href="#pwncat.AbstractNetcatPlugin">AbstractNetcatPlugin</a></li>
-<li>abc.ABC</li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -3985,17 +3980,26 @@ socket.socket: TCP or UDP socket or False on error</p></div>
 <span>def <span class="ident">consumer</span></span>(<span>self, data)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Send data received to stdin (command input).</p></div>
+<div class="desc"><p>Send data received to stdin (command input).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>str</code></dt>
+<dd>Command to execute.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def consumer(self, data):
-    # type: (bytes) -&gt; None
-    &#34;&#34;&#34;Send data received to stdin (command input).&#34;&#34;&#34;
-    data = self.enc.encode(data)
-    self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))
-    self.p.stdin.write(data)
+    # type: (str) -&gt; None
+    &#34;&#34;&#34;Send data received to stdin (command input).
+
+    Args:
+        data (str): Command to execute.
+    &#34;&#34;&#34;
+    byte = self.enc.encode(data)
+    self.log.trace(&#34;Appending to stdin: %s&#34;, repr(byte))
+    self.p.stdin.write(byte)
     self.p.stdin.flush()</code></pre>
 </details>
 </dd>
@@ -4055,7 +4059,7 @@ socket.socket: TCP or UDP socket or False on error</p></div>
 </dd>
 <dt id="pwncat.NetcatPluginOutput"><code class="flex name class">
 <span>class <span class="ident">NetcatPluginOutput</span></span>
-<span>(</span><span>options={})</span>
+<span>(</span><span>options)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Implement basic input/output plugin.</p>
@@ -4085,10 +4089,10 @@ callback that writes to stdout.</p>
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
-    def __init__(self, options={}):
+    def __init__(self, options):
         # type: (dict) -&gt; None
         &#34;&#34;&#34;Set specific options for this plugin.&#34;&#34;&#34;
-        super(NetcatPluginOutput, self).__init__()
+        super(NetcatPluginOutput, self).__init__(options)
         assert &#34;encoder&#34; in options
         assert &#34;input_timeout&#34; in options
         assert &#34;crlf&#34; in options
@@ -4174,7 +4178,6 @@ callback that writes to stdout.</p>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="pwncat.AbstractNetcatPlugin" href="#pwncat.AbstractNetcatPlugin">AbstractNetcatPlugin</a></li>
-<li>abc.ABC</li>
 </ul>
 <h3>Class variables</h3>
 <dl>
@@ -4473,7 +4476,7 @@ callback that writes to stdout.</p>
                 return
 
     def send(self, data):
-        # type: (bytes) -&gt; None
+        # type: (str) -&gt; None
         &#34;&#34;&#34;Send data to a socket.&#34;&#34;&#34;
         super(Pwncat, self).__send(self.conn, data)
 
@@ -4742,7 +4745,7 @@ callback that writes to stdout.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def send(self, data):
-    # type: (bytes) -&gt; None
+    # type: (str) -&gt; None
     &#34;&#34;&#34;Send data to a socket.&#34;&#34;&#34;
     super(Pwncat, self).__send(self.conn, data)</code></pre>
 </details>
@@ -4803,7 +4806,7 @@ callback that writes to stdout.</p>
     #       &#34;interrupts&#34;: [&#34;func&#34;],  # List of funcs to be called outside the thread to stop it
     #   }
     # }
-    __actions = {}
+    __actions = {}  # type: Dict[str, Dict[str, Any]]
 
     # Dict of timed function definition to run in a thread.
     # Each list item will be run in its own thread.
@@ -4817,12 +4820,12 @@ callback that writes to stdout.</p>
     #       &#34;signal&#34;: &#34;StopSignal&#34;, # An instance providing has_stop() and raise_stop()
     #   }
     # }
-    __timers = {}
+    __timers = {}  # type: Dict[str, Dict[str, Any]]
 
     # A dict which holds the threads created from actions.
     # The name is based on the __actions name
     # {&#34;name&#34;: &#34;&lt;thread&gt;&#34;}
-    __threads = {}
+    __threads = {}  # type: Dict[str, threading.Thread]
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -5281,8 +5284,7 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class StringEncoder(object):
-    &#34;&#34;&#34;
-    Takes care about Python 2/3 string encoding/decoding.
+    &#34;&#34;&#34;Takes care about Python 2/3 string encoding/decoding.
 
     This allows to parse all string/byte values internally between all
     classes or functions as strings to keep full Python 2/3 compat.
@@ -5300,14 +5302,14 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
         &#34;&#34;&#34;Convert string into a byte type for Python3.&#34;&#34;&#34;
         if self.py3:
             return data.encode(self.codec)
-        return data
+        return data  # type: ignore
 
     def decode(self, data):
         # type: (bytes) -&gt; str
         &#34;&#34;&#34;Convert bytes into a string type for Python3.&#34;&#34;&#34;
         if self.py3:
             return data.decode(self.codec)
-        return data</code></pre>
+        return data  # type: ignore</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -5332,7 +5334,7 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
     &#34;&#34;&#34;Convert bytes into a string type for Python3.&#34;&#34;&#34;
     if self.py3:
         return data.decode(self.codec)
-    return data</code></pre>
+    return data  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="pwncat.StringEncoder.encode"><code class="name flex">
@@ -5349,7 +5351,7 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
     &#34;&#34;&#34;Convert string into a byte type for Python3.&#34;&#34;&#34;
     if self.py3:
         return data.encode(self.codec)
-    return data</code></pre>
+    return data  # type: ignore</code></pre>
 </details>
 </dd>
 </dl>
