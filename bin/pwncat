@@ -357,9 +357,9 @@ class LibSocket(object):
         sock.settimeout(self.__options["recv_timeout"])
 
     # ------------------------------------------------------------------------------
-    # Private Send / Receive Functions
+    # Protected Send / Receive Functions
     # ------------------------------------------------------------------------------
-    def __send(self, sock, data):
+    def _send(self, sock, data):
         # type: (socket.socket, str) -> int
         """Send data to a socker.
 
@@ -415,7 +415,7 @@ class LibSocket(object):
                 return False
         return send
 
-    def __receive(self, sock):
+    def _receive(self, sock):
         # type: (socket.socket) -> str
         """Return data from the given socket.
 
@@ -570,6 +570,7 @@ class Pwncat(LibSocket):
         )
         self.__sock_opts = {
             "udp": sock_opts["udp"],
+            "recv_retry": sock_opts["recv_retry"],
         }
         if role == "server":
             self.__srv_opts = {
@@ -614,13 +615,12 @@ class Pwncat(LibSocket):
         """Ensure everything in this instance will stop."""
         self.__destruct__()
 
-    def receive(self, ssig, recv_retry):
-        # type: (StopSignal, int) -> Iterator[str]
+    def receive(self, ssig):
+        # type: (StopSignal) -> Iterator[str]
         """Network receive generator which hooks into the receive function and adds features.
 
         Args:
             ssig (StopSignal): A StopSignal instance to raise or request program stop.
-            recv_retry (int):  When closing this end, how many times to check/recv if data is left
         """
         # Counter for receive retries once this side of the program
         # shuts down (e.g.: Ctrl+c) as there could be data left on the wire.
@@ -638,7 +638,7 @@ class Pwncat(LibSocket):
         while True:
             # [1/3] Generate data
             try:
-                yield super(Pwncat, self).__receive(self.conn)
+                yield super(Pwncat, self)._receive(self.conn)
             # [2/3] Non-blocking socket is finished receiving data and allows us to do some action
             except socket.timeout:
                 # Let's ask the interrupter() function if we should terminate?
@@ -648,11 +648,11 @@ class Pwncat(LibSocket):
                 # Happened most likely that the user pressed Ctrl+c
                 # Before quitting, we will check x many times, if there is still
                 # data left to receive, before shutting down.
-                if curr_recv_timeout_retry < recv_retry:
+                if curr_recv_timeout_retry < self.__sock_opts["recv_retry"]:
                     self.log.trace(  # type: ignore
                         "Final socket read: %d/%d before quitting.",
                         curr_recv_timeout_retry + 1,
-                        recv_retry,
+                        self.__sock_opts["recv_retry"],
                     )
                     curr_recv_timeout_retry += 1
                     continue
@@ -674,7 +674,7 @@ class Pwncat(LibSocket):
     def send(self, data):
         # type: (str) -> None
         """Send data to a socket."""
-        super(Pwncat, self).__send(self.conn, data)
+        super(Pwncat, self)._send(self.conn, data)
 
     # ------------------------------------------------------------------------------
     # Private Functions
@@ -871,7 +871,7 @@ class AbstractNetcatPlugin(ABC):  # type: ignore
         Args:
             options (dict):    Custom options for a plugin
         """
-        super().__init__()
+        super(AbstractNetcatPlugin, self).__init__()
 
     @abstractmethod
     def producer(self, ssig):
@@ -2033,6 +2033,7 @@ def main():
         "bufsize": 8192,
         "backlog": 0,
         "recv_timeout": TIMEOUT_RECV_SOCKET,
+        "recv_retry": TIMEOUT_RECV_SOCKET_RETRY,
         "nodns": args.nodns,
         "udp": args.udp,
     }
