@@ -1045,7 +1045,7 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         Attributes:
             encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
             executable (str):          Executable to run
-            p (subprocess.Popen):      subprocess.Popen instance
+            proc (subprocess.Popen):   subprocess.Popen instance
         """
         # Define destructor
         atexit.register(self.__destruct__)

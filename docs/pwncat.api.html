@@ -1072,7 +1072,7 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         Attributes:
             encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
             executable (str):          Executable to run
-            p (subprocess.Popen):      subprocess.Popen instance
+            proc (subprocess.Popen):   subprocess.Popen instance
         &#34;&#34;&#34;
         # Define destructor
         atexit.register(self.__destruct__)
@@ -3917,10 +3917,8 @@ socket.socket: TCP or UDP socket or False on error</p></div>
 <pre><code> Executable to run
 </code></pre>
 </dd>
-<dt><strong><code>p</code></strong> :&ensp;<code>subprocess.Popen</code></dt>
-<dd>
-<p>subprocess.Popen instance</p>
-</dd>
+<dt><strong><code>proc</code></strong> :&ensp;<code>subprocess.Popen</code></dt>
+<dd>subprocess.Popen instance</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -3942,7 +3940,7 @@ socket.socket: TCP or UDP socket or False on error</p></div>
         Attributes:
             encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
             executable (str):          Executable to run
-            p (subprocess.Popen):      subprocess.Popen instance
+            proc (subprocess.Popen):   subprocess.Popen instance
         &#34;&#34;&#34;
         # Define destructor
         atexit.register(self.__destruct__)
