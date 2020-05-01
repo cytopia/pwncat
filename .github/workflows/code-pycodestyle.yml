@@ -1,0 +1,30 @@
+---
+
+###
+### Code style
+###
+
+name: pycode
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+      matrix:
+        target:
+          - pycodestyle
+    name: "[ ${{ matrix.target }} ]"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@master
+
+      - name: "${{ matrix.target }}"
+        run: |
+          make ${{ matrix.target }}

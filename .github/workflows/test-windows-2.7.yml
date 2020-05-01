@@ -1,6 +1,6 @@
 ---
 
-name: Linux
+name: win-2.7
 on:
   pull_request:
   push:
@@ -10,17 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       fail-fast: False
       matrix:
         version:
           - 2.7
-          - 3.6
-          - 3.7
-          - 3.8
 
-    name: "[${{ matrix.version}}]"
+    name: "[win] 2.7"
     steps:
       # ------------------------------------------------------------
       # Setup

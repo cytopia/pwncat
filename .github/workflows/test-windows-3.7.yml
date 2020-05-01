@@ -1,6 +1,6 @@
 ---
 
-name: Windows
+name: win-3.7
 on:
   pull_request:
   push:
@@ -15,12 +15,9 @@ jobs:
       fail-fast: False
       matrix:
         version:
-          - 2.7
-          - 3.6
           - 3.7
-          - 3.8
 
-    name: "[${{ matrix.version}}]"
+    name: "[win] 3.7"
     steps:
       # ------------------------------------------------------------
       # Setup
@@ -32,20 +29,6 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.version }}
-
-      - name: Test commands
-        shell: bash
-        run: |
-          ps -ef  || echo "No ps -ef"
-          ps -efW || echo "No ps -efW"
-          ps --help
-          ps -afl || "no ps afl"
-          ps -afls || "no ps afls"
-      #    ps -axl || "no ps -axl"
-      #    ps  || "no ps"
-      #    ps --windows -ealf || "no ps --windows -ealf"
-      #    ps -p 420 || "no ps -p 420"
-
 
       # ------------------------------------------------------------
       # Tests: Behaviour

@@ -29,18 +29,6 @@ jobs:
         run: |
           make lint-files
 
-      - name: Python Black
-        run: |
-          make black
-
-      - name: PyCodeStyle
-        run: |
-          make pycodestyle
-
-      - name: PyDocStyle
-        run: |
-          make pydocstyle
-
       - name: Check consistent version
         run: |
           make version
