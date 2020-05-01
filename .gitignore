@@ -6,3 +6,4 @@ tests/output/*
 !.keepme
 __pycache__
 *.pyc
+.mypy_cache/*

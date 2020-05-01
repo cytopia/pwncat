@@ -14,7 +14,7 @@ DOCPATH = docs/
 BINNAME = pwncat
 
 FL_VERSION = 0.3
-FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/
+FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/,.mypy_cache/
 
 UID := $(shell id -u)
 GID := $(shell id -g)
@@ -91,7 +91,7 @@ mypy:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check mypy"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/mypy --strict --show-error-context --pretty $(BINPATH)$(BINNAME)
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/mypy --strict --show-error-context --show-error-codes --pretty --config-file setup.cfg $(BINPATH)$(BINNAME)
 
 
 # -------------------------------------------------------------------------------------------------
