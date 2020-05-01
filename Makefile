@@ -5,7 +5,7 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint code test pycodestyle pydocstyle pylint pylint mypy black version lint-files lint-docs lint-usage docs dist sdist bdist build checkbuild deploy autoformat clean
+.PHONY: help lint code test pycodestyle pydocstyle pylint mypy black version lint-files lint-docs lint-usage docs dist sdist bdist build checkbuild deploy autoformat clean
 
 VERSION = 2.7
 BINPATH = bin/
@@ -59,24 +59,27 @@ code: pycodestyle pydocstyle pylint black mypy
 
 pycodestyle:
 	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Check pydocstyle"
+	@echo "# Check pycodestyle"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pycodestyle --show-source --show-pep8 $(BINPATH)$(BINNAME)
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pycodestyle sh -c ' \
+		mkdir -p /tmp \
+		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
+		&& pycodestyle --config=setup.cfg --show-source --show-pep8 /tmp/$(BINNAME).py'
 
 pydocstyle:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pycodestyle"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm -v $(PWD):/data --entrypoint= cytopia/pydocstyle sh -c ' \
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pydocstyle sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
-		&& pydocstyle -e  /tmp/$(BINNAME).py'
+		&& pydocstyle -e /tmp/$(BINNAME).py'
 
 pylint:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pylint"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pylint $(BINPATH)$(BINNAME)
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pylint --rcfile=setup.cfg $(BINPATH)$(BINNAME)
 
 black:
 	@echo "# -------------------------------------------------------------------- #"
