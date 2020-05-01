@@ -7,11 +7,11 @@
 # 3. (tty and non-tty mode) UDP Will always stay open (can't determine if connection is gone)
 
 from __future__ import print_function
-from abc import ABCMeta, abstractmethod
-from subprocess import Popen, PIPE
+from abc import ABCMeta
+from abc import abstractmethod
+
 import argparse
 import atexit
-import errno
 import logging
 import os
 import re
@@ -23,7 +23,7 @@ import time
 
 # Only used with mypy for static source code analysis
 if os.environ.get("MYPY_CHECK", False):
-    from typing import Optional, Iterator, Union
+    from typing import Optional, Iterator, List, Dict, Any, StringIO
 
 # Python 2 + Python 3 support
 ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
@@ -57,7 +57,7 @@ TIMEOUT_RECV_SOCKET_RETRY = 2
 # -------------------------------------------------------------------------------------------------
 # CLASS: TraceLogger
 # -------------------------------------------------------------------------------------------------
-class TraceLogger(logging.Logger):
+class TraceLogger(logging.getLoggerClass()):
     """Logger class with additional TRACE level logging."""
 
     LEVEL_NUM = 9
@@ -65,11 +65,12 @@ class TraceLogger(logging.Logger):
 
     def __init__(self, name, level=logging.NOTSET):
         # type: (str, int) -> None
+        """Create a custom Logger instance with TRACE level logging."""
         super(TraceLogger, self).__init__(name, level)
         logging.addLevelName(self.LEVEL_NUM, self.LEVEL_NAME)
 
     def trace(self, msg, *args, **kwargs):
-        # type: (str, *str, **str) -> None
+        # type: (str, Any, Any) -> None
         """Set custom log level for TRACE."""
         if self.isEnabledFor(self.LEVEL_NUM):
             # Yes, logger takes its '*args' as 'args'.
@@ -80,7 +81,7 @@ class TraceLogger(logging.Logger):
 # CLASS: ColoredLogFormatter
 # -------------------------------------------------------------------------------------------------
 class ColoredLogFormatter(logging.Formatter):
-    """Logging Formatter to add colors and count warning / errors"""
+    """Logging Formatter to add colors and count warning / errors."""
 
     COLORS = {
         logging.CRITICAL: "\x1b[31;1m",  # bold red
@@ -94,6 +95,12 @@ class ColoredLogFormatter(logging.Formatter):
 
     def __init__(self, color, loglevel):
         # type: (str, int) -> None
+        """Construct a colored log formatter.
+
+        Args:
+            color (str):  Either be "alway", "never" or "auto"
+            loglevel (int):  Current desired log level
+        """
         super(ColoredLogFormatter, self).__init__()
         self.color = color
         self.loglevel = loglevel
@@ -113,6 +120,7 @@ class ColoredLogFormatter(logging.Formatter):
 
     def __colorize(self, level, fmt):
         # type: (int, str) -> str
+        """Colorize a log message based on its level."""
         if self.color == "never":
             return fmt
 
@@ -124,6 +132,7 @@ class ColoredLogFormatter(logging.Formatter):
 
     def format(self, record):
         # type: (logging.LogRecord) -> str
+        """Apply custom formatting to log message."""
         log_fmt = self.__get_format()
         log_fmt = self.__colorize(record.levelno, log_fmt)
         formatter = logging.Formatter(log_fmt)
@@ -141,17 +150,17 @@ class LibSocket(object):
     # it must wait for the client to connect first in order
     # to retrieve its addr and port in order to be able
     # to send data back to it.
-    remote_addr = None
-    remote_port = None
+    remote_addr = None  # type: str
+    remote_port = None  # type: int
 
     # Available optional settings with sane defaults
     __options = {
-        "bufsize": 1024,  # (int) Receive buffer size
-        "backlog": 0,  # (int) Listen backlog
-        "recv_timeout": None,  # (float) seconds for socket timeout or None if blocking
-        "nodns": False,  # (bool) Do not resolve hostname
-        "udp": False,  # (bool) Is TCP or UDP?
-    }
+        "bufsize": 1024,  # Receive buffer size
+        "backlog": 0,  # Listen backlog
+        "recv_timeout": None,  # seconds for socket timeout or None if blocking
+        "nodns": False,  # Do not resolve hostname
+        "udp": False,  # Is TCP or UDP?
+    }  # type: Dict[str, Any]
 
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
@@ -163,6 +172,10 @@ class LibSocket(object):
         Args:
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat)
             options (dict):          Dict of required options (see __options)
+
+        Attributes:
+            remote_addr (str):    Remote hostname
+            remote_port (int):    Remote port
         """
         assert type(self) is not LibSocket, "LibSocket cannot be instantiated directly."
 
@@ -182,7 +195,7 @@ class LibSocket(object):
     # Public Functions
     # ------------------------------------------------------------------------------
     def gethostbyname(self, host, port):
-        # type: (str, int) -> Optional[str]
+        # type: (str, int) -> str
         """Translate hostname into IP address.
 
         Args:
@@ -190,20 +203,23 @@ class LibSocket(object):
             port (int): The port of the hostname to resolve
         Returns:
             str: Numeric IP address or False on error
+
+        Raises:
+            socket.gaierror: If hostname cannot be resolved.
         """
         socktype = socket.SOCK_DGRAM if self.__options["udp"] else socket.SOCK_STREAM
         flags = 0
         if self.__options["nodns"]:
             flags = socket.AI_NUMERICHOST
         try:
-            self.log.debug("Resolving hostname: {}".format(host))
+            self.log.debug("Resolving hostname: %s", host)
             (family, socktype, proto, canonname, sockaddr) = socket.getaddrinfo(
                 host, port, socket.AF_INET, socktype, flags
             )[0]
         except socket.gaierror as error:
-            self.log.error("Resolve Error: {}".format(error))
-            return None
-        self.log.debug("Resolved hostname:  {}".format(sockaddr[0]))
+            self.log.error("Resolve Error: %s", error)
+            raise socket.gaierror(error)
+        self.log.debug("Resolved hostname: %s", sockaddr[0])
         return sockaddr[0]
 
     def create_socket(self):
@@ -211,7 +227,7 @@ class LibSocket(object):
         """Create TCP or UDP socket.
 
         Returns
-            socket: TCP or UDP socket or False on error
+            socket.socket: TCP or UDP socket or False on error
         """
         try:
             if self.__options["udp"]:
@@ -221,7 +237,7 @@ class LibSocket(object):
                 self.log.debug("Creating TCP socket")
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as error:
-            self.log.error("Failed to create the socket: {}".format(error))
+            self.log.error("Failed to create the socket: %s", error)
             return None
         # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
@@ -233,7 +249,7 @@ class LibSocket(object):
         """Shuts down and closes a socket.
 
         Args:
-            sock (socket): The socket to shutdown and close
+            sock (socket.socket): The socket to shutdown and close
         """
         try:
             # (SHUT_RD)   0 = Done receiving (disallows receiving)
@@ -254,18 +270,18 @@ class LibSocket(object):
         """Bind the socket to an address.
 
         Args:
-            sock (socket): The socket to bind
-            addr (str):    The address to bind to
-            port (int):    The port to bind to
+            sock (socket.socket): The socket to bind
+            addr (str):           The address to bind to
+            port (int):           The port to bind to
         Returns:
             bool: True on success and False on Failure
         """
         try:
-            self.log.debug("Binding socket to {}:{}".format(addr, port))
+            self.log.debug("Binding socket to %s:%d", addr, port)
             sock.bind((addr, port))
             return True
         except (OverflowError, OSError, socket.error) as error:
-            self.log.error("Binding socket to {}:{} failed: {}".format(addr, port, error))
+            self.log.error("Binding socket to %s:%d failed: %s", addr, port, error)
             return False
 
     def listen(self, sock):
@@ -273,16 +289,16 @@ class LibSocket(object):
         """Listen for connections made to the socket.
 
         Args:
-            sock (socket): The socket to listen on
+            sock (socket.socket): The socket to listen on
         Returns:
             bool: True on success and False on Failure
         """
         try:
-            self.log.debug("Listening with backlog={}".format(self.__options["backlog"]))
+            self.log.debug("Listening with backlog=%d", self.__options["backlog"])
             sock.listen(self.__options["backlog"])
             return True
         except socket.error as error:
-            self.log.error("Listening failed: {}".format(error))
+            self.log.error("Listening failed: %s", error)
             return False
 
     def accept(self, sock):
@@ -290,9 +306,9 @@ class LibSocket(object):
         """Accept a connection. The socket must be bound to an addr and listening for connections.
 
         Args:
-            sock (socket): The socket to accept on
+            sock (socket.socket): The socket to accept on
         Returns:
-            socket: The connection socket or None on error
+            socket.socket: The connection socket or None on error
         """
         try:
             self.log.debug("Waiting for TCP client")
@@ -300,10 +316,10 @@ class LibSocket(object):
             addr, port = client
             self.remote_addr = addr
             self.remote_port = port
-            self.log.info("Client connected from {}:{}".format(addr, port))
+            self.log.info("Client connected from %s:%d", addr, port)
             return conn
         except (socket.gaierror, socket.error) as error:
-            self.log.error("Accept failed: {}".format(error))
+            self.log.error("Accept failed: %s", error)
             return None
 
     def connect(self, sock):
@@ -311,39 +327,40 @@ class LibSocket(object):
         """Connect to a remote socket at given address and port (TCP-only).
 
         Args:
-            sock (socket): The socket to use for connecting
+            sock (socket.socket): The socket to use for connecting
         Returns:
             bool: True on success and False on Failure
         """
         try:
-            self.log.debug("Connecting to {}:{}".format(self.remote_addr, self.remote_port))
+            self.log.debug("Connecting to %s:%d", self.remote_addr, self.remote_port)
             sock.connect((self.remote_addr, self.remote_port))
             return True
         except socket.error as error:
             self.log.error(
-                "Connecting to {}:{} failed: {}".format(self.remote_addr, self.remote_port, error)
+                "Connecting to %s:%d failed: %s", self.remote_addr, self.remote_port, error
             )
             return False
 
     def settimeout(self, sock):
         # type: (socket.socket) -> None
-        """Sets the receive timeout on a socket.
+        """Set the receive timeout on a socket.
+
         Args:
-            sock (socket): The socket to set the receive timeout for.
+            sock (socket.socket): The socket to set the receive timeout for.
         """
-        self.log.debug("Setting sock recv timeout to {} sec".format(self.__options["recv_timeout"]))
+        self.log.debug("Setting sock recv timeout to %f sec", self.__options["recv_timeout"])
         sock.settimeout(self.__options["recv_timeout"])
 
     # ------------------------------------------------------------------------------
-    # Send / Receive Functions
+    # Private Send / Receive Functions
     # ------------------------------------------------------------------------------
-    def send(self, sock, data):
-        # type: (socket.socket, Union[bytes, str]) -> int
-        """Send data
+    def __send(self, sock, data):
+        # type: (socket.socket, str) -> int
+        """Send data to a socker.
 
         Args:
-            sock (socket): The socket to send data through.
-            data (str):    The data to send
+            sock (socket.socket): The socket to send data through.
+            data (str):           The data to send
         Returns:
             int: Returns total bytes sent or False on error
         """
@@ -357,59 +374,54 @@ class LibSocket(object):
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
         size = len(data)  # bytes of data that needs to be send
-        data = self.enc.encode(data)
-        assert size == len(data), "Encoding messed up string length, might need to do len() after."
+        byte = self.enc.encode(data)
+        assert size == len(byte), "Encoding messed up string length, might need to do len() after."
 
         # Loop until all bytes have been send
         while send < size:
             try:
                 self.log.debug(
-                    "Trying to send {} bytes to {}:{}".format(
-                        size - send, self.remote_addr, self.remote_port
-                    )
+                    "Trying to send %d bytes to %s:%d",
+                    size - send,
+                    self.remote_addr,
+                    self.remote_port,
                 )
-                self.log.trace("Trying to send: {}".format(repr(data)))
+                self.log.trace("Trying to send: %s", repr(byte))
                 if self.__options["udp"]:
-                    curr = sock.sendto(data, (self.remote_addr, self.remote_port))
+                    curr = sock.sendto(byte, (self.remote_addr, self.remote_port))
                     send += curr
                 else:
-                    curr = sock.send(data)
+                    curr = sock.send(byte)
                     send += curr
                 if curr == 0:
                     self.log.error("No bytes send during loop round.")
                     return 0
-                # Remove 'curr' many bytes from data for the next round
-                data = data[curr:]
+                # Remove 'curr' many bytes from byte for the next round
+                byte = byte[curr:]
                 self.log.debug(
-                    "Sent {} bytes to {}:{} ({} bytes remaining)".format(
-                        curr, self.remote_addr, self.remote_port, size - send
-                    )
+                    "Sent %d bytes to %s:%d (%d bytes remaining)",
+                    curr,
+                    self.remote_addr,
+                    self.remote_port,
+                    size - send,
                 )
-            except socket.error as error:
-                # TODO: What is this error?
-                if error.errno == errno.EPIPE:
-                    self.log.error("TODO:Add desc1 Socket error({}): {}".format(error.errno, error))
-                    return False
-                # TODO: What is this error?
-                self.log.error("TODO:Add desc2 Socket Error: {}".format(error))
-                return False
-            except (OSError) as error:
-                self.log.error("Socket OS Error: {}".format(error))
+            except (OSError, socket.error) as error:
+                self.log.error("Socket OS Error: %s", error)
                 return False
         return send
 
-    def receive(self, sock):
+    def __receive(self, sock):
         # type: (socket.socket) -> str
-        """Returns data received from a socket.
+        """Return data from the given socket.
 
         Args:
-            sock (socket): The socket to receive data on.
+            sock (socket.socket): The socket to receive data on.
         Returns:
             str: data received
         Raises:
-            socket.timeout:  Except here to do an action when the socket is not busy.
-            socket.error:    Except here when unconnected or connection was forcibly closed.
-            EOFError:        Except here when upstream has closed the connection.
+            socket.timeout: Except here to do an action when the socket is not busy.
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+            EOFError:       Except here when upstream has closed the connection.
         """
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
@@ -427,7 +439,7 @@ class LibSocket(object):
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
         except (OSError, socket.error) as error:
-            self.log.error("Connection error: {}".format(error))
+            self.log.error("Connection error: %s", error)
             raise socket.error(error)
 
         # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
@@ -441,7 +453,7 @@ class LibSocket(object):
         # to send data back to it (see send() function)
         if self.__options["udp"]:
             self.remote_addr, self.remote_port = addr
-            self.log.debug("Client connected: {}:{}".format(self.remote_addr, self.remote_port))
+            self.log.debug("Client connected: %s:%d", self.remote_addr, self.remote_port)
 
         # [4/5] Upstream (server or client) is gone.
         # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.
@@ -454,9 +466,9 @@ class LibSocket(object):
         # [5/5] We have data to process
         data = self.enc.decode(byte)
         self.log.debug(
-            "Received {} bytes from {}:{}".format(len(data), self.remote_addr, self.remote_port)
+            "Received %d bytes from %s:%d", len(data), self.remote_addr, self.remote_port
         )
-        self.log.trace("Received: {}".format(repr(data)))
+        self.log.trace("Received: %s", repr(data))
         return data
 
 
@@ -475,21 +487,21 @@ class StringEncoder(object):
     codec = "cp437"
 
     def __init__(self):
-        # type: () -> None
-        self.py3 = sys.version_info >= (3, 0)
+        """Create a StringEncoder instance which converts str/bytes according to Python version."""
+        self.py3 = sys.version_info >= (3, 0)  # type: bool
 
     def encode(self, data):
-        # type: (str) -> Union[bytes, str]
+        # type: (str) -> bytes
         """Convert string into a byte type for Python3."""
         if self.py3:
             return data.encode(self.codec)
         return data
 
     def decode(self, data):
-        # type: (Union[bytes, str]) -> str
+        # type: (bytes) -> str
         """Convert bytes into a string type for Python3."""
         if self.py3:
-            data = data.decode(self.codec)
+            return data.decode(self.codec)
         return data
 
 
@@ -499,36 +511,37 @@ class StringEncoder(object):
 class Pwncat(LibSocket):
     """Pwncat implementation based on custom Socket library."""
 
+    sock = None  # type: socket.socket
+    conn = None  # type: socket.socket
+    ssig = None  # type: StopSignal
+
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self, encoder, host, port, role, srv_opts, cli_opts, sock_opts):
         # type: (StringEncoder, str, int, str, dict, dict, dict) -> None
-        """Constructor.
+        """Create a Pwncat instance of either a server or a client.
 
         Args:
-            encoder (StringEncoder):  Instance of StringEncoder (Python2/3 str/byte compat)
-            host (str):               The hostname to resolve
-            port (int):               The port of the hostname to resolve
-            role (str):               Either "server" or "client"
-            srv_opts (dict):          Options for the server
-            cli_opts (dict):          Options for the client
-            sock_opts (dict):         Options to parse back to LibSocket
+            encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat)
+            host (str):              The hostname to resolve
+            port (int):              The port of the hostname to resolve
+            role (str):              Either "server" or "client"
+            srv_opts (dict):         Options for the server
+            cli_opts (dict):         Options for the client
+            sock_opts (dict):        Options to parse back to LibSocket
 
         Attributes:
-            sock (socket.socket):     Server listen socket
-            conn (socket.socker):     Server/client send/receive socket
-            role (str):               Determines role: either "server" or "client"
-            ssig (StopSignal):        Instance of StopSignal
+            sock (socket.socket): Server listen socket
+            conn (socket.socket): Server/client send/receive socket
+            role (str):           Determines role: either "server" or "client"
+            ssig (StopSignal):    Instance of StopSignal
         """
         # Define destructor
-        atexit.register(self.__exit__)
+        atexit.register(self.__destruct__)
 
         assert role in ["server", "client"], "The role must be 'server' or 'client'."
         self.role = role
-        # self.sock = None  # type: socket.socket
-        # self.conn = None  # type: socket.socket
-        # self.ssig = None  # type: StopSignal
 
         super(Pwncat, self).__init__(
             encoder,
@@ -558,8 +571,9 @@ class Pwncat(LibSocket):
             }
 
         # Resolve hostname
-        addr = self.gethostbyname(host, port)
-        if not addr:
+        try:
+            addr = self.gethostbyname(host, port)
+        except socket.gaierror:
             sys.exit(1)
         # Create server or client
         if role == "server":
@@ -569,7 +583,7 @@ class Pwncat(LibSocket):
             if not self.__client_create(addr, port):
                 sys.exit(1)
 
-    def __exit__(self):
+    def __destruct__(self):
         # type: () -> None
         """Destructor."""
         if hasattr(self, "conn"):
@@ -583,9 +597,9 @@ class Pwncat(LibSocket):
     def stop(self):
         # type: () -> None
         """Ensure everything in this instance will stop."""
-        self.__exit__()
+        self.__destruct__()
 
-    def receive(self, ssig, recv_retry=2):
+    def receive(self, ssig, recv_retry):
         # type: (StopSignal, int) -> Iterator[str]
         """Network receive generator which hooks into the receive function and adds features.
 
@@ -609,7 +623,7 @@ class Pwncat(LibSocket):
         while True:
             # [1/3] Generate data
             try:
-                yield super(Pwncat, self).receive(self.conn)
+                yield super(Pwncat, self).__receive(self.conn)
             # [2/3] Non-blocking socket is finished receiving data and allows us to do some action
             except socket.timeout:
                 # Let's ask the interrupter() function if we should terminate?
@@ -621,9 +635,9 @@ class Pwncat(LibSocket):
                 # data left to receive, before shutting down.
                 if curr_recv_timeout_retry < recv_retry:
                     self.log.trace(
-                        "Final socket read: {}/{} before quitting.".format(
-                            curr_recv_timeout_retry + 1, recv_retry
-                        )
+                        "Final socket read: %d/%d before quitting.",
+                        curr_recv_timeout_retry + 1,
+                        recv_retry,
                     )
                     curr_recv_timeout_retry += 1
                     continue
@@ -638,19 +652,20 @@ class Pwncat(LibSocket):
                 # Do we re-accept new clients?
                 if self.role == "server" and self.__server_reaccept_from_client():
                     continue
-                elif self.role == "client" and self.__client_reconnect_to_server():
+                if self.role == "client" and self.__client_reconnect_to_server():
                     continue
                 return
 
     def send(self, data):
         # type: (bytes) -> None
-        super(Pwncat, self).send(self.conn, data)
+        """Send data to a socket."""
+        super(Pwncat, self).__send(self.conn, data)
 
     # ------------------------------------------------------------------------------
     # Private Functions
     # ------------------------------------------------------------------------------
-    def __client_reconnect_to_server(self, ssig=None):
-        # type: (Optional[StopSignal]) -> bool
+    def __client_reconnect_to_server(self):
+        # type: () -> bool
         """Ensure the client re-connects to the remote server, if the remote server hang up.
 
         Args:
@@ -672,13 +687,13 @@ class Pwncat(LibSocket):
 
             if type(self.__cli_opts["reconn"]) is int:
                 self.log.info(
-                    "Reconnecting in {} sec ({} more times left)".format(
-                        self.__cli_opts["reconn_wait"], self.__cli_opts["reconn"]
-                    )
+                    "Reconnecting in %f sec (%d more times left)",
+                    self.__cli_opts["reconn_wait"],
+                    self.__cli_opts["reconn"],
                 )
             else:
                 self.log.info(
-                    "Reconnecting in {} sec (indefinitely)".format(self.__cli_opts["reconn_wait"])
+                    "Reconnecting in %f sec (indefinitely)", self.__cli_opts["reconn_wait"]
                 )
             # [1/5] Decrease reconnect counter
             if (type(self.__cli_opts["reconn"])) is int:
@@ -786,18 +801,14 @@ class Pwncat(LibSocket):
         # [UDP 3/4] There is no listen or accept for UDP
         if self.__sock_opts["udp"]:
             self.conn = sock
-            self.log.info(
-                "Listening on {} (family {}/UDP, port {})".format(addr, socket.AF_INET, port)
-            )
+            self.log.info("Listening on %s (family %d/UDP, port %d)", addr, socket.AF_INET, port)
         # [TCP 3/4] Requires listen and accept
         else:
             # Listen
             if not self.listen(sock):
                 self.close_socket(sock)
                 return False
-            self.log.info(
-                "Listening on {} (family {}/TCP, port {})".format(addr, socket.AF_INET, port)
-            )
+            self.log.info("Listening on %s (family %d/TCP, port %d)", addr, socket.AF_INET, port)
             # Accept
             conn = self.accept(sock)
             if not conn:
@@ -866,7 +877,7 @@ class AbstractNetcatPlugin(ABC):
 
     @abstractmethod
     def consumer(self, data):
-        """The consumer takes the consumers' output as input and processes it in some form.
+        """Define a consumer callback which will apply an action on the producer output.
 
         Args:
             data (str): Data retrieved from the producer to work on
@@ -875,12 +886,13 @@ class AbstractNetcatPlugin(ABC):
 
     @abstractmethod
     def interrupt(self):
-        """Defines an interrupt function which will stop the producer.
+        """Define an interrupt function which will stop the producer.
 
         Various producer might call blocking functions and they won't be able to stop themself
         as they hang on that blocking function. This method is triggered from outside and is
         supposed to stop/shutdown the producer.
-        If no such interrupt is required, imeplemt it empty."""
+        If no such interrupt is required, imeplemt it empty.
+        """
         raise NotImplementedError("Should have implemented this")
 
 
@@ -906,8 +918,9 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self, options={}):
+        # type: (dict) -> None
         """Set specific options for this plugin."""
-        super(AbstractNetcatPlugin, self).__init__()
+        super(NetcatPluginOutput, self).__init__()
         assert "encoder" in options
         assert "input_timeout" in options
         assert "crlf" in options
@@ -923,6 +936,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # Private Functions
     # ------------------------------------------------------------------------------
     def __use_linefeeds(self, data):
+        # type: (str) -> str
         """Ensure the user input has the desired linefeeds --crlf or not."""
         # No replacement requested or already CRLF
         if not self.crlf or data.endswith("\r\n"):
@@ -935,6 +949,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
         return data
 
     def __set_input_timeout(self):
+        # type: () -> None
         """Throws a catchable BaseException for sys.stdin after timeout (Linux only)."""
         i, o, e = select.select([sys.stdin], [], [], self.input_timeout)
         if not i:
@@ -945,6 +960,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
     # ------------------------------------------------------------------------------
 
     def producer(self, ssig):
+        # type: (StopSignal) -> Iterator[str]
         """Constantly ask for user input."""
         # https://stackoverflow.com/questions/1450393/#38670261
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
@@ -967,8 +983,8 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                     return
                 continue
             if line:
-                self.log.debug("Received {} bytes from STDIN".format(len(line)))
-                self.log.trace("Received: {}".format(repr(line)))
+                self.log.debug("Received %d bytes from STDIN", len(line))
+                self.log.trace("Received: %s", repr(line))
                 yield self.__use_linefeeds(line)
             # EOF or <Ctrl>+<d>
             else:
@@ -978,13 +994,14 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
                     return
 
     def consumer(self, data):
+        # type: (str) -> None
         """Print received data to stdout."""
         print(data, end="")
         sys.stdout.flush()
 
     def interrupt(self):
+        # type: () -> None
         """Empty interrupt."""
-        pass
 
 
 # -------------------------------------------------------------------------------------------------
@@ -993,50 +1010,61 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
 class NetcatPluginCommand(AbstractNetcatPlugin):
     """Implement command execution functionality."""
 
-    executable = None
-
     # ------------------------------------------------------------------------------
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self, options={}):
-        """Set specific options for this plugin."""
+        # type: (dict) -> None
+        """Set specific options for this plugin.
+
+        Args:
+            options (dict): Custom module options
+
+        Attributes:
+            encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
+            executable (str):          Executable to run
+            p (subprocess.subprocess): subprocess.Popen instance
+        """
+        super(NetcatPluginCommand, self).__init__()
         # Define destructor
-        atexit.register(self.__exit__)
+        atexit.register(self.__destruct__)
 
         assert "encoder" in options
         assert "executable" in options
 
         self.log = logging.getLogger(__name__)
-        self.enc = options["encoder"]
+        self.enc = options["encoder"]  # type: StringEncoder
         self.executable = options["executable"]
-        self.log.debug("Setting '{}' as executable".format(self.executable))
+        self.log.debug("Setting '%s' as executable", self.executable)
 
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
-            self.p = Popen(
+            self.p = subprocess.Popen(
                 # TODO: should I also use 'bufsize=1'?
                 self.executable,
-                stdin=PIPE,
-                stdout=PIPE,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=False,
                 env=env,
-            )
+            )  # type: StringIO
+        except FileNotFoundError:
+            self.log.error("Specified executable '%s' not found", self.executable)
+            sys.exit(1)
         # Python-2 compat (doesn't have FileNotFoundError)
         except OSError:
-            self.log.error("Specified executable '{}' not found".format(self.executable))
-            sys.exit(1)
-        except FileNotFoundError:
-            self.log.error("Specified executable '{}' not found".format(self.executable))
+            self.log.error("Specified executable '%s' not found", self.executable)
             sys.exit(1)
 
-    def __exit__(self):
+    def __destruct__(self):
+        # type: () -> None
         """Destructor."""
-        self.log.trace("Killing executable: {} with pid {}".format(self.executable, self.p.pid))
+        self.log.trace("Killing executable: %s with pid %d", self.executable, self.p.pid)
         self.p.kill()
 
     def __set_input_timeout(self, timeout=0.1):
+        # type: (float) -> None
         """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
         # select((rlist, wlist, xlist, timeout)
         # rlist: wait until ready for reading
@@ -1050,11 +1078,13 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
     # Public Functions
     # ------------------------------------------------------------------------------
     def interrupt(self):
+        # type: () -> None
         """Stop function that can be called externally to close this instance."""
         self.log.trace("[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()")
         self.p.kill()
 
     def producer(self, ssig):
+        # type: (StopSignal) -> Iterator[str]
         """Constantly ask for input."""
         while True:
             if ssig.has_stop():
@@ -1073,16 +1103,17 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
             #    #self.p.stdout.flush()
             #    continue
             data = self.enc.decode(data)
-            self.log.trace("Command output: {}".format(data))
+            self.log.trace("Command output: %s", repr(data))
             if not data:
                 self.log.trace("Command output was empty. Exiting loop.")
                 break
             yield data
 
     def consumer(self, data):
+        # type: (bytes) -> None
         """Send data received to stdin (command input)."""
         data = self.enc.encode(data)
-        self.log.trace("Appending to stdin: {}".format(data))
+        self.log.trace("Appending to stdin: %s", repr(data))
         self.p.stdin.write(data)
         self.p.stdin.flush()
 
@@ -1099,13 +1130,21 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
 # CLASS: Runner
 # -------------------------------------------------------------------------------------------------
 class StopSignal(object):
+    """Provide a simple boolean switch."""
 
-    __stop = False
+    def __init__(self):
+        # type: () -> None
+        """Create a StopSignal instance."""
+        self.__stop = False
 
     def has_stop(self):
+        # type: () -> bool
+        """Check if a stop signal has been raised."""
         return self.__stop
 
     def raise_stop(self):
+        # type: () -> None
+        """Raise a stop signal."""
         self.__stop = True
 
 
@@ -1148,18 +1187,18 @@ class Runner(object):
     # Constructor / Destructor
     # ------------------------------------------------------------------------------
     def __init__(self):
-        """Constructor."""
+        """Create a new Runner object."""
         self.log = logging.getLogger(__name__)
 
     # ------------------------------------------------------------------------------
     # Public Functions
     # ------------------------------------------------------------------------------
     def add_action(self, action):
-        """
-        Enables a function to run threaded by the producer/consumer runner.
+        # type: (dict) -> None
+        """Add a function to the producer/consumer thread pool runner.
 
         Args:
-            action (dict): A dictionary or a set of producer, consumer and interrupt funcs
+            action (dict): A dictionary of producer, consumer and interrupt funcs
         """
         assert "name" in action
         assert "producer" in action
@@ -1175,6 +1214,12 @@ class Runner(object):
         }
 
     def add_timer(self, timer):
+        # type: (dict) -> None
+        """Add a function to the timer thread pool runner.
+
+        Args:
+            timer (dict): A dictionary timer functions.
+        """
         self.__timers[timer["name"]] = {
             "action": timer["action"],
             "intvl": timer["intvl"],
@@ -1195,11 +1240,11 @@ class Runner(object):
                 consumer (function): A callback which consumes data from the generator
                 ssig (StopSignal):   Providing has_stop() and raise_stop()
             """
-            self.log.trace("[{}] Producer Start".format(name))
+            self.log.trace("[%s] Producer Start", name)
             for data in producer(ssig):
-                self.log.trace("[{}] Producer received: {}".format(name, repr(data)))
+                self.log.trace("[%s] Producer received: %s", name, repr(data))
                 consumer(data)
-            self.log.trace("[{}] Producer Stop".format(name))
+            self.log.trace("[%s] Producer Stop", name)
 
         def run_timer(name, action, intvl, ssig, *args, **kwargs):
             """Timer run function to be thrown into a thread (Execs periodic tasks).
@@ -1212,15 +1257,15 @@ class Runner(object):
                 args (*args):      *args for action func
                 kwargs (**kwargs): **kwargs for action func
             """
-            self.log.trace("[{}] Timer Start (exec every {} sec)".format(name, intvl))
+            self.log.trace("[%s] Timer Start (exec every %f sec)", name, intvl)
             time_last = int(time.time())
             while True:
                 if ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for timer {}".format(name))
+                    self.log.trace("Stop signal acknowledged for timer %s", name)
                     return
                 time_now = int(time.time())
                 if time_now > time_last + intvl:
-                    self.log.debug("[{}] Executing timed function".format(time_now))
+                    self.log.debug("[%s] Executing timed function", time_now)
                     # TODO: The following if/else could probably be simplified somehow
                     if args is not None:
                         if kwargs:
@@ -1276,11 +1321,10 @@ class Runner(object):
                     # [1/3] Inform all threads (inside) about a stop signal.
                     # All threads with non-blocking funcs will be able to stop themselves
                     self.log.trace(
-                        "Raise stop signal: {}.{}() for {}".format(
-                            self.__actions[key]["signal"].raise_stop.__self__.__class__.__name__,
-                            self.__actions[key]["signal"].raise_stop.__name__,
-                            self.__threads[key].getName(),
-                        )
+                        "Raise stop signal: %s.%s() for %s",
+                        self.__actions[key]["signal"].raise_stop.__self__.__class__.__name__,
+                        self.__actions[key]["signal"].raise_stop.__name__,
+                        self.__threads[key].getName(),
                     )
                     self.__actions[key]["signal"].raise_stop()
                     # [2/3] Call external interrupters
@@ -1288,15 +1332,14 @@ class Runner(object):
                     # so that they are actually able to join
                     for interrupt in self.__actions[key]["interrupts"]:
                         self.log.trace(
-                            "Call INTERRUPT: {}.{}() for {}".format(
-                                interrupt.__self__.__class__.__name__,
-                                interrupt.__name__,
-                                self.__threads[key].getName(),
-                            )
+                            "Call INTERRUPT: %s.%s() for %s",
+                            interrupt.__self__.__class__.__name__,
+                            interrupt.__name__,
+                            self.__threads[key].getName(),
                         )
                         interrupt()
                     # [3/3] All blocking events inside the threads are gone, now join them
-                    self.log.trace("Joining {}".format(self.__threads[key].getName()))
+                    self.log.trace("Joining %s", self.__threads[key].getName())
                     self.__threads[key].join(timeout=0.1)
             # If all threads have died, exit
             if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
@@ -1319,6 +1362,7 @@ class Runner(object):
 # COMMAND LINE ARGUMENTS
 # -------------------------------------------------------------------------------------------------
 def get_version():
+    # type: () -> str
     """Return version information."""
     return """%(prog)s: Version %(version)s (%(url)s) by %(author)s""" % (
         {"prog": APPNAME, "version": VERSION, "url": APPREPO, "author": "cytopia"}
@@ -1326,12 +1370,14 @@ def get_version():
 
 
 def _args_check_color(value):
+    # type: (str) -> str
     if value not in ["auto", "always", "never"]:
         raise argparse.ArgumentTypeError("%s is an invalid color definition" % value)
     return value
 
 
 def _args_check_port(value):
+    # type: (str) -> int
     """Check arguments for invalid port number."""
     min_port = 1
     max_port = 65535
@@ -1343,6 +1389,7 @@ def _args_check_port(value):
 
 
 def _args_check_forwards(value):
+    # type: (str) -> str
     """Check forward argument (-L/-R) for correct pattern."""
     match = re.search(r"(.+):(.+)", value)
     if match is None or len(match.groups()) != 2:
@@ -1352,22 +1399,25 @@ def _args_check_forwards(value):
 
 
 def _args_check_rebind(value):
+    # type: (str) -> int
     """Check rebind argument for correct value."""
     intvalue = int(value)
     if intvalue < 0:
-        raise argparse.ArgumentTypeError("must be equal or greater than 0." % value)
+        raise argparse.ArgumentTypeError("must be equal or greater than 0. Got: %s" % value)
     return intvalue
 
 
 def _args_check_reconn(value):
+    # type: (str) -> int
     """Check reconn argument for correct value."""
     intvalue = int(value)
     if intvalue < 0:
-        raise argparse.ArgumentTypeError("must be equal or greater than 0." % value)
+        raise argparse.ArgumentTypeError("must be equal or greater than 0. Got: %s" % value)
     return intvalue
 
 
 def _args_check_robin_ports(value):
+    # type: (str) -> List[int]
     """Check round-robin argument for comma separated string or range."""
     mcomma = re.search(r"^[0-9]+(,([0-9]+))*$", value)
     mrange = re.search(r"^[0-9]+\-[0-9]+$", value)
@@ -1377,27 +1427,29 @@ def _args_check_robin_ports(value):
             raise argparse.ArgumentTypeError("%s is not a valid port specifier" % value)
 
     if mcomma:
-        ports = mcomma.group(0).split(",")
+        ports = [int(port) for port in mcomma.group(0).split(",")]
         for port in ports:
-            _args_check_port(port)
+            _args_check_port(str(port))
         return ports
 
     if mrange:
-        ranges = mrange.group(0).split("-")
-        if int(ranges[0]) >= (int(ranges[1]) + 1):
+        ranges = [int(r) for r in mrange.group(0).split("-")]
+        if ranges[0] >= (ranges[1] + 1):
             raise argparse.ArgumentTypeError(
                 "Left side of range must be smaller or equal than right side."
             )
         ports = []
-        for port in range(int(ranges[0]), int(ranges[1]) + 1):
-            _args_check_port(port)
+        for port in range(ranges[0], ranges[1] + 1):
+            print(type(port))
+            _args_check_port(str(port))
             ports.append(port)
         return ports
+
+    return []
 
 
 def _args_check_mutually_exclusive(parser, args):
     """Check mutually exclusive arguments."""
-
     # This is connect mode
     connect_mode = not args.listen and not args.zero and not args.local and not args.remote
 
@@ -1510,13 +1562,13 @@ def _args_check_mutually_exclusive(parser, args):
         sys.exit(1)
 
     # [ADVANCED] --wait
-    if args.wait is not False and (args.udp):
+    if args.wait is not False and args.udp:
         parser.print_usage()
         print(
             "%s: error: -w/--wait mutually excl. with -u/--udp" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
-    if args.wait is not False and not (connect_mode):
+    if args.wait is not False and not connect_mode:
         parser.print_usage()
         print(
             "%s: error: -w/--wait only works with connect mode" % (APPNAME), file=sys.stderr,
@@ -1531,7 +1583,7 @@ def _args_check_mutually_exclusive(parser, args):
             file=sys.stderr,
         )
         sys.exit(1)
-    if args.udp_ping_init is not False and not (args.udp):
+    if args.udp_ping_init is not False and not args.udp:
         parser.print_usage()
         print(
             "%s: error: --udp-ping-init only works with -u/--udp" % (APPNAME), file=sys.stderr,
@@ -1616,8 +1668,7 @@ client which connects to another server specified by
 address given via -L/--local addr:port.
 (I.e.: proxies a remote service to a local address)
 
-"""
-        % ({"prog": APPNAME}),
+""",
     )
     mode.add_argument(
         "-R",
@@ -1636,8 +1687,7 @@ incoming traffic and only allow outbound.
 The connection to your listening server is given by
 -R/--remote addr:port and the connection to the
 target machine via the positional arguments.
-"""
-        % ({"prog": APPNAME}),
+""",
     )
     optional.add_argument(
         "-e",
@@ -1909,7 +1959,7 @@ accidentally by other input.
 
     # Connect mode and Zero-I/O mode require hostname and port to be set
     connect_mode = not (args.listen or args.zero or args.local or args.remote)
-    if (connect_mode or args.zero) and not (args.hostname):
+    if (connect_mode or args.zero) and not args.hostname:
         parser.print_usage()
         print(
             "%s: error: the following arguments are required: hostname" % (APPNAME),
@@ -1929,6 +1979,7 @@ accidentally by other input.
 # MAIN ENTRYPOINT
 # -------------------------------------------------------------------------------------------------
 def main():
+    # type: () -> None
     """Run the program."""
     args = get_args()
     host = args.hostname
