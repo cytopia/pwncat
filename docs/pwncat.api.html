@@ -472,13 +472,13 @@ class LibSocket(object):
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
         except (OSError, socket.error) as error:
-            self.log.error(&#34;Connection error: %s&#34;, error)
+            self.log.warning(&#34;Connection error: %s&#34;, error)
             raise socket.error(error)
 
         # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = &#34;Connection was closed by self.&#34;
-            self.log.error(msg)
+            self.log.warning(msg)
             raise socket.error(msg)
 
         # If we&#39;re receiving data from a UDP client
@@ -3529,13 +3529,13 @@ def producer(self, ssig):
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
         except (OSError, socket.error) as error:
-            self.log.error(&#34;Connection error: %s&#34;, error)
+            self.log.warning(&#34;Connection error: %s&#34;, error)
             raise socket.error(error)
 
         # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = &#34;Connection was closed by self.&#34;
-            self.log.error(msg)
+            self.log.warning(msg)
             raise socket.error(msg)
 
         # If we&#39;re receiving data from a UDP client

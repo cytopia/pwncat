@@ -445,13 +445,13 @@ class LibSocket(object):
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
         except (OSError, socket.error) as error:
-            self.log.error("Connection error: %s", error)
+            self.log.warning("Connection error: %s", error)
             raise socket.error(error)
 
         # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = "Connection was closed by self."
-            self.log.error(msg)
+            self.log.warning(msg)
             raise socket.error(msg)
 
         # If we're receiving data from a UDP client
