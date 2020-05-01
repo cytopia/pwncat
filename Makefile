@@ -73,7 +73,7 @@ pydocstyle:
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pydocstyle sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
-		&& pydocstyle -e /tmp/$(BINNAME).py'
+		&& pydocstyle --explain --config=setup.cfg /tmp/$(BINNAME).py'
 
 pylint:
 	@echo "# -------------------------------------------------------------------- #"
