@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.11-alpha
+
+#### Added
+- Python type coverage report
+
+
 ## Release 0.0.10-alpha
 
 #### Added

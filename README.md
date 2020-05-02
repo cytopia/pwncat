@@ -55,7 +55,7 @@
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=black"><img src="https://github.com/cytopia/pwncat/workflows/black/badge.svg" /></a></td>
       </tr>
       <tr>
-       <td><a href="https://github.com/python/mypy">mypy</a></td>
+       <td><a href="https://github.com/python/mypy">mypy</a> <sup>[1]</sup></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mypy"><img src="https://github.com/cytopia/pwncat/workflows/mypy/badge.svg" /></a></td>
       </tr>
       <tr>
@@ -115,6 +115,8 @@
   </tr>
  </tbody>
 <table>
+
+> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 92.13%)</strong></sup>
 
 
 #### Motivation
@@ -215,6 +217,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 Documentation will evolve over time.
 
 * API docs can be found here: [pwncat.api.html](https://cytopia.github.io/pwncat/pwncat.api.html)
+* Python type coverage can be found here: [pwncat.type.html](https://cytopia.github.io/pwncat/pwncat.type.html)
 * HTML man page can be found here: [pwncat.man.html](https://cytopia.github.io/pwncat/pwncat.man.html)
 * Raw man page can be found here: [pwncat.1](man/pwncat.1)
 

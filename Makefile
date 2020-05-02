@@ -249,13 +249,35 @@ man: $(BINPATH)$(BINNAME)
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).man.html'
 
 docs:
+	@# Generate pdoc API page
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		pip install pdoc3 \
 		&& mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
-		&& pdoc -f -o $(DOCPATH) --html --config show_inherited_members=False /tmp/$(BINNAME).py \
+		&& pdoc3 -f -o $(DOCPATH) --html --config show_inherited_members=False /tmp/$(BINNAME).py \
 		&& mv $(DOCPATH)$(BINNAME).html $(DOCPATH)$(BINNAME).api.html \
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).api.html'
+	@# Generate mypy code coverage page
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data -w /data -e UID=$(UID) -e GID=${GID} --entrypoint= cytopia/mypy sh -c ' \
+		mypy --strict --show-error-context --show-error-codes --pretty --config-file setup.cfg --html-report tmp $(BINPATH)$(BINNAME) \
+		&& cp -f tmp/mypy-html.css docs/css/mypy.css \
+		&& cat tmp/index.html \
+			| sed "s|mypy-html.css|css/mypy.css|g" \
+			| sed "s|<a.*</a>|bin/pwncat|g" \
+			> docs/pwncat.type.html \
+		&& cat tmp/html/bin/pwncat.html \
+			| sed "s|../../mypy-html.css|mypy.css|g" \
+			| sed "s|__main__|pwncat|g" \
+			>> docs/pwncat.type.html \
+		&& chown $${UID}:$${GID} docs/pwncat.type.html \
+		&& chown $${UID}:$${GID} docs/css/mypy.css \
+		&& rm -r tmp/'
+	@# Update code coverage in README.md
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data -w /data python:3-alpine sh -c ' \
+		apk add bc \
+		&& percent=$$(grep "% imprecise" docs/pwncat.type.html | grep "th" | grep -Eo "[.0-9]+") \
+		&& coverage=$$(echo "100 - $${percent}" | bc) \
+		&& sed -i "s/fully typed: \([.0-9]*\)/fully typed: $${coverage}/g" README.md'
 
 
 # -------------------------------------------------------------------------------------------------
