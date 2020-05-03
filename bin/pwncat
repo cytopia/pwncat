@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Python netcat re-implementation."""
+"""pwncat."""
 
 # Main sections in this file:
 # ---------------------------
 # 1. Data structure types
 # 2. Library classes
 # 3. Network
-# 4. Netcat plugins
-# 5. Netcat plugin runner
+# 4. Plugins
+# 5. Plugin runner
 # 6. Command line arguments
 # 7. Main entrypoint
 
@@ -53,7 +53,18 @@ TIMEOUT_READ_STDIN = 0.1
 TIMEOUT_RECV_SOCKET = 0.1
 TIMEOUT_RECV_SOCKET_RETRY = 2
 
+# https://docs.python.org/3/library/subprocess.html#popen-constructor
+# * 0 means unbuffered (read and write are one system call and can return short)
+# * 1 means line buffered (only usable if universal_newlines=True i.e., in a text mode)
+# * any other positive value means use a buffer of approximately that size
+# * negative bufsize (the default) means the system default of io.DEFAULT_BUFFER_SIZE will be used.
+# TODO: should I use 'bufsize=1'?
+POPEN_BUFSIZE = -1
+
+# https://docs.python.org/3/library/socket.html#socket.socket.recv
 RECV_BUFSIZE = 8192
+
+# https://docs.python.org/3/library/socket.html#socket.socket.listen
 LISTEN_BACKLOG = 0
 
 
@@ -66,22 +77,14 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# STRUCT: (1/6) DSRunnerAction
+# [1/7 DATA STRUCTURE TYPES]: (1/8) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
-class DSRunnerAction(object):
+class DsRunnerAction(object):
     """A type-safe data structure for Action functions for the Runner class."""
 
-    def __init__(
-        self,
-        producer,  # type: Callable[[], Iterator[str]]
-        consumer,  # type: Callable[[str], None]
-        interrupts,  # type: List[Callable[[], None]]
-    ):
-        # type: (...) -> None
-        self.__producer = producer
-        self.__consumer = consumer
-        self.__interrupts = interrupts
-
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
     @property
     def producer(self):
         # type: () -> Callable[[], Iterator[str]]
@@ -100,30 +103,30 @@ class DSRunnerAction(object):
         """`List[Callable[[], None]]`: List of interrupt functions."""
         return self.__interrupts
 
-
-# -------------------------------------------------------------------------------------------------
-# STRUCT: (2/6) DSRunnerTimer
-# -------------------------------------------------------------------------------------------------
-class DSRunnerTimer(object):
-    """A type-safe data structure for Timer functions for the Runner class."""
-
+    # --------------------------------------------------------------------------
+    # Contrcutor
+    # --------------------------------------------------------------------------
     def __init__(
         self,
-        action,  # type: Callable[..., None]
-        intvl,  # type: int
-        args,  # type: Tuple[Any, ...]
-        kwargs,  # type: Dict[str, Any]
-        signal,  # type: StopSignal
+        producer,  # type: Callable[[], Iterator[str]]
+        consumer,  # type: Callable[[str], None]
+        interrupts,  # type: List[Callable[[], None]]
     ):
         # type: (...) -> None
-        assert type(intvl) is int, type(intvl)
-        assert type(kwargs) is dict, type(kwargs)
-        self.__action = action
-        self.__intvl = intvl
-        self.__args = args
-        self.__kwargs = kwargs
-        self.__signal = signal
+        self.__producer = producer
+        self.__consumer = consumer
+        self.__interrupts = interrupts
 
+
+# -------------------------------------------------------------------------------------------------
+# [1/7 DATA STRUCTURE TYPES]: (2/8) DsRunnerTimer
+# -------------------------------------------------------------------------------------------------
+class DsRunnerTimer(object):
+    """A type-safe data structure for Timer functions for the Runner class."""
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
     @property
     def action(self):
         # type: () -> Callable[..., None]
@@ -154,26 +157,36 @@ class DSRunnerTimer(object):
         """`StopSignal`: StopSignal instance."""
         return self.__signal
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(
+        self,
+        action,  # type: Callable[..., None]
+        intvl,  # type: int
+        args,  # type: Tuple[Any, ...]
+        kwargs,  # type: Dict[str, Any]
+        signal,  # type: StopSignal
+    ):
+        # type: (...) -> None
+        assert type(intvl) is int, type(intvl)
+        assert type(kwargs) is dict, type(kwargs)
+        self.__action = action
+        self.__intvl = intvl
+        self.__args = args
+        self.__kwargs = kwargs
+        self.__signal = signal
+
 
 # -------------------------------------------------------------------------------------------------
-# STRUCT: (3/6) DSSockOpts
+# [1/7 DATA STRUCTURE TYPES]: (3/8) DsSock
 # -------------------------------------------------------------------------------------------------
-class DSSockOpts(object):
-    """A type-safe data structure for LibSocket."""
+class DsSock(object):
+    """A type-safe data structure for DsSock options."""
 
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, udp):
-        # type: (int, int, Optional[float], bool, bool) -> None
-        assert type(bufsize) is int, type(bufsize)
-        assert type(backlog) is int, type(backlog)
-        assert type(recv_timeout) is float, type(recv_timeout)
-        assert type(nodns) is bool, type(nodns)
-        assert type(udp) is bool, type(udp)
-        self.__bufsize = bufsize
-        self.__backlog = backlog
-        self.__recv_timeout = recv_timeout
-        self.__nodns = nodns
-        self.__udp = udp
-
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
     @property
     def bufsize(self):
         # type: () -> int
@@ -204,43 +217,57 @@ class DSSockOpts(object):
         """`bool`: Determines if we use TCP or UDP."""
         return self.__udp
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, bufsize, backlog, recv_timeout, nodns, udp):
+        # type: (int, int, Optional[float], bool, bool) -> None
+        assert type(bufsize) is int, type(bufsize)
+        assert type(backlog) is int, type(backlog)
+        assert type(recv_timeout) is float, type(recv_timeout)
+        assert type(nodns) is bool, type(nodns)
+        assert type(udp) is bool, type(udp)
+        self.__bufsize = bufsize
+        self.__backlog = backlog
+        self.__recv_timeout = recv_timeout
+        self.__nodns = nodns
+        self.__udp = udp
+
 
 # -------------------------------------------------------------------------------------------------
-# STRUCT: (4/6) DSPwncatCliOpts
+# [1/7 DATA STRUCTURE TYPES]: (4/8) DsPluginNetworkSock
 # -------------------------------------------------------------------------------------------------
-class DSPwncatSockOpts(DSSockOpts):
-    """A type-safe data structure for Pwncat socket options."""
+class DsPluginNetworkSock(DsSock):
+    """A type-safe data structure for PluginNetwork socket options."""
 
-    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, udp):
-        # type: (int, int, Optional[float], int, bool, bool) -> None
-        assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
-        self.__recv_timeout_retry = recv_timeout_retry
-        super(DSPwncatSockOpts, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)
-
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
     @property
     def recv_timeout_retry(self):
         # type: () -> int
         """`int`: How many times to retry receiving if stop signal was raised."""
         return self.__recv_timeout_retry
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, udp):
+        # type: (int, int, Optional[float], int, bool, bool) -> None
+        assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
+        self.__recv_timeout_retry = recv_timeout_retry
+        super(DsPluginNetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)
+
 
 # -------------------------------------------------------------------------------------------------
-# STRUCT: (5/6) DSPwncatCliOpts
+# [1/7 DATA STRUCTURE TYPES]: (5/8) DsPluginNetworkCli
 # -------------------------------------------------------------------------------------------------
-class DSPwncatCliOpts(object):
-    """A type-safe data structure for Pwncat client options."""
+class DsPluginNetworkCli(object):
+    """A type-safe data structure for PluginNetwork client options."""
 
-    def __init__(self, reconn, reconn_wait, reconn_robin):
-        # type: (int, float, List[int]) -> None
-        assert type(reconn) is int, type(reconn)
-        assert type(reconn_wait) is float, type(reconn_wait)
-        assert type(reconn_robin) is list, type(reconn_robin)
-        for i in reconn_robin:
-            assert type(i) is int, type(i)
-        self.__reconn = reconn
-        self.__reconn_wait = reconn_wait
-        self.__reconn_robin = reconn_robin
-
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
     @property
     def reconn(self):
         # type: () -> int
@@ -262,7 +289,6 @@ class DSPwncatCliOpts(object):
     @reconn_wait.setter
     def reconn_wait(self, value):
         # type: (float) -> None
-        """Change reconn_wait value."""
         assert type(value) is float, type(value)
         self.__reconn_wait = value
 
@@ -272,27 +298,30 @@ class DSPwncatCliOpts(object):
         """`[int]`: List of alternating re-connection ports."""
         return self.__reconn_robin
 
-
-# -------------------------------------------------------------------------------------------------
-# STRUCT: (6/6) DSPwncatSrvOpts
-# -------------------------------------------------------------------------------------------------
-class DSPwncatSrvOpts(object):
-    """A type-safe data structure for Pwncat server options."""
-
-    def __init__(self, keep_open, rebind, rebind_wait, rebind_robin):
-        # type: (bool, int, float, List[int]) -> None
-        """Construct pwncat server options."""
-        assert type(keep_open) is bool, type(keep_open)
-        assert type(rebind) is int, type(rebind)
-        assert type(rebind_wait) is float, type(rebind_wait)
-        assert type(rebind_robin) is list, type(rebind_robin)
-        for i in rebind_robin:
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, reconn, reconn_wait, reconn_robin):
+        # type: (int, float, List[int]) -> None
+        assert type(reconn) is int, type(reconn)
+        assert type(reconn_wait) is float, type(reconn_wait)
+        assert type(reconn_robin) is list, type(reconn_robin)
+        for i in reconn_robin:
             assert type(i) is int, type(i)
-        self.keep_open = keep_open
-        self.__rebind = rebind
-        self.__rebind_wait = rebind_wait
-        self.__rebind_robin = rebind_robin
+        self.__reconn = reconn
+        self.__reconn_wait = reconn_wait
+        self.__reconn_robin = reconn_robin
 
+
+# -------------------------------------------------------------------------------------------------
+# [1/7 DATA STRUCTURE TYPES]: (6/8) DsPluginNetworkSrv
+# -------------------------------------------------------------------------------------------------
+class DsPluginNetworkSrv(object):
+    """A type-safe data structure for PluginNetwork server options."""
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
     @property
     def keep_open(self):
         # type: () -> bool
@@ -324,6 +353,104 @@ class DSPwncatSrvOpts(object):
         """`[int]`: List of alternating rebind ports."""
         return self.__rebind_robin
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, keep_open, rebind, rebind_wait, rebind_robin):
+        # type: (bool, int, float, List[int]) -> None
+        assert type(keep_open) is bool, type(keep_open)
+        assert type(rebind) is int, type(rebind)
+        assert type(rebind_wait) is float, type(rebind_wait)
+        assert type(rebind_robin) is list, type(rebind_robin)
+        for i in rebind_robin:
+            assert type(i) is int, type(i)
+        self.keep_open = keep_open
+        self.__rebind = rebind
+        self.__rebind_wait = rebind_wait
+        self.__rebind_robin = rebind_robin
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/7 DATA STRUCTURE TYPES]: (7/8) DsPluginOutput
+# -------------------------------------------------------------------------------------------------
+class DsPluginOutput(object):
+    """A type-safe data structure for PluginOutput options."""
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def enc(self):
+        # type: () -> StringEncoder
+        """`StringEncoder`: String encoder instance."""
+        return self.__enc
+
+    @property
+    def crlf(self):
+        # type: () -> bool
+        """`bool`: Convert LF to CRLF?"""
+        return self.__crlf
+
+    @property
+    def input_timeout(self):
+        # type: () -> Optional[float]
+        """`float`: Input timeout in seconds for non-blocking read or `None` for blocking."""
+        return self.__input_timeout
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, encoder, crlf, input_timeout):
+        # type: (StringEncoder, bool, Optional[float]) -> None
+        super(DsPluginOutput, self).__init__()
+        self.__enc = encoder
+        self.__crlf = crlf
+        self.__input_timeout = input_timeout
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/7 DATA STRUCTURE TYPES]: (8/8) DsPluginCommand
+# -------------------------------------------------------------------------------------------------
+class DsPluginCommand(object):
+    """A type-safe data structure for PluginCommand options."""
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def enc(self):
+        # type: () -> StringEncoder
+        """`StringEncoder`: Instance of StringEncoder."""
+        return self.__enc
+
+    @property
+    def executable(self):
+        # type: () -> str
+        """`srt`: Name or path of executable to run (e.g.: `/bin/bash`)."""
+        return self.__executable
+
+    @property
+    def bufsize(self):
+        # type: () -> int
+        """`int`: `subprocess.Popen` bufsize.
+
+        https://docs.python.org/3/library/subprocess.html#popen-constructor
+        0 means unbuffered (read and write are one system call and can return short)
+        1 means line buffered (only usable if universal_newlines=True i.e., in a text mode)
+        any other positive value means use a buffer of approximately that size
+        negative bufsize (the default) means system default of io.DEFAULT_BUFFER_SIZE will be used.
+        """
+        return self.__bufsize
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, enc, executable, bufsize):
+        # type: (StringEncoder, str, int) -> None
+        self.__enc = enc
+        self.__executable = executable
+        self.__bufsize = bufsize
+
 
 # #################################################################################################
 # #################################################################################################
@@ -334,7 +461,7 @@ class DSPwncatSrvOpts(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: TraceLogger
+# [2/7 LIBRARY CLASSES]: (1/4) TraceLogger
 # -------------------------------------------------------------------------------------------------
 class TraceLogger(logging.getLoggerClass()):  # type: ignore
     """Extend Python's default logger class with TRACE level logging."""
@@ -342,6 +469,9 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
     LEVEL_NUM = 9
     LEVEL_NAME = "TRACE"
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
     def __init__(self, name, level=logging.NOTSET):
         # type: (str, int) -> None
         """Instantiate TraceLogger class.
@@ -353,6 +483,9 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
         super(TraceLogger, self).__init__(name, level)
         logging.addLevelName(self.LEVEL_NUM, self.LEVEL_NAME)
 
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
     def trace(self, msg, *args, **kwargs):
         # type: (str, Any, Any) -> None
         """Set custom log level for TRACE.
@@ -368,7 +501,7 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: ColoredLogFormatter
+# [2/7 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
 # -------------------------------------------------------------------------------------------------
 class ColoredLogFormatter(logging.Formatter):
     """Custom log formatter which adds different details and color support."""
@@ -383,6 +516,9 @@ class ColoredLogFormatter(logging.Formatter):
     COLOR_DEF = COLORS[logging.DEBUG]
     COLOR_RST = "\x1b[0m"
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
     def __init__(self, color, loglevel):
         # type: (str, int) -> None
         """Instantiate ColoredLogFormatter class.
@@ -396,6 +532,20 @@ class ColoredLogFormatter(logging.Formatter):
         self.loglevel = loglevel
         self.tty = sys.stderr.isatty()
 
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
+    def format(self, record):
+        # type: (logging.LogRecord) -> str
+        """Apply custom formatting to log message."""
+        log_fmt = self.__get_format()
+        log_fmt = self.__colorize(record.levelno, log_fmt)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+    # --------------------------------------------------------------------------
+    # Private Functions
+    # --------------------------------------------------------------------------
     def __get_format(self):
         # type: () -> str
         """Return format string based on currently applied log level."""
@@ -420,17 +570,9 @@ class ColoredLogFormatter(logging.Formatter):
 
         return self.COLORS.get(level, self.COLOR_DEF) + fmt + self.COLOR_RST
 
-    def format(self, record):
-        # type: (logging.LogRecord) -> str
-        """Apply custom formatting to log message."""
-        log_fmt = self.__get_format()
-        log_fmt = self.__colorize(record.levelno, log_fmt)
-        formatter = logging.Formatter(log_fmt)
-        return formatter.format(record)
-
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: StringEncoder
+# [2/7 LIBRARY CLASSES]: (3/4) StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
     """Takes care about Python 2/3 string encoding/decoding.
@@ -442,11 +584,17 @@ class StringEncoder(object):
     # https://stackoverflow.com/questions/606191/27527728#27527728
     codec = "cp437"
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
     def __init__(self):
         # type: () -> None
         """Create a StringEncoder instance which converts str/bytes according to Python version."""
         self.py3 = sys.version_info >= (3, 0)  # type: bool
 
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
     def encode(self, data):
         # type: (str) -> bytes
         """Convert string into a byte type for Python3."""
@@ -463,16 +611,22 @@ class StringEncoder(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: StopSignal
+# [2/7 LIBRARY CLASSES]: (4/4): StopSignal
 # -------------------------------------------------------------------------------------------------
 class StopSignal(object):
     """Provide a simple boolean switch."""
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
     def __init__(self):
         # type: () -> None
         """Create a StopSignal instance."""
         self.__stop = False
 
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
     def has_stop(self):
         # type: () -> bool
         """Check if a stop signal has been raised."""
@@ -493,38 +647,24 @@ class StopSignal(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: LibSocket
+# [3/7 NETWORK]: (1/1) Sock
 # -------------------------------------------------------------------------------------------------
-
-
-class SockExcTimeout(Exception):
-    """Raise when a non-blocking socket receive times out."""
-
-    # TODO: Use this exception
-
-
-class SockExcUpstreamGone(Exception):
-    """Raise when the upstream of a socket is gone."""
-
-    # TODO: Use this exception
-
-
-class PwncatSocket(object):
+class Sock(object):
     """Provides an abstracted server client socket for TCP and UDP."""
 
     __sock = None  # type: socket.socket
     __conn = None  # type: socket.socket
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Constructor / Destructor
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def __init__(self, encoder, options):
-        # type: (StringEncoder, DSSockOpts) -> None
-        """Instantiate LibSocket class.
+        # type: (StringEncoder, DsSock) -> None
+        """Instantiate Sock class.
 
         Args:
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
-            options (DSSockOpts): Instance of DSSockOpts.
+            options (DsSock): Instance of DsSock.
         """
         self.__log = logging.getLogger(__name__)
         self.__enc = encoder
@@ -537,10 +677,9 @@ class PwncatSocket(object):
         self.__remote_addr = None  # type: Optional[str]
         self.__remote_port = None  # type: Optional[int]
 
-    # ------------------------------------------------------------------------------
-    # Public  Send / Receive Functions
-    # ------------------------------------------------------------------------------
-
+    # --------------------------------------------------------------------------
+    # Public Send / Receive Functions
+    # --------------------------------------------------------------------------
     def send(self, data):
         # type: (str) -> int
         """Send data through a connected socket.
@@ -662,10 +801,9 @@ class PwncatSocket(object):
         self.__log.trace("Received: %s", repr(data))  # type: ignore
         return data
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Public Functions
-    # ------------------------------------------------------------------------------
-
+    # --------------------------------------------------------------------------
     def gethostbyname(self, host, port):
         # type: (Optional[str], int) -> str
         """Translate hostname into IP address.
@@ -832,10 +970,9 @@ class PwncatSocket(object):
             # Socket does not exist (anymore)
             pass
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Private Functions (general)
-    # ------------------------------------------------------------------------------
-
+    # --------------------------------------------------------------------------
     def __create_socket(self):
         # type: () -> socket.socket
         """Create TCP or UDP socket.
@@ -896,10 +1033,9 @@ class PwncatSocket(object):
         except (OSError, socket.error) as error:
             self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Private Functions (server)
-    # ------------------------------------------------------------------------------
-
+    # --------------------------------------------------------------------------
     def __bind(self, sock, addr, port):
         # type: (socket.socket, str, int) -> bool
         """Bind the socket to an address.
@@ -964,10 +1100,9 @@ class PwncatSocket(object):
         self.__log.info("Client connected from %s:%d", self.__remote_addr, self.__remote_port)
         return conn
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Private Functions (client)
-    # ------------------------------------------------------------------------------
-
+    # --------------------------------------------------------------------------
     def __connect(self, sock, addr, port):
         # type: (socket.socket, str, int) -> None
         """Connect to a remote socket at given address and port (TCP-only).
@@ -996,13 +1131,13 @@ class PwncatSocket(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   4 / 7   N E T C A T   P L U G I N S
+# ###   4 / 7   P L U G I N S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# ABSTRACT CLASS: Plugin
+# [4/7 PLUGINS]: (1/4): Plugin
 # -------------------------------------------------------------------------------------------------
 class Plugin(ABC):  # type: ignore
     """Abstract class to for netcat plugins.
@@ -1020,18 +1155,9 @@ class Plugin(ABC):  # type: ignore
     in a way that it is able to act on the event which the "interrupt" func emitted.
     """
 
-    def __init__(self, ssig, opts):
-        # type: (StopSignal, Dict[str, Any]) -> None
-        """Set specific options for this plugin.
-
-        Args:
-            ssig (StopSignal): StopSignal instance used by the interrupter.
-            opts (dict): Custom plugin option.
-        """
-        super(Plugin, self).__init__()
-        self.__ssig = ssig
-        self.__opts = opts
-
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
     @property
     def ssig(self):
         # type: () -> StopSignal
@@ -1039,11 +1165,29 @@ class Plugin(ABC):  # type: ignore
         return self.__ssig
 
     @property
-    def opts(self):
-        # type: () -> Dict[str, Any]
-        """`dict`: Custom plugin options."""
-        return self.__opts
+    def log(self):
+        # type: () -> logging.Logger
+        """`TraceLogger`: Logger instance."""
+        return self.__log
 
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    @abstractmethod
+    def __init__(self, ssig):
+        # type: (StopSignal) -> None
+        """Set specific options for this plugin.
+
+        Args:
+            ssig (StopSignal): StopSignal instance used by the interrupter.
+        """
+        super(Plugin, self).__init__()
+        self.__ssig = ssig
+        self.__log = logging.getLogger(__name__)
+
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
     @abstractmethod
     def producer(self):
         # type: () -> Iterator[str]
@@ -1079,24 +1223,14 @@ class Plugin(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: Pwncat
+# [4/7 PLUGINS]: (2/4) PluginNetwork
 # -------------------------------------------------------------------------------------------------
+class PluginNetwork(Plugin):
+    """Pwncat implementation based on custom Socket library."""
 
-# TODO: This has an invalid signature, use options={} to distribute vars
-# TODO: Why does Python not complain about it???
-class Pwncat(Plugin):
-    """Pwncat implementation based on custom Socket library.
-
-    Attributes:
-        role (str): Determines role: either "server" or "client".
-        __sock_opts (DSPwncatSockOpts): Hold socket settings.
-        __srv_opts (DSPwncatSrvOpts):   Hold server settings.
-        __cli_opts (DSPwncatCliOpts):   Hold client settings.
-    """
-
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Constructor / Destructor
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def __init__(
         self,
         ssig,  # type: StopSignal
@@ -1104,9 +1238,9 @@ class Pwncat(Plugin):
         host,  # type: str
         port,  # type: int
         role,  # type: str
-        srv_opts,  # type: DSPwncatSrvOpts
-        cli_opts,  # type: DSPwncatCliOpts
-        sock_opts,  # type: DSPwncatSockOpts
+        srv_opts,  # type: DsPluginNetworkSrv
+        cli_opts,  # type: DsPluginNetworkCli
+        sock_opts,  # type: DsPluginNetworkSock
     ):
         # type: (...) -> None
         """Create a Pwncat instance of either a server or a client.
@@ -1117,18 +1251,15 @@ class Pwncat(Plugin):
             host (str): The hostname to resolve.
             port (int): The port of the hostname to resolve.
             role (str): Either "server" or "client".
-            srv_opts (DSPwncatSrvOpts):   Options for the server.
-            cli_opts (DSPwncatCliOpts):   Options for the client.
-            sock_opts (DSPwncatSockOpts): Options to parse back to LibSocket.
+            srv_opts (DsPluginNetworkSrv):   Options for the server.
+            cli_opts (DsPluginNetworkCli):   Options for the client.
+            sock_opts (DsPluginNetworkSock): Options to parse back to Sock.
         """
         assert role in ["server", "client"], "The role must be 'server' or 'client'."
-        super(Pwncat, self).__init__(ssig, {})
+        super(PluginNetwork, self).__init__(ssig)
 
-        # TODO: make these private variables! (also everywhere in all classes)
-        self.role = role
-        self.log = logging.getLogger(__name__)
-
-        self.__net = PwncatSocket(encoder, sock_opts)
+        self.__role = role
+        self.__net = Sock(encoder, sock_opts)
         self.__sock_opts = sock_opts
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
@@ -1150,10 +1281,9 @@ class Pwncat(Plugin):
                 if not self.__client_reconnect_to_server():
                     sys.exit(1)
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Public Functions
-    # ------------------------------------------------------------------------------
-
+    # --------------------------------------------------------------------------
     def producer(self):
         # type: () -> Iterator[str]
         """Network receive generator which hooks into the receive function and adds features.
@@ -1196,9 +1326,9 @@ class Pwncat(Plugin):
                 if self.ssig.has_stop():
                     return
                 # Do we re-accept new clients?
-                if self.role == "server" and self.__server_reaccept_from_client():
+                if self.__role == "server" and self.__server_reaccept_from_client():
                     continue
-                if self.role == "client" and self.__client_reconnect_to_server():
+                if self.__role == "client" and self.__client_reconnect_to_server():
                     continue
                 return
 
@@ -1219,9 +1349,9 @@ class Pwncat(Plugin):
         # TODO: Check if this is required
         self.ssig.raise_stop()
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Private Functions
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def __client_reconnect_to_server(self):
         # type: () -> bool
         """Ensure the client re-connects to the remote server, if the remote server hang up.
@@ -1230,7 +1360,7 @@ class Pwncat(Plugin):
             bool: Returns `True` on success and `False` on failure or stop signal requested.
         """
         assert not self.__sock_opts.udp, "This should have been caught during arg check."
-        assert self.role == "client", "This should have been caught during arg check."
+        assert self.__role == "client", "This should have been caught during arg check."
 
         # reconn < 0 (endlessly)
         # reconn > 0 (reconnect until counter reaches zero)
@@ -1272,7 +1402,7 @@ class Pwncat(Plugin):
         """
         # Do not re-accept for UDP
         assert not self.__sock_opts.udp, "This should have been caught during arg check."
-        assert self.role == "server", "This should have been caught during arg check."
+        assert self.__role == "server", "This should have been caught during arg check."
 
         # [NO] Do not re-accept
         if not self.__srv_opts.keep_open:
@@ -1287,67 +1417,33 @@ class Pwncat(Plugin):
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: PluginOutput (Module for: user-input -> send -> receive -> output)
+# [4/7 PLUGINS]: (3/4) PluginOutput
 # -------------------------------------------------------------------------------------------------
 class PluginOutput(Plugin):
     """Implement basic input/output plugin.
 
     This plugin provides a generator which continuously reads from stdin
-    (non-blocking on POSIX and blocking on windows) as well as a
+    (non-blocking on POSIX and blocking on Windows) as well as a
     callback that writes to stdout.
     """
 
-    # Replace '\n' linefeeds (if they exist) with CRLF ('\r\n')?
-    crlf = False
-
-    # Non-blocking read from stdin achieved via timeout.
-    # Specify timeout in seconds.
-    input_timeout = None
-
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Constructor / Destructor
-    # ------------------------------------------------------------------------------
-    def __init__(self, ssig, options):
-        # type: (StopSignal, Dict[str, Any]) -> None
-        """Set specific options for this plugin."""
-        super(PluginOutput, self).__init__(ssig, options)
-        assert "encoder" in options
-        assert "input_timeout" in options
-        assert "crlf" in options
+    # --------------------------------------------------------------------------
+    def __init__(self, ssig, opts):
+        # type: (StopSignal, DsPluginOutput) -> None
+        """Set specific options for this plugin.
 
-        self.log = logging.getLogger(__name__)
-        self.enc = options["encoder"]
-        if "input_timeout" in options:
-            self.input_timeout = options["input_timeout"]
-        if "crlf" in options:
-            self.crlf = options["crlf"]
+        Args:
+            ssig (StopSignal): StopSignal instance.
+            opts (DsPluginOutput): Plugin options.
+        """
+        super(PluginOutput, self).__init__(ssig)
+        self.__opts = opts
 
-    # ------------------------------------------------------------------------------
-    # Private Functions
-    # ------------------------------------------------------------------------------
-    def __use_linefeeds(self, data):
-        # type: (str) -> str
-        """Ensure the user input has the desired linefeeds --crlf or not."""
-        # No replacement requested or already CRLF
-        if not self.crlf or data.endswith("\r\n"):
-            return data
-        # Replace current newline character with CRLF
-        if data.endswith("\n"):
-            self.log.debug("Replacing LF with CRLF")
-            return data[:-1] + "\r\n"
-        # Otherwise just return as it is
-        return data
-
-    def __set_input_timeout(self):
-        # type: () -> None
-        """Throws a catchable TimeoutError exception for sys.stdin after timeout (Linux only)."""
-        if not select.select([sys.stdin], [], [], self.input_timeout)[0]:
-            raise TimeoutError("timed out")
-
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Public Functions
-    # ------------------------------------------------------------------------------
-
+    # --------------------------------------------------------------------------
     def producer(self):
         # type: () -> Iterator[str]
         """Constantly ask for user input.
@@ -1402,94 +1498,88 @@ class PluginOutput(Plugin):
         # TODO: Check if this is required???
         self.ssig.raise_stop()
 
+    # --------------------------------------------------------------------------
+    # Private Functions
+    # --------------------------------------------------------------------------
+    def __use_linefeeds(self, data):
+        # type: (str) -> str
+        """Ensure the user input has the desired linefeeds --crlf or not."""
+        # No replacement requested or already CRLF
+        if not self.__opts.crlf or data.endswith("\r\n"):
+            return data
+        # Replace current newline character with CRLF
+        if data.endswith("\n"):
+            self.log.debug("Replacing LF with CRLF")
+            return data[:-1] + "\r\n"
+        # Otherwise just return as it is
+        return data
+
+    def __set_input_timeout(self):
+        # type: () -> None
+        """Throws a catchable TimeoutError exception for sys.stdin after timeout (Linux only)."""
+        if not select.select([sys.stdin], [], [], self.__opts.input_timeout)[0]:
+            raise TimeoutError("timed out")
+
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: PluginCommand (Module for user-input -> send -> execute -> send-back -> output)
+# [4/7 PLUGINS]: (4/4) PluginCommand
 # -------------------------------------------------------------------------------------------------
 class PluginCommand(Plugin):
     """Implement command execution functionality.
 
     Attributes:
-        encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat)
-        executable (str): Executable to run
-        proc (subprocess.Popen): subprocess.Popen instance
+        proc (subprocess.Popen): subprocess.Popen instance.
     """
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Constructor / Destructor
-    # ------------------------------------------------------------------------------
-    def __init__(self, ssig, options):
-        # type: (StopSignal, Dict[str, Any]) -> None
+    # --------------------------------------------------------------------------
+    def __init__(self, ssig, opts):
+        # type: (StopSignal, DsPluginCommand) -> None
         """Set specific options for this plugin.
 
         Args:
             ssig (StopSignal): Instance of StopSignal.
-            options (dict): Custom module options.
+            opts (DsPluginCommand): Custom module options.
         """
+        super(PluginCommand, self).__init__(ssig)
+        self.__opts = opts
+        self.log.debug("Setting '%s' as executable", self.__opts.executable)
+
         # Define destructor
         atexit.register(self.__destruct__)
-        super(PluginCommand, self).__init__(ssig, options)
-
-        assert "encoder" in options
-        assert "executable" in options
-
-        self.log = logging.getLogger(__name__)
-        self.enc = options["encoder"]  # type: StringEncoder
-        self.executable = options["executable"]
-        self.log.debug("Setting '%s' as executable", self.executable)
 
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
             self.proc = Popen(
-                # TODO: should I also use 'bufsize=1'?
-                self.executable,
+                self.__opts.executable,
                 stdin=PIPE,
                 stdout=PIPE,
                 stderr=STDOUT,
+                bufsize=self.__opts.bufsize,
                 shell=False,
                 env=env,
             )
         except FileNotFoundError:
-            self.log.error("Specified executable '%s' not found", self.executable)
+            self.log.error("Specified executable '%s' not found", self.__opts.executable)
             sys.exit(1)
         # Python-2 compat (doesn't have FileNotFoundError)
         except OSError:
-            self.log.error("Specified executable '%s' not found", self.executable)
+            self.log.error("Specified executable '%s' not found", self.__opts.executable)
             sys.exit(1)
 
     def __destruct__(self):
         # type: () -> None
         """Destructor."""
         self.log.trace(  # type: ignore
-            "Killing executable: %s with pid %d", self.executable, self.proc.pid
+            "Killing executable: %s with pid %d", self.__opts.executable, self.proc.pid
         )
         self.proc.kill()
 
-    def __set_input_timeout(self, timeout=0.1):
-        # type: (float) -> None
-        """Throw a TimeOutError Exception for sys.stdin (Linux only)."""
-        # select((rlist, wlist, xlist, timeout)
-        # rlist: wait until ready for reading
-        # wlist: wait until ready for writing
-        # xlist: wait for an "exceptional condition"
-        if not select.select([self.proc.stdout], [], [], timeout)[0]:
-            raise TimeoutError("timed out")
-
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Public Functions
-    # ------------------------------------------------------------------------------
-    def interrupt(self):
-        # type: () -> None
-        """Stop function that can be called externally to close this instance."""
-        self.log.trace(  # type: ignore
-            "[PluginCommand] subprocess.kill() was raised by input_unterrupter()"
-        )
-        self.proc.kill()
-        # Raise stop signal
-        # TODO: Check if this is required???
-        self.ssig.raise_stop()
-
+    # --------------------------------------------------------------------------
     def producer(self):
         # type: () -> Iterator[str]
         """Constantly ask for input.
@@ -1503,21 +1593,12 @@ class PluginCommand(Plugin):
                 self.log.trace("Stop signal acknowledged in Command")  # type: ignore
                 return
             self.log.trace("Reading command output")  # type: ignore
-            # TODO: non-blocking read does not seem to work or?
-            # try:
-            # self.__set_input_timeout(timeout=1.5)
             data = self.proc.stdout.readline()  # Much better performance than self.proc.read(1)
-            # except TimeoutError:
-            #    if THREAD_TERMINATE:
-            #        return
-            #    # No input, just check again
-            #    #self.proc.stdout.flush()
-            #    continue
             self.log.trace("Command output: %s", repr(data))  # type: ignore
             if not data:
                 self.log.trace("Command output was empty. Exiting loop.")  # type: ignore
                 break
-            yield self.enc.decode(data)
+            yield self.__opts.enc.decode(data)
 
     def consumer(self, data):
         # type: (str) -> None
@@ -1527,31 +1608,40 @@ class PluginCommand(Plugin):
             data (str): Command to execute.
         """
         assert self.proc.stdin is not None
-        byte = self.enc.encode(data)
+        byte = self.__opts.enc.encode(data)
         self.log.trace("Appending to stdin: %s", repr(byte))  # type: ignore
         self.proc.stdin.write(byte)
         self.proc.stdin.flush()
 
+    def interrupt(self):
+        # type: () -> None
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace(  # type: ignore
+            "[PluginCommand] subprocess.kill() was raised by input_unterrupter()"
+        )
+        self.proc.kill()
+        # Raise stop signal
+        # TODO: Check if this is required???
+        self.ssig.raise_stop()
+
 
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   5 / 7   N E T C A T   P L U G I N   R U N N E R
+# ###   5 / 7   P L U G I N   R U N N E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: Runner
+# [5/7 PLUGIN RUNNER]: (1/1) Runner
 # -------------------------------------------------------------------------------------------------
-
-
 class Runner(object):
     """Runner class that takes care about putting everything into threads."""
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Constructor / Destructor
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def __init__(self):
         # type: () -> None
         """Create a new Runner object."""
@@ -1559,37 +1649,37 @@ class Runner(object):
 
         # Dict of producer/consumer action to run in a thread.
         # Each list item will be run in its own thread
-        self.__actions = {}  # type: Dict[str, DSRunnerAction]
+        self.__actions = {}  # type: Dict[str, DsRunnerAction]
 
         # Dict of timed function definition to run in a thread.
         # Each list item will be run in its own thread.
-        self.__timers = {}  # type: Dict[str, DSRunnerTimer]
+        self.__timers = {}  # type: Dict[str, DsRunnerTimer]
 
         # A dict which holds the threads created from actions.
         # The name is based on the __actions name
         # {"name": "<thread>"}
         self.__threads = {}  # type: Dict[str, threading.Thread]
 
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     # Public Functions
-    # ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def add_action(self, name, action):
-        # type: (str, DSRunnerAction) -> None
+        # type: (str, DsRunnerAction) -> None
         """Add a function to the producer/consumer thread pool runner.
 
         Args:
             name (str): The name for the added action (will be used for logging the tread name).
-            action (DSRunnerAction): Instance of DSRunnerAction.
+            action (DsRunnerAction): Instance of DSRunnerAction.
         """
         self.__actions[name] = action
 
     def add_timer(self, name, timer):
-        # type: (str, DSRunnerTimer) -> None
+        # type: (str, DsRunnerTimer) -> None
         """Add a function to the timer thread pool runner.
 
         Args:
             name (str): The name for the added timer (will be used for logging the thread name).
-            timer (DSRunnerTimer): Instance of DSRunnerTimer.
+            timer (DsRunnerTimer): Instance of DsRunnerTimer.
         """
         self.__timers[name] = timer
 
@@ -1719,7 +1809,7 @@ class Runner(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# FUNCTIONS: 1/2 HELPER FUNCTIONS
+# [6/7 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
 # -------------------------------------------------------------------------------------------------
 def get_version():
     # type: () -> str
@@ -1912,7 +2002,7 @@ def _args_check_mutually_exclusive(parser, args):
 
 
 # -------------------------------------------------------------------------------------------------
-# FUNCTIONS: 2/2   A R G U M E N T   P A R S E R
+# [6/7 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
 # -------------------------------------------------------------------------------------------------
 def get_args():
     # type: () -> argparse.Namespace
@@ -2308,7 +2398,7 @@ accidentally by other input.
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# MAIN ENTRYPOINT: 1/2 main()
+# [7/7 MAIN ENTRYPOINT]: (1/2) main
 # -------------------------------------------------------------------------------------------------
 def main():
     # type: () -> None
@@ -2318,7 +2408,7 @@ def main():
     port = args.port
 
     # Set pwncat options
-    sock_opts = DSPwncatSockOpts(
+    sock_opts = DsPluginNetworkSock(
         RECV_BUFSIZE,
         LISTEN_BACKLOG,
         TIMEOUT_RECV_SOCKET,
@@ -2326,8 +2416,8 @@ def main():
         args.nodns,
         args.udp,
     )
-    srv_opts = DSPwncatSrvOpts(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)
-    cli_opts = DSPwncatCliOpts(args.reconn, args.reconn_wait, args.reconn_robin)
+    srv_opts = DsPluginNetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)
+    cli_opts = DsPluginNetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # "wait": args.wait,
     # "udp_ping_init": args.udp_ping_init,
@@ -2358,26 +2448,17 @@ def main():
     logger.addHandler(handler)
 
     # Initialize encoder
-    encoder = StringEncoder()
+    enc = StringEncoder()
 
     # initialize StopSignal
     ssig = StopSignal()
 
     # Use command modulde
     if args.cmd:
-        module_opts = {
-            "encoder": encoder,
-            "executable": args.cmd,
-        }
-        mod = PluginCommand(ssig, module_opts)
+        mod = PluginCommand(ssig, DsPluginCommand(enc, args.cmd, POPEN_BUFSIZE))
     # Use output module
     else:
-        module_opts = {
-            "encoder": encoder,
-            "crlf": args.crlf,
-            "input_timeout": TIMEOUT_READ_STDIN,
-        }
-        mod = PluginOutput(ssig, module_opts)
+        mod = PluginOutput(ssig, DsPluginOutput(enc, args.crlf, TIMEOUT_READ_STDIN))
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
@@ -2389,13 +2470,13 @@ def main():
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
         # Create listen and client instances
-        net_srv = Pwncat(ssig, encoder, lhost, lport, "server", srv_opts, cli_opts, sock_opts)
-        net_cli = Pwncat(ssig, encoder, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net_srv = PluginNetwork(ssig, enc, lhost, lport, "server", srv_opts, cli_opts, sock_opts)
+        net_cli = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
             "TRANSMIT",
-            DSRunnerAction(
+            DsRunnerAction(
                 net_srv.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
@@ -2403,7 +2484,7 @@ def main():
         )
         run.add_action(
             "RECEIVE",
-            DSRunnerAction(
+            DsRunnerAction(
                 net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
@@ -2419,13 +2500,13 @@ def main():
         lhost = args.remote.split(":")[0]
         lport = int(args.remote.split(":")[1])
         # Create local and remote client
-        net_cli_l = Pwncat(ssig, encoder, lhost, lport, "client", srv_opts, cli_opts, sock_opts)
-        net_cli_r = Pwncat(ssig, encoder, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net_cli_l = PluginNetwork(ssig, enc, lhost, lport, "client", srv_opts, cli_opts, sock_opts)
+        net_cli_r = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
             "TRANSMIT",
-            DSRunnerAction(
+            DsRunnerAction(
                 net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
@@ -2433,7 +2514,7 @@ def main():
         )
         run.add_action(
             "RECEIVE",
-            DSRunnerAction(
+            DsRunnerAction(
                 net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
@@ -2442,11 +2523,11 @@ def main():
         run.run()
     # Run server
     if args.listen:
-        net = Pwncat(ssig, encoder, host, port, "server", srv_opts, cli_opts, sock_opts)
+        net = PluginNetwork(ssig, enc, host, port, "server", srv_opts, cli_opts, sock_opts)
         run = Runner()
         run.add_action(
             "RECV",
-            DSRunnerAction(
+            DsRunnerAction(
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
@@ -2454,7 +2535,7 @@ def main():
         )
         run.add_action(
             "STDIN",
-            DSRunnerAction(
+            DsRunnerAction(
                 mod.producer,
                 net.consumer,  # send data
                 [mod.interrupt],  # Externally stop the produer itself
@@ -2464,11 +2545,11 @@ def main():
 
     # Run client
     else:
-        net = Pwncat(ssig, encoder, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
         run = Runner()
         run.add_action(
             "RECV",
-            DSRunnerAction(
+            DsRunnerAction(
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
@@ -2476,7 +2557,7 @@ def main():
         )
         run.add_action(
             "STDIN",
-            DSRunnerAction(
+            DsRunnerAction(
                 mod.producer,
                 net.consumer,  # send data
                 [net.interrupt, mod.interrupt],  # Externally stop the produer itself
@@ -2485,13 +2566,13 @@ def main():
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
             run.add_timer(
                 "PING",
-                DSRunnerTimer(net.consumer, args.udp_ping_intvl, ("\x00",), {}, ssig,),  # send data
+                DsRunnerTimer(net.consumer, args.udp_ping_intvl, ("\x00",), {}, ssig,),  # send data
             )
         run.run()
 
 
 # -------------------------------------------------------------------------------------------------
-# MAIN ENTRYPOINT: 2/2 Start
+# [7/7 MAIN ENTRYPOINT]: (2/2) start
 # -------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Catch Ctrl+c and exit without error message
