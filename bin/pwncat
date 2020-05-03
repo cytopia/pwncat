@@ -1140,9 +1140,9 @@ class Sock(object):
 # [4/7 PLUGINS]: (1/4): Plugin
 # -------------------------------------------------------------------------------------------------
 class Plugin(ABC):  # type: ignore
-    """Abstract class to for netcat plugins.
+    """Abstract class to for pwncat plugins.
 
-    This is a skeleton that defines how the plugins for Netcat should look like.
+    This is a skeleton that defines how the plugins for pwncat should look like.
 
     The "producer" should constantly yield data received from some sort of input
     which could be user input, output from a shell command data from a socket.
@@ -1685,7 +1685,7 @@ class Runner(object):
 
     def run(self):
         # type: () -> None
-        """Run threaded NetCat."""
+        """Run threaded pwncat plugins."""
 
         def run_action(name, producer, consumer):
             # type: (str, Callable[[], str], Callable[[str], None]) -> None
