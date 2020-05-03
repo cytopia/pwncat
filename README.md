@@ -211,6 +211,47 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
 
 
+## :cop: Behaviour
+
+Like the original implementation of `netcat`, when using **TCP**, `pwncat`
+(in client and listen mode) will automatically quit, if the network connection has been terminated,
+properly or improperly.
+
+In case the remote peer does not terminate the connection, or in **UDP** mode, `pwncat` will stay open.
+
+Have a look at the following illustratoins to better understand the behaviour:
+
+```bash
+# [Valid HTTP request] Does not quit, web server keeps connection intact
+printf "GET / HTTP/1.1\n\n" | pwncat www.google.com 80
+```
+
+```bash
+# [Invalid HTTP request] Quits, because the web server closes the connection
+printf "GET / \n\n" | pwncat www.google.com 80
+```
+
+```bash
+# [TCP]
+# Neither of both, client and server will quit after successful transfer
+# and they will be stuck, waiting for more input or output.
+# When exiting one (e.g.: via Ctrl+c), the other one will quit as well.
+pwncat -l 4444 > output.txt
+pwncat localhost 4444 < input.txt
+```
+
+```bash
+# [UDP]
+# Neither of both, client and server will quit after successful transfer
+# and they will be stuck, waiting for more input or output.
+# When exiting one (e.g.: via Ctrl+c), the other one will still stay open in UDP mode.
+pwncat -u -l 4444 > output.txt
+pwncat -u localhost 4444 < input.txt
+```
+
+There are many ways to alter this default behaviour. Have a look at the [usage](#computer-usage)
+section for more advanced adjustments.
+
 
 ## :closed_book: Documentation
 
@@ -224,10 +265,10 @@ Documentation will evolve over time.
 
 ## :computer: Usage
 
-See all available options below.
+Type `pwncat -h` or click below to see all available options.
 
 <details>
-  <summary><stront>Click to expand</strong></summary>
+  <summary><strong>Click here to expand usage</strong></summary>
 
 ```
 usage: pwncat [-Cnuv] [-e cmd] hostname port
