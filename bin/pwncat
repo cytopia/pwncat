@@ -85,13 +85,13 @@ class DSRunnerAction(object):
     @property
     def producer(self):
         # type: () -> Callable[[], Iterator[str]]
-        """`AbstractNetcatPlugin.producer`: Data producer function."""
+        """`Plugin.producer`: Data producer function."""
         return self.__producer
 
     @property
     def consumer(self):
         # type: () -> Callable[[str], None]
-        """`AbstractNetcatPlugin.consumer`: Data consumer function."""
+        """`Plugin.consumer`: Data consumer function."""
         return self.__consumer
 
     @property
@@ -359,8 +359,8 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
 
         Args:
             msg (str): The log message.
-            args (*args): *args for trace level log function.
-            kwargs (**kwargs): kwargs for trace level log function.
+            args (args): *args for trace level log function.
+            kwargs (kwargs): kwargs for trace level log function.
         """
         if self.isEnabledFor(self.LEVEL_NUM):
             # Yes, logger takes its '*args' as 'args'.
@@ -1002,9 +1002,9 @@ class PwncatSocket(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# ABSTRACT CLASS: AbstractNetcatPlugin
+# ABSTRACT CLASS: Plugin
 # -------------------------------------------------------------------------------------------------
-class AbstractNetcatPlugin(ABC):  # type: ignore
+class Plugin(ABC):  # type: ignore
     """Abstract class to for netcat plugins.
 
     This is a skeleton that defines how the plugins for Netcat should look like.
@@ -1028,7 +1028,7 @@ class AbstractNetcatPlugin(ABC):  # type: ignore
             ssig (StopSignal): StopSignal instance used by the interrupter.
             opts (dict): Custom plugin option.
         """
-        super(AbstractNetcatPlugin, self).__init__()
+        super(Plugin, self).__init__()
         self.__ssig = ssig
         self.__opts = opts
 
@@ -1084,7 +1084,7 @@ class AbstractNetcatPlugin(ABC):  # type: ignore
 
 # TODO: This has an invalid signature, use options={} to distribute vars
 # TODO: Why does Python not complain about it???
-class Pwncat(AbstractNetcatPlugin):
+class Pwncat(Plugin):
     """Pwncat implementation based on custom Socket library.
 
     Attributes:
@@ -1289,7 +1289,7 @@ class Pwncat(AbstractNetcatPlugin):
 # -------------------------------------------------------------------------------------------------
 # CLASS: NetcatPluginOutput (Module for: user-input -> send -> receive -> output)
 # -------------------------------------------------------------------------------------------------
-class NetcatPluginOutput(AbstractNetcatPlugin):
+class NetcatPluginOutput(Plugin):
     """Implement basic input/output plugin.
 
     This plugin provides a generator which continuously reads from stdin
@@ -1406,13 +1406,13 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
 # -------------------------------------------------------------------------------------------------
 # CLASS: NetcatPluginCommand (Module for user-input -> send -> execute -> send-back -> output)
 # -------------------------------------------------------------------------------------------------
-class NetcatPluginCommand(AbstractNetcatPlugin):
+class NetcatPluginCommand(Plugin):
     """Implement command execution functionality.
 
     Attributes:
-        encoder (StringEncoder):   Instance of StringEncoder (Python2/3 str/byte compat)
-        executable (str):          Executable to run
-        proc (subprocess.Popen):   subprocess.Popen instance
+        encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat)
+        executable (str): Executable to run
+        proc (subprocess.Popen): subprocess.Popen instance
     """
 
     # ------------------------------------------------------------------------------
