@@ -1211,7 +1211,7 @@ class Pwncat(Plugin):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
         self.log.trace(  # type: ignore
-            "[NetcatPluginNetwork] socket.close was raised by calling interrupt() externally."
+            "[PluginNetwork] socket.close was raised by calling interrupt() externally."
         )
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
@@ -1287,9 +1287,9 @@ class Pwncat(Plugin):
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: NetcatPluginOutput (Module for: user-input -> send -> receive -> output)
+# CLASS: PluginOutput (Module for: user-input -> send -> receive -> output)
 # -------------------------------------------------------------------------------------------------
-class NetcatPluginOutput(Plugin):
+class PluginOutput(Plugin):
     """Implement basic input/output plugin.
 
     This plugin provides a generator which continuously reads from stdin
@@ -1310,7 +1310,7 @@ class NetcatPluginOutput(Plugin):
     def __init__(self, ssig, options):
         # type: (StopSignal, Dict[str, Any]) -> None
         """Set specific options for this plugin."""
-        super(NetcatPluginOutput, self).__init__(ssig, options)
+        super(PluginOutput, self).__init__(ssig, options)
         assert "encoder" in options
         assert "input_timeout" in options
         assert "crlf" in options
@@ -1396,7 +1396,7 @@ class NetcatPluginOutput(Plugin):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
         self.log.trace(  # type: ignore
-            "[NetcatPluginOutput] interrupt() invoked"
+            "[PluginOutput] interrupt() invoked"
         )
         # Raise stop signal
         # TODO: Check if this is required???
@@ -1404,9 +1404,9 @@ class NetcatPluginOutput(Plugin):
 
 
 # -------------------------------------------------------------------------------------------------
-# CLASS: NetcatPluginCommand (Module for user-input -> send -> execute -> send-back -> output)
+# CLASS: PluginCommand (Module for user-input -> send -> execute -> send-back -> output)
 # -------------------------------------------------------------------------------------------------
-class NetcatPluginCommand(Plugin):
+class PluginCommand(Plugin):
     """Implement command execution functionality.
 
     Attributes:
@@ -1428,7 +1428,7 @@ class NetcatPluginCommand(Plugin):
         """
         # Define destructor
         atexit.register(self.__destruct__)
-        super(NetcatPluginCommand, self).__init__(ssig, options)
+        super(PluginCommand, self).__init__(ssig, options)
 
         assert "encoder" in options
         assert "executable" in options
@@ -1483,7 +1483,7 @@ class NetcatPluginCommand(Plugin):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
         self.log.trace(  # type: ignore
-            "[NetcatPluginCommand] subprocess.kill() was raised by input_unterrupter()"
+            "[PluginCommand] subprocess.kill() was raised by input_unterrupter()"
         )
         self.proc.kill()
         # Raise stop signal
@@ -2369,7 +2369,7 @@ def main():
             "encoder": encoder,
             "executable": args.cmd,
         }
-        mod = NetcatPluginCommand(ssig, module_opts)
+        mod = PluginCommand(ssig, module_opts)
     # Use output module
     else:
         module_opts = {
@@ -2377,7 +2377,7 @@ def main():
             "crlf": args.crlf,
             "input_timeout": TIMEOUT_READ_STDIN,
         }
-        mod = NetcatPluginOutput(ssig, module_opts)
+        mod = PluginOutput(ssig, module_opts)
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
