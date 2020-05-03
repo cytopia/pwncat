@@ -1,6 +1,6 @@
 ---
 
-name: lin-3.6
+name: mac-3.5,
 on:
   pull_request:
   push:
@@ -10,14 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       fail-fast: False
       matrix:
         version:
-          - 3.6
+          - 3.5,
 
-    name: "[lin] 3.6"
+    name: "[mac] 3.5,"
     steps:
       # ------------------------------------------------------------
       # Setup

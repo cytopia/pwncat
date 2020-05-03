@@ -1,6 +1,6 @@
 ---
 
-name: lin-3.6
+name: lin-3.5,
 on:
   pull_request:
   push:
@@ -15,9 +15,9 @@ jobs:
       fail-fast: False
       matrix:
         version:
-          - 3.6
+          - 3.5,
 
-    name: "[lin] 3.6"
+    name: "[lin] 3.5,"
     steps:
       # ------------------------------------------------------------
       # Setup

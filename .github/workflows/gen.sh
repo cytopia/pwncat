@@ -14,7 +14,7 @@ FLW_PATH="${SCRIPT_PATH}"
 ###
 ### Build Matrix
 ###
-PYTHON_VERSIONS=("2.7" "3.6" "3.7" "3.8")
+PYTHON_VERSIONS=("2.7" "3.5", "3.6" "3.7" "3.8")
 OPERATING_SYSTEMS=("ubuntu" "windows" "macos")
 
 
