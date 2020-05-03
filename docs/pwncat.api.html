@@ -728,7 +728,7 @@ class PwncatSocket(object):
             if not isinstance(infos, list) or len(infos) == 0:
                 raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
 
-            (family, socktype, proto, canonname, sockaddr) = infos[0]
+            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
         except socket.gaierror as error:
             self.__log.error(&#34;Resolve Error: %s&#34;, error)
             raise socket.gaierror(error)  # type: ignore
@@ -847,7 +847,7 @@ class PwncatSocket(object):
         &#34;&#34;&#34;Close the bind socket used by the server to accept clients.&#34;&#34;&#34;
         try:
             self.__close(&#34;sock&#34;, self.__sock)
-        except AttributeError as error:
+        except AttributeError:
             # Socket does not exist (anymore)
             pass
 
@@ -856,7 +856,7 @@ class PwncatSocket(object):
         &#34;&#34;&#34;Close the communication socket used for send and receive.&#34;&#34;&#34;
         try:
             self.__close(&#34;conn&#34;, self.__conn)
-        except AttributeError as error:
+        except AttributeError:
             # Socket does not exist (anymore)
             pass
 
@@ -915,17 +915,13 @@ class PwncatSocket(object):
             # (SHUT_RDWR) 2 = Both
             self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
-        except OSError as error:
-            self.__log.trace(&#34;Could not shutdown %s socket: %s&#34;, name, error)  # type: ignore
-        except socket.error as error:
+        except (OSError, socket.error) as error:
             self.__log.trace(&#34;Could not shutdown %s socket: %s&#34;, name, error)  # type: ignore
 
         try:
             self.__log.trace(&#34;Closing %s socket&#34;, name)  # type: ignore
             sock.close()
-        except OSError as error:
-            self.__log.trace(&#34;Could not close %s socket: %s&#34;, name, error)  # type: ignore
-        except socket.error as error:
+        except (OSError, socket.error) as error:
             self.__log.trace(&#34;Could not close %s socket: %s&#34;, name, error)  # type: ignore
 
     # ------------------------------------------------------------------------------
@@ -947,9 +943,6 @@ class PwncatSocket(object):
         try:
             self.__log.debug(&#34;Binding socket to %s:%d&#34;, addr, port)
             sock.bind((addr, port))
-            # Store local addr and port
-            self.__local_addr = addr
-            self.__local_port = port
             return True
         except (OverflowError, OSError, socket.error) as error:
             self.__log.error(&#34;Binding socket to %s:%d failed: %s&#34;, addr, port, error)
@@ -1055,22 +1048,29 @@ class AbstractNetcatPlugin(ABC):  # type: ignore
     in a way that it is able to act on the event which the &#34;interrupt&#34; func emitted.
     &#34;&#34;&#34;
 
-    def __init__(self, ssig, options):
+    def __init__(self, ssig, opts):
         # type: (StopSignal, Dict[str, Any]) -&gt; None
         &#34;&#34;&#34;Set specific options for this plugin.
 
         Args:
             ssig (StopSignal): StopSignal instance used by the interrupter.
-            options (dict): Custom options for a plugin.
+            opts (dict): Custom plugin option.
         &#34;&#34;&#34;
         super(AbstractNetcatPlugin, self).__init__()
         self.__ssig = ssig
+        self.__opts = opts
 
     @property
     def ssig(self):
         # type: () -&gt; StopSignal
         &#34;&#34;&#34;`StopSignal`: Read only property to provide a StopSignal instance to plugins.&#34;&#34;&#34;
         return self.__ssig
+
+    @property
+    def opts(self):
+        # type: () -&gt; Dict[str, Any]
+        &#34;&#34;&#34;`dict`: Custom plugin options.&#34;&#34;&#34;
+        return self.__opts
 
     @abstractmethod
     def producer(self):
@@ -1110,7 +1110,7 @@ class AbstractNetcatPlugin(ABC):  # type: ignore
 # CLASS: Pwncat
 # -------------------------------------------------------------------------------------------------
 
-# FIXME: This has an invalid signature, use options={} to distribute vars
+# TODO: This has an invalid signature, use options={} to distribute vars
 # TODO: Why does Python not complain about it???
 class Pwncat(AbstractNetcatPlugin):
     &#34;&#34;&#34;Pwncat implementation based on custom Socket library.
@@ -1244,7 +1244,7 @@ class Pwncat(AbstractNetcatPlugin):
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
         # Raise stop signal
-        # FIXME: Check if this is required
+        # TODO: Check if this is required
         self.ssig.raise_stop()
 
     # ------------------------------------------------------------------------------
@@ -1427,7 +1427,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
             &#34;[NetcatPluginOutput] interrupt() invoked&#34;
         )
         # Raise stop signal
-        # FIXME: Check if this is required???
+        # TODO: Check if this is required???
         self.ssig.raise_stop()
 
 
@@ -1515,7 +1515,7 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         )
         self.proc.kill()
         # Raise stop signal
-        # FIXME: Check if this is required???
+        # TODO: Check if this is required???
         self.ssig.raise_stop()
 
     def producer(self):
@@ -1699,7 +1699,7 @@ class Runner(object):
             &#34;&#34;&#34;Stop threads.&#34;&#34;&#34;
             for key in self.__threads:
                 if not self.__threads[key].is_alive() or force:
-                    # FIXME: How are we gonna call the stop signal now?
+                    # TODO: How are we gonna call the stop signal now?
                     #  # [1/3] Inform all threads (inside) about a stop signal.
                     #  # All threads with non-blocking funcs will be able to stop themselves
                     #  self.log.trace(  # type: ignore
@@ -2127,7 +2127,7 @@ disconnected or the connection is unterrupted otherwise.
         type=int,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to bind, it will re-initialize
-itself x many times before giving up. Use -01 to re-init
+itself x many times before giving up. Use -1 to re-init
 endlessly. (default: fail after first unsuccessful try).
 
 &#34;&#34;&#34;,
@@ -2424,17 +2424,17 @@ def main():
         run.add_action(
             &#34;TRANSMIT&#34;,
             DSRunnerAction(
-                net_srv.receive,  # USER sends data to PC-SERVER
-                net_cli.send,  # Data parsed on to PC-CLIENT to send to TARGET
-                [net_cli.stop, net_srv.stop],
+                net_srv.producer,  # (receive) USER sends data to PC-SERVER
+                net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
+                [net_cli.interrupt, net_srv.interrupt],
             ),
         )
         run.add_action(
             &#34;RECEIVE&#34;,
             DSRunnerAction(
-                net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
-                net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
-                [net_cli.stop, net_srv.stop],
+                net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
+                [net_cli.interrupt, net_srv.interrupt],
             ),
         )
         run.run()
@@ -2454,16 +2454,16 @@ def main():
         run.add_action(
             &#34;TRANSMIT&#34;,
             DSRunnerAction(
-                net_cli_l.receive,  # USER sends data to PC-SERVER
-                net_cli_r.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
+                net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
             ),
         )
         run.add_action(
             &#34;RECEIVE&#34;,
             DSRunnerAction(
-                net_cli_r.receive,  # Data comes back from TARGET to PC-CLIENT
-                net_cli_l.send,  # Data parsed on to PC-SERVER to back send to USER
+                net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
             ),
         )
@@ -2731,7 +2731,7 @@ disconnected or the connection is unterrupted otherwise.
         type=int,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to bind, it will re-initialize
-itself x many times before giving up. Use -01 to re-init
+itself x many times before giving up. Use -1 to re-init
 endlessly. (default: fail after first unsuccessful try).
 
 &#34;&#34;&#34;,
@@ -3043,17 +3043,17 @@ accidentally by other input.
         run.add_action(
             &#34;TRANSMIT&#34;,
             DSRunnerAction(
-                net_srv.receive,  # USER sends data to PC-SERVER
-                net_cli.send,  # Data parsed on to PC-CLIENT to send to TARGET
-                [net_cli.stop, net_srv.stop],
+                net_srv.producer,  # (receive) USER sends data to PC-SERVER
+                net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
+                [net_cli.interrupt, net_srv.interrupt],
             ),
         )
         run.add_action(
             &#34;RECEIVE&#34;,
             DSRunnerAction(
-                net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
-                net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
-                [net_cli.stop, net_srv.stop],
+                net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
+                [net_cli.interrupt, net_srv.interrupt],
             ),
         )
         run.run()
@@ -3073,16 +3073,16 @@ accidentally by other input.
         run.add_action(
             &#34;TRANSMIT&#34;,
             DSRunnerAction(
-                net_cli_l.receive,  # USER sends data to PC-SERVER
-                net_cli_r.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
+                net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
             ),
         )
         run.add_action(
             &#34;RECEIVE&#34;,
             DSRunnerAction(
-                net_cli_r.receive,  # Data comes back from TARGET to PC-CLIENT
-                net_cli_l.send,  # Data parsed on to PC-SERVER to back send to USER
+                net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
             ),
         )
@@ -3144,7 +3144,7 @@ accidentally by other input.
 <dl>
 <dt id="pwncat.AbstractNetcatPlugin"><code class="flex name class">
 <span>class <span class="ident">AbstractNetcatPlugin</span></span>
-<span>(</span><span>ssig, options)</span>
+<span>(</span><span>ssig, opts)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract class to for netcat plugins.</p>
@@ -3161,8 +3161,8 @@ in a way that it is able to act on the event which the "interrupt" func emitted.
 <dl>
 <dt><strong><code>ssig</code></strong> :&ensp;<code><a title="pwncat.StopSignal" href="#pwncat.StopSignal">StopSignal</a></code></dt>
 <dd>StopSignal instance used by the interrupter.</dd>
-<dt><strong><code>options</code></strong> :&ensp;<code>dict</code></dt>
-<dd>Custom options for a plugin.</dd>
+<dt><strong><code>opts</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Custom plugin option.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -3184,22 +3184,29 @@ in a way that it is able to act on the event which the "interrupt" func emitted.
     in a way that it is able to act on the event which the &#34;interrupt&#34; func emitted.
     &#34;&#34;&#34;
 
-    def __init__(self, ssig, options):
+    def __init__(self, ssig, opts):
         # type: (StopSignal, Dict[str, Any]) -&gt; None
         &#34;&#34;&#34;Set specific options for this plugin.
 
         Args:
             ssig (StopSignal): StopSignal instance used by the interrupter.
-            options (dict): Custom options for a plugin.
+            opts (dict): Custom plugin option.
         &#34;&#34;&#34;
         super(AbstractNetcatPlugin, self).__init__()
         self.__ssig = ssig
+        self.__opts = opts
 
     @property
     def ssig(self):
         # type: () -&gt; StopSignal
         &#34;&#34;&#34;`StopSignal`: Read only property to provide a StopSignal instance to plugins.&#34;&#34;&#34;
         return self.__ssig
+
+    @property
+    def opts(self):
+        # type: () -&gt; Dict[str, Any]
+        &#34;&#34;&#34;`dict`: Custom plugin options.&#34;&#34;&#34;
+        return self.__opts
 
     @abstractmethod
     def producer(self):
@@ -3246,6 +3253,20 @@ in a way that it is able to act on the event which the "interrupt" func emitted.
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="pwncat.AbstractNetcatPlugin.opts"><code class="name">var <span class="ident">opts</span></code></dt>
+<dd>
+<div class="desc"><p><code>dict</code>: Custom plugin options.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def opts(self):
+    # type: () -&gt; Dict[str, Any]
+    &#34;&#34;&#34;`dict`: Custom plugin options.&#34;&#34;&#34;
+    return self.__opts</code></pre>
+</details>
+</dd>
 <dt id="pwncat.AbstractNetcatPlugin.ssig"><code class="name">var <span class="ident">ssig</span></code></dt>
 <dd>
 <div class="desc"><p><code><a title="pwncat.StopSignal" href="#pwncat.StopSignal">StopSignal</a></code>: Read only property to provide a StopSignal instance to plugins.</p></div>
@@ -4207,7 +4228,7 @@ def udp(self):
         )
         self.proc.kill()
         # Raise stop signal
-        # FIXME: Check if this is required???
+        # TODO: Check if this is required???
         self.ssig.raise_stop()
 
     def producer(self):
@@ -4304,7 +4325,7 @@ def udp(self):
     )
     self.proc.kill()
     # Raise stop signal
-    # FIXME: Check if this is required???
+    # TODO: Check if this is required???
     self.ssig.raise_stop()</code></pre>
 </details>
 </dd>
@@ -4357,6 +4378,7 @@ def udp(self):
 <ul class="hlist">
 <li><code><b><a title="pwncat.AbstractNetcatPlugin" href="#pwncat.AbstractNetcatPlugin">AbstractNetcatPlugin</a></b></code>:
 <ul class="hlist">
+<li><code><a title="pwncat.AbstractNetcatPlugin.opts" href="#pwncat.AbstractNetcatPlugin.opts">opts</a></code></li>
 <li><code><a title="pwncat.AbstractNetcatPlugin.ssig" href="#pwncat.AbstractNetcatPlugin.ssig">ssig</a></code></li>
 </ul>
 </li>
@@ -4486,7 +4508,7 @@ callback that writes to stdout.</p>
             &#34;[NetcatPluginOutput] interrupt() invoked&#34;
         )
         # Raise stop signal
-        # FIXME: Check if this is required???
+        # TODO: Check if this is required???
         self.ssig.raise_stop()</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -4539,7 +4561,7 @@ callback that writes to stdout.</p>
         &#34;[NetcatPluginOutput] interrupt() invoked&#34;
     )
     # Raise stop signal
-    # FIXME: Check if this is required???
+    # TODO: Check if this is required???
     self.ssig.raise_stop()</code></pre>
 </details>
 </dd>
@@ -4601,6 +4623,7 @@ callback that writes to stdout.</p>
 <ul class="hlist">
 <li><code><b><a title="pwncat.AbstractNetcatPlugin" href="#pwncat.AbstractNetcatPlugin">AbstractNetcatPlugin</a></b></code>:
 <ul class="hlist">
+<li><code><a title="pwncat.AbstractNetcatPlugin.opts" href="#pwncat.AbstractNetcatPlugin.opts">opts</a></code></li>
 <li><code><a title="pwncat.AbstractNetcatPlugin.ssig" href="#pwncat.AbstractNetcatPlugin.ssig">ssig</a></code></li>
 </ul>
 </li>
@@ -4779,7 +4802,7 @@ callback that writes to stdout.</p>
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
         # Raise stop signal
-        # FIXME: Check if this is required
+        # TODO: Check if this is required
         self.ssig.raise_stop()
 
     # ------------------------------------------------------------------------------
@@ -4888,7 +4911,7 @@ callback that writes to stdout.</p>
     self.__net.close_conn_sock()
     self.__net.close_bind_sock()
     # Raise stop signal
-    # FIXME: Check if this is required
+    # TODO: Check if this is required
     self.ssig.raise_stop()</code></pre>
 </details>
 </dd>
@@ -4960,6 +4983,7 @@ callback that writes to stdout.</p>
 <ul class="hlist">
 <li><code><b><a title="pwncat.AbstractNetcatPlugin" href="#pwncat.AbstractNetcatPlugin">AbstractNetcatPlugin</a></b></code>:
 <ul class="hlist">
+<li><code><a title="pwncat.AbstractNetcatPlugin.opts" href="#pwncat.AbstractNetcatPlugin.opts">opts</a></code></li>
 <li><code><a title="pwncat.AbstractNetcatPlugin.ssig" href="#pwncat.AbstractNetcatPlugin.ssig">ssig</a></code></li>
 </ul>
 </li>
@@ -5175,7 +5199,7 @@ callback that writes to stdout.</p>
             if not isinstance(infos, list) or len(infos) == 0:
                 raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
 
-            (family, socktype, proto, canonname, sockaddr) = infos[0]
+            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
         except socket.gaierror as error:
             self.__log.error(&#34;Resolve Error: %s&#34;, error)
             raise socket.gaierror(error)  # type: ignore
@@ -5294,7 +5318,7 @@ callback that writes to stdout.</p>
         &#34;&#34;&#34;Close the bind socket used by the server to accept clients.&#34;&#34;&#34;
         try:
             self.__close(&#34;sock&#34;, self.__sock)
-        except AttributeError as error:
+        except AttributeError:
             # Socket does not exist (anymore)
             pass
 
@@ -5303,7 +5327,7 @@ callback that writes to stdout.</p>
         &#34;&#34;&#34;Close the communication socket used for send and receive.&#34;&#34;&#34;
         try:
             self.__close(&#34;conn&#34;, self.__conn)
-        except AttributeError as error:
+        except AttributeError:
             # Socket does not exist (anymore)
             pass
 
@@ -5362,17 +5386,13 @@ callback that writes to stdout.</p>
             # (SHUT_RDWR) 2 = Both
             self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
-        except OSError as error:
-            self.__log.trace(&#34;Could not shutdown %s socket: %s&#34;, name, error)  # type: ignore
-        except socket.error as error:
+        except (OSError, socket.error) as error:
             self.__log.trace(&#34;Could not shutdown %s socket: %s&#34;, name, error)  # type: ignore
 
         try:
             self.__log.trace(&#34;Closing %s socket&#34;, name)  # type: ignore
             sock.close()
-        except OSError as error:
-            self.__log.trace(&#34;Could not close %s socket: %s&#34;, name, error)  # type: ignore
-        except socket.error as error:
+        except (OSError, socket.error) as error:
             self.__log.trace(&#34;Could not close %s socket: %s&#34;, name, error)  # type: ignore
 
     # ------------------------------------------------------------------------------
@@ -5394,9 +5414,6 @@ callback that writes to stdout.</p>
         try:
             self.__log.debug(&#34;Binding socket to %s:%d&#34;, addr, port)
             sock.bind((addr, port))
-            # Store local addr and port
-            self.__local_addr = addr
-            self.__local_port = port
             return True
         except (OverflowError, OSError, socket.error) as error:
             self.__log.error(&#34;Binding socket to %s:%d failed: %s&#34;, addr, port, error)
@@ -5490,7 +5507,7 @@ callback that writes to stdout.</p>
     &#34;&#34;&#34;Close the bind socket used by the server to accept clients.&#34;&#34;&#34;
     try:
         self.__close(&#34;sock&#34;, self.__sock)
-    except AttributeError as error:
+    except AttributeError:
         # Socket does not exist (anymore)
         pass</code></pre>
 </details>
@@ -5509,7 +5526,7 @@ callback that writes to stdout.</p>
     &#34;&#34;&#34;Close the communication socket used for send and receive.&#34;&#34;&#34;
     try:
         self.__close(&#34;conn&#34;, self.__conn)
-    except AttributeError as error:
+    except AttributeError:
         # Socket does not exist (anymore)
         pass</code></pre>
 </details>
@@ -5575,7 +5592,7 @@ callback that writes to stdout.</p>
         if not isinstance(infos, list) or len(infos) == 0:
             raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
 
-        (family, socktype, proto, canonname, sockaddr) = infos[0]
+        (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
     except socket.gaierror as error:
         self.__log.error(&#34;Resolve Error: %s&#34;, error)
         raise socket.gaierror(error)  # type: ignore
@@ -6053,7 +6070,7 @@ callback that writes to stdout.</p>
             &#34;&#34;&#34;Stop threads.&#34;&#34;&#34;
             for key in self.__threads:
                 if not self.__threads[key].is_alive() or force:
-                    # FIXME: How are we gonna call the stop signal now?
+                    # TODO: How are we gonna call the stop signal now?
                     #  # [1/3] Inform all threads (inside) about a stop signal.
                     #  # All threads with non-blocking funcs will be able to stop themselves
                     #  self.log.trace(  # type: ignore
@@ -6234,7 +6251,7 @@ callback that writes to stdout.</p>
         &#34;&#34;&#34;Stop threads.&#34;&#34;&#34;
         for key in self.__threads:
             if not self.__threads[key].is_alive() or force:
-                # FIXME: How are we gonna call the stop signal now?
+                # TODO: How are we gonna call the stop signal now?
                 #  # [1/3] Inform all threads (inside) about a stop signal.
                 #  # All threads with non-blocking funcs will be able to stop themselves
                 #  self.log.trace(  # type: ignore
@@ -6582,6 +6599,7 @@ kwargs (**kwargs): kwargs for trace level log function.</p></div>
 <ul class="">
 <li><code><a title="pwncat.AbstractNetcatPlugin.consumer" href="#pwncat.AbstractNetcatPlugin.consumer">consumer</a></code></li>
 <li><code><a title="pwncat.AbstractNetcatPlugin.interrupt" href="#pwncat.AbstractNetcatPlugin.interrupt">interrupt</a></code></li>
+<li><code><a title="pwncat.AbstractNetcatPlugin.opts" href="#pwncat.AbstractNetcatPlugin.opts">opts</a></code></li>
 <li><code><a title="pwncat.AbstractNetcatPlugin.producer" href="#pwncat.AbstractNetcatPlugin.producer">producer</a></code></li>
 <li><code><a title="pwncat.AbstractNetcatPlugin.ssig" href="#pwncat.AbstractNetcatPlugin.ssig">ssig</a></code></li>
 </ul>

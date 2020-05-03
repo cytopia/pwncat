@@ -116,7 +116,7 @@
  </tbody>
 <table>
 
-> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 92.29%)</strong></sup>
+> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 92.25%)</strong></sup>
 
 
 #### Motivation
@@ -355,7 +355,7 @@ advanced arguments:
 
   --rebind x            Listen mode (TCP and UDP):
                         If the server is unable to bind, it will re-initialize
-                        itself x many times before giving up. Use 0 to re-init
+                        itself x many times before giving up. Use -1 to re-init
                         endlessly. (default: fail after first unsuccessful try).
 
   --rebind-wait s       Listen mode (TCP and UDP):
@@ -372,7 +372,7 @@ advanced arguments:
   --reconn x            Connect mode / Zero-I/O mode (TCP only):
                         If the remote server is not reachable or the connection
                         is interrupted, the client will connect again x many
-                        times before giving up. Use 0 to retry endlessly.
+                        times before giving up. Use -1 to retry endlessly.
                         (default: quit if the remote is not available or the
                         connection was interrupted)
                         This might be handy for stable TCP reverse shells ;-)

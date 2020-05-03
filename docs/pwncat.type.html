@@ -14,12 +14,12 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">7.71% imprecise</th>
+<th class="summary summary-precision">7.75% imprecise</th>
 <th class="summary summary-lines">2503 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">7.71% imprecise</td>
+<td class="summary summary-precision">7.75% imprecise</td>
 <td class="summary summary-lines">2503 LOC</td>
 </tr></tbody>
 </table>
@@ -3293,7 +3293,7 @@ Explicit (x3)">            if not isinstance(infos, list) or len(infos) == 0:</s
 <span class="line-precise" title="No Anys on this line!">                raise socket.gaierror("Could resolve to hostname")  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x3)">            (family, socktype, proto, canonname, sockaddr) = infos[0]</span>
+Explicit (x3)">            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612</span>
 <span class="line-precise" title="No Anys on this line!">        except socket.gaierror as error:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.error("Resolve Error: %s", error)</span>
@@ -3416,7 +3416,7 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port
 <span class="line-empty" title="No Anys on this line!">        """Close the bind socket used by the server to accept clients."""</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close("sock", self.__sock)</span>
-<span class="line-precise" title="No Anys on this line!">        except AttributeError as error:</span>
+<span class="line-precise" title="No Anys on this line!">        except AttributeError:</span>
 <span class="line-empty" title="No Anys on this line!">            # Socket does not exist (anymore)</span>
 <span class="line-precise" title="No Anys on this line!">            pass</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -3425,7 +3425,7 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port
 <span class="line-empty" title="No Anys on this line!">        """Close the communication socket used for send and receive."""</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close("conn", self.__conn)</span>
-<span class="line-precise" title="No Anys on this line!">        except AttributeError as error:</span>
+<span class="line-precise" title="No Anys on this line!">        except AttributeError:</span>
 <span class="line-empty" title="No Anys on this line!">            # Socket does not exist (anymore)</span>
 <span class="line-precise" title="No Anys on this line!">            pass</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -3489,10 +3489,7 @@ Explicit (x4)">        self.__log.debug("Setting sock recv timeout to %f sec", s
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.__log.trace("Shutting down %s socket", name)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            sock.shutdown(socket.SHUT_RDWR)</span>
-<span class="line-precise" title="No Anys on this line!">        except OSError as error:</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">            self.__log.trace("Could not shutdown %s socket: %s", name, error)  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">        except socket.error as error:</span>
+<span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.__log.trace("Could not shutdown %s socket: %s", name, error)  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -3500,10 +3497,7 @@ Error (x2)">            self.__log.trace("Could not shutdown %s socket: %s", nam
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.__log.trace("Closing %s socket", name)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            sock.close()</span>
-<span class="line-precise" title="No Anys on this line!">        except OSError as error:</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">        except socket.error as error:</span>
+<span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -3528,9 +3522,6 @@ Error (x2)">            self.__log.trace("Could not close %s socket: %s", name, 
 Explicit (x4)">            self.__log.debug("Binding socket to %s:%d", addr, port)</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Omitted Generics (x1)">            sock.bind((addr, port))</span>
-<span class="line-empty" title="No Anys on this line!">            # Store local addr and port</span>
-<span class="line-precise" title="No Anys on this line!">            self.__local_addr = addr</span>
-<span class="line-precise" title="No Anys on this line!">            self.__local_port = port</span>
 <span class="line-precise" title="No Anys on this line!">            return True</span>
 <span class="line-precise" title="No Anys on this line!">        except (OverflowError, OSError, socket.error) as error:</span>
 <span class="line-any" title="Any Types on this line: 
@@ -3647,23 +3638,33 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!">    """</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x1)">    def __init__(self, ssig, options):</span>
+Explicit (x1)">    def __init__(self, ssig, opts):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (StopSignal, Dict[str, Any]) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Set specific options for this plugin.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            ssig (StopSignal): StopSignal instance used by the interrupter.</span>
-<span class="line-empty" title="No Anys on this line!">            options (dict): Custom options for a plugin.</span>
+<span class="line-empty" title="No Anys on this line!">            opts (dict): Custom plugin option.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x1)">        super(AbstractNetcatPlugin, self).__init__()</span>
 <span class="line-precise" title="No Anys on this line!">        self.__ssig = ssig</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Explicit (x2)">        self.__opts = opts</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def ssig(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; StopSignal</span>
 <span class="line-empty" title="No Anys on this line!">        """`StopSignal`: Read only property to provide a StopSignal instance to plugins."""</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__ssig</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Explicit (x1)">    def opts(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Dict[str, Any]</span>
+<span class="line-empty" title="No Anys on this line!">        """`dict`: Custom plugin options."""</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Explicit (x1)">        return self.__opts</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @abstractmethod</span>
 <span class="line-precise" title="No Anys on this line!">    def producer(self):</span>
@@ -3703,7 +3704,7 @@ Explicit (x1)">        super(AbstractNetcatPlugin, self).__init__()</span>
 <span class="line-empty" title="No Anys on this line!"># CLASS: Pwncat</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!"># FIXME: This has an invalid signature, use options={} to distribute vars</span>
+<span class="line-empty" title="No Anys on this line!"># TODO: This has an invalid signature, use options={} to distribute vars</span>
 <span class="line-empty" title="No Anys on this line!"># TODO: Why does Python not complain about it???</span>
 <span class="line-precise" title="No Anys on this line!">class Pwncat(AbstractNetcatPlugin):</span>
 <span class="line-empty" title="No Anys on this line!">    """Pwncat implementation based on custom Socket library.</span>
@@ -3839,7 +3840,7 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__net.close_conn_sock()</span>
 <span class="line-precise" title="No Anys on this line!">        self.__net.close_bind_sock()</span>
 <span class="line-empty" title="No Anys on this line!">        # Raise stop signal</span>
-<span class="line-empty" title="No Anys on this line!">        # FIXME: Check if this is required</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: Check if this is required</span>
 <span class="line-precise" title="No Anys on this line!">        self.ssig.raise_stop()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # ------------------------------------------------------------------------------</span>
@@ -4045,7 +4046,7 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            "[NetcatPluginOutput] interrupt() invoked"</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-empty" title="No Anys on this line!">        # Raise stop signal</span>
-<span class="line-empty" title="No Anys on this line!">        # FIXME: Check if this is required???</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: Check if this is required???</span>
 <span class="line-precise" title="No Anys on this line!">        self.ssig.raise_stop()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4150,7 +4151,7 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        self.proc.kill()</span>
 <span class="line-empty" title="No Anys on this line!">        # Raise stop signal</span>
-<span class="line-empty" title="No Anys on this line!">        # FIXME: Check if this is required???</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: Check if this is required???</span>
 <span class="line-precise" title="No Anys on this line!">        self.ssig.raise_stop()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def producer(self):</span>
@@ -4353,7 +4354,7 @@ Explicit (x1)">                kwargs=self.__timers[key].kwargs,</span>
 <span class="line-empty" title="No Anys on this line!">            """Stop threads."""</span>
 <span class="line-precise" title="No Anys on this line!">            for key in self.__threads:</span>
 <span class="line-precise" title="No Anys on this line!">                if not self.__threads[key].is_alive() or force:</span>
-<span class="line-empty" title="No Anys on this line!">                    # FIXME: How are we gonna call the stop signal now?</span>
+<span class="line-empty" title="No Anys on this line!">                    # TODO: How are we gonna call the stop signal now?</span>
 <span class="line-empty" title="No Anys on this line!">                    #  # [1/3] Inform all threads (inside) about a stop signal.</span>
 <span class="line-empty" title="No Anys on this line!">                    #  # All threads with non-blocking funcs will be able to stop themselves</span>
 <span class="line-empty" title="No Anys on this line!">                    #  self.log.trace(  # type: ignore</span>
@@ -4821,7 +4822,7 @@ Explicit (x3)">    advanced.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        type=int,</span>
 <span class="line-precise" title="No Anys on this line!">        help="""Listen mode (TCP and UDP):</span>
 <span class="line-empty" title="No Anys on this line!">If the server is unable to bind, it will re-initialize</span>
-<span class="line-empty" title="No Anys on this line!">itself x many times before giving up. Use -01 to re-init</span>
+<span class="line-empty" title="No Anys on this line!">itself x many times before giving up. Use -1 to re-init</span>
 <span class="line-empty" title="No Anys on this line!">endlessly. (default: fail after first unsuccessful try).</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">""",</span>
@@ -5154,17 +5155,17 @@ Explicit (x2)">        net_cli = Pwncat(ssig, encoder, host, port, "client", srv
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "TRANSMIT",</span>
 <span class="line-precise" title="No Anys on this line!">            DSRunnerAction(</span>
-<span class="line-precise" title="No Anys on this line!">                net_srv.receive,  # USER sends data to PC-SERVER</span>
-<span class="line-precise" title="No Anys on this line!">                net_cli.send,  # Data parsed on to PC-CLIENT to send to TARGET</span>
-<span class="line-precise" title="No Anys on this line!">                [net_cli.stop, net_srv.stop],</span>
+<span class="line-precise" title="No Anys on this line!">                net_srv.producer,  # (receive) USER sends data to PC-SERVER</span>
+<span class="line-precise" title="No Anys on this line!">                net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET</span>
+<span class="line-precise" title="No Anys on this line!">                [net_cli.interrupt, net_srv.interrupt],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECEIVE",</span>
 <span class="line-precise" title="No Anys on this line!">            DSRunnerAction(</span>
-<span class="line-precise" title="No Anys on this line!">                net_cli.receive,  # Data comes back from TARGET to PC-CLIENT</span>
-<span class="line-precise" title="No Anys on this line!">                net_srv.send,  # Data parsed on to PC-SERVER to back send to USER</span>
-<span class="line-precise" title="No Anys on this line!">                [net_cli.stop, net_srv.stop],</span>
+<span class="line-precise" title="No Anys on this line!">                net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT</span>
+<span class="line-precise" title="No Anys on this line!">                net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER</span>
+<span class="line-precise" title="No Anys on this line!">                [net_cli.interrupt, net_srv.interrupt],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
@@ -5189,16 +5190,16 @@ Explicit (x2)">        net_cli_r = Pwncat(ssig, encoder, host, port, "client", s
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "TRANSMIT",</span>
 <span class="line-precise" title="No Anys on this line!">            DSRunnerAction(</span>
-<span class="line-precise" title="No Anys on this line!">                net_cli_l.receive,  # USER sends data to PC-SERVER</span>
-<span class="line-precise" title="No Anys on this line!">                net_cli_r.send,  # Data parsed on to PC-CLIENT to send to TARGET</span>
+<span class="line-precise" title="No Anys on this line!">                net_cli_l.producer,  # (receive) USER sends data to PC-SERVER</span>
+<span class="line-precise" title="No Anys on this line!">                net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECEIVE",</span>
 <span class="line-precise" title="No Anys on this line!">            DSRunnerAction(</span>
-<span class="line-precise" title="No Anys on this line!">                net_cli_r.receive,  # Data comes back from TARGET to PC-CLIENT</span>
-<span class="line-precise" title="No Anys on this line!">                net_cli_l.send,  # Data parsed on to PC-SERVER to back send to USER</span>
+<span class="line-precise" title="No Anys on this line!">                net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT</span>
+<span class="line-precise" title="No Anys on this line!">                net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
