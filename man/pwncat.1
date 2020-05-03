@@ -106,7 +106,7 @@ disconnected or the connection is unterrupted otherwise.
 \fB\-\-rebind\fR x
 Listen mode (TCP and UDP):
 If the server is unable to bind, it will re\-initialize
-itself x many times before giving up. Use 0 to re\-init
+itself x many times before giving up. Use \fB\-01\fR to re\-init
 endlessly. (default: fail after first unsuccessful try).
 .TP
 \fB\-\-rebind\-wait\fR s
@@ -126,7 +126,7 @@ This option requires \fB\-\-rebind\fR to be specified.
 Connect mode / Zero\-I/O mode (TCP only):
 If the remote server is not reachable or the connection
 is interrupted, the client will connect again x many
-times before giving up. Use 0 to retry endlessly.
+times before giving up. Use \fB\-1\fR to retry endlessly.
 (default: quit if the remote is not available or the
 connection was interrupted)
 This might be handy for stable TCP reverse shells ;\-)

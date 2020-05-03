@@ -212,8 +212,9 @@ x</p>
 
 <p style="margin-left:22%;">Listen mode (TCP and UDP): If
 the server is unable to bind, it will re&minus;initialize
-itself x many times before giving up. Use 0 to re&minus;init
-endlessly. (default: fail after first unsuccessful try).</p>
+itself x many times before giving up. Use <b>&minus;01</b>
+to re&minus;init endlessly. (default: fail after first
+unsuccessful try).</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;rebind&minus;wait</b>
@@ -242,10 +243,10 @@ x</p>
 <p style="margin-left:22%;">Connect mode / Zero&minus;I/O
 mode (TCP only): If the remote server is not reachable or
 the connection is interrupted, the client will connect again
-x many times before giving up. Use 0 to retry endlessly.
-(default: quit if the remote is not available or the
-connection was interrupted) This might be handy for stable
-TCP reverse shells ;&minus;)</p>
+x many times before giving up. Use <b>&minus;1</b> to retry
+endlessly. (default: quit if the remote is not available or
+the connection was interrupted) This might be handy for
+stable TCP reverse shells ;&minus;)</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;reconn&minus;wait</b>
