@@ -701,7 +701,7 @@ class PwncatSocket(object):
             if not isinstance(infos, list) or len(infos) == 0:
                 raise socket.gaierror("Could resolve to hostname")  # type: ignore
 
-            (family, socktype, proto, canonname, sockaddr) = infos[0]
+            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
         except socket.gaierror as error:
             self.__log.error("Resolve Error: %s", error)
             raise socket.gaierror(error)  # type: ignore
@@ -820,7 +820,7 @@ class PwncatSocket(object):
         """Close the bind socket used by the server to accept clients."""
         try:
             self.__close("sock", self.__sock)
-        except AttributeError as error:
+        except AttributeError:
             # Socket does not exist (anymore)
             pass
 
@@ -829,7 +829,7 @@ class PwncatSocket(object):
         """Close the communication socket used for send and receive."""
         try:
             self.__close("conn", self.__conn)
-        except AttributeError as error:
+        except AttributeError:
             # Socket does not exist (anymore)
             pass
 
@@ -888,17 +888,13 @@ class PwncatSocket(object):
             # (SHUT_RDWR) 2 = Both
             self.__log.trace("Shutting down %s socket", name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
-        except OSError as error:
-            self.__log.trace("Could not shutdown %s socket: %s", name, error)  # type: ignore
-        except socket.error as error:
+        except (OSError, socket.error) as error:
             self.__log.trace("Could not shutdown %s socket: %s", name, error)  # type: ignore
 
         try:
             self.__log.trace("Closing %s socket", name)  # type: ignore
             sock.close()
-        except OSError as error:
-            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
-        except socket.error as error:
+        except (OSError, socket.error) as error:
             self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
 
     # ------------------------------------------------------------------------------
@@ -920,9 +916,6 @@ class PwncatSocket(object):
         try:
             self.__log.debug("Binding socket to %s:%d", addr, port)
             sock.bind((addr, port))
-            # Store local addr and port
-            self.__local_addr = addr
-            self.__local_port = port
             return True
         except (OverflowError, OSError, socket.error) as error:
             self.__log.error("Binding socket to %s:%d failed: %s", addr, port, error)
@@ -1028,22 +1021,29 @@ class AbstractNetcatPlugin(ABC):  # type: ignore
     in a way that it is able to act on the event which the "interrupt" func emitted.
     """
 
-    def __init__(self, ssig, options):
+    def __init__(self, ssig, opts):
         # type: (StopSignal, Dict[str, Any]) -> None
         """Set specific options for this plugin.
 
         Args:
             ssig (StopSignal): StopSignal instance used by the interrupter.
-            options (dict): Custom options for a plugin.
+            opts (dict): Custom plugin option.
         """
         super(AbstractNetcatPlugin, self).__init__()
         self.__ssig = ssig
+        self.__opts = opts
 
     @property
     def ssig(self):
         # type: () -> StopSignal
         """`StopSignal`: Read only property to provide a StopSignal instance to plugins."""
         return self.__ssig
+
+    @property
+    def opts(self):
+        # type: () -> Dict[str, Any]
+        """`dict`: Custom plugin options."""
+        return self.__opts
 
     @abstractmethod
     def producer(self):
@@ -1083,7 +1083,7 @@ class AbstractNetcatPlugin(ABC):  # type: ignore
 # CLASS: Pwncat
 # -------------------------------------------------------------------------------------------------
 
-# FIXME: This has an invalid signature, use options={} to distribute vars
+# TODO: This has an invalid signature, use options={} to distribute vars
 # TODO: Why does Python not complain about it???
 class Pwncat(AbstractNetcatPlugin):
     """Pwncat implementation based on custom Socket library.
@@ -1217,7 +1217,7 @@ class Pwncat(AbstractNetcatPlugin):
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
         # Raise stop signal
-        # FIXME: Check if this is required
+        # TODO: Check if this is required
         self.ssig.raise_stop()
 
     # ------------------------------------------------------------------------------
@@ -1400,7 +1400,7 @@ class NetcatPluginOutput(AbstractNetcatPlugin):
             "[NetcatPluginOutput] interrupt() invoked"
         )
         # Raise stop signal
-        # FIXME: Check if this is required???
+        # TODO: Check if this is required???
         self.ssig.raise_stop()
 
 
@@ -1488,7 +1488,7 @@ class NetcatPluginCommand(AbstractNetcatPlugin):
         )
         self.proc.kill()
         # Raise stop signal
-        # FIXME: Check if this is required???
+        # TODO: Check if this is required???
         self.ssig.raise_stop()
 
     def producer(self):
@@ -1672,7 +1672,7 @@ class Runner(object):
             """Stop threads."""
             for key in self.__threads:
                 if not self.__threads[key].is_alive() or force:
-                    # FIXME: How are we gonna call the stop signal now?
+                    # TODO: How are we gonna call the stop signal now?
                     #  # [1/3] Inform all threads (inside) about a stop signal.
                     #  # All threads with non-blocking funcs will be able to stop themselves
                     #  self.log.trace(  # type: ignore
@@ -2397,17 +2397,17 @@ def main():
         run.add_action(
             "TRANSMIT",
             DSRunnerAction(
-                net_srv.receive,  # USER sends data to PC-SERVER
-                net_cli.send,  # Data parsed on to PC-CLIENT to send to TARGET
-                [net_cli.stop, net_srv.stop],
+                net_srv.producer,  # (receive) USER sends data to PC-SERVER
+                net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
+                [net_cli.interrupt, net_srv.interrupt],
             ),
         )
         run.add_action(
             "RECEIVE",
             DSRunnerAction(
-                net_cli.receive,  # Data comes back from TARGET to PC-CLIENT
-                net_srv.send,  # Data parsed on to PC-SERVER to back send to USER
-                [net_cli.stop, net_srv.stop],
+                net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
+                [net_cli.interrupt, net_srv.interrupt],
             ),
         )
         run.run()
@@ -2427,16 +2427,16 @@ def main():
         run.add_action(
             "TRANSMIT",
             DSRunnerAction(
-                net_cli_l.receive,  # USER sends data to PC-SERVER
-                net_cli_r.send,  # Data parsed on to PC-CLIENT to send to TARGET
+                net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
+                net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
             ),
         )
         run.add_action(
             "RECEIVE",
             DSRunnerAction(
-                net_cli_r.receive,  # Data comes back from TARGET to PC-CLIENT
-                net_cli_l.send,  # Data parsed on to PC-SERVER to back send to USER
+                net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
             ),
         )
