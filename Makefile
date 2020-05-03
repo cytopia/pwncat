@@ -91,7 +91,7 @@ mypy:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check mypy"
 	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/mypy --strict --show-error-context --show-error-codes --pretty --config-file setup.cfg $(BINPATH)$(BINNAME)
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/mypy --config-file setup.cfg $(BINPATH)$(BINNAME)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -105,10 +105,23 @@ version:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check version config"
 	@echo "# -------------------------------------------------------------------- #"
-	if [ "$$(grep version= setup.py | awk -F'"' '{print $$2}')" != "$$(grep 'VERSION ' $(BINPATH)$(BINNAME) | awk -F'"' '{print $$2}')" ]; then \
-		echo "Version mismatch in setup.py and $(BINPATH)$(BINNAME)"; \
+	@VERSION_PWNCAT=$$( grep -E '^VERSION = "[.0-9]+(-\w+)?"' bin/pwncat | awk -F'"' '{print $$2}' || true ); \
+	VERSION_SETUP=$$( grep version= setup.py | awk -F'"' '{print $$2}' || true ); \
+	VERSION_CHANGE=$$( grep -E '## Release [.0-9]+(-\w+)?$$' CHANGELOG.md | head -1 | sed 's/.*[[:space:]]//g' || true ); \
+	if [ "$${VERSION_PWNCAT}" != "$${VERSION_SETUP}" ] && [ "$${VERSION_SETUP}" != "$${VERSION_CHANGE}" ]; then \
+		echo "[ERROR] Version mismatch"; \
+		echo "bin/pwncat:   $${VERSION_PWNCAT}"; \
+		echo "setup.py:     $${VERSION_SETUP}"; \
+		echo "CHANGELOG.md: $${VERSION_CHANGE}    # Looking for latest entry with regex format: '## Release [.0-9]+(\w+)?$$'" ; \
 		exit 1; \
-	fi
+	else \
+		echo "[OK] Version match"; \
+		echo "bin/pwncat:   $${VERSION_PWNCAT}"; \
+		echo "setup.py:     $${VERSION_SETUP}"; \
+		echo "CHANGELOG.md: $${VERSION_CHANGE}"; \
+		exit 0; \
+	fi \
+
 
 lint-files:
 	@echo "# --------------------------------------------------------------------"
@@ -259,7 +272,7 @@ docs:
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).api.html'
 	@# Generate mypy code coverage page
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data -w /data -e UID=$(UID) -e GID=${GID} --entrypoint= cytopia/mypy sh -c ' \
-		mypy --strict --show-error-context --show-error-codes --pretty --config-file setup.cfg --html-report tmp $(BINPATH)$(BINNAME) \
+		mypy --config-file setup.cfg --html-report tmp $(BINPATH)$(BINNAME) \
 		&& cp -f tmp/mypy-html.css docs/css/mypy.css \
 		&& cat tmp/index.html \
 			| sed "s|mypy-html.css|css/mypy.css|g" \
