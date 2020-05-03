@@ -1,7 +1,7 @@
 ---
 # https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions
 # https://github.com/actions/python-versions/blob/master/versions-manifest.json
-name: win-2.7
+name: lin-x64-pypy2
 on:
   pull_request:
   push:
@@ -11,14 +11,14 @@ on:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: False
       matrix:
         version:
-          - 2.7
+          - pypy2
 
-    name: "[win] 2.7"
+    name: "[lin] [x64] pypy2"
     steps:
       # ------------------------------------------------------------
       # Setup

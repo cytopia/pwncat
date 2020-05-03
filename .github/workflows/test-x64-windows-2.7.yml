@@ -1,7 +1,7 @@
 ---
 # https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions
 # https://github.com/actions/python-versions/blob/master/versions-manifest.json
-name: win-2.7
+name: win-x64-2.7
 on:
   pull_request:
   push:
@@ -18,7 +18,7 @@ jobs:
         version:
           - 2.7
 
-    name: "[win] 2.7"
+    name: "[win] [x64] 2.7"
     steps:
       # ------------------------------------------------------------
       # Setup
