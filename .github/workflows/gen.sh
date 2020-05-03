@@ -18,7 +18,9 @@ PYTHON_VERSIONS=("2.7" "3.5" "3.6" "3.7" "3.8" "pypy2" "pypy3")
 OPERATING_SYSTEMS=("ubuntu" "windows" "macos")
 PYTHON_ARCHS=("x64" "x86")
 
-rm -f "${TPL_PATH}/test-*"
+
+find "${FLW_PATH}" -name "test-*" -exec rm {} \;
+
 for arch in ${!PYTHON_ARCHS[*]}; do
 	for os in ${!OPERATING_SYSTEMS[*]}; do
 		for v in ${!PYTHON_VERSIONS[*]}; do
