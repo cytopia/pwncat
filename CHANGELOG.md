@@ -9,6 +9,9 @@
 #### Added
 - Python type coverage report
 
+#### Changed
+- Code: heavy refactoring
+
 
 ## Release 0.0.10-alpha
 
