@@ -709,7 +709,7 @@ class PwncatSocket(object):
         &#34;&#34;&#34;
         family = socket.AF_INET
         socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-        proto = 0
+        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
         flags = 0
 
         # Quickly do wildcards for listening addresses
@@ -727,13 +727,12 @@ class PwncatSocket(object):
 
             if not isinstance(infos, list) or len(infos) == 0:
                 raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
-
-            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
-        except socket.gaierror as error:
+            addr = str(infos[0][4][0])
+        except (AttributeError, socket.gaierror) as error:
             self.__log.error(&#34;Resolve Error: %s&#34;, error)
             raise socket.gaierror(error)  # type: ignore
-        self.__log.debug(&#34;Resolved hostname: %s&#34;, canonname)
-        return canonname
+        self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
+        return addr
 
     def run_client(self, addr, port):
         # type: (str, int) -&gt; bool
@@ -5180,7 +5179,7 @@ callback that writes to stdout.</p>
         &#34;&#34;&#34;
         family = socket.AF_INET
         socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-        proto = 0
+        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
         flags = 0
 
         # Quickly do wildcards for listening addresses
@@ -5198,13 +5197,12 @@ callback that writes to stdout.</p>
 
             if not isinstance(infos, list) or len(infos) == 0:
                 raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
-
-            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
-        except socket.gaierror as error:
+            addr = str(infos[0][4][0])
+        except (AttributeError, socket.gaierror) as error:
             self.__log.error(&#34;Resolve Error: %s&#34;, error)
             raise socket.gaierror(error)  # type: ignore
-        self.__log.debug(&#34;Resolved hostname: %s&#34;, canonname)
-        return canonname
+        self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
+        return addr
 
     def run_client(self, addr, port):
         # type: (str, int) -&gt; bool
@@ -5573,7 +5571,7 @@ callback that writes to stdout.</p>
     &#34;&#34;&#34;
     family = socket.AF_INET
     socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-    proto = 0
+    proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
     flags = 0
 
     # Quickly do wildcards for listening addresses
@@ -5591,13 +5589,12 @@ callback that writes to stdout.</p>
 
         if not isinstance(infos, list) or len(infos) == 0:
             raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
-
-        (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
-    except socket.gaierror as error:
+        addr = str(infos[0][4][0])
+    except (AttributeError, socket.gaierror) as error:
         self.__log.error(&#34;Resolve Error: %s&#34;, error)
         raise socket.gaierror(error)  # type: ignore
-    self.__log.debug(&#34;Resolved hostname: %s&#34;, canonname)
-    return canonname</code></pre>
+    self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
+    return addr</code></pre>
 </details>
 </dd>
 <dt id="pwncat.PwncatSocket.re_accept_client"><code class="name flex">

@@ -15,12 +15,12 @@
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
 <th class="summary summary-precision">7.75% imprecise</th>
-<th class="summary summary-lines">2503 LOC</th>
+<th class="summary summary-lines">2502 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
 <td class="summary summary-precision">7.75% imprecise</td>
-<td class="summary summary-lines">2503 LOC</td>
+<td class="summary summary-lines">2502 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2537,7 +2537,6 @@
 <span id="L2500" class="lineno"><a class="lineno" href="#L2500">2500</a></span>
 <span id="L2501" class="lineno"><a class="lineno" href="#L2501">2501</a></span>
 <span id="L2502" class="lineno"><a class="lineno" href="#L2502">2502</a></span>
-<span id="L2503" class="lineno"><a class="lineno" href="#L2503">2503</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""Python netcat re-implementation."""</span>
@@ -3270,7 +3269,7 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-precise" title="No Anys on this line!">        family = socket.AF_INET</span>
 <span class="line-precise" title="No Anys on this line!">        socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM</span>
-<span class="line-precise" title="No Anys on this line!">        proto = 0</span>
+<span class="line-precise" title="No Anys on this line!">        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP</span>
 <span class="line-precise" title="No Anys on this line!">        flags = 0</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Quickly do wildcards for listening addresses</span>
@@ -3291,16 +3290,15 @@ Explicit (x3)">            infos = socket.getaddrinfo(host, port, family, sockty
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x3)">            if not isinstance(infos, list) or len(infos) == 0:</span>
 <span class="line-precise" title="No Anys on this line!">                raise socket.gaierror("Could resolve to hostname")  # type: ignore</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x3)">            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612</span>
-<span class="line-precise" title="No Anys on this line!">        except socket.gaierror as error:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">            addr = str(infos[0][4][0])</span>
+<span class="line-precise" title="No Anys on this line!">        except (AttributeError, socket.gaierror) as error:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.error("Resolve Error: %s", error)</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.gaierror(error)  # type: ignore</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">        self.__log.debug("Resolved hostname: %s", canonname)</span>
-<span class="line-precise" title="No Anys on this line!">        return canonname</span>
+Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>
+<span class="line-precise" title="No Anys on this line!">        return addr</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def run_client(self, addr, port):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str, int) -&gt; bool</span>

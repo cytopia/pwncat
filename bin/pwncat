@@ -682,7 +682,7 @@ class PwncatSocket(object):
         """
         family = socket.AF_INET
         socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-        proto = 0
+        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
         flags = 0
 
         # Quickly do wildcards for listening addresses
@@ -700,13 +700,12 @@ class PwncatSocket(object):
 
             if not isinstance(infos, list) or len(infos) == 0:
                 raise socket.gaierror("Could resolve to hostname")  # type: ignore
-
-            (family, socktype, proto, canonname, sockaddr) = infos[0]  # pylint: disable=W0612
-        except socket.gaierror as error:
+            addr = str(infos[0][4][0])
+        except (AttributeError, socket.gaierror) as error:
             self.__log.error("Resolve Error: %s", error)
             raise socket.gaierror(error)  # type: ignore
-        self.__log.debug("Resolved hostname: %s", canonname)
-        return canonname
+        self.__log.debug("Resolved hostname: %s", addr)
+        return addr
 
     def run_client(self, addr, port):
         # type: (str, int) -> bool
