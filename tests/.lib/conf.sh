@@ -263,22 +263,37 @@ run_bg() {
 ###
 has_errors() {
 	local stderr="${1}"
+	local reg_ignore_err="${2:-}"
+
+	local errors=0
 
 	if [ ! -f "${stderr}" ]; then
 		>&2 echo "[Assert Error] 'has_errors()' did not receive a valid file: ${stderr}"
 		exit 1
 	fi
 
-	# Stuff the Python logger is producing
-	if ! run_fail "grep -E 'FATAL|ERROR' ${stderr} >/dev/null"; then
-		return 0  # Successful return means it has errors
+	# Stuff the Python logging.Logger is producing
+	if [ -n "${reg_ignore_err}" ]; then
+		if ! run_fail "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -E 'FATAL|ERROR' >/dev/null"; then
+			return 0  # Successful return means it has errors
+		fi
+	else
+		if ! run_fail "grep -E 'FATAL|ERROR' ${stderr} >/dev/null"; then
+			return 0  # Successful return means it has errors
+		fi
 	fi
 
 	# Other stuff that might pop up. Note that greping for 'Error' case-insensitive
 	# might yield false positives due to all the caught exception messages that may
 	# contain the word 'Error' or a combination of it.
-	if ! run_fail "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
-		return 0  # Successful return means it has errors
+	if [ -n "${reg_ignore_err}" ]; then
+		if ! run_fail "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
+			return 0  # Successful return means it has errors
+		fi
+	else
+		if ! run_fail "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
+			return 0  # Successful return means it has errors
+		fi
 	fi
 	return 1
 }
@@ -441,6 +456,62 @@ tmp_file() {
 # -------------------------------------------------------------------------------------------------
 
 ###
+###
+###
+test_wait_for_data_transfer() {
+	local send_name="${1}"
+	local send_pid="${2}"
+	local send_file_stdout="${3}"
+	local send_file_stderr="${4}"
+	local expected="${5}"
+	# Required
+	local recv_name="${6}"
+	local recv_pid="${7}"
+	local recv_file_stdout="${8}"
+	local recv_file_stderr="${9}"
+
+	print_info "Wait for data transfer (${send_name} -> ${recv_name})"
+
+	local cnt=0
+	local retry=20
+
+	# shellcheck disable=SC2059
+	while ! diff  \
+		<(od -c "${recv_file_stdout}") \
+		<(printf "${expected}" | od -c) >/dev/null 2>&1; do
+		printf "."
+		cnt=$(( cnt + 1 ))
+		if [ "${cnt}" -gt "${retry}" ]; then
+			echo
+			print_file "(SEND) ${send_name} STDERR" "${send_file_stderr}"
+			print_file "(SEND) ${send_name} STDOUT" "${send_file_stdout}"
+			print_file "(RECV) ${recv_name} STDERR" "${recv_file_stderr}"
+			print_file "(RECV) ${recv_name} STDOUT" "${recv_file_stdout}"
+
+			print_data "EXPECTED DATA" "${expected}"
+			print_file "RECEIVED DATA" "${recv_file_stdout}"
+
+			diff "${recv_file_stdout}" <(printf "${expected}") || true
+			diff <(od -c "${recv_file_stdout}") <(printf "${expected}" | od -c) || true
+
+			print_data "RECEIVED RAW" "$( od -c "${recv_file_stdout}" )"
+			print_data "EXPECTED RAW" "$( printf "${expected}" | od -c )"
+			print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}"
+
+			kill_pid "${send_pid}" || true
+			kill_pid "${recv_pid}" || true
+			exit 1
+		fi
+		sleep 1
+	done
+	echo
+	print_file "${recv_name} received data" "${recv_file_stdout}"
+	print_data "${recv_name} received raw" "$( od -c "${recv_file_stdout}" )"
+}
+
+
+
+###
 ### Stop instance gratefully, or kill and exit
 ###
 action_stop_instance() {
@@ -591,6 +662,21 @@ test_case_instance_is_stopped() {
 ### Ensure instance has no errors
 ###
 test_case_instance_has_no_errors() {
+	# This is a mysterious bash error. We need to somehow use these parameters
+	# in case only 1,2,3,4 and 9 are specified... no idea why. But this way the 9th
+	# parameter will have a value as it is supposed to be
+	set +u
+	echo "1: ${1}"  >/dev/null
+	echo "2: ${2}"  >/dev/null
+	echo "3: ${3}"  >/dev/null
+	echo "4: ${4}"  >/dev/null
+	echo "5: ${5}"  >/dev/null
+	echo "6: ${6}"  >/dev/null
+	echo "7: ${7}"  >/dev/null
+	echo "8: ${8}"  >/dev/null
+	echo "9: ${9}"  >/dev/null
+	set -u
+
 	local name="${1}"
 	local pid="${2:-}"
 	local file_stdout="${3}"
@@ -601,6 +687,9 @@ test_case_instance_has_no_errors() {
 	local file_stdout2="${7:-}"
 	local file_stderr2="${8:-}"
 
+	local reg_ignore_err="${9:-}"
+
+
 	# ASSERTS
 	if [ -n "${name2}" ]; then
 		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
@@ -609,9 +698,13 @@ test_case_instance_has_no_errors() {
 		fi
 	fi
 
-	print_info "Check ${name} for errors"
+	if [ -n "${reg_ignore_err}" ]; then
+		print_info "Check ${name} for errors (except: '${reg_ignore_err}')"
+	else
+		print_info "Check ${name} for errors"
+	fi
 
-	if ! has_errors "${file_stderr}"; then
+	if ! has_errors "${file_stderr}" "${reg_ignore_err}"; then
 		return 0
 	fi
 
