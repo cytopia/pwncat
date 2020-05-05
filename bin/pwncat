@@ -1783,7 +1783,10 @@ class Runner(object):
                 time_now = int(time.time())
                 if time_now > time_last + intvl:
                     self.log.debug("[%s] Executing timed function", time_now)
-                    action(*args, **kwargs)
+                    if len(kwargs):
+                        action(*args, **kwargs)
+                    else:
+                        action(*args)
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
@@ -2626,7 +2629,7 @@ def main():
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
             run.add_timer(
                 "PING",
-                DsRunnerTimer(net.consumer, args.udp_ping_intvl, ("\x00",), {}, ssig,),  # send data
+                DsRunnerTimer(net.consumer, args.udp_ping_intvl, ("\x00"), {}, ssig,),  # send data
             )
         run.run()
 
