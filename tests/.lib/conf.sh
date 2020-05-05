@@ -1,0 +1,606 @@
+set -e
+set -u
+set -o pipefail
+
+# SOURCEPATH must be set by script sourcing me
+# shellcheck disable=SC2034
+SOURCEDIR="$( dirname "${SOURCEPATH}" )"
+
+
+# -------------------------------------------------------------------------------------------------
+# GLOBALS
+# -------------------------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------------------------
+# PRINT HEADLINES
+# -------------------------------------------------------------------------------------------------
+
+print_test_case() {
+	local clr_clr="\\033[0;32m"   # Green
+	local clr_rst="\\033[m"       # Reset to normal
+
+	local python="${1:-}"
+
+	local filename=
+	local filenum=
+	local filedesc=
+
+	local dirname=
+	local dirnum=
+	local dirmode=
+	local dirtype=
+	echo "${filename}"
+
+	dirname="$( cd "$(dirname "${0}")" >/dev/null || true; basename "$(pwd -P)" || true )"
+	dirnum="$( echo "${dirname}" | grep -Eo '^[0-9]+' )"
+	dirmode="$( echo "${dirname}" | sed 's/--.*//g' | sed 's/[0-9]*-//g' || true )"
+	dirtype="${dirname//*--/}"
+
+	filename="$( basename "${0}" || true )"
+	filenum="$( echo "${filename}" | grep -Eo '^[0-9]+' || true )"
+	fileproto="$( echo "${filename}" | grep -Eo '\-(tcp|udp)\-' | grep -Eo 'tcp|udp' || true )"
+	filedesc="$( echo "${filename}" | sed 's/.*[0-9]*-\(tcp\|udp\)---//g' | sed 's/\.sh$//g' | sed 's/---/   /g' | sed 's/_/ /g' || true )"
+
+	# shellcheck disable=SC2059
+	printf "${clr_clr}"
+	printf '#%.0s' {1..120}; echo
+	printf '#%.0s' {1..120}; echo
+	printf '#%.0s' {1..120}; echo
+	printf '######\n'
+	printf '######\n'
+	printf '###### [%s] [%s]: %s  -  (%s)\n' "${dirnum}" "${dirmode}" "${dirtype}" "${python}"
+	printf '######\n'
+	printf '######\n'
+	printf '###### [%s] (%s):   %s\n' "${filenum}" "${fileproto}" "${filedesc}"
+	printf '######\n'
+	printf '######\n'
+	printf '#%.0s' {1..120}; echo
+	printf '#%.0s' {1..120}; echo
+	printf '#%.0s' {1..120}; echo
+	# shellcheck disable=SC2059
+	printf "${clr_rst}"
+}
+
+print_h1() {
+	echo;echo;
+	printf '#%.0s' {1..100}; echo
+	printf '#%.0s' {1..100}; echo
+	printf '###\n'
+	printf '### %s\n' "${1}"
+	printf '###\n'
+	printf '#%.0s' {1..100}; echo
+	printf '#%.0s' {1..100}; echo
+}
+
+print_h2() {
+	echo
+	local clr_clr="\\033[0;34m"   # Blue
+	local clr_rst="\\033[m"       # Reset to normal
+
+	# shellcheck disable=SC2059
+	printf "${clr_clr}"
+	printf -- '*%.0s' {1..80}; echo
+	printf -- '* %s\n' "${1}"
+	printf -- '*%.0s' {1..80}; echo
+	# shellcheck disable=SC2059
+	printf "${clr_rst}"
+}
+
+print_h3() {
+	local clr_clr="\\033[0;34m"   # Blue
+	local clr_rst="\\033[m"       # Reset to normal
+
+	# shellcheck disable=SC2059
+	printf "${clr_clr}"
+	printf -- '-%.0s' {1..60}; echo
+	printf -- '%s\n' "${1}"
+	printf -- '-%.0s' {1..60}; echo
+	# shellcheck disable=SC2059
+	printf "${clr_rst}"
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# PRINT INFO
+# -------------------------------------------------------------------------------------------------
+
+print_info() {
+	local message="${1}"
+	#local clr_info="\\033[0;34m" # Blue
+	#local clr_rst="\\033[m"      # Reset to normal
+	printf "[INFO] %s\\n" "${message}"
+}
+
+print_warn() {
+	local message="${1}"
+	local clr_warn="\\033[0;33m" # Yello
+	local clr_rst="\\033[m"      # Reset to normal
+	printf "[WARN] %s\\n" "${message}"
+	printf "${clr_warn}[WARN] %s${clr_rst}\\n" "${message}"
+}
+
+print_error() {
+	local message="${1}"
+	local clr_err="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"      # Reset to normal
+	printf "${clr_err}[ERR]  %s${clr_rst}\\n" "${message}"
+}
+
+print_file() {
+	local name="${1}"
+	local file="${2}"
+	local clr_div="\\033[0;33m"  # Yellow
+	local clr_rst="\\033[m"      # Reset to normal
+
+	print_h3 "[${name}] Filename: ${file}"
+	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF FILE"
+	cat "${file}"
+	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF FILE"
+	echo
+}
+
+print_data() {
+	local name="${1}"
+	local data="${2}"
+	local clr_div="\\033[0;33m"  # Yellow
+	local clr_rst="\\033[m"      # Reset to normal
+
+	print_h3 "[${name}]"
+	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF DATA"
+	echo "${data}"
+	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF DATA"
+	echo
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# RUN FUNCTIONS
+# -------------------------------------------------------------------------------------------------
+
+###
+### Run a command in foreground
+###
+run() {
+	local cmd="${1}"
+
+	local clr_cmd="\\033[0;35m"   # Purple
+	local clr_ok="\\033[0;32m"    # Green
+	local clr_fail="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"       # Reset to normal
+
+	printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
+	if ${cmd}; then
+		printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
+		return 0
+	fi
+	printf "${clr_fail}%s${clr_rst}\\n" "[FAIL]"
+	return 1
+}
+
+###
+### Run a command in foreground and ensure it failed
+###
+run_fail() {
+	local cmd="${1}"
+
+	local clr_cmd="\\033[0;35m"   # Purple
+	local clr_ok="\\033[0;32m"    # Green
+	local clr_fail="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"       # Reset to normal
+
+	>&2 printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
+	if ! eval "${cmd}"; then
+		>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK] (failed - was supposed to fail)"
+		return 0
+	fi
+	>&2 printf "${clr_fail}%s${clr_rst}\\n" "[FAIL] (succeeded - was supposed to fail)"
+	return 1
+}
+
+###
+### Run a command in background and return its pid
+###
+run_bg() {
+	local pipe="${1}"
+	shift
+	local index_stdout=$(( ${#} - 2 ))
+	local index_stderr=$(( ${#} - 1 ))
+
+	local stdout=
+	local stderr=
+	local cnt=0
+	for arg in "${@}"; do
+		if [ "${cnt}" -eq "${index_stdout}" ]; then
+			stdout="${arg}"
+		fi
+		if [ "${cnt}" -eq "${index_stderr}" ]; then
+			stderr="${arg}"
+		fi
+		cnt=$(( cnt + 1 ))
+	done
+
+	# Remove last two arguments
+	set -- "${@:1:$(($#-1))}"
+	set -- "${@:1:$(($#-1))}"
+
+	local clr_cmd="\\033[0;35m"   # Purple
+	local clr_ok="\\033[0;32m"    # Green
+	local clr_fail="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"       # Reset to normal
+	local pid
+
+	# Piped command
+	if [ -n "${pipe}" ]; then
+		>&2 printf "${clr_cmd}%s | %s${clr_rst}\\n" "${pipe}" "${*} > ${stdout} 2> ${stderr}"
+		${pipe} | "${@}"  > "${stdout}" 2> "${stderr}" &
+		pid="${!:-}"
+	# Normal command
+	else
+		>&2 printf "${clr_cmd}%s${clr_rst}\\n" "${*} > ${stdout} 2> ${stderr}"
+		"${@}" > "${stdout}" 2> "${stderr}" &
+		pid="${!:-}"
+	fi
+
+	# Check PID
+	if [ -z "${pid}" ]; then
+		>&2 printf "${clr_fail}%s${clr_rst}\\n" "[FAIL]"
+		return 1
+	fi
+
+	>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
+	echo "${pid}"
+	return 0
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# LOW LEVEL FUNCTIONS
+# -------------------------------------------------------------------------------------------------
+
+###
+### Check file for errors
+###
+has_errors() {
+	local stderr="${1}"
+
+	if [ ! -f "${stderr}" ]; then
+		>&2 echo "[Assert Error] 'has_errors()' did not receive a valid file: ${stderr}"
+		exit 1
+	fi
+
+	# Stuff the Python logger is producing
+	if ! run_fail "grep -E 'FATAL|ERROR' ${stderr} >/dev/null"; then
+		return 0  # Successful return means it has errors
+	fi
+
+	# Other stuff that might pop up. Note that greping for 'Error' case-insensitive
+	# might yield false positives due to all the caught exception messages that may
+	# contain the word 'Error' or a combination of it.
+	if ! run_fail "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
+		return 0  # Successful return means it has errors
+	fi
+	return 1
+}
+
+###
+### Check if pid is running
+###
+pid_is_running() {
+	local pid="${1}"
+
+	if [ -z "${pid}" ]; then
+		>&2 echo "[Assert Error] 'pid_is_running()' function did not receive a pid value"
+		exit 1
+	fi
+
+	# Try different methods to determine if it is running
+	if run "kill -0 ${pid}"; then
+		return 0
+	fi
+	if run "ps -p ${pid}"; then
+		return 0
+	fi
+	return 1
+}
+
+###
+### Check if pid is running
+###
+pid_is_not_running() {
+	local pid="${1}"
+	local running=0
+
+	if [ -z "${pid}" ]; then
+		>&2 echo "[Assert Error] 'pid_is_running()' function did not receive a pid value"
+		exit 1
+	fi
+
+	# Both methods should not succeed (in case on does not exist anyway)
+
+	# Command not found or "not running"
+	if run_fail "kill -0 ${pid}"; then
+		running=$(( running + 1 ))
+	fi
+	# Command not found or "not running"
+	if run_fail "ps -p ${pid}"; then
+		running=$(( running + 1 ))
+	fi
+
+	# Two confirmations
+	if [ "${running}" == "2" ]; then
+		return 0
+	fi
+
+	return 1
+}
+
+###
+### Stop pid gracefully
+###
+stop_pid() {
+	local pid="${1}"
+
+	if [ -z "${pid}" ]; then
+		>&2 echo "[Assert Error] 'stop_pid()' function did not receive a pid value"
+		exit 1
+	fi
+
+	if ! run "kill ${pid}"; then
+		return 1
+	fi
+
+	# Ensure it was really stopped
+	if pid_is_not_running "${pid}"; then
+		return 0
+	fi
+
+	# Give it some time to shutdown gracefully
+	for i in {1..10}; do
+		if pid_is_not_running "${pid}"; then
+			return 0
+		fi
+		sleep 1
+	done
+
+	# Nope, still running
+	return 1
+}
+
+###
+### Kill pid with force
+###
+kill_pid() {
+	local pid="${1}"
+
+	if [ -z "${pid}" ]; then
+		>&2 echo "[Assert Error] 'kill_pid()' function did not receive a pid value"
+		exit 1
+	fi
+
+	if ! run "kill -9 ${pid}"; then
+		return 1
+	fi
+
+	# Ensure it was really stopped
+	if ! pid_is_running "${pid}"; then
+		return 0
+	fi
+
+	# Give it some time to shutdown gracefully
+	# shellcheck disable=SC2034
+	for i in {1..10}; do
+		if ! pid_is_running "${pid}"; then
+			return 0
+		fi
+		run "kill -9 ${pid} || true"
+		sleep 1
+	done
+
+	# Nope, still running
+	return 1
+}
+
+###
+### Create tmpfile wrapper
+###
+tmp_file() {
+	# Just in case it needs to be adjusted everywhere
+	mktemp
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# HIGH LEVEL CHECK FUNCTIONS    -    they will automatically exit the script!!!
+# -------------------------------------------------------------------------------------------------
+
+###
+### Stop instance gratefully, or kill and exit
+###
+action_stop_instance() {
+	local name="${1}"
+	local pid="${2}"
+	local file_stdout="${3}"
+	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local pid2="${6:-}"
+	local file_stdout2="${7:-}"
+	local file_stderr2="${8:-}"
+
+	# ASSERTS
+	if [ -n "${name2}" ]; then
+		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
+			print_error "[Meta] (action_stop_instance(): pid2, stdout2 or stderr2  not specified."
+			exit 1
+		fi
+	fi
+
+	# (1/3) Normal stop
+	print_info "Stopping ${name} gracefully (pid: ${pid})..."
+	if stop_pid "${pid}"; then
+		return 0
+	fi
+
+	# (2/3) Show info after graceful stop attempt
+	if [ -n "${name2}" ]; then
+		print_file "${name2} STDERR" "${file_stderr2}"
+		print_file "${name2} STDOUT" "${file_stdout2}"
+	fi
+	print_file "${name} STDERR" "${file_stderr}"
+	print_file "${name} STDOUT" "${file_stdout}"
+	print_error "[Meta] Could not stop ${name} process with pid: ${pid}"
+
+	# (3/3) Kill with force and cleanup
+	kill_pid "${pid}" || true
+	if [ -n "${name2}" ]; then
+		kill_pid "${pid2}" || true
+		print_file "${name2} STDERR" "${file_stderr2}"
+		print_file "${name2} STDOUT" "${file_stdout2}"
+	fi
+	print_file "${name} STDERR" "${file_stderr}"
+	print_file "${name} STDOUT" "${file_stdout}"
+	print_error "[Meta] Could not stop ${name} gracefully process with pid: ${pid}"
+	exit 1
+}
+
+
+###
+### Ensure instance is running
+###
+test_case_instance_is_running() {
+	local name="${1}"
+	local pid="${2}"
+	local file_stdout="${3}"
+	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local pid2="${6:-}"
+	local file_stdout2="${7:-}"
+	local file_stderr2="${8:-}"
+
+	# ASSERTS
+	if [ -n "${name2}" ]; then
+		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
+			print_error "[Meta] (test_case_instance_is_running(): pid2, stdout2 or stderr2  not specified."
+			exit 1
+		fi
+	fi
+
+	print_info "Check ${name} is running (pid: ${pid}) ..."
+
+	if pid_is_running "${pid}"; then
+		print_info "${name} is running with pid: ${pid}"
+		return 0
+	fi
+
+	if [ -n "${name2}" ]; then
+		print_file "${name2} STDERR" "${file_stderr2}"
+		print_file "${name2} STDOUT" "${file_stdout2}"
+	fi
+	print_file "${name} STDERR" "${file_stderr}"
+	print_file "${name} STDOUT" "${file_stdout}"
+	print_error "[${name} Error] Failed to start ${name} in background"
+
+	# cleanup
+	if [ -n "${name2}" ]; then
+		kill_pid "${pid2}" || true
+	fi
+	exit 1
+}
+
+
+###
+### Ensure instance is stopped
+###
+test_case_instance_is_stopped() {
+	local name="${1}"
+	local pid="${2}"
+	local file_stdout="${3}"
+	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local pid2="${6:-}"
+	local file_stdout2="${7:-}"
+	local file_stderr2="${8:-}"
+
+	# ASSERTS
+	if [ -n "${name2}" ]; then
+		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
+			print_error "[Meta] (test_case_instance_is_stopped(): pid2, stdout2 or stderr2  not specified."
+			exit 1
+		fi
+	fi
+
+	print_info "Check ${name} has stopped (pid: ${pid}) ..."
+
+	# Give it some time to shutdown gracefully
+	# shellcheck disable=SC2034
+	for i in {1..10}; do
+		if pid_is_not_running "${pid}"; then
+			return 0
+		fi
+		sleep 1
+	done
+
+	# Show logs
+	if [ -n "${name2}" ]; then
+		print_file "${name2} STDERR" "${file_stderr2}"
+		print_file "${name2} STDOUT" "${file_stdout2}"
+	fi
+	print_file "${name} STDERR" "${file_stderr}"
+	print_file "${name} STDOUT" "${file_stdout}"
+	print_error "[${name} Error] ${name} is not stopped"
+
+	# cleanup
+	kill_pid "${pid}" || true
+	if [ -n "${name2}" ]; then
+		kill_pid "${pid2}" || true
+	fi
+	exit 1
+}
+
+
+###
+### Ensure instance has no errors
+###
+test_case_instance_has_no_errors() {
+	local name="${1}"
+	local pid="${2:-}"
+	local file_stdout="${3}"
+	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local pid2="${6:-}"
+	local file_stdout2="${7:-}"
+	local file_stderr2="${8:-}"
+
+	# ASSERTS
+	if [ -n "${name2}" ]; then
+		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
+			print_error "[Meta] (test_case_instance_has_no_errors(): pid2, stdout2 or stderr2  not specified."
+			exit 1
+		fi
+	fi
+
+	print_info "Check ${name} for errors"
+
+	if ! has_errors "${file_stderr}"; then
+		return 0
+	fi
+
+	if [ -n "${name2}" ]; then
+		print_file "${name2} STDERR" "${file_stderr2}"
+		print_file "${name2} STDOUT" "${file_stdout2}"
+	fi
+	print_file "${name} STDERR" "${file_stderr}"
+	print_file "${name} STDOUT" "${file_stdout}"
+	print_error "[${name} Error] Errors found in stderr"
+
+	# cleanup
+	kill_pid "${pid}" || true
+	if [ -n "${name2}" ]; then
+		kill_pid "${pid2}" || true
+	fi
+	exit 1
+}
