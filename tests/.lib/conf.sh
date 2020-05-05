@@ -170,7 +170,7 @@ run() {
 	local clr_rst="\\033[m"       # Reset to normal
 
 	printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
-	if ${cmd}; then
+	if eval "${cmd}"; then
 		printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
 		return 0
 	fi
@@ -281,6 +281,32 @@ has_errors() {
 		return 0  # Successful return means it has errors
 	fi
 	return 1
+}
+
+###
+### Check file has no errors
+###
+has_no_errors() {
+	local stderr="${1}"
+	local errors=0
+
+	if [ ! -f "${stderr}" ]; then
+		>&2 echo "[Assert Error] 'has_errors()' did not receive a valid file: ${stderr}"
+		exit 1
+	fi
+
+	# Stuff the Python logger is producing
+	if ! run_fail "grep -E 'FATAL|ERROR' ${stderr} >/dev/null"; then
+		errors=$(( errors + 1 ))
+	fi
+
+	# Other stuff that might pop up. Note that greping for 'Error' case-insensitive
+	# might yield false positives due to all the caught exception messages that may
+	# contain the word 'Error' or a combination of it.
+	if ! run_fail "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
+		errors=$(( errors + 1 ))
+	fi
+	return ${errors}
 }
 
 ###
@@ -586,6 +612,50 @@ test_case_instance_has_no_errors() {
 	print_info "Check ${name} for errors"
 
 	if ! has_errors "${file_stderr}"; then
+		return 0
+	fi
+
+	if [ -n "${name2}" ]; then
+		print_file "${name2} STDERR" "${file_stderr2}"
+		print_file "${name2} STDOUT" "${file_stdout2}"
+	fi
+	print_file "${name} STDERR" "${file_stderr}"
+	print_file "${name} STDOUT" "${file_stdout}"
+	print_error "[${name} Error] Errors found in stderr"
+
+	# cleanup
+	kill_pid "${pid}" || true
+	if [ -n "${name2}" ]; then
+		kill_pid "${pid2}" || true
+	fi
+	exit 1
+}
+
+###
+### Ensure instance does have errors
+###
+test_case_instance_has_errors() {
+	local name="${1}"
+	local pid="${2:-}"
+	local file_stdout="${3}"
+	local file_stderr="${4}"
+	# Optional
+	local name2="${5:-}"
+	local pid2="${6:-}"
+	local file_stdout2="${7:-}"
+	local file_stderr2="${8:-}"
+
+	# ASSERTS
+	if [ -n "${name2}" ]; then
+		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
+			print_error "[Meta] (test_case_instance_has_errors(): pid2, stdout2 or stderr2  not specified."
+			exit 1
+		fi
+	fi
+
+	print_info "Check ${name} for errors"
+
+	if ! has_no_errors "${file_stderr}"; then
 		return 0
 	fi
 
