@@ -230,19 +230,19 @@ class DsRunnerTimer(object):
     def __init__(
         self,
         action,  # type: Callable[..., None]
-        intvl,  # type: int
-        args,  # type: Tuple[Any, ...]
-        kwargs,  # type: Dict[str, Any]
         signal,  # type: StopSignal
+        intvl,  # type: int
+        *args,  # type: Tuple[Any, ...]
+        **kwargs  # type: Dict[str, Any]
     ):
         # type: (...) -&gt; None
         assert type(intvl) is int, type(intvl)
         assert type(kwargs) is dict, type(kwargs)
         self.__action = action
+        self.__signal = signal
         self.__intvl = intvl
         self.__args = args
         self.__kwargs = kwargs
-        self.__signal = signal
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1783,7 +1783,7 @@ class Runner(object):
                 consumer(data)
             self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
-        def run_timer(name, action, intvl, ssig, *args, **kwargs):
+        def run_timer(name, action, intvl, ssig, args, **kwargs):
             # type: (str, Callable[..., None], int, StopSignal, Any, Any) -&gt; None
             &#34;&#34;&#34;Timer run function to be thrown into a thread (Execs periodic tasks).
 
@@ -1804,10 +1804,7 @@ class Runner(object):
                 time_now = int(time.time())
                 if time_now &gt; time_last + intvl:
                     self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                    if kwargs:
-                        action(*args, **kwargs)
-                    else:
-                        action(*args)
+                    action(*args, **kwargs)
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
@@ -2650,7 +2647,7 @@ def main():
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl &gt; 0:
             run.add_timer(
                 &#34;PING&#34;,
-                DsRunnerTimer(net.consumer, args.udp_ping_intvl, (&#34;\x00&#34;,), {}, ssig,),  # send data
+                DsRunnerTimer(net.consumer, ssig, args.udp_ping_intvl, *(&#34;\x00&#34;)),  # send data
             )
         run.run()
 
@@ -3260,7 +3257,7 @@ accidentally by other input.
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl &gt; 0:
             run.add_timer(
                 &#34;PING&#34;,
-                DsRunnerTimer(net.consumer, args.udp_ping_intvl, (&#34;\x00&#34;,), {}, ssig,),  # send data
+                DsRunnerTimer(net.consumer, ssig, args.udp_ping_intvl, *(&#34;\x00&#34;)),  # send data
             )
         run.run()</code></pre>
 </details>
@@ -3984,7 +3981,7 @@ def producer(self):
 </dd>
 <dt id="pwncat.DsRunnerTimer"><code class="flex name class">
 <span>class <span class="ident">DsRunnerTimer</span></span>
-<span>(</span><span>action, intvl, args, kwargs, signal)</span>
+<span>(</span><span>action, signal, intvl, *args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for Timer functions for the Runner class.</p></div>
@@ -4034,19 +4031,19 @@ def producer(self):
     def __init__(
         self,
         action,  # type: Callable[..., None]
-        intvl,  # type: int
-        args,  # type: Tuple[Any, ...]
-        kwargs,  # type: Dict[str, Any]
         signal,  # type: StopSignal
+        intvl,  # type: int
+        *args,  # type: Tuple[Any, ...]
+        **kwargs  # type: Dict[str, Any]
     ):
         # type: (...) -&gt; None
         assert type(intvl) is int, type(intvl)
         assert type(kwargs) is dict, type(kwargs)
         self.__action = action
+        self.__signal = signal
         self.__intvl = intvl
         self.__args = args
-        self.__kwargs = kwargs
-        self.__signal = signal</code></pre>
+        self.__kwargs = kwargs</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -5369,7 +5366,7 @@ callback that writes to stdout.</p>
                 consumer(data)
             self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
-        def run_timer(name, action, intvl, ssig, *args, **kwargs):
+        def run_timer(name, action, intvl, ssig, args, **kwargs):
             # type: (str, Callable[..., None], int, StopSignal, Any, Any) -&gt; None
             &#34;&#34;&#34;Timer run function to be thrown into a thread (Execs periodic tasks).
 
@@ -5390,10 +5387,7 @@ callback that writes to stdout.</p>
                 time_now = int(time.time())
                 if time_now &gt; time_last + intvl:
                     self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                    if kwargs:
-                        action(*args, **kwargs)
-                    else:
-                        action(*args)
+                    action(*args, **kwargs)
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
@@ -5553,7 +5547,7 @@ callback that writes to stdout.</p>
             consumer(data)
         self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
-    def run_timer(name, action, intvl, ssig, *args, **kwargs):
+    def run_timer(name, action, intvl, ssig, args, **kwargs):
         # type: (str, Callable[..., None], int, StopSignal, Any, Any) -&gt; None
         &#34;&#34;&#34;Timer run function to be thrown into a thread (Execs periodic tasks).
 
@@ -5574,10 +5568,7 @@ callback that writes to stdout.</p>
             time_now = int(time.time())
             if time_now &gt; time_last + intvl:
                 self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                if kwargs:
-                    action(*args, **kwargs)
-                else:
-                    action(*args)
+                action(*args, **kwargs)
                 time_last = time_now  # Reset previous time
             time.sleep(0.1)
 

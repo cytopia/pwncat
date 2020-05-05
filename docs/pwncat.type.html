@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.33% imprecise</th>
-<th class="summary summary-lines">2640 LOC</th>
+<th class="summary summary-precision">6.26% imprecise</th>
+<th class="summary summary-lines">2637 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.33% imprecise</td>
-<td class="summary summary-lines">2640 LOC</td>
+<td class="summary summary-precision">6.26% imprecise</td>
+<td class="summary summary-lines">2637 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2672,9 +2672,6 @@
 <span id="L2635" class="lineno"><a class="lineno" href="#L2635">2635</a></span>
 <span id="L2636" class="lineno"><a class="lineno" href="#L2636">2636</a></span>
 <span id="L2637" class="lineno"><a class="lineno" href="#L2637">2637</a></span>
-<span id="L2638" class="lineno"><a class="lineno" href="#L2638">2638</a></span>
-<span id="L2639" class="lineno"><a class="lineno" href="#L2639">2639</a></span>
-<span id="L2640" class="lineno"><a class="lineno" href="#L2640">2640</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -2889,10 +2886,10 @@ Explicit (x1)">        return self.__kwargs</span>
 Explicit (x4)">    def __init__(</span>
 <span class="line-empty" title="No Anys on this line!">        self,</span>
 <span class="line-empty" title="No Anys on this line!">        action,  # type: Callable[..., None]</span>
-<span class="line-empty" title="No Anys on this line!">        intvl,  # type: int</span>
-<span class="line-empty" title="No Anys on this line!">        args,  # type: Tuple[Any, ...]</span>
-<span class="line-empty" title="No Anys on this line!">        kwargs,  # type: Dict[str, Any]</span>
 <span class="line-empty" title="No Anys on this line!">        signal,  # type: StopSignal</span>
+<span class="line-empty" title="No Anys on this line!">        intvl,  # type: int</span>
+<span class="line-empty" title="No Anys on this line!">        *args,  # type: Tuple[Any, ...]</span>
+<span class="line-empty" title="No Anys on this line!">        **kwargs  # type: Dict[str, Any]</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
@@ -2901,12 +2898,12 @@ Explicit (x2)">        assert type(intvl) is int, type(intvl)</span>
 Explicit (x6)">        assert type(kwargs) is dict, type(kwargs)</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x4)">        self.__action = action</span>
+<span class="line-precise" title="No Anys on this line!">        self.__signal = signal</span>
 <span class="line-precise" title="No Anys on this line!">        self.__intvl = intvl</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x2)">        self.__args = args</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x2)">        self.__kwargs = kwargs</span>
-<span class="line-precise" title="No Anys on this line!">        self.__signal = signal</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
@@ -4540,7 +4537,7 @@ Error (x2)">                self.log.trace("[%s] Producer received: %s", name, r
 Error (x2)">            self.log.trace("[%s] Producer Stop", name)  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">        def run_timer(name, action, intvl, ssig, *args, **kwargs):</span>
+Explicit (x4)">        def run_timer(name, action, intvl, ssig, args, **kwargs):</span>
 <span class="line-empty" title="No Anys on this line!">            # type: (str, Callable[..., None], int, StopSignal, Any, Any) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">            """Timer run function to be thrown into a thread (Execs periodic tasks).</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4564,13 +4561,8 @@ Error (x2)">                    self.log.trace("Stop signal acknowledged for tim
 <span class="line-precise" title="No Anys on this line!">                if time_now &gt; time_last + intvl:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                    self.log.debug("[%s] Executing timed function", time_now)</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x1)">                    if kwargs:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                        action(*args, **kwargs)</span>
-<span class="line-empty" title="No Anys on this line!">                    else:</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x3)">                        action(*args)</span>
+Explicit (x4)">                    action(*args, **kwargs)</span>
 <span class="line-precise" title="No Anys on this line!">                    time_last = time_now  # Reset previous time</span>
 <span class="line-precise" title="No Anys on this line!">                time.sleep(0.1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -5501,7 +5493,7 @@ Explicit (x5)">        if type(args.udp_ping_intvl) is int and args.udp_ping_int
 <span class="line-precise" title="No Anys on this line!">            run.add_timer(</span>
 <span class="line-precise" title="No Anys on this line!">                "PING",</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">                DsRunnerTimer(net.consumer, args.udp_ping_intvl, ("\x00",), {}, ssig,),  # send data</span>
+Explicit (x5)">                DsRunnerTimer(net.consumer, ssig, args.udp_ping_intvl, *("\x00")),  # send data</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
 <span class="line-empty" title="No Anys on this line!"></span>

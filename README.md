@@ -122,7 +122,7 @@
  </tbody>
 <table>
 
-> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.67%)</strong></sup>
+> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.74%)</strong></sup>
 
 
 #### Motivation
