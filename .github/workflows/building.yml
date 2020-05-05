@@ -32,18 +32,18 @@ jobs:
 
       - name: Build source distribution
         run: |
-          make _build_source_dist VERSION=${version}
+          make _build-source_dist VERSION=${version}
         env:
           version: ${{ matrix.version }}
 
       - name: Build binary distribution
         run: |
-          make _build_binary_dist VERSION=${version}
+          make _build-binary_dist VERSION=${version}
         env:
           version: ${{ matrix.version }}
 
       - name: Build Python package
         run: |
-          make _build_python_package VERSION=${version}
+          make _build-python_package VERSION=${version}
         env:
           version: ${{ matrix.version }}

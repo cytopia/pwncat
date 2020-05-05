@@ -130,14 +130,14 @@ _lint-flows:
 # -------------------------------------------------------------------------------------------------
 # Code Style Targets
 # -------------------------------------------------------------------------------------------------
-code: _code_pycodestyle
-code: _code_pydocstyle
-code: _code_pylint
-code: _code_black
-code: _code_mypy
+code: _code-pycodestyle
+code: _code-pydocstyle
+code: _code-pylint
+code: _code-black
+code: _code-mypy
 
 .PHONY: _code_pycodestyle
-_code_pycodestyle:
+_code-pycodestyle:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pycodestyle"
 	@echo "# -------------------------------------------------------------------- #"
@@ -147,7 +147,7 @@ _code_pycodestyle:
 		&& pycodestyle --config=setup.cfg /tmp/$(BINNAME).py'
 
 .PHONY: _code_pydocstyle
-_code_pydocstyle:
+_code-pydocstyle:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pycodestyle"
 	@echo "# -------------------------------------------------------------------- #"
@@ -157,21 +157,21 @@ _code_pydocstyle:
 		&& pydocstyle --explain --config=setup.cfg /tmp/$(BINNAME).py'
 
 .PHONY: _code_pylint
-_code_pylint:
+_code-pylint:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pylint"
 	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pylint --rcfile=setup.cfg $(BINPATH)$(BINNAME)
 
 .PHONY: _code_black
-_code_black:
+_code-black:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check Python Black"
 	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
 
 .PHONY: _code_mypy
-_code_mypy:
+_code-mypy:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check mypy"
 	@echo "# -------------------------------------------------------------------- #"
@@ -231,12 +231,12 @@ _test-options--ping_intvl:
 # -------------------------------------------------------------------------------------------------
 # Documentation
 # -------------------------------------------------------------------------------------------------
-docs: _docs_man
-docs: _docs_api
-docs: _docs_mypy_type_coverage
+docs: _docs-man
+docs: _docs-api
+docs: _docs-mypy_type_coverage
 
 .PHONY: _docs_man
-_docs_man: $(BINPATH)$(BINNAME)
+_docs-man: $(BINPATH)$(BINNAME)
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add help2man \
 		&& help2man -n $(BINNAME) --no-info --source=https://github.com/cytopia/pwncat -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
@@ -247,7 +247,7 @@ _docs_man: $(BINPATH)$(BINNAME)
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).man.html'
 
 .PHONY: _docs_api
-_docs_api:
+_docs-api:
 	@# Generate pdoc API page
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		pip install pdoc3 \
@@ -258,7 +258,7 @@ _docs_api:
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).api.html'
 
 .PHONY: _docs_mypy_type_coverage
-_docs_mypy_type_coverage:
+_docs-mypy_type_coverage:
 	@# Generate mypy code coverage page
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data -w /data -e UID=$(UID) -e GID=${GID} --entrypoint= cytopia/mypy sh -c ' \
 		mypy --config-file setup.cfg --html-report tmp $(BINPATH)$(BINNAME) \
@@ -294,13 +294,13 @@ flows:
 # -------------------------------------------------------------------------------------------------
 build: clean
 build: _lint-version
-build: _build_source_dist
-build: _build_binary_dist
-build: _build_python_package
-build: _build_check_python_package
+build: _build-source_dist
+build: _build-binary_dist
+build: _build-python_package
+build: _build-check_python_package
 
 .PHONY: _build_source_dist
-_build_source_dist:
+_build-source_dist:
 	@echo "Create source distribution"
 	docker run \
 		--rm \
@@ -312,7 +312,7 @@ _build_source_dist:
 		python setup.py sdist
 
 .PHONY: _build_binary_dist
-_build_binary_dist:
+_build-binary_dist:
 	@echo "Create binary distribution"
 	docker run \
 		--rm \
@@ -324,7 +324,7 @@ _build_binary_dist:
 		python setup.py bdist_wheel --universal
 
 .PHONY: _build_python_package
-_build_python_package:
+_build-python_package:
 	@echo "Build Python package"
 	docker run \
 		--rm \
@@ -336,7 +336,7 @@ _build_python_package:
 		python setup.py build
 
 .PHONY: _build_check_python_package
-_build_check_python_package:
+_build-check_python_package:
 	@echo "Check Python package"
 	docker run \
 		--rm \
