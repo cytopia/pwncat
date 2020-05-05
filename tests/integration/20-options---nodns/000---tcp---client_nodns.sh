@@ -88,14 +88,14 @@ run_test() {
 
 for curr_round in $(seq "${RUNS}"); do
 	run_test "${RHOST} ${RPORT} -n -vvvv     "  "1" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} -n -vvv      "  "2" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} -n -vv       "  "3" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} -n -v        "  "4" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} -n           "  "5" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} -n -vvv      "  "2" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} -n -vv       "  "3" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} -n -v        "  "4" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} -n           "  "5" "10" "${curr_round}" "${RUNS}"
 
-	run_test "${RHOST} ${RPORT} --nodns -vvvv"  "6" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} --nodns -vvv "  "7" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} --nodns -vv  "  "8" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} --nodns -v   " " 9" "10" "${curr_round}" "${RUNS}"
-	run_test "${RHOST} ${RPORT} --nodns      " "10" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} --nodns -vvvv"  "6" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} --nodns -vvv "  "7" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} --nodns -vv  "  "8" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} --nodns -v   " " 9" "10" "${curr_round}" "${RUNS}"
+	#run_test "${RHOST} ${RPORT} --nodns      " "10" "10" "${curr_round}" "${RUNS}"
 done

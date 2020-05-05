@@ -138,18 +138,18 @@ for curr_round in $(seq "${RUNS}"); do
 	echo
 	#         server opts         client opts
 	run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -vvv " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -vv  " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -v   " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u      " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vvv " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vv  " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -v   " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u      " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -v   "  "8" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u      "  "9" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvv "  "6" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vv  "  "7" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -v   "  "8" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vvvv" "${RHOST} ${RPORT} --udp-ping-intvl 1 -u      "  "9" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -u -vvv " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvv " "10" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -vv  " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vv  " "11" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u -v   " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -v   " "12" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -u      " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u      " "13" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vvv " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vvv " "10" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -vv  " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -vv  " "11" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u -v   " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u -v   " "12" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -u      " "${RHOST} ${RPORT} --udp-ping-intvl 1 -u      " "13" "13" "${curr_round}" "${RUNS}"
 done

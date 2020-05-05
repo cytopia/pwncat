@@ -274,18 +274,18 @@ for curr_round in $(seq "${RUNS}"); do
 	echo
 	#         server opts         client opts
 	run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1 -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -vvv " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -vv  " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -v   " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT}      " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vvv " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vv  " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -v   " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT}      " "${RHOST} ${RPORT} --reconn -1 -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1 -vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1 -vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1 -v   "  "8" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1      "  "9" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1 -vvv "  "6" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1 -vv  "  "7" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1 -v   "  "8" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} --reconn -1      "  "9" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -vvv " "${RHOST} ${RPORT} --reconn -1 -vvv " "10" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -vv  " "${RHOST} ${RPORT} --reconn -1 -vv  " "11" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -v   " "${RHOST} ${RPORT} --reconn -1 -v   " "12" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT}      " "${RHOST} ${RPORT} --reconn -1      " "13" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vvv " "${RHOST} ${RPORT} --reconn -1 -vvv " "10" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -vv  " "${RHOST} ${RPORT} --reconn -1 -vv  " "11" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -v   " "${RHOST} ${RPORT} --reconn -1 -v   " "12" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT}      " "${RHOST} ${RPORT} --reconn -1      " "13" "13" "${curr_round}" "${RUNS}"
 done

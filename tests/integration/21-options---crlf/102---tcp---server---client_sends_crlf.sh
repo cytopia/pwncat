@@ -162,18 +162,18 @@ for curr_round in $(seq "${RUNS}"); do
 	echo
 	#         server opts         client opts
 	run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -vvv " "${RHOST} ${RPORT} --crlf -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -vv  " "${RHOST} ${RPORT} --crlf -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -v   " "${RHOST} ${RPORT} --crlf -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf      " "${RHOST} ${RPORT} --crlf -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vvv " "${RHOST} ${RPORT} --crlf -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vv  " "${RHOST} ${RPORT} --crlf -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -v   " "${RHOST} ${RPORT} --crlf -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf      " "${RHOST} ${RPORT} --crlf -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf -vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf -vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf -v   "  "8" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf      "  "9" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf -vvv "  "6" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf -vv  "  "7" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf -v   "  "8" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vvvv" "${RHOST} ${RPORT} --crlf      "  "9" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} --crlf -vvv " "${RHOST} ${RPORT} --crlf -vvv " "10" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -vv  " "${RHOST} ${RPORT} --crlf -vv  " "11" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf -v   " "${RHOST} ${RPORT} --crlf -v   " "12" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --crlf      " "${RHOST} ${RPORT} --crlf      " "13" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vvv " "${RHOST} ${RPORT} --crlf -vvv " "10" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -vv  " "${RHOST} ${RPORT} --crlf -vv  " "11" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf -v   " "${RHOST} ${RPORT} --crlf -v   " "12" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf      " "${RHOST} ${RPORT} --crlf      " "13" "13" "${curr_round}" "${RUNS}"
 done

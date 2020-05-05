@@ -181,18 +181,18 @@ for curr_round in $(seq "${RUNS}"); do
 	echo
 	#         server opts         client opts
 	run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -vvv " "${RHOST} ${RPORT} -u -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -vv  " "${RHOST} ${RPORT} -u -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -v   " "${RHOST} ${RPORT} -u -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u      " "${RHOST} ${RPORT} -u -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vvv " "${RHOST} ${RPORT} -u -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vv  " "${RHOST} ${RPORT} -u -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -v   " "${RHOST} ${RPORT} -u -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u      " "${RHOST} ${RPORT} -u -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u -vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u -vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u -v   "  "8" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u      "  "9" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u -vvv "  "6" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u -vv  "  "7" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u -v   "  "8" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vvvv" "${RHOST} ${RPORT} -u      "  "9" "13" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -e /bin/sh -u -vvv " "${RHOST} ${RPORT} -u -vvv " "10" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -vv  " "${RHOST} ${RPORT} -u -vv  " "11" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u -v   " "${RHOST} ${RPORT} -u -v   " "12" "13" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -e /bin/sh -u      " "${RHOST} ${RPORT} -u      " "13" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vvv " "${RHOST} ${RPORT} -u -vvv " "10" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -vv  " "${RHOST} ${RPORT} -u -vv  " "11" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u -v   " "${RHOST} ${RPORT} -u -v   " "12" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} -e /bin/sh -u      " "${RHOST} ${RPORT} -u      " "13" "13" "${curr_round}" "${RUNS}"
 done
