@@ -87,27 +87,33 @@
      <tbody>
       <tr>
        <th>2.7</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-2.7"><img src="https://github.com/cytopia/pwncat/workflows/lin-2.7/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-2.7"><img src="https://github.com/cytopia/pwncat/workflows/mac-2.7/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-2.7"><img src="https://github.com/cytopia/pwncat/workflows/win-2.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-ubuntu-2.7"><img src="https://github.com/cytopia/pwncat/workflows/x64-ubuntu-2.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-macos-2.7"><img src="https://github.com/cytopia/pwncat/workflows/x64-macos-2.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-windows-2.7"><img src="https://github.com/cytopia/pwncat/workflows/x64-windows-2.7/badge.svg" /></a></td>
+      </tr>
+      <tr>
+       <th>3.5</th>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-ubuntu-3.5"><img src="https://github.com/cytopia/pwncat/workflows/x64-ubuntu-3.5/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-macos-3.5"><img src="https://github.com/cytopia/pwncat/workflows/x64-macos-3.5/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-windows-3.5"><img src="https://github.com/cytopia/pwncat/workflows/x64-windows-3.5/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.6</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.6"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.6/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.6"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.6/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.6"><img src="https://github.com/cytopia/pwncat/workflows/win-3.6/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-ubuntu-3.6"><img src="https://github.com/cytopia/pwncat/workflows/x64-ubuntu-3.6/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-macos-3.6"><img src="https://github.com/cytopia/pwncat/workflows/x64-macos-3.6/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-windows-3.6"><img src="https://github.com/cytopia/pwncat/workflows/x64-windows-3.6/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.7</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.7"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.7/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.7"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.7/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.7"><img src="https://github.com/cytopia/pwncat/workflows/win-3.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-ubuntu-3.7"><img src="https://github.com/cytopia/pwncat/workflows/x64-ubuntu-3.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-macos-3.7"><img src="https://github.com/cytopia/pwncat/workflows/x64-macos-3.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-windows-3.7"><img src="https://github.com/cytopia/pwncat/workflows/x64-windows-3.7/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.8</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.8"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.8/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.8"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.8/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.8"><img src="https://github.com/cytopia/pwncat/workflows/win-3.8/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-ubuntu-3.8"><img src="https://github.com/cytopia/pwncat/workflows/x64-ubuntu-3.8/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-macos-3.8"><img src="https://github.com/cytopia/pwncat/workflows/x64-macos-3.8/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=x64-windows-3.8"><img src="https://github.com/cytopia/pwncat/workflows/x64-windows-3.8/badge.svg" /></a></td>
       </tr>
      </tbody>
     </table>
@@ -116,7 +122,7 @@
  </tbody>
 <table>
 
-> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.58%)</strong></sup>
+> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.61%)</strong></sup>
 
 
 #### Motivation

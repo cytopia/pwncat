@@ -29,7 +29,7 @@
 &#34;&#34;&#34;pwncat.&#34;&#34;&#34;
 
 # Main sections in this file:
-# ---------------------------
+# ------------------------------------
 # 1. Data structure types
 # 2. Library classes
 # 3. Network
@@ -37,6 +37,46 @@
 # 5. Plugin runner
 # 6. Command line arguments
 # 7. Main entrypoint
+#
+# How does it work?
+# ------------------------------------
+# 1. IO (Various input/output modules based on producer/consumer)
+# 2. Transformer (transforms data)
+# 3. Runner (puts IO consumer/producer into threads)
+# 4. Signaling / Interrupts
+#
+# 1. IO
+# ------------------------------------
+# IO classes provide basic input/output functionality.
+# The producer will constantly gather input (net recv, user input, command output)
+# The consumer is a callback applied to this data (net send, output, command execution)
+# Each producer/consumer pair will be put into a thread by the Runner instance.
+#
+# 2. Transformer
+# ---------------------------
+# Transformer sit on top of a IO callback and can transform the data before it is send
+# to the callback. (e.g.: convert LF to CRLF, convert simple text into a HTTP POST request,
+# convert a HTTP POST response into text, encrypt/decrypt, etc.)
+#
+# 3. Runner - The really cool meat:
+# ------------------------------------
+# The single Runner instance puts it all-together. Each producer/consumer pair (and
+# x many Transformer) will be moved into their own Thread.
+# Producer and consumer of different instances can be mixed, when adding them to the Runner.
+# This allows an Net-1.receive producer, to output it (chat), execute it (command)
+# or to send it further via a second Net-2 class (proxy).
+#
+# A list of Transformer can be added to each consumer/producer pair, allowing further data
+# transformation. This means you can simply write a Transformer, which wraps any kind of raw
+# data into a Layer-7 protocol and/or unwraps it from it. This allows for easy extension
+# of various protocols or other data transformations.
+#
+# 4. Signaling / Interrupts
+# ------------------------------------
+# The StopSignal instance is distributed across all Threads and and the Runner instance and
+# is a way to let other Threads know that a stop signal has been requested.
+# Producer/Consumer can implement their own interrupt function so they can be stopped from
+# inside (if they do non-blocking stuff) or from outside (if they do blocking stuff).
 
 from __future__ import print_function
 from abc import abstractmethod
@@ -1770,7 +1810,10 @@ class Runner(object):
                 time_now = int(time.time())
                 if time_now &gt; time_last + intvl:
                     self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                    action(*args, **kwargs)
+                    if len(kwargs):
+                        action(*args, **kwargs)
+                    else:
+                        action(*args)
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
@@ -5353,7 +5396,10 @@ callback that writes to stdout.</p>
                 time_now = int(time.time())
                 if time_now &gt; time_last + intvl:
                     self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                    action(*args, **kwargs)
+                    if len(kwargs):
+                        action(*args, **kwargs)
+                    else:
+                        action(*args)
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
@@ -5534,7 +5580,10 @@ callback that writes to stdout.</p>
             time_now = int(time.time())
             if time_now &gt; time_last + intvl:
                 self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                action(*args, **kwargs)
+                if len(kwargs):
+                    action(*args, **kwargs)
+                else:
+                    action(*args)
                 time_last = time_now  # Reset previous time
             time.sleep(0.1)
 
