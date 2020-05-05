@@ -685,16 +685,18 @@ class Sock(object):
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self, encoder, options):
-        # type: (StringEncoder, DsSock) -&gt; None
+    def __init__(self, encoder, ssig, options):
+        # type: (StringEncoder, StopSignal, DsSock) -&gt; None
         &#34;&#34;&#34;Instantiate Sock class.
 
         Args:
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
+            ssig (StopSignal): Used to stop blocking loops.
             options (DsSock): Instance of DsSock.
         &#34;&#34;&#34;
         self.__log = logging.getLogger(__name__)
         self.__enc = encoder
+        self.__ssig = ssig
         self.__options = options
 
         # Store the address of the remote end.
@@ -718,11 +720,16 @@ class Sock(object):
             int: Returns total bytes sent.
         &#34;&#34;&#34;
         # In case of sending data back to an udp client we need to wait
-        # until the client has first connected and told us its addr/port
+        # until the client has first connected and told us its addr/port.
         if self.__options.udp:
             if self.__remote_addr is None or self.__remote_port is None:
                 self.__log.warning(&#34;UDP client has not yet connected. Queueing message&#34;)
                 while self.__remote_addr is None or self.__remote_port is None:
+                    # In case the user pressed Ctrl+c on the server while trying
+                    # to send data to the client, we need to quit here, otherwise
+                    # it blocks the shutdown routine.
+                    if self.__ssig.has_stop():
+                        return 0
                     time.sleep(0.1)  # Less wastefull than using &#39;pass&#39;
                 # First time a UDP client connects to the server (display it on the server)
                 self.__log.info(
@@ -777,6 +784,7 @@ class Sock(object):
 
         Raises:
             socket.timeout: Except here to do an action when the socket is not busy.
+            AttributeError: Except here when current instance has closed itself (Ctrl+c).
             socket.error:   Except here when unconnected or connection was forcibly closed.
             EOFError:       Except here when upstream has closed the connection.
         &#34;&#34;&#34;
@@ -791,19 +799,22 @@ class Sock(object):
         except socket.timeout as error:
             raise socket.timeout(error)  # type: ignore
 
-        # [2/5] Connection was forcibly closed
-        # [Errno 107] Transport endpoint is not connected
-        # [Errno 10054] An existing connection was forcibly closed by the remote host
-        # [WinError 10054] An existing connection was forcibly closed by the remote host
-        except (OSError, socket.error) as error:
-            self.__log.warning(&#34;Connection error: %s&#34;, error)
-            raise socket.error(error)
-
-        # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
+        # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = &#34;Connection was closed by self.&#34;
             self.__log.warning(msg)
-            raise socket.error(msg)
+            raise AttributeError(msg)
+
+        # [3/5] Connection was forcibly closed
+        # [Errno 107] Transport endpoint is not connected
+        # [Errno 10054] An existing connection was forcibly closed by the remote host
+        # [WinError 10054] An existing connection was forcibly closed by the remote host
+        except socket.error as error:
+            self.__log.warning(&#34;Connection error-1: %s&#34;, error)
+            raise socket.error(error)
+        except OSError as error:
+            self.__log.warning(&#34;Connection error-2: %s&#34;, error)
+            raise socket.error(error)
 
         # If we&#39;re receiving data from a UDP client
         # we can firstly/finally set its addr/port in order
@@ -969,13 +980,16 @@ class Sock(object):
         Returns:
             bool: Returns `True` on success and `False` and error.
         &#34;&#34;&#34;
-        # [1/2] Accept
+        # [1/3] Close conn socket
+        self.close_conn_sock
+
+        # [2/3] Accept
         try:
-            conn = self.__accept(self.__conn)
+            conn = self.__accept(self.__sock)
         except socket.error:
             return False
         self.__conn = conn
-        # [2/2] Set current receive timeout for socket to make it non-blocking
+        # [3/3] Set current receive timeout for socket to make it non-blocking
         self.__settimeout(self.__conn)
         return True
 
@@ -1286,7 +1300,7 @@ class PluginNetwork(Plugin):
         super(PluginNetwork, self).__init__(ssig)
 
         self.__role = role
-        self.__net = Sock(encoder, sock_opts)
+        self.__net = Sock(encoder, ssig, sock_opts)
         self.__sock_opts = sock_opts
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
@@ -1353,6 +1367,9 @@ class PluginNetwork(Plugin):
                 if self.ssig.has_stop():
                     return
                 # Do we re-accept new clients?
+                if self.__sock_opts.udp:
+                    # Always accept new clients or reconnect in UDP mode (its stateless)
+                    return
                 if self.__role == &#34;server&#34; and self.__server_reaccept_from_client():
                     continue
                 if self.__role == &#34;client&#34; and self.__client_reconnect_to_server():
@@ -1490,7 +1507,7 @@ class PluginOutput(Plugin):
                 if os.name != &#34;nt&#34;:
                     self.__set_input_timeout()
                 line = sys.stdin.readline()
-            except TimeoutError:
+            except EOFError:
                 # When using select() with timeout, we don&#39;t have any input
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
@@ -1543,9 +1560,12 @@ class PluginOutput(Plugin):
 
     def __set_input_timeout(self):
         # type: () -&gt; None
-        &#34;&#34;&#34;Throws a catchable TimeoutError exception for sys.stdin after timeout (Linux only).&#34;&#34;&#34;
+        &#34;&#34;&#34;Throws a catchable EOFError exception for sys.stdin after timeout (Linux only).&#34;&#34;&#34;
+        # rlist: wait until ready for reading
+        # wlist: wait until ready for writing
+        # xlist: wait for an exceptional condition
         if not select.select([sys.stdin], [], [], self.__opts.input_timeout)[0]:
-            raise TimeoutError(&#34;timed out&#34;)
+            raise EOFError(&#34;timed out&#34;)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -4724,7 +4744,7 @@ def producer(self):
         super(PluginNetwork, self).__init__(ssig)
 
         self.__role = role
-        self.__net = Sock(encoder, sock_opts)
+        self.__net = Sock(encoder, ssig, sock_opts)
         self.__sock_opts = sock_opts
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
@@ -4791,6 +4811,9 @@ def producer(self):
                 if self.ssig.has_stop():
                     return
                 # Do we re-accept new clients?
+                if self.__sock_opts.udp:
+                    # Always accept new clients or reconnect in UDP mode (its stateless)
+                    return
                 if self.__role == &#34;server&#34; and self.__server_reaccept_from_client():
                     continue
                 if self.__role == &#34;client&#34; and self.__client_reconnect_to_server():
@@ -4980,6 +5003,9 @@ def producer(self):
             if self.ssig.has_stop():
                 return
             # Do we re-accept new clients?
+            if self.__sock_opts.udp:
+                # Always accept new clients or reconnect in UDP mode (its stateless)
+                return
             if self.__role == &#34;server&#34; and self.__server_reaccept_from_client():
                 continue
             if self.__role == &#34;client&#34; and self.__client_reconnect_to_server():
@@ -5063,7 +5089,7 @@ callback that writes to stdout.</p>
                 if os.name != &#34;nt&#34;:
                     self.__set_input_timeout()
                 line = sys.stdin.readline()
-            except TimeoutError:
+            except EOFError:
                 # When using select() with timeout, we don&#39;t have any input
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
@@ -5116,9 +5142,12 @@ callback that writes to stdout.</p>
 
     def __set_input_timeout(self):
         # type: () -&gt; None
-        &#34;&#34;&#34;Throws a catchable TimeoutError exception for sys.stdin after timeout (Linux only).&#34;&#34;&#34;
+        &#34;&#34;&#34;Throws a catchable EOFError exception for sys.stdin after timeout (Linux only).&#34;&#34;&#34;
+        # rlist: wait until ready for reading
+        # wlist: wait until ready for writing
+        # xlist: wait for an exceptional condition
         if not select.select([sys.stdin], [], [], self.__opts.input_timeout)[0]:
-            raise TimeoutError(&#34;timed out&#34;)</code></pre>
+            raise EOFError(&#34;timed out&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -5196,7 +5225,7 @@ callback that writes to stdout.</p>
             if os.name != &#34;nt&#34;:
                 self.__set_input_timeout()
             line = sys.stdin.readline()
-        except TimeoutError:
+        except EOFError:
             # When using select() with timeout, we don&#39;t have any input
             # at this point and simply continue the loop or quit if
             # a terminate request has been made by other threads.
@@ -5586,7 +5615,7 @@ callback that writes to stdout.</p>
 </dd>
 <dt id="pwncat.Sock"><code class="flex name class">
 <span>class <span class="ident">Sock</span></span>
-<span>(</span><span>encoder, options)</span>
+<span>(</span><span>encoder, ssig, options)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Provides an abstracted server client socket for TCP and UDP.</p>
@@ -5595,6 +5624,8 @@ callback that writes to stdout.</p>
 <dl>
 <dt><strong><code>encoder</code></strong> :&ensp;<code><a title="pwncat.StringEncoder" href="#pwncat.StringEncoder">StringEncoder</a></code></dt>
 <dd>Instance of StringEncoder (Python2/3 str/byte compat).</dd>
+<dt><strong><code>ssig</code></strong> :&ensp;<code><a title="pwncat.StopSignal" href="#pwncat.StopSignal">StopSignal</a></code></dt>
+<dd>Used to stop blocking loops.</dd>
 <dt><strong><code>options</code></strong> :&ensp;<code><a title="pwncat.DsSock" href="#pwncat.DsSock">DsSock</a></code></dt>
 <dd>Instance of DsSock.</dd>
 </dl></div>
@@ -5611,16 +5642,18 @@ callback that writes to stdout.</p>
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self, encoder, options):
-        # type: (StringEncoder, DsSock) -&gt; None
+    def __init__(self, encoder, ssig, options):
+        # type: (StringEncoder, StopSignal, DsSock) -&gt; None
         &#34;&#34;&#34;Instantiate Sock class.
 
         Args:
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
+            ssig (StopSignal): Used to stop blocking loops.
             options (DsSock): Instance of DsSock.
         &#34;&#34;&#34;
         self.__log = logging.getLogger(__name__)
         self.__enc = encoder
+        self.__ssig = ssig
         self.__options = options
 
         # Store the address of the remote end.
@@ -5644,11 +5677,16 @@ callback that writes to stdout.</p>
             int: Returns total bytes sent.
         &#34;&#34;&#34;
         # In case of sending data back to an udp client we need to wait
-        # until the client has first connected and told us its addr/port
+        # until the client has first connected and told us its addr/port.
         if self.__options.udp:
             if self.__remote_addr is None or self.__remote_port is None:
                 self.__log.warning(&#34;UDP client has not yet connected. Queueing message&#34;)
                 while self.__remote_addr is None or self.__remote_port is None:
+                    # In case the user pressed Ctrl+c on the server while trying
+                    # to send data to the client, we need to quit here, otherwise
+                    # it blocks the shutdown routine.
+                    if self.__ssig.has_stop():
+                        return 0
                     time.sleep(0.1)  # Less wastefull than using &#39;pass&#39;
                 # First time a UDP client connects to the server (display it on the server)
                 self.__log.info(
@@ -5703,6 +5741,7 @@ callback that writes to stdout.</p>
 
         Raises:
             socket.timeout: Except here to do an action when the socket is not busy.
+            AttributeError: Except here when current instance has closed itself (Ctrl+c).
             socket.error:   Except here when unconnected or connection was forcibly closed.
             EOFError:       Except here when upstream has closed the connection.
         &#34;&#34;&#34;
@@ -5717,19 +5756,22 @@ callback that writes to stdout.</p>
         except socket.timeout as error:
             raise socket.timeout(error)  # type: ignore
 
-        # [2/5] Connection was forcibly closed
-        # [Errno 107] Transport endpoint is not connected
-        # [Errno 10054] An existing connection was forcibly closed by the remote host
-        # [WinError 10054] An existing connection was forcibly closed by the remote host
-        except (OSError, socket.error) as error:
-            self.__log.warning(&#34;Connection error: %s&#34;, error)
-            raise socket.error(error)
-
-        # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
+        # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = &#34;Connection was closed by self.&#34;
             self.__log.warning(msg)
-            raise socket.error(msg)
+            raise AttributeError(msg)
+
+        # [3/5] Connection was forcibly closed
+        # [Errno 107] Transport endpoint is not connected
+        # [Errno 10054] An existing connection was forcibly closed by the remote host
+        # [WinError 10054] An existing connection was forcibly closed by the remote host
+        except socket.error as error:
+            self.__log.warning(&#34;Connection error-1: %s&#34;, error)
+            raise socket.error(error)
+        except OSError as error:
+            self.__log.warning(&#34;Connection error-2: %s&#34;, error)
+            raise socket.error(error)
 
         # If we&#39;re receiving data from a UDP client
         # we can firstly/finally set its addr/port in order
@@ -5895,13 +5937,16 @@ callback that writes to stdout.</p>
         Returns:
             bool: Returns `True` on success and `False` and error.
         &#34;&#34;&#34;
-        # [1/2] Accept
+        # [1/3] Close conn socket
+        self.close_conn_sock
+
+        # [2/3] Accept
         try:
-            conn = self.__accept(self.__conn)
+            conn = self.__accept(self.__sock)
         except socket.error:
             return False
         self.__conn = conn
-        # [2/2] Set current receive timeout for socket to make it non-blocking
+        # [3/3] Set current receive timeout for socket to make it non-blocking
         self.__settimeout(self.__conn)
         return True
 
@@ -6209,13 +6254,16 @@ callback that writes to stdout.</p>
     Returns:
         bool: Returns `True` on success and `False` and error.
     &#34;&#34;&#34;
-    # [1/2] Accept
+    # [1/3] Close conn socket
+    self.close_conn_sock
+
+    # [2/3] Accept
     try:
-        conn = self.__accept(self.__conn)
+        conn = self.__accept(self.__sock)
     except socket.error:
         return False
     self.__conn = conn
-    # [2/2] Set current receive timeout for socket to make it non-blocking
+    # [3/3] Set current receive timeout for socket to make it non-blocking
     self.__settimeout(self.__conn)
     return True</code></pre>
 </details>
@@ -6234,6 +6282,8 @@ callback that writes to stdout.</p>
 <dl>
 <dt><code>socket.timeout</code></dt>
 <dd>Except here to do an action when the socket is not busy.</dd>
+<dt><code>AttributeError</code></dt>
+<dd>Except here when current instance has closed itself (Ctrl+c).</dd>
 <dt><code>socket.error</code></dt>
 <dd>Except here when unconnected or connection was forcibly closed.</dd>
 <dt><code>EOFError</code></dt>
@@ -6254,6 +6304,7 @@ callback that writes to stdout.</p>
 
     Raises:
         socket.timeout: Except here to do an action when the socket is not busy.
+        AttributeError: Except here when current instance has closed itself (Ctrl+c).
         socket.error:   Except here when unconnected or connection was forcibly closed.
         EOFError:       Except here when upstream has closed the connection.
     &#34;&#34;&#34;
@@ -6268,19 +6319,22 @@ callback that writes to stdout.</p>
     except socket.timeout as error:
         raise socket.timeout(error)  # type: ignore
 
-    # [2/5] Connection was forcibly closed
-    # [Errno 107] Transport endpoint is not connected
-    # [Errno 10054] An existing connection was forcibly closed by the remote host
-    # [WinError 10054] An existing connection was forcibly closed by the remote host
-    except (OSError, socket.error) as error:
-        self.__log.warning(&#34;Connection error: %s&#34;, error)
-        raise socket.error(error)
-
-    # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
+    # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
     except AttributeError:
         msg = &#34;Connection was closed by self.&#34;
         self.__log.warning(msg)
-        raise socket.error(msg)
+        raise AttributeError(msg)
+
+    # [3/5] Connection was forcibly closed
+    # [Errno 107] Transport endpoint is not connected
+    # [Errno 10054] An existing connection was forcibly closed by the remote host
+    # [WinError 10054] An existing connection was forcibly closed by the remote host
+    except socket.error as error:
+        self.__log.warning(&#34;Connection error-1: %s&#34;, error)
+        raise socket.error(error)
+    except OSError as error:
+        self.__log.warning(&#34;Connection error-2: %s&#34;, error)
+        raise socket.error(error)
 
     # If we&#39;re receiving data from a UDP client
     # we can firstly/finally set its addr/port in order
@@ -6470,11 +6524,16 @@ callback that writes to stdout.</p>
         int: Returns total bytes sent.
     &#34;&#34;&#34;
     # In case of sending data back to an udp client we need to wait
-    # until the client has first connected and told us its addr/port
+    # until the client has first connected and told us its addr/port.
     if self.__options.udp:
         if self.__remote_addr is None or self.__remote_port is None:
             self.__log.warning(&#34;UDP client has not yet connected. Queueing message&#34;)
             while self.__remote_addr is None or self.__remote_port is None:
+                # In case the user pressed Ctrl+c on the server while trying
+                # to send data to the client, we need to quit here, otherwise
+                # it blocks the shutdown routine.
+                if self.__ssig.has_stop():
+                    return 0
                 time.sleep(0.1)  # Less wastefull than using &#39;pass&#39;
             # First time a UDP client connects to the server (display it on the server)
             self.__log.info(

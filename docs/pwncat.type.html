@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.43% imprecise</th>
-<th class="summary summary-lines">2583 LOC</th>
+<th class="summary summary-precision">6.42% imprecise</th>
+<th class="summary summary-lines">2603 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.43% imprecise</td>
-<td class="summary summary-lines">2583 LOC</td>
+<td class="summary summary-precision">6.42% imprecise</td>
+<td class="summary summary-lines">2603 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2618,6 +2618,26 @@
 <span id="L2581" class="lineno"><a class="lineno" href="#L2581">2581</a></span>
 <span id="L2582" class="lineno"><a class="lineno" href="#L2582">2582</a></span>
 <span id="L2583" class="lineno"><a class="lineno" href="#L2583">2583</a></span>
+<span id="L2584" class="lineno"><a class="lineno" href="#L2584">2584</a></span>
+<span id="L2585" class="lineno"><a class="lineno" href="#L2585">2585</a></span>
+<span id="L2586" class="lineno"><a class="lineno" href="#L2586">2586</a></span>
+<span id="L2587" class="lineno"><a class="lineno" href="#L2587">2587</a></span>
+<span id="L2588" class="lineno"><a class="lineno" href="#L2588">2588</a></span>
+<span id="L2589" class="lineno"><a class="lineno" href="#L2589">2589</a></span>
+<span id="L2590" class="lineno"><a class="lineno" href="#L2590">2590</a></span>
+<span id="L2591" class="lineno"><a class="lineno" href="#L2591">2591</a></span>
+<span id="L2592" class="lineno"><a class="lineno" href="#L2592">2592</a></span>
+<span id="L2593" class="lineno"><a class="lineno" href="#L2593">2593</a></span>
+<span id="L2594" class="lineno"><a class="lineno" href="#L2594">2594</a></span>
+<span id="L2595" class="lineno"><a class="lineno" href="#L2595">2595</a></span>
+<span id="L2596" class="lineno"><a class="lineno" href="#L2596">2596</a></span>
+<span id="L2597" class="lineno"><a class="lineno" href="#L2597">2597</a></span>
+<span id="L2598" class="lineno"><a class="lineno" href="#L2598">2598</a></span>
+<span id="L2599" class="lineno"><a class="lineno" href="#L2599">2599</a></span>
+<span id="L2600" class="lineno"><a class="lineno" href="#L2600">2600</a></span>
+<span id="L2601" class="lineno"><a class="lineno" href="#L2601">2601</a></span>
+<span id="L2602" class="lineno"><a class="lineno" href="#L2602">2602</a></span>
+<span id="L2603" class="lineno"><a class="lineno" href="#L2603">2603</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -3312,16 +3332,18 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor / Destructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __init__(self, encoder, options):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (StringEncoder, DsSock) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, encoder, ssig, options):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (StringEncoder, StopSignal, DsSock) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Instantiate Sock class.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).</span>
+<span class="line-empty" title="No Anys on this line!">            ssig (StopSignal): Used to stop blocking loops.</span>
 <span class="line-empty" title="No Anys on this line!">            options (DsSock): Instance of DsSock.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-precise" title="No Anys on this line!">        self.__log = logging.getLogger(__name__)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__enc = encoder</span>
+<span class="line-precise" title="No Anys on this line!">        self.__ssig = ssig</span>
 <span class="line-precise" title="No Anys on this line!">        self.__options = options</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Store the address of the remote end.</span>
@@ -3345,12 +3367,17 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!">            int: Returns total bytes sent.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-empty" title="No Anys on this line!">        # In case of sending data back to an udp client we need to wait</span>
-<span class="line-empty" title="No Anys on this line!">        # until the client has first connected and told us its addr/port</span>
+<span class="line-empty" title="No Anys on this line!">        # until the client has first connected and told us its addr/port.</span>
 <span class="line-precise" title="No Anys on this line!">        if self.__options.udp:</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__remote_addr is None or self.__remote_port is None:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                self.__log.warning("UDP client has not yet connected. Queueing message")</span>
 <span class="line-precise" title="No Anys on this line!">                while self.__remote_addr is None or self.__remote_port is None:</span>
+<span class="line-empty" title="No Anys on this line!">                    # In case the user pressed Ctrl+c on the server while trying</span>
+<span class="line-empty" title="No Anys on this line!">                    # to send data to the client, we need to quit here, otherwise</span>
+<span class="line-empty" title="No Anys on this line!">                    # it blocks the shutdown routine.</span>
+<span class="line-precise" title="No Anys on this line!">                    if self.__ssig.has_stop():</span>
+<span class="line-precise" title="No Anys on this line!">                        return 0</span>
 <span class="line-precise" title="No Anys on this line!">                    time.sleep(0.1)  # Less wastefull than using 'pass'</span>
 <span class="line-empty" title="No Anys on this line!">                # First time a UDP client connects to the server (display it on the server)</span>
 <span class="line-any" title="Any Types on this line: 
@@ -3412,6 +3439,7 @@ Explicit (x4)">                self.__log.error("Socket OS Error: %s", error)</s
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Raises:</span>
 <span class="line-empty" title="No Anys on this line!">            socket.timeout: Except here to do an action when the socket is not busy.</span>
+<span class="line-empty" title="No Anys on this line!">            AttributeError: Except here when current instance has closed itself (Ctrl+c).</span>
 <span class="line-empty" title="No Anys on this line!">            socket.error:   Except here when unconnected or connection was forcibly closed.</span>
 <span class="line-empty" title="No Anys on this line!">            EOFError:       Except here when upstream has closed the connection.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
@@ -3426,21 +3454,25 @@ Explicit (x4)">                self.__log.error("Socket OS Error: %s", error)</s
 <span class="line-precise" title="No Anys on this line!">        except socket.timeout as error:</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.timeout(error)  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [2/5] Connection was forcibly closed</span>
-<span class="line-empty" title="No Anys on this line!">        # [Errno 107] Transport endpoint is not connected</span>
-<span class="line-empty" title="No Anys on this line!">        # [Errno 10054] An existing connection was forcibly closed by the remote host</span>
-<span class="line-empty" title="No Anys on this line!">        # [WinError 10054] An existing connection was forcibly closed by the remote host</span>
-<span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.warning("Connection error: %s", error)</span>
-<span class="line-precise" title="No Anys on this line!">            raise socket.error(error)</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)</span>
+<span class="line-empty" title="No Anys on this line!">        # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)</span>
 <span class="line-precise" title="No Anys on this line!">        except AttributeError:</span>
 <span class="line-precise" title="No Anys on this line!">            msg = "Connection was closed by self."</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.warning(msg)</span>
-<span class="line-precise" title="No Anys on this line!">            raise socket.error(msg)</span>
+<span class="line-precise" title="No Anys on this line!">            raise AttributeError(msg)</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # [3/5] Connection was forcibly closed</span>
+<span class="line-empty" title="No Anys on this line!">        # [Errno 107] Transport endpoint is not connected</span>
+<span class="line-empty" title="No Anys on this line!">        # [Errno 10054] An existing connection was forcibly closed by the remote host</span>
+<span class="line-empty" title="No Anys on this line!">        # [WinError 10054] An existing connection was forcibly closed by the remote host</span>
+<span class="line-precise" title="No Anys on this line!">        except socket.error as error:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">            self.__log.warning("Connection error-1: %s", error)</span>
+<span class="line-precise" title="No Anys on this line!">            raise socket.error(error)</span>
+<span class="line-precise" title="No Anys on this line!">        except OSError as error:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">            self.__log.warning("Connection error-2: %s", error)</span>
+<span class="line-precise" title="No Anys on this line!">            raise socket.error(error)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # If we're receiving data from a UDP client</span>
 <span class="line-empty" title="No Anys on this line!">        # we can firstly/finally set its addr/port in order</span>
@@ -3618,13 +3650,16 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port
 <span class="line-empty" title="No Anys on this line!">        Returns:</span>
 <span class="line-empty" title="No Anys on this line!">            bool: Returns `True` on success and `False` and error.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
-<span class="line-empty" title="No Anys on this line!">        # [1/2] Accept</span>
+<span class="line-empty" title="No Anys on this line!">        # [1/3] Close conn socket</span>
+<span class="line-precise" title="No Anys on this line!">        self.close_conn_sock</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # [2/3] Accept</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
-<span class="line-precise" title="No Anys on this line!">            conn = self.__accept(self.__conn)</span>
+<span class="line-precise" title="No Anys on this line!">            conn = self.__accept(self.__sock)</span>
 <span class="line-precise" title="No Anys on this line!">        except socket.error:</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
 <span class="line-precise" title="No Anys on this line!">        self.__conn = conn</span>
-<span class="line-empty" title="No Anys on this line!">        # [2/2] Set current receive timeout for socket to make it non-blocking</span>
+<span class="line-empty" title="No Anys on this line!">        # [3/3] Set current receive timeout for socket to make it non-blocking</span>
 <span class="line-precise" title="No Anys on this line!">        self.__settimeout(self.__conn)</span>
 <span class="line-precise" title="No Anys on this line!">        return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -3955,7 +3990,7 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-precise" title="No Anys on this line!">        super(PluginNetwork, self).__init__(ssig)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        self.__role = role</span>
-<span class="line-precise" title="No Anys on this line!">        self.__net = Sock(encoder, sock_opts)</span>
+<span class="line-precise" title="No Anys on this line!">        self.__net = Sock(encoder, ssig, sock_opts)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__sock_opts = sock_opts</span>
 <span class="line-precise" title="No Anys on this line!">        self.__srv_opts = srv_opts</span>
 <span class="line-precise" title="No Anys on this line!">        self.__cli_opts = cli_opts</span>
@@ -4023,6 +4058,9 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                if self.ssig.has_stop():</span>
 <span class="line-empty" title="No Anys on this line!">                    return</span>
 <span class="line-empty" title="No Anys on this line!">                # Do we re-accept new clients?</span>
+<span class="line-precise" title="No Anys on this line!">                if self.__sock_opts.udp:</span>
+<span class="line-empty" title="No Anys on this line!">                    # Always accept new clients or reconnect in UDP mode (its stateless)</span>
+<span class="line-empty" title="No Anys on this line!">                    return</span>
 <span class="line-precise" title="No Anys on this line!">                if self.__role == "server" and self.__server_reaccept_from_client():</span>
 <span class="line-precise" title="No Anys on this line!">                    continue</span>
 <span class="line-precise" title="No Anys on this line!">                if self.__role == "client" and self.__client_reconnect_to_server():</span>
@@ -4167,7 +4205,7 @@ Error (x2)">                self.log.trace("Stop signal acknowledged for reading
 <span class="line-precise" title="No Anys on this line!">                if os.name != "nt":</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__set_input_timeout()</span>
 <span class="line-precise" title="No Anys on this line!">                line = sys.stdin.readline()</span>
-<span class="line-precise" title="No Anys on this line!">            except TimeoutError:</span>
+<span class="line-precise" title="No Anys on this line!">            except EOFError:</span>
 <span class="line-empty" title="No Anys on this line!">                # When using select() with timeout, we don't have any input</span>
 <span class="line-empty" title="No Anys on this line!">                # at this point and simply continue the loop or quit if</span>
 <span class="line-empty" title="No Anys on this line!">                # a terminate request has been made by other threads.</span>
@@ -4226,10 +4264,13 @@ Explicit (x4)">            self.log.debug("Replacing LF with CRLF")</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def __set_input_timeout(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
-<span class="line-empty" title="No Anys on this line!">        """Throws a catchable TimeoutError exception for sys.stdin after timeout (Linux only)."""</span>
+<span class="line-empty" title="No Anys on this line!">        """Throws a catchable EOFError exception for sys.stdin after timeout (Linux only)."""</span>
+<span class="line-empty" title="No Anys on this line!">        # rlist: wait until ready for reading</span>
+<span class="line-empty" title="No Anys on this line!">        # wlist: wait until ready for writing</span>
+<span class="line-empty" title="No Anys on this line!">        # xlist: wait for an exceptional condition</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x10)">        if not select.select([sys.stdin], [], [], self.__opts.input_timeout)[0]:</span>
-<span class="line-precise" title="No Anys on this line!">            raise TimeoutError("timed out")</span>
+<span class="line-precise" title="No Anys on this line!">            raise EOFError("timed out")</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
