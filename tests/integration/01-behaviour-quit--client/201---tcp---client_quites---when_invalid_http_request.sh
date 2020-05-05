@@ -15,7 +15,7 @@ source "${SOURCEPATH}"
 # GLOBALS
 # -------------------------------------------------------------------------------------------------
 
-PYTHON="python${1:-}"
+PYTHON="python${2:-}"
 PYVER="$( "${PYTHON}" -V 2>&1 | head -1 || true )"
 
 RHOST="www.google.com"
