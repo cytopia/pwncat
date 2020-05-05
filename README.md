@@ -3,11 +3,11 @@
 **[Install](#tada-install)** |
 **[TL;DR](#coffee-tldr)** |
 **[Features](#star-features)** |
+**[Behaviour](#cop-behaviour)** |
 **[Docs](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
 **[Examples](#bulb-examples)** |
 **[FAQ](#information_source-faq)** |
-**[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Contributing](#octocat-contributing)** |
 **[Disclaimer](#exclamation-disclaimer)** |
 **[License](#page_facing_up-license)**
@@ -116,7 +116,7 @@
  </tbody>
 <table>
 
-> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.57%)</strong></sup>
+> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.58%)</strong></sup>
 
 
 #### Motivation
