@@ -658,16 +658,18 @@ class Sock(object):
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self, encoder, options):
-        # type: (StringEncoder, DsSock) -> None
+    def __init__(self, encoder, ssig, options):
+        # type: (StringEncoder, StopSignal, DsSock) -> None
         """Instantiate Sock class.
 
         Args:
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
+            ssig (StopSignal): Used to stop blocking loops.
             options (DsSock): Instance of DsSock.
         """
         self.__log = logging.getLogger(__name__)
         self.__enc = encoder
+        self.__ssig = ssig
         self.__options = options
 
         # Store the address of the remote end.
@@ -691,11 +693,16 @@ class Sock(object):
             int: Returns total bytes sent.
         """
         # In case of sending data back to an udp client we need to wait
-        # until the client has first connected and told us its addr/port
+        # until the client has first connected and told us its addr/port.
         if self.__options.udp:
             if self.__remote_addr is None or self.__remote_port is None:
                 self.__log.warning("UDP client has not yet connected. Queueing message")
                 while self.__remote_addr is None or self.__remote_port is None:
+                    # In case the user pressed Ctrl+c on the server while trying
+                    # to send data to the client, we need to quit here, otherwise
+                    # it blocks the shutdown routine.
+                    if self.__ssig.has_stop():
+                        return 0
                     time.sleep(0.1)  # Less wastefull than using 'pass'
                 # First time a UDP client connects to the server (display it on the server)
                 self.__log.info(
@@ -750,6 +757,7 @@ class Sock(object):
 
         Raises:
             socket.timeout: Except here to do an action when the socket is not busy.
+            AttributeError: Except here when current instance has closed itself (Ctrl+c).
             socket.error:   Except here when unconnected or connection was forcibly closed.
             EOFError:       Except here when upstream has closed the connection.
         """
@@ -764,19 +772,22 @@ class Sock(object):
         except socket.timeout as error:
             raise socket.timeout(error)  # type: ignore
 
-        # [2/5] Connection was forcibly closed
-        # [Errno 107] Transport endpoint is not connected
-        # [Errno 10054] An existing connection was forcibly closed by the remote host
-        # [WinError 10054] An existing connection was forcibly closed by the remote host
-        except (OSError, socket.error) as error:
-            self.__log.warning("Connection error: %s", error)
-            raise socket.error(error)
-
-        # [3/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
+        # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = "Connection was closed by self."
             self.__log.warning(msg)
-            raise socket.error(msg)
+            raise AttributeError(msg)
+
+        # [3/5] Connection was forcibly closed
+        # [Errno 107] Transport endpoint is not connected
+        # [Errno 10054] An existing connection was forcibly closed by the remote host
+        # [WinError 10054] An existing connection was forcibly closed by the remote host
+        except socket.error as error:
+            self.__log.warning("Connection error-1: %s", error)
+            raise socket.error(error)
+        except OSError as error:
+            self.__log.warning("Connection error-2: %s", error)
+            raise socket.error(error)
 
         # If we're receiving data from a UDP client
         # we can firstly/finally set its addr/port in order
@@ -1262,7 +1273,7 @@ class PluginNetwork(Plugin):
         super(PluginNetwork, self).__init__(ssig)
 
         self.__role = role
-        self.__net = Sock(encoder, sock_opts)
+        self.__net = Sock(encoder, ssig, sock_opts)
         self.__sock_opts = sock_opts
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
@@ -1329,6 +1340,9 @@ class PluginNetwork(Plugin):
                 if self.ssig.has_stop():
                     return
                 # Do we re-accept new clients?
+                if self.__sock_opts.udp:
+                    # Always accept new clients or reconnect in UDP mode (its stateless)
+                    return
                 if self.__role == "server" and self.__server_reaccept_from_client():
                     continue
                 if self.__role == "client" and self.__client_reconnect_to_server():
@@ -1466,7 +1480,7 @@ class PluginOutput(Plugin):
                 if os.name != "nt":
                     self.__set_input_timeout()
                 line = sys.stdin.readline()
-            except TimeoutError:
+            except EOFError:
                 # When using select() with timeout, we don't have any input
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
@@ -1519,9 +1533,12 @@ class PluginOutput(Plugin):
 
     def __set_input_timeout(self):
         # type: () -> None
-        """Throws a catchable TimeoutError exception for sys.stdin after timeout (Linux only)."""
+        """Throws a catchable EOFError exception for sys.stdin after timeout (Linux only)."""
+        # rlist: wait until ready for reading
+        # wlist: wait until ready for writing
+        # xlist: wait for an exceptional condition
         if not select.select([sys.stdin], [], [], self.__opts.input_timeout)[0]:
-            raise TimeoutError("timed out")
+            raise EOFError("timed out")
 
 
 # -------------------------------------------------------------------------------------------------
