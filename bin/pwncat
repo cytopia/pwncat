@@ -942,13 +942,16 @@ class Sock(object):
         Returns:
             bool: Returns `True` on success and `False` and error.
         """
-        # [1/2] Accept
+        # [1/3] Close conn socket
+        self.close_conn_sock
+
+        # [2/3] Accept
         try:
-            conn = self.__accept(self.__conn)
+            conn = self.__accept(self.__sock)
         except socket.error:
             return False
         self.__conn = conn
-        # [2/2] Set current receive timeout for socket to make it non-blocking
+        # [3/3] Set current receive timeout for socket to make it non-blocking
         self.__settimeout(self.__conn)
         return True
 
