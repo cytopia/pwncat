@@ -27,4 +27,4 @@ jobs:
 
       - name: "${{ matrix.target }}"
         run: |
-          make ${{ matrix.target }}
+          make _code-${{ matrix.target }}

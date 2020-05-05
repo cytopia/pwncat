@@ -1,7 +1,7 @@
 ---
 # https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions
 # https://github.com/actions/python-versions/blob/master/versions-manifest.json
-name: x64-macos-3.7
+name: x64-ubuntu-3.6
 on:
   pull_request:
   push:
@@ -11,11 +11,11 @@ on:
 
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: False
 
-    name: "[x64] [macos] python-3.7"
+    name: "[x64] [ubuntu] python-3.6"
     steps:
       # ------------------------------------------------------------
       # Setup
@@ -26,7 +26,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.6
           architecture: x64
 
       # ------------------------------------------------------------

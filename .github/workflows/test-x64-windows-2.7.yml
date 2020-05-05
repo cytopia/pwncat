@@ -1,7 +1,7 @@
 ---
 # https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions
 # https://github.com/actions/python-versions/blob/master/versions-manifest.json
-name: win-x64-2.7
+name: x64-windows-2.7
 on:
   pull_request:
   push:
@@ -14,11 +14,8 @@ jobs:
     runs-on: windows-latest
     strategy:
       fail-fast: False
-      matrix:
-        version:
-          - 2.7
 
-    name: "[win] [x64] 2.7"
+    name: "[x64] [windows] python-2.7"
     steps:
       # ------------------------------------------------------------
       # Setup
@@ -29,127 +26,54 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.version }}
+          python-version: 2.7
           architecture: x64
 
       # ------------------------------------------------------------
       # Tests: Behaviour
       # ------------------------------------------------------------
 
-      ###
-      ### Shutdown
-      ###
-      - name: "[BEHAVIOUR] (TCP) Client shutdown"
+      - name: "[BEHAVIOUR] Client quits correctly"
         shell: bash
         run: |
-          make test-behaviour-tcp_client_exits_and_server_hangs_up
+          make _test-behaviour-quit--client
 
-      - name: "[BEHAVIOUR] (UDP) Client shutdown"
+      - name: "[BEHAVIOUR] Server quits correctly"
         shell: bash
         run: |
-          make test-behaviour-udp_client_exits_and_server_stays_alive
+          make _test-behaviour-quit--server
 
-      - name: "[BEHAVIOUR] (TCP) Server shutdown"
+      - name: "[MODES] Local port forwarding"
         shell: bash
         run: |
-          make test-behaviour-tcp_server_exits_and_hangs_up
+          make _test-mode--local_forward
 
-      - name: "[BEHAVIOUR] (UDP) Server shutdown"
+      - name: "[MODES] Remote port forwarding"
         shell: bash
         run: |
-          make test-behaviour-udp_server_exits_and_client_stays_alive
+          make _test-mode--remote_forward
 
-      ###
-      ### Socket
-      ###
-      - name: "[BEHAVIOUR] (TCP) Socket REUSEADDR"
+      - name: "[OPTIONS] -n/--nodns"
         shell: bash
         run: |
-          make test-behaviour-tcp_socket_reuseaddr
+          make _test-options--nodns
 
-      - name: "[BEHAVIOUR] (UDP) Socket REUSEADDR"
+      - name: "[OPTIONS] -C/--crlf"
         shell: bash
         run: |
-          make test-behaviour-udp_socket_reuseaddr
+          make _test-options--crlf
 
-      # ------------------------------------------------------------
-      # Tests: Basic
-      # ------------------------------------------------------------
-
-      ###
-      ### Client requests
-      ###
-      - name: "[BASICS] (TCP) Client makes HTTP request"
+      - name: "[OPTIONS] --keep-open"
         shell: bash
         run: |
-          make test-basics-client-tcp_make_http_request
+          make _test-options--keep_open
 
-      ###
-      ### Client sends data/file/command to server
-      ###
-      - name: "[BASICS] (TCP) Client sends data to Server"
+      - name: "[OPTIONS] --reconn"
         shell: bash
         run: |
-          make test-basics-client-tcp_send_text_to_server
+          make _test-options--reconn
 
-      - name: "[BASICS] (UDP) Client sends data to Server"
+      - name: "[OPTIONS] --ping-intvl"
         shell: bash
         run: |
-          make test-basics-client-udp_send_text_to_server
-
-      - name: "[BASICS] (TCP) Client sends file to Server"
-        shell: bash
-        run: |
-          make test-basics-client-tcp_send_file_to_server
-
-      - name: "[BASICS] (UDP) Client sends file to Server"
-        shell: bash
-        run: |
-          make test-basics-client-udp_send_file_to_server
-
-      - name: "[BASICS] (TCP) Client sends command to Server"
-        shell: bash
-        run: |
-          make test-basics-client-tcp_send_comand_to_server
-
-      - name: "[BASICS] (UDP) Client sends command to Server"
-        shell: bash
-        run: |
-          make test-basics-client-udp_send_comand_to_server
-
-      # ------------------------------------------------------------
-      # Tests: Options
-      # ------------------------------------------------------------
-
-      ###
-      ### DNS Resolution
-      ###
-      - name: "[OPTIONS] (TCP) Client --nodns"
-        shell: bash
-        run: |
-          make test-options-client-tcp_nodns
-
-      - name: "[OPTIONS] (UDP) Client --nodns"
-        shell: bash
-        run: |
-          make test-options-client-udp_nodns
-
-      ###
-      ### Keep open
-      ###
-      - name: "[OPTIONS] (TCP) Server --keep-open"
-        shell: bash
-        run: |
-          make test-options-tcp_server_keep_open
-
-      # ------------------------------------------------------------
-      # Tests: Modes
-      # ------------------------------------------------------------
-
-      ###
-      ### Port Forward
-      ###
-      - name: "[MODES] (TCP) Port Forward"
-        shell: bash
-        run: |
-          make test-modes-forwawrd_tcp-client_make_http_request
+          make _test-options--ping_intvl

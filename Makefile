@@ -5,7 +5,7 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint code test autoformat docs build deploy clean
+.PHONY: help lint code test autoformat docs flows build deploy clean
 
 VERSION = 2.7
 BINPATH = bin/
@@ -41,6 +41,7 @@ help:
 	@echo "autoformat       Autoformat code according to Python black"
 	@echo
 	@echo "docs             Update code documentation"
+	@echo "flows            Update GitHub action workflows"
 	@echo
 	@echo "build            Build Python pkg, source and binary dist"
 	@echo "deploy           Deploy pip package"
@@ -50,11 +51,12 @@ help:
 # -------------------------------------------------------------------------------------------------
 # Lint Targets
 # -------------------------------------------------------------------------------------------------
+lint: _lint-files
 lint: _lint-version
 lint: _lint-usage
-lint: _lint-files
 lint: _lint-docs
 lint: _lint-man
+lint: _lint-flows
 
 .PHONY: _lint-version
 _lint-version:
@@ -115,6 +117,14 @@ _lint-man:
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory man
 	git diff --quiet -- $(DOCPATH) $(MANPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
+
+.PHONY: _lint-flows
+_lint-flows:
+	@echo "# -------------------------------------------------------------------- #"
+	@echo "# Lint flows"
+	@echo "# -------------------------------------------------------------------- #"
+	@$(MAKE) --no-print-directory flows
+	git diff --quiet -- .github/workflows || { echo "Build Changes"; git diff | cat; git status; false; }
 
 
 # -------------------------------------------------------------------------------------------------
@@ -179,7 +189,7 @@ test: _test-options--nodns
 test: _test-options--crlf
 test: _test-options--keep_open
 test: _test-options--reconn
-test: _test-options--ping_init
+test: _test-options--ping_intvl
 
 .PHONY: _test-behaviour-quit--client
 _test-behaviour-quit--client:
@@ -214,8 +224,8 @@ _test-options--reconn:
 	tests/integration/run.sh "23-options---reconn"
 
 .PHONY: _test-options--ping_init
-_test-options--ping_init:
-	tests/integration/run.sh "24-options---ping_init"
+_test-options--ping_intvl:
+	tests/integration/run.sh "25-options---ping_intvl"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -270,6 +280,13 @@ _docs_mypy_type_coverage:
 		&& percent=$$(grep "% imprecise" docs/pwncat.type.html | grep "th" | grep -Eo "[.0-9]+") \
 		&& coverage=$$(echo "100 - $${percent}" | bc) \
 		&& sed -i "s/fully typed: \([.0-9]*\)/fully typed: $${coverage}/g" README.md'
+
+
+# -------------------------------------------------------------------------------------------------
+# GitHub Action workflows
+# -------------------------------------------------------------------------------------------------
+flows:
+	$(PWD)/tests/pipelines/gen.sh
 
 
 # -------------------------------------------------------------------------------------------------
