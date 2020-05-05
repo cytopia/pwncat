@@ -275,6 +275,8 @@ _docs_mypy_type_coverage:
 # -------------------------------------------------------------------------------------------------
 # Build Targets
 # -------------------------------------------------------------------------------------------------
+build: clean
+build: _lint-version
 build: _build_source_dist
 build: _build_binary_dist
 build: _build_python_package
