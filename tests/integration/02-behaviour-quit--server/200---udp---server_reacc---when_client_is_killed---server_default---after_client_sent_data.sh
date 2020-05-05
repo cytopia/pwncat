@@ -165,7 +165,7 @@ run_test() {
 	print_h2 "(6/10) Start: Client (round 2)"
 
 	# Start Client
-	print_info "Start Client (round 1)"
+	print_info "Start Client"
 	# shellcheck disable=SC2086
 	if ! cli_pid="$( run_bg "echo ${data}" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
