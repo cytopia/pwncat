@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.39% imprecise</th>
-<th class="summary summary-lines">2646 LOC</th>
+<th class="summary summary-precision">6.33% imprecise</th>
+<th class="summary summary-lines">2640 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.39% imprecise</td>
-<td class="summary summary-lines">2646 LOC</td>
+<td class="summary summary-precision">6.33% imprecise</td>
+<td class="summary summary-lines">2640 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2675,12 +2675,6 @@
 <span id="L2638" class="lineno"><a class="lineno" href="#L2638">2638</a></span>
 <span id="L2639" class="lineno"><a class="lineno" href="#L2639">2639</a></span>
 <span id="L2640" class="lineno"><a class="lineno" href="#L2640">2640</a></span>
-<span id="L2641" class="lineno"><a class="lineno" href="#L2641">2641</a></span>
-<span id="L2642" class="lineno"><a class="lineno" href="#L2642">2642</a></span>
-<span id="L2643" class="lineno"><a class="lineno" href="#L2643">2643</a></span>
-<span id="L2644" class="lineno"><a class="lineno" href="#L2644">2644</a></span>
-<span id="L2645" class="lineno"><a class="lineno" href="#L2645">2645</a></span>
-<span id="L2646" class="lineno"><a class="lineno" href="#L2646">2646</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -3548,13 +3542,9 @@ Explicit (x4)">            self.__log.warning(msg)</span>
 <span class="line-empty" title="No Anys on this line!">        # [Errno 107] Transport endpoint is not connected</span>
 <span class="line-empty" title="No Anys on this line!">        # [Errno 10054] An existing connection was forcibly closed by the remote host</span>
 <span class="line-empty" title="No Anys on this line!">        # [WinError 10054] An existing connection was forcibly closed by the remote host</span>
-<span class="line-precise" title="No Anys on this line!">        except socket.error as error:</span>
+<span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.warning("Connection error-1: %s", error)</span>
-<span class="line-precise" title="No Anys on this line!">            raise socket.error(error)</span>
-<span class="line-precise" title="No Anys on this line!">        except OSError as error:</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.warning("Connection error-2: %s", error)</span>
+Explicit (x4)">            self.__log.warning("Connection error: %s", error)</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.error(error)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # If we're receiving data from a UDP client</span>
@@ -3620,10 +3610,6 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 Explicit (x4)">            self.__log.debug("Resolving hostname: %s", host)</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x3)">            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x3)">            if not isinstance(infos, list) or len(infos) == 0:</span>
-<span class="line-precise" title="No Anys on this line!">                raise socket.gaierror("Could resolve to hostname")  # type: ignore</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            addr = str(infos[0][4][0])</span>
 <span class="line-precise" title="No Anys on this line!">        except (AttributeError, socket.gaierror) as error:</span>
@@ -3734,7 +3720,7 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port
 <span class="line-empty" title="No Anys on this line!">            bool: Returns `True` on success and `False` and error.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-empty" title="No Anys on this line!">        # [1/3] Close conn socket</span>
-<span class="line-precise" title="No Anys on this line!">        self.close_conn_sock</span>
+<span class="line-precise" title="No Anys on this line!">        self.close_conn_sock()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [2/3] Accept</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
@@ -4579,7 +4565,7 @@ Error (x2)">                    self.log.trace("Stop signal acknowledged for tim
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                    self.log.debug("[%s] Executing timed function", time_now)</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x1)">                    if len(kwargs):</span>
+Explicit (x1)">                    if kwargs:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                        action(*args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!">                    else:</span>

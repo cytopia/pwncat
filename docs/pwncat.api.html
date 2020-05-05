@@ -849,11 +849,8 @@ class Sock(object):
         # [Errno 107] Transport endpoint is not connected
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
-        except socket.error as error:
-            self.__log.warning(&#34;Connection error-1: %s&#34;, error)
-            raise socket.error(error)
-        except OSError as error:
-            self.__log.warning(&#34;Connection error-2: %s&#34;, error)
+        except (OSError, socket.error) as error:
+            self.__log.warning(&#34;Connection error: %s&#34;, error)
             raise socket.error(error)
 
         # If we&#39;re receiving data from a UDP client
@@ -913,9 +910,6 @@ class Sock(object):
         try:
             self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-
-            if not isinstance(infos, list) or len(infos) == 0:
-                raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
             self.__log.error(&#34;Resolve Error: %s&#34;, error)
@@ -1021,7 +1015,7 @@ class Sock(object):
             bool: Returns `True` on success and `False` and error.
         &#34;&#34;&#34;
         # [1/3] Close conn socket
-        self.close_conn_sock
+        self.close_conn_sock()
 
         # [2/3] Accept
         try:
@@ -1810,7 +1804,7 @@ class Runner(object):
                 time_now = int(time.time())
                 if time_now &gt; time_last + intvl:
                     self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                    if len(kwargs):
+                    if kwargs:
                         action(*args, **kwargs)
                     else:
                         action(*args)
@@ -5396,7 +5390,7 @@ callback that writes to stdout.</p>
                 time_now = int(time.time())
                 if time_now &gt; time_last + intvl:
                     self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                    if len(kwargs):
+                    if kwargs:
                         action(*args, **kwargs)
                     else:
                         action(*args)
@@ -5580,7 +5574,7 @@ callback that writes to stdout.</p>
             time_now = int(time.time())
             if time_now &gt; time_last + intvl:
                 self.log.debug(&#34;[%s] Executing timed function&#34;, time_now)
-                if len(kwargs):
+                if kwargs:
                     action(*args, **kwargs)
                 else:
                     action(*args)
@@ -5815,11 +5809,8 @@ callback that writes to stdout.</p>
         # [Errno 107] Transport endpoint is not connected
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
-        except socket.error as error:
-            self.__log.warning(&#34;Connection error-1: %s&#34;, error)
-            raise socket.error(error)
-        except OSError as error:
-            self.__log.warning(&#34;Connection error-2: %s&#34;, error)
+        except (OSError, socket.error) as error:
+            self.__log.warning(&#34;Connection error: %s&#34;, error)
             raise socket.error(error)
 
         # If we&#39;re receiving data from a UDP client
@@ -5879,9 +5870,6 @@ callback that writes to stdout.</p>
         try:
             self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-
-            if not isinstance(infos, list) or len(infos) == 0:
-                raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
             self.__log.error(&#34;Resolve Error: %s&#34;, error)
@@ -5987,7 +5975,7 @@ callback that writes to stdout.</p>
             bool: Returns `True` on success and `False` and error.
         &#34;&#34;&#34;
         # [1/3] Close conn socket
-        self.close_conn_sock
+        self.close_conn_sock()
 
         # [2/3] Accept
         try:
@@ -6271,9 +6259,6 @@ callback that writes to stdout.</p>
     try:
         self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
         infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-
-        if not isinstance(infos, list) or len(infos) == 0:
-            raise socket.gaierror(&#34;Could resolve to hostname&#34;)  # type: ignore
         addr = str(infos[0][4][0])
     except (AttributeError, socket.gaierror) as error:
         self.__log.error(&#34;Resolve Error: %s&#34;, error)
@@ -6304,7 +6289,7 @@ callback that writes to stdout.</p>
         bool: Returns `True` on success and `False` and error.
     &#34;&#34;&#34;
     # [1/3] Close conn socket
-    self.close_conn_sock
+    self.close_conn_sock()
 
     # [2/3] Accept
     try:
@@ -6378,11 +6363,8 @@ callback that writes to stdout.</p>
     # [Errno 107] Transport endpoint is not connected
     # [Errno 10054] An existing connection was forcibly closed by the remote host
     # [WinError 10054] An existing connection was forcibly closed by the remote host
-    except socket.error as error:
-        self.__log.warning(&#34;Connection error-1: %s&#34;, error)
-        raise socket.error(error)
-    except OSError as error:
-        self.__log.warning(&#34;Connection error-2: %s&#34;, error)
+    except (OSError, socket.error) as error:
+        self.__log.warning(&#34;Connection error: %s&#34;, error)
         raise socket.error(error)
 
     # If we&#39;re receiving data from a UDP client
