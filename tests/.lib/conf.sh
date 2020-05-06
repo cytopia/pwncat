@@ -136,8 +136,9 @@ print_file() {
 	print_h3 "[${name}] Filename: ${file}"
 	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF FILE"
 	cat "${file}"
+	printf "\\n"
 	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF FILE"
-	echo
+	printf "\\n"
 }
 
 print_data() {
@@ -148,9 +149,11 @@ print_data() {
 
 	print_h3 "[${name}]"
 	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF DATA"
-	echo "${data}"
+	# shellcheck disable=SC2059
+	printf "${data}"
+	printf "\\n"
 	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF DATA"
-	echo
+	printf "\\n"
 }
 
 
