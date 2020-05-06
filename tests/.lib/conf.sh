@@ -33,7 +33,7 @@ print_test_case() {
 	echo "${filename}"
 
 	dirname="$( cd "$(dirname "${0}")" >/dev/null || true; basename "$(pwd -P)" || true )"
-	dirnum="$( echo "${dirname}" | grep -Eo '^[0-9]+' )"
+	dirnum="$( echo "${dirname}" | grep -Eo '^[0-9]+' || true )"
 	dirmode="$( echo "${dirname}" | sed 's/--.*//g' | sed 's/[0-9]*-//g' || true )"
 	dirtype="${dirname//*--/}"
 
