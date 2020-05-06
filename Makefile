@@ -5,7 +5,7 @@ endif
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint code test autoformat docs flows build deploy clean
+.PHONY: help lint code test smoke autoformat docs flows build deploy clean
 
 VERSION = 2.7
 BINPATH = bin/
@@ -38,6 +38,7 @@ help:
 	@echo "lint             Lint repository"
 	@echo "code             Lint source code"
 	@echo "test             Run integration tests"
+	@echo "smoke            Run smokke tests (dockerized)"
 	@echo "autoformat       Autoformat code according to Python black"
 	@echo
 	@echo "docs             Update code documentation"
@@ -176,6 +177,19 @@ _code-mypy:
 	@echo "# Check mypy"
 	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/mypy --config-file setup.cfg $(BINPATH)$(BINNAME)
+
+
+# -------------------------------------------------------------------------------------------------
+# Smoke Targets
+# -------------------------------------------------------------------------------------------------
+smoke: _smoke-keep_open-before_send
+
+.PHONY:
+_smoke-keep_open-before_send:
+	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1"
+
+_smoke-keep_open-after_client_send:
+	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2"
 
 
 # -------------------------------------------------------------------------------------------------
