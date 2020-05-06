@@ -458,55 +458,102 @@ tmp_file() {
 ###
 ###
 ###
-test_wait_for_data_transfer() {
-	local send_name="${1}"
-	local send_pid="${2}"
-	local send_file_stdout="${3}"
-	local send_file_stderr="${4}"
-	local expected="${5}"
-	# Required
-	local recv_name="${6}"
-	local recv_pid="${7}"
-	local recv_file_stdout="${8}"
-	local recv_file_stderr="${9}"
+wait_for_data_transferred() {
+	local expect_regex="${1}"
+	local expect_data="${2}"
 
-	print_info "Wait for data transfer (${send_name} -> ${recv_name})"
+	local recv_name="${3}"
+	local recv_pid="${4}"
+	local recv_file_stdout="${5}"
+	local recv_file_stderr="${6}"
+
+	local send_name="${7:-}"
+	local send_pid="${8:-}"
+	local send_file_stdout="${9:-}"
+	local send_file_stderr="${10:-}"
+
+	# ASSERTS
+	if [ -n "${send_name}" ]; then
+		if [ -z "${send_pid}" ] || [ -z "${send_file_stdout}" ] || [ -z "${send_file_stderr}" ]; then
+			print_error "[Meta] (wait_for_data_transferred(): send_pid, send_file_stdout or send_file_stderr  not specified."
+			exit 1
+		fi
+	fi
+
+	if [ -n "${send_name}" ]; then
+		print_info "Wait for data transferred (${send_name} -> ${recv_name})"
+	else
+		print_info "Wait for data transferred on ${recv_name}"
+	fi
 
 	local cnt=0
 	local retry=20
 
-	# shellcheck disable=SC2059
-	while ! diff  \
-		<(od -c "${recv_file_stdout}") \
-		<(printf "${expected}" | od -c) >/dev/null 2>&1; do
-		printf "."
-		cnt=$(( cnt + 1 ))
-		if [ "${cnt}" -gt "${retry}" ]; then
-			echo
-			print_file "(SEND) ${send_name} STDERR" "${send_file_stderr}"
-			print_file "(SEND) ${send_name} STDOUT" "${send_file_stdout}"
-			print_file "(RECV) ${recv_name} STDERR" "${recv_file_stderr}"
-			print_file "(RECV) ${recv_name} STDOUT" "${recv_file_stdout}"
-
-			print_data "EXPECTED DATA" "${expected}"
-			print_file "RECEIVED DATA" "${recv_file_stdout}"
-
-			diff "${recv_file_stdout}" <(printf "${expected}") || true
-			diff <(od -c "${recv_file_stdout}") <(printf "${expected}" | od -c) || true
-
-			print_data "RECEIVED RAW" "$( od -c "${recv_file_stdout}" )"
-			print_data "EXPECTED RAW" "$( printf "${expected}" | od -c )"
-			print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}"
-
-			kill_pid "${send_pid}" || true
-			kill_pid "${recv_pid}" || true
-			exit 1
-		fi
-		sleep 1
-	done
+	# 1/2 Validate transfer against regex
+	if [ -n "${expect_regex}" ]; then
+		while ! grep -E "${expect_regex}" "${recv_file_stdout}" >/dev/null; do
+			printf "."
+			cnt=$(( cnt + 1 ))
+			if [ "${cnt}" -gt "${retry}" ]; then
+				echo
+				if [ -n "${send_name}" ]; then
+					print_file "SENDER] [${send_name}] - [/dev/stdout" "${send_file_stdout}"
+					print_file "SENDER] [${send_name}] - [/dev/stderr" "${send_file_stderr}"
+				fi
+				print_file "RECVER] [${recv_name}] - [/dev/stderr" "${recv_file_stderr}"
+				echo
+				print_data "EXPECT] [${recv_name}] - [REG" "${expect_regex}"
+				print_file "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}"
+				print_data "RECVER] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+				echo
+				if [ -n "${send_name}" ]; then
+					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
+				else
+					print_error "[Receive Error] Received data on ${recv_name} does not match expected data."
+				fi
+				kill_pid "${send_pid}" || true
+				kill_pid "${recv_pid}" || true
+				exit 1
+			fi
+			sleep 1
+		done
+	# 2/2 Check against exact match of expected vs received
+	else
+		# shellcheck disable=SC2059
+		while ! diff  \
+			<(od -c "${recv_file_stdout}") \
+			<(printf "${expect_data}" | od -c) >/dev/null; do
+			printf "."
+			cnt=$(( cnt + 1 ))
+			if [ "${cnt}" -gt "${retry}" ]; then
+				echo
+				if [ -n "${send_name}" ]; then
+					print_file "SENDER] [${send_name}] - [/dev/stdout" "${send_file_stdout}"
+					print_file "SENDER] [${send_name}] - [/dev/stderr" "${send_file_stderr}"
+				fi
+				print_file "RECVER] [${recv_name}] - [/dev/stderr" "${recv_file_stderr}"
+				echo
+				print_data "EXPECT] [${recv_name}] - [RAW" "${expect_data}"
+				print_file "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}"
+				echo
+				print_data "EXPECT] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
+				print_data "RECVER] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+				echo
+				if [ -n "${send_name}" ]; then
+					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
+				else
+					print_error "[Receive Error] Received data on ${recv_name} does not match expected data."
+				fi
+				kill_pid "${send_pid}" || true
+				kill_pid "${recv_pid}" || true
+				exit 1
+			fi
+			sleep 1
+		done
+	fi
 	echo
-	print_file "${recv_name} received data" "${recv_file_stdout}"
-	print_data "${recv_name} received raw" "$( od -c "${recv_file_stdout}" )"
+	print_file "RECVER] [${recv_name}] received - [RAW" "${recv_file_stdout}"
+	print_data "RECVER] [${recv_name}] received - [HEX" "$( od -c "${recv_file_stdout}" )"
 }
 
 
