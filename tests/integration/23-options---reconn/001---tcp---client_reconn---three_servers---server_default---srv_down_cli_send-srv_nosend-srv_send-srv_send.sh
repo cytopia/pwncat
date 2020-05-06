@@ -126,7 +126,7 @@ run_test() {
 	print_h2 "(3/11) Transfer: Client -> Server (round 1)"
 
 	# [CLIENT -> SERVER]
-	test_wait_for_data_transfer "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "${data}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}"
+	wait_for_data_transferred "" "${data}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -183,8 +183,8 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(6/11) Transfer: Server -> Client (round 2)"
 
-	# [CLIENT -> SERVER]
-	test_wait_for_data_transfer "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}" "${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	# [SERVER -> CLIENT]
+	wait_for_data_transferred "" "${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -241,8 +241,8 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(9/11) Transfer: Server -> Client (round 3)"
 
-	# [CLIENT -> SERVER]
-	test_wait_for_data_transfer "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}" "${data}${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	# [SERVER -> CLIENT]
+	wait_for_data_transferred "" "${data}${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}"
 
 
 	# --------------------------------------------------------------------------------

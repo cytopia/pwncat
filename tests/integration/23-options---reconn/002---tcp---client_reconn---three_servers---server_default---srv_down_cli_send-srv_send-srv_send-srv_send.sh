@@ -126,7 +126,7 @@ run_test() {
 	print_h2 "(3/12) Transfer: Client -> Server (round 1)"
 
 	# [CLIENT -> SERVER]
-	test_wait_for_data_transfer "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "${data}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}"
+	wait_for_data_transferred "" "${data}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -134,8 +134,8 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(4/12) Transfer: Server -> Client (round 2)"
 
-	# [SERVER -> CLIENT]
-	test_wait_for_data_transfer "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	# [SERVER -> Client]
+	wait_for_data_transferred "" "${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -193,7 +193,7 @@ run_test() {
 	print_h2 "(7/12) Transfer: Server -> Client (round 2)"
 
 	# [SERVER -> Client]
-	test_wait_for_data_transfer "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}" "${data}${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	wait_for_data_transferred "" "${data}${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -251,7 +251,7 @@ run_test() {
 	print_h2 "(10/12) Transfer: Server -> Client (round 3)"
 
 	# [SERVER -> Client]
-	test_wait_for_data_transfer "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}" "${data}${data}${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	wait_for_data_transferred "" "${data}${data}${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}"
 
 
 	# --------------------------------------------------------------------------------
