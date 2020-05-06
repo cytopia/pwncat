@@ -12,7 +12,7 @@ PYTHON_VERSION = 2.7
 # -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
-.PHONY: help lint code test smoke autoformat docs flows build deploy clean
+.PHONY: help lint code test smoke autoformat docs pipeline build deploy clean
 
 BINPATH = bin/
 MANPATH = man/
@@ -48,7 +48,7 @@ help:
 	@echo "autoformat       Autoformat code according to Python black"
 	@echo
 	@echo "docs             Update code documentation"
-	@echo "flows            Update GitHub action workflows"
+	@echo "pipeline         Update GitHub action workflow pipelines"
 	@echo
 	@echo "build            Build Python pkg, source and binary dist"
 	@echo "deploy           Deploy pip package"
@@ -63,7 +63,7 @@ lint: _lint-version
 lint: _lint-usage
 lint: _lint-docs
 lint: _lint-man
-lint: _lint-flows
+lint: _lint-pipeline
 
 .PHONY: _lint-version
 _lint-version:
@@ -125,12 +125,12 @@ _lint-man:
 	@$(MAKE) --no-print-directory man
 	git diff --quiet -- $(DOCPATH) $(MANPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
 
-.PHONY: _lint-flows
-_lint-flows:
+.PHONY: _lint-pipeline
+_lint-pipeline:
 	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Lint flows"
+	@echo "# Lint Pipelines"
 	@echo "# -------------------------------------------------------------------- #"
-	@$(MAKE) --no-print-directory flows
+	@$(MAKE) --no-print-directory pipeline
 	git diff --quiet -- .github/workflows || { echo "Build Changes"; git diff | cat; git status; false; }
 
 
@@ -189,6 +189,7 @@ _code-mypy:
 # Smoke Targets
 # -------------------------------------------------------------------------------------------------
 smoke: _smoke-keep_open-before_send
+smoke: _smoke-keep_open-after_client_send
 
 .PHONY:
 _smoke-keep_open-before_send:
@@ -303,10 +304,10 @@ _docs-mypy_type_coverage:
 
 
 # -------------------------------------------------------------------------------------------------
-# GitHub Action workflows
+# Generate GitHub Action workflow pipelines
 # -------------------------------------------------------------------------------------------------
-flows:
-	$(PWD)/tests/pipelines/gen.sh
+pipeline:
+	$(PWD)/tests/pipelines/run.sh
 
 
 # -------------------------------------------------------------------------------------------------

@@ -45,6 +45,6 @@ jobs:
         run: |
           make _lint-man
 
-      - name: Check up-to-date GitHub Action workflows
+      - name: Check up-to-date GitHub Action workflow pipelines
         run: |
-          make _lint-flows
+          make _lint-pipeline

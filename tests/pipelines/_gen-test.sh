@@ -74,5 +74,4 @@ for v in "${VERSION_MATRIX[@]}"; do
 		| sed "s/__JOB_NAME__/${job_name}/g" \
 		| sed "s/__ARCHITECTURE__/${arch}/g" \
 		> "${flw_file}"
-
 done
