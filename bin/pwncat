@@ -427,8 +427,8 @@ class DsPluginOutput(object):
 
     @property
     def crlf(self):
-        # type: () -> bool
-        """`bool`: Convert LF to CRLF?"""
+        # type: () -> Optional[bool]
+        """`bool`: Converts LF to CRLF on `True`, CRLF to LF on `False` and noop on `None`."""
         return self.__crlf
 
     @property
@@ -441,7 +441,7 @@ class DsPluginOutput(object):
     # Constructor
     # --------------------------------------------------------------------------
     def __init__(self, encoder, crlf, input_timeout):
-        # type: (StringEncoder, bool, Optional[float]) -> None
+        # type: (StringEncoder, Optional[bool], Optional[float]) -> None
         super(DsPluginOutput, self).__init__()
         self.__enc = encoder
         self.__crlf = crlf
@@ -1554,15 +1554,23 @@ class PluginOutput(Plugin):
     # --------------------------------------------------------------------------
     def __use_linefeeds(self, data):
         # type: (str) -> str
-        """Ensure the user input has the desired linefeeds --crlf or not."""
-        # No replacement requested or already CRLF
-        if not self.__opts.crlf or data.endswith("\r\n"):
+        """Ensure the user input has the desired linefeeds: LF, CRLF or as entered."""
+        # 'auto' keep it as it is
+        if self.__opts.crlf is None:
             return data
-        # Replace current newline character with CRLF
-        if data.endswith("\n"):
-            self.log.debug("Replacing LF with CRLF")
-            return data[:-1] + "\r\n"
-        # Otherwise just return as it is
+
+        # LF -> CRLF
+        if self.__opts.crlf is True:
+            if not data.endswith("\r\n") and data.endswith("\n"):
+                self.log.debug("Replacing LF with CRLF")
+                return data[:-1] + "\r\n"
+        # CRLF -> LF
+        if self.__opts.crlf is False:
+            if data.endswith("\r\n"):
+                self.log.debug("Replacing CRLF with LF")
+                return data[:-2] + "\n"
+
+        # Otherwise just return it as it is
         return data
 
     def __set_input_timeout(self):
@@ -1873,6 +1881,18 @@ def get_version():
     )
 
 
+def _args_check_yes_no(value):
+    # type: (Optional[str]) -> Optional[bool]
+    """Evaluate a yes/no choice into True, False or None."""
+    if value is None:
+        return None
+    if value in ["always", "yes", "y", "fuckyes"]:
+        return True
+    if value in ["never", "no", "n", "fuckno"]:
+        return False
+    raise argparse.ArgumentTypeError("'%s' is an invalid choice" % value)
+
+
 def _args_check_color(value):
     # type: (str) -> str
     if value not in ["auto", "always", "never"]:
@@ -2169,9 +2189,16 @@ target machine via the positional arguments.
     optional.add_argument(
         "-C",
         "--crlf",
-        action="store_true",
-        default=False,
-        help="Replace LF with CRLF from stdin (default: don't)",
+        type=_args_check_yes_no,
+        metavar="y/n",
+        default=None,
+        help="""Specify, 'always', 'yes' or 'y' to alway force replacing
+LF (\\n) with CRLF (\\r\\n) on stdin.
+Specify 'never', 'no' or'n' to always force replacing
+CRLF (\\r\\n) with LF (\\n) on stdin.
+By default it will not replace anything and takes
+what is entered (usually CRLF on windows and LF
+on unix).""",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
