@@ -524,8 +524,8 @@ wait_for_data_transferred() {
 	else
 		# shellcheck disable=SC2059
 		while ! diff  \
-			<(od -c "${recv_file_stdout}") \
-			<(printf "${expect_data}" | od -c) >/dev/null; do
+			<(printf "${expect_data}" | od -c) \
+			<(od -c "${recv_file_stdout}") >/dev/null; do
 			printf "."
 			cnt=$(( cnt + 1 ))
 			if [ "${cnt}" -gt "${retry}" ]; then
@@ -541,6 +541,7 @@ wait_for_data_transferred() {
 				echo
 				print_data "EXPECT] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
 				print_data "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
+				diff <(printf "${expect_data}" | od -c) <(od -c "${recv_file_stdout}") || true
 				echo
 				if [ -n "${send_name}" ]; then
 					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
