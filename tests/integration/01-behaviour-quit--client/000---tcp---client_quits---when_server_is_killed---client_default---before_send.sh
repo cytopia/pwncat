@@ -46,7 +46,7 @@ run_test() {
 	###
 	### Create data and files
 	###
-	#data='abcdefghijklmnopqrstuvwxyz1234567890'
+	#data="abcdefghijklmnopqrstuvwxyz1234567890\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"

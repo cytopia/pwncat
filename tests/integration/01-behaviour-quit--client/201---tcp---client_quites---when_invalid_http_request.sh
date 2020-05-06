@@ -22,7 +22,6 @@ RHOST="www.google.com"
 RPORT="80"
 RUNS=1
 #STARTUP_WAIT=2
-TRANS_WAIT=10
 
 
 # -------------------------------------------------------------------------------------------------
@@ -67,26 +66,8 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(2/3) Transfer: Client -> Google -> Client"
 
-	# [SERVER] Wait for data
-	print_info "Wait for data transfer"
-	cnt=0
-	while ! grep 'Bad Request' "${cli_stdout}" >/dev/null 2>&1; do
-		printf "."
-		cnt=$(( cnt + 1 ))
-		if [ "${cnt}" -gt "${TRANS_WAIT}" ]; then
-			echo
-			print_file "CLIENT STDERR" "${cli_stderr}"
-			print_file "CLIENT STDOUT" "${cli_stdout}"
-			print_data "EXPECT DATA" "Bad Request"
-			kill_pid "${cli_pid}" || true
-			print_data "RECEIVED RAW" "$( od -c "${cli_stdout}" )"
-			print_error "[Receive Error] Received data on Client does not match expected data from Google."
-			exit 1
-		fi
-		sleep 1
-	done
-	echo
-	print_file "Client received data" "${cli_stdout}"
+	# [CLIENT] -> [GOOGLE] -> CLIENT]
+	wait_for_data_transferred "Bad Request" "" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------
