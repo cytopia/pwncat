@@ -23,7 +23,6 @@ PYVER="$( "${PYTHON}" -V 2>&1 | head -1 || true )"
 
 RUNS=1
 STARTUP_WAIT=4
-#TRANS_WAIT=10
 
 
 # -------------------------------------------------------------------------------------------------
@@ -46,7 +45,7 @@ run_test() {
 	###
 	### Create data and files
 	###
-	#data='abcdefghijklmnopqrstuvwxyz1234567890'
+	#data="abcdefghijklmnopqrstuvwxyz1234567890\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"

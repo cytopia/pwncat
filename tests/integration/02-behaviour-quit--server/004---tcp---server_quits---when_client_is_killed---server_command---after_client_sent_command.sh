@@ -23,7 +23,6 @@ PYVER="$( "${PYTHON}" -V 2>&1 | head -1 || true )"
 
 RUNS=1
 STARTUP_WAIT=4
-TRANS_WAIT=10
 
 
 # -------------------------------------------------------------------------------------------------
@@ -46,8 +45,8 @@ run_test() {
 	###
 	### Create data and files
 	###
-	data='whoami'
-	expect="$(whoami)"
+	data="whoami\\n"
+	expect="$(whoami)\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"
@@ -84,7 +83,7 @@ run_test() {
 	# Start Client
 	print_info "Start Client"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "echo ${data}" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli_stdout}" "${cli_stderr}" )"; then
+	if ! cli_pid="$( run_bg "printf ${data}" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
 	fi
 
@@ -109,31 +108,8 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(3/5) Transfer: Client -> Server -> Client"
 
-	# [SERVER] Wait for data
-	print_info "Wait for data transfer"
-	cnt=0
-	while ! diff <(echo "${expect}") "${cli_stdout}" >/dev/null 2>&1; do
-		printf "."
-		cnt=$(( cnt + 1 ))
-		if [ "${cnt}" -gt "${TRANS_WAIT}" ]; then
-			echo
-			print_file "SERVER STDERR" "${srv_stderr}"
-			print_file "SERVER STDOUT" "${srv_stdout}"
-			print_file "CLIENT STDERR" "${cli_stderr}"
-			print_file "CLIENT STDOUT" "${cli_stdout}"
-			print_data "EXPECT DATA" "${expect}"
-			diff <(echo "${expect}") "${cli_stdout}" 2>&1 || true
-			kill_pid "${cli_pid}" || true
-			kill_pid "${srv_pid}" || true
-			print_data "RECEIVED RAW" "$( od -c "${cli_stdout}" )"
-			print_data "EXPECTED RAW" "$( echo "${expect}" | od -c )"
-			print_error "[Receive Error] Received data on Client does not match expected response from Server"
-			exit 1
-		fi
-		sleep 1
-	done
-	echo
-	print_file "Client received data" "${cli_stdout}"
+	# [CLIENT -> SERVER -> CLIENT]
+	wait_for_data_transferred "" "${expect}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
