@@ -6,7 +6,7 @@ set -o pipefail
 
 SCRIPT_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-TPL_NAME="template-test.tpl"
+TPL_NAME="template-test.yml.tpl"
 TPL_PATH="${SCRIPT_PATH}/${TPL_NAME}"
 FLW_PATH="${SCRIPT_PATH}/../../.github/workflows"
 
