@@ -214,39 +214,39 @@ test: _test-options--ping_intvl
 
 .PHONY: _test-behaviour-quit--client
 _test-behaviour-quit--client:
-	tests/integration/run.sh "01-behaviour-quit--client" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "01-behaviour-quit--client" "localhost" "4444" "4" "1"
 
 .PHONY: _test-behaviour-quit--server
 _test-behaviour-quit--server:
-	tests/integration/run.sh "02-behaviour-quit--server" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "02-behaviour-quit--server" "localhost" "4444" "4" "1"
 
 .PHONY: _test-mode--local_forward
 _test-mode--local_forward:
-	tests/integration/run.sh "10-mode---local_forward" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "10-mode---local_forward" "localhost" "4444" "4" "1"
 
 .PHONY: _test-mode--remote_forward
 _test-mode--remote_forward:
-	tests/integration/run.sh "11-mode---remote_forward" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "11-mode---remote_forward" "localhost" "4444" "4" "1"
 
 .PHONY: _test-options--nodns
 _test-options--nodns:
-	tests/integration/run.sh "20-options---nodns" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "20-options---nodns" "localhost" "4444" "4" "1"
 
 .PHONY: _test-options--crlf
 _test-options--crlf:
-	tests/integration/run.sh "21-options---crlf" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "21-options---crlf" "localhost" "4444" "4" "1"
 
 .PHONY: _test-options--keep_open
 _test-options--keep_open:
-	tests/integration/run.sh "22-options---keep_open" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "22-options---keep_open" "localhost" "4444" "4" "1"
 
 .PHONY: _test-options--reconn
 _test-options--reconn:
-	tests/integration/run.sh "23-options---reconn" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "23-options---reconn" "localhost" "4444" "4" "1"
 
 .PHONY: _test-options--ping_init
 _test-options--ping_intvl:
-	tests/integration/run.sh "25-options---ping_intvl" "localhost" "4444" "1" "1"
+	tests/integration/run.sh "25-options---ping_intvl" "localhost" "4444" "4" "1"
 
 
 # -------------------------------------------------------------------------------------------------
