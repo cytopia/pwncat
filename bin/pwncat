@@ -2546,8 +2546,6 @@ def main():
     if args.local:
         # TODO: Make the listen address optional!
         srv_opts.keep_open = True
-        cli_opts.reconn = True
-        cli_opts.reconn_wait = 0
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
         # Create listen and client instances
@@ -2576,8 +2574,8 @@ def main():
     # -> connect to client, connect to target and proxy traffic in between.
     if args.remote:
         # TODO: Make the listen address optional!
-        cli_opts.reconn = True
-        cli_opts.reconn_wait = 0.2
+        cli_opts.reconn = -1
+        cli_opts.reconn_wait = 0.1
         lhost = args.remote.split(":")[0]
         lport = int(args.remote.split(":")[1])
         # Create local and remote client

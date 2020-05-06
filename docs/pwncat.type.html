@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.23% imprecise</th>
-<th class="summary summary-lines">2664 LOC</th>
+<th class="summary summary-precision">6.24% imprecise</th>
+<th class="summary summary-lines">2662 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.23% imprecise</td>
-<td class="summary summary-lines">2664 LOC</td>
+<td class="summary summary-precision">6.24% imprecise</td>
+<td class="summary summary-lines">2662 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2697,8 +2697,6 @@
 <span id="L2660" class="lineno"><a class="lineno" href="#L2660">2660</a></span>
 <span id="L2661" class="lineno"><a class="lineno" href="#L2661">2661</a></span>
 <span id="L2662" class="lineno"><a class="lineno" href="#L2662">2662</a></span>
-<span id="L2663" class="lineno"><a class="lineno" href="#L2663">2663</a></span>
-<span id="L2664" class="lineno"><a class="lineno" href="#L2664">2664</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5433,8 +5431,6 @@ Explicit (x1)">        mod = PluginOutput(ssig, DsPluginOutput(enc, args.crlf, T
 Explicit (x1)">    if args.local:</span>
 <span class="line-empty" title="No Anys on this line!">        # TODO: Make the listen address optional!</span>
 <span class="line-precise" title="No Anys on this line!">        srv_opts.keep_open = True</span>
-<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn = True</span>
-<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn_wait = 0</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x5)">        lhost = args.local.split(":")[0]</span>
 <span class="line-any" title="Any Types on this line: 
@@ -5468,8 +5464,8 @@ Explicit (x2)">        net_cli = PluginNetwork(ssig, enc, host, port, "client", 
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">    if args.remote:</span>
 <span class="line-empty" title="No Anys on this line!">        # TODO: Make the listen address optional!</span>
-<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn = True</span>
-<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn_wait = 0.2</span>
+<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn = -1</span>
+<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn_wait = 0.1</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x5)">        lhost = args.remote.split(":")[0]</span>
 <span class="line-any" title="Any Types on this line: 
