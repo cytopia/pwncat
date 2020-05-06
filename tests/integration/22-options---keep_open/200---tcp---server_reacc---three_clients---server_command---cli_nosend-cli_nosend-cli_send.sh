@@ -45,8 +45,8 @@ run_test() {
 	###
 	### Create data and files
 	###
-	data='whoami'
-	expect="$(whoami)"
+	data="whoami\\n"
+	expect="$(whoami)\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 
@@ -218,7 +218,7 @@ run_test() {
 	# Start Client
 	print_info "Start Client"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "echo ${data}" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli3_stdout}" "${cli3_stderr}" )"; then
+	if ! cli_pid="$( run_bg "printf ${data}" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli3_stdout}" "${cli3_stderr}" )"; then
 		printf ""
 	fi
 
@@ -243,31 +243,8 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(9/12) Transfer: Client -> Server -> Client (round 3)"
 
-	# [SERVER] Wait for data
-	print_info "Wait for data transfer"
-	cnt=0
-	while ! diff <(echo "${expect}") "${cli3_stdout}" >/dev/null 2>&1; do
-		printf "."
-		cnt=$(( cnt + 1 ))
-		if [ "${cnt}" -gt "${TRANS_WAIT}" ]; then
-			echo
-			print_file "SERVER STDERR" "${srv_stderr}"
-			print_file "SERVER STDOUT" "${srv_stdout}"
-			print_file "CLIENT STDERR" "${cli3_stderr}"
-			print_file "CLIENT STDOUT" "${cli3_stdout}"
-			print_data "EXPECT DATA" "${expect}"
-			diff <(echo "${expect}") "${cli3_stdout}" 2>&1 || true
-			kill_pid "${cli_pid}" || true
-			kill_pid "${srv_pid}" || true
-			print_data "RECEIVED RAW" "$( od -c "${cli3_stdout}" )"
-			print_data "EXPECTED RAW" "$( echo "${expect}" | od -c )"
-			print_error "[Receive Error] Received data on Client does not match expected response from Server"
-			exit 1
-		fi
-		sleep 1
-	done
-	echo
-	print_file "Client received data" "${cli3_stdout}"
+	# [CLIENT -> SERVER -> Client]
+	wait_for_data_transferred "" "${expect}" "Client" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
