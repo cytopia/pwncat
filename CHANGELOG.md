@@ -6,12 +6,18 @@
 
 ## Release 0.0.11-alpha
 
+#### Fixed
+- Various bugs with `--reconn`, `--keep-open`, `--local` and `--remote`
+- Various bugs with threads
+
 #### Added
 - Python type coverage report
+- CI: Added ca. 10,000 LoC integration tests and fixed findings accordingly
 
 #### Changed
-- Code: heavy refactoring
-- Option: `-C`/`--crlf` now takes an argument to either force LF or CRLF (omit for auto)
+- Code: really heavy heavy code refactoring
+- Option: `-C`/`--crlf` now takes an argument to either force LF or CRLF (or keep as it is, if not specified)
+- Modularized code for better plugin integration
 
 
 ## Release 0.0.10-alpha
