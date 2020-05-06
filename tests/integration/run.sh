@@ -7,7 +7,7 @@ set -o pipefail
 SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 print_usage() {
-	echo "Error, Usage: ${0} <dir>"
+	echo "Error, Usage: ${0} <dir> [host] [port] [wait] [runs] [python]"
 	echo "Valid dirs:"
 	echo
 	find "${SCRIPTPATH}" -type d -exec basename {} \; | grep -E '^[0-9].*' | sort
@@ -40,5 +40,6 @@ fi
 ###
 TESTDIR="${SCRIPTPATH}/${1}"
 find "${TESTDIR}" -name '*.sh' -type f | sort | while read -r -d $'\n' file; do
-	"${file}"
+	# Script  # Bind addr       # Bind port  # Wait    # Runs    # Python
+	"${file}" "${2:-localhost}" "${3:-4444}" "${4:-2}" "${5:-1}" "${6:-}"
 done
