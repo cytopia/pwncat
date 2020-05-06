@@ -136,7 +136,7 @@ code: _code-pylint
 code: _code-black
 code: _code-mypy
 
-.PHONY: _code_pycodestyle
+.PHONY: _code-pycodestyle
 _code-pycodestyle:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pycodestyle"
@@ -146,7 +146,7 @@ _code-pycodestyle:
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
 		&& pycodestyle --config=setup.cfg /tmp/$(BINNAME).py'
 
-.PHONY: _code_pydocstyle
+.PHONY: _code-pydocstyle
 _code-pydocstyle:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pycodestyle"
@@ -156,21 +156,21 @@ _code-pydocstyle:
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
 		&& pydocstyle --explain --config=setup.cfg /tmp/$(BINNAME).py'
 
-.PHONY: _code_pylint
+.PHONY: _code-pylint
 _code-pylint:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check pylint"
 	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pylint --rcfile=setup.cfg $(BINPATH)$(BINNAME)
 
-.PHONY: _code_black
+.PHONY: _code-black
 _code-black:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check Python Black"
 	@echo "# -------------------------------------------------------------------- #"
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
 
-.PHONY: _code_mypy
+.PHONY: _code-mypy
 _code-mypy:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Check mypy"
@@ -235,7 +235,7 @@ docs: _docs-man
 docs: _docs-api
 docs: _docs-mypy_type_coverage
 
-.PHONY: _docs_man
+.PHONY: _docs-man
 _docs-man: $(BINPATH)$(BINNAME)
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add help2man \
@@ -246,7 +246,7 @@ _docs-man: $(BINPATH)$(BINNAME)
 		&& cat $(MANPATH)$(BINNAME).1 | groff -mandoc -Thtml | sed "s/.*CreationDate:.*//g" > $(DOCPATH)$(BINNAME).man.html \
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).man.html'
 
-.PHONY: _docs_api
+.PHONY: _docs-api
 _docs-api:
 	@# Generate pdoc API page
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
@@ -257,7 +257,7 @@ _docs-api:
 		&& mv $(DOCPATH)$(BINNAME).html $(DOCPATH)$(BINNAME).api.html \
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).api.html'
 
-.PHONY: _docs_mypy_type_coverage
+.PHONY: _docs-mypy_type_coverage
 _docs-mypy_type_coverage:
 	@# Generate mypy code coverage page
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data -w /data -e UID=$(UID) -e GID=${GID} --entrypoint= cytopia/mypy sh -c ' \
