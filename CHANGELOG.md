@@ -11,6 +11,7 @@
 
 #### Changed
 - Code: heavy refactoring
+- Option: `-C`/`--crlf` now takes an argument to either force LF or CRLF (omit for auto)
 
 
 ## Release 0.0.10-alpha
