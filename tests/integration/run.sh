@@ -7,7 +7,7 @@ set -o pipefail
 SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 print_usage() {
-	echo "Error, Usage: ${0} <dir> [host] [port] [wait] [runs] [python]"
+	echo "Usage: ${0} <dir> [host] [port] [wait] [runs] [python]"
 	echo "Valid dirs:"
 	echo
 	find "${SCRIPTPATH}" -type d -exec basename {} \; | grep -E '^[0-9].*' | sort
@@ -17,7 +17,8 @@ print_usage() {
 ###
 ### Validate command line argument is present
 ###
-if [ "${#}" -ne "1" ]; then
+if [ "${#}" -lt "1" ]; then
+	echo "Error, missing required argument."
 	print_usage
 	exit 1
 fi
@@ -27,10 +28,8 @@ fi
 ### Validate command line argument is correct directory
 ###
 if [ ! -d "${SCRIPTPATH}/${1}" ]; then
-	echo "Error, Usage: ${0} <dir>"
-	echo "Valid dirs:"
-	echo
-	find "${SCRIPTPATH}" -type d -exec basename {} \; | grep -E '^[0-9].*' | sort
+	echo "Error, provided argument is not a valid directory."
+	print_usage
 	exit 1
 fi
 
