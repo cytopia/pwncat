@@ -11,6 +11,16 @@ COMPOSEDIR="${SCRIPTPATH}/"
 source "${SOURCEPATH}"
 
 
+# -------------------------------------------------------------------------------------------------
+# SETTINGS
+# -------------------------------------------------------------------------------------------------
+WAIT_STARTUP=2
+WAIT_SHUTDOWN=2
+
+
+# -------------------------------------------------------------------------------------------------
+# FUNCTIONS
+# -------------------------------------------------------------------------------------------------
 print_usage() {
 	echo "${0} <dir> <compose-server-name> <compose-client-name>"
 	echo "Valid dirs:"
@@ -23,7 +33,7 @@ print_usage() {
 # CHECKS
 # -------------------------------------------------------------------------------------------------
 
-if [ "${#}" -ne "3" ]; then
+if [ "${#}" -lt "3" ]; then
 	print_usage
 	exit 1
 fi
@@ -31,6 +41,7 @@ fi
 COMPOSE="${1}"
 SERVER="${2}"
 CLIENT="${3}"
+PYTHON_VERSION="${4:-3.8}"
 COMPOSEDIR="${SCRIPTPATH}/${COMPOSE}"
 
 if [ ! -f "${COMPOSEDIR}/docker-compose.yml" ]; then
@@ -47,7 +58,12 @@ if ! command -v docker-compose >/dev/null 2>&1; then
 fi
 
 
-print_test_case ""
+# -------------------------------------------------------------------------------------------------
+# APPLY VERSION
+# -------------------------------------------------------------------------------------------------
+
+echo "PYTHON_VERSION=${PYTHON_VERSION}" > "${COMPOSEDIR}/.env"
+print_test_case "Python ${PYTHON_VERSION}"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -56,10 +72,13 @@ print_test_case ""
 print_h2 "(1/5) Get artifacts"
 
 cd "${COMPOSEDIR}"
-while sleep 1; do
+
+# shellcheck disable=SC2050
+while [ "1" -eq "1" ]; do
 	if run "docker-compose pull"; then
 		break
 	fi
+	sleep 1
 done
 
 
@@ -79,7 +98,7 @@ print_h2 "(2/5) Starting compose"
 
 cd "${COMPOSEDIR}"
 run "docker-compose up -d ${SERVER} ${CLIENT}"
-run "sleep 5"
+run "sleep ${WAIT_STARTUP}"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -90,6 +109,9 @@ print_h2 "(3/5) Validate running"
 if ! run "docker-compose ps --filter 'status=running' --services | grep ${SERVER}"; then
 	print_error "Server is not running"
 	run "docker-compose logs"
+	run "docker-compose ps"
+	run "docker-compose exec ${CLIENT} ps || true"
+	run "docker-compose exec ${SERVER} ps || true"
 	run "docker-compose kill  || true 2>/dev/null"
 	run "docker-compose rm -f || true 2>/dev/null"
 	exit 1
@@ -97,10 +119,16 @@ fi
 if ! run "docker-compose ps --filter 'status=running' --services | grep ${CLIENT}"; then
 	print_error "Client is not running"
 	run "docker-compose logs"
+	run "docker-compose ps"
+	run "docker-compose exec ${CLIENT} ps || true"
+	run "docker-compose exec ${SERVER} ps || true"
 	run "docker-compose kill  || true 2>/dev/null"
 	run "docker-compose rm -f || true 2>/dev/null"
 	exit 1
 fi
+
+run "docker-compose exec ${CLIENT} ps || true"
+run "docker-compose exec ${SERVER} ps || true"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -109,11 +137,17 @@ fi
 print_h2 "(4/5) Test"
 
 run "docker-compose exec ${SERVER} kill -2 1"
-run "sleep 5"
+run "sleep ${WAIT_SHUTDOWN}"
+run "docker-compose exec ${CLIENT} ps || true"
+run "docker-compose exec ${SERVER} ps || true"
+
 
 
 if ! run_fail "docker-compose ps --filter 'status=running' --services | grep ${SERVER}"; then
 	run "docker-compose logs"
+	run "docker-compose ps"
+	run "docker-compose exec ${CLIENT} ps || true"
+	run "docker-compose exec ${SERVER} ps || true"
 	run "docker-compose kill  || true 2>/dev/null"
 	run "docker-compose rm -f || true 2>/dev/null"
 	print_error "Server was supposed to stop, it is running"
@@ -122,6 +156,9 @@ fi
 
 if ! run_fail "docker-compose ps --filter 'status=running' --services | grep ${CLIENT}"; then
 	run "docker-compose logs"
+	run "docker-compose ps"
+	run "docker-compose exec ${CLIENT} ps || true"
+	run "docker-compose exec ${SERVER} ps || true"
 	run "docker-compose kill  || true 2>/dev/null"
 	run "docker-compose rm -f || true 2>/dev/null"
 	print_error "Client was supposed to stop, it is running"
@@ -136,5 +173,6 @@ print_h2 "(5/5) Stopping Docker Compose"
 
 run "docker-compose logs ${SERVER}"
 run "docker-compose logs ${CLIENT}"
+run "docker-compose ps"
 run "docker-compose kill  || true 2>/dev/null"
 run "docker-compose rm -f || true 2>/dev/null"

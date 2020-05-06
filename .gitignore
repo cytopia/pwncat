@@ -7,3 +7,4 @@ tests/output/*
 __pycache__
 *.pyc
 .mypy_cache/*
+.env

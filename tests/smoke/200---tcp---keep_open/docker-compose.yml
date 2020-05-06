@@ -7,9 +7,9 @@ services:
   ### SIGINT (Ctrl+c) on Server (not sending data)
   ###
   server_1:
-    image: python:3.8-alpine
+    image: python:${PYTHON_VERSION}-alpine
     hostname: server
-    command: /usr/bin/pwncat -vvvvv -l 4444 --keep-open
+    command: python${PYTHON_VERSION} /usr/bin/pwncat -vvvvv -l 4444 --keep-open
     restart: "no"
     ports:
       - "4444:4444/tcp"
@@ -17,9 +17,9 @@ services:
     volumes:
       - ../../../bin/pwncat:/usr/bin/pwncat
   client_1:
-    image: python:3.8-alpine
+    image: python:${PYTHON_VERSION}-alpine
     hostname: client
-    command: /usr/bin/pwncat -vvvvv server_1 4444
+    command: python${PYTHON_VERSION} /usr/bin/pwncat -vvvvv server_1 4444
     restart: "no"
     volumes:
       - ../../../bin/pwncat:/usr/bin/pwncat
@@ -31,9 +31,9 @@ services:
   ### SIGINT (Ctrl+c) on Server (Client sends data)
   ###
   server_2:
-    image: python:3.8-alpine
+    image: python:${PYTHON_VERSION}-alpine
     hostname: server
-    command: /usr/bin/pwncat -vvvvv -l 4444 --keep-open
+    command: python${PYTHON_VERSION} /usr/bin/pwncat -vvvvv -l 4444 --keep-open
     restart: "no"
     ports:
       - "4444:4444/tcp"
@@ -41,12 +41,14 @@ services:
     volumes:
       - ../../../bin/pwncat:/usr/bin/pwncat
   client_2:
-    image: python:3.8-alpine
+    image: python:${PYTHON_VERSION}-alpine
     hostname: client
     command: /start.sh "server_2" "4444"
     restart: "no"
     volumes:
       - ../../../bin/pwncat:/usr/bin/pwncat
       - ./start_client_send.sh:/start.sh
+    environment:
+      PYTHON_VERSION: ${PYTHON_VERSION}
     depends_on:
       - server_2

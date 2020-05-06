@@ -3,11 +3,17 @@ ifneq (,)
 endif
 
 # -------------------------------------------------------------------------------------------------
+# Can be changed
+# -------------------------------------------------------------------------------------------------
+# This can be adjusted
+PYTHON_VERSION = 2.7
+
+
+# -------------------------------------------------------------------------------------------------
 # Default configuration
 # -------------------------------------------------------------------------------------------------
 .PHONY: help lint code test smoke autoformat docs flows build deploy clean
 
-VERSION = 2.7
 BINPATH = bin/
 MANPATH = man/
 DOCPATH = docs/
@@ -186,10 +192,10 @@ smoke: _smoke-keep_open-before_send
 
 .PHONY:
 _smoke-keep_open-before_send:
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
 
 _smoke-keep_open-after_client_send:
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -322,7 +328,7 @@ _build-source_dist:
 		-v $(PWD):/data \
 		-w /data \
 		-u $$(id -u):$$(id -g) \
-		python:$(VERSION)-alpine \
+		python:$(PYTHON_VERSION)-alpine \
 		python setup.py sdist
 
 .PHONY: _build_binary_dist
@@ -334,7 +340,7 @@ _build-binary_dist:
 		-v $(PWD):/data \
 		-w /data \
 		-u $$(id -u):$$(id -g) \
-		python:$(VERSION)-alpine \
+		python:$(PYTHON_VERSION)-alpine \
 		python setup.py bdist_wheel --universal
 
 .PHONY: _build_python_package
@@ -346,7 +352,7 @@ _build-python_package:
 		-v $(PWD):/data \
 		-w /data \
 		-u $$(id -u):$$(id -g) \
-		python:$(VERSION)-alpine \
+		python:$(PYTHON_VERSION)-alpine \
 		python setup.py build
 
 .PHONY: _build_check_python_package
@@ -357,7 +363,7 @@ _build-check_python_package:
 		$$(tty -s && echo "-it" || echo) \
 		-v $(PWD):/data \
 		-w /data \
-		python:$(VERSION)-alpine \
+		python:$(PYTHON_VERSION)-alpine \
 		sh -c "pip install twine \
 		&& twine check dist/*"
 
@@ -371,7 +377,7 @@ deploy:
 		$$(tty -s && echo "-it" || echo) \
 		-v $(PWD):/data \
 		-w /data \
-		python:$(VERSION)-alpine \
+		python:$(PYTHON_VERSION)-alpine \
 		sh -c "pip install twine \
 		&& twine upload dist/*"
 
