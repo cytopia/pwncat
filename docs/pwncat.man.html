@@ -137,11 +137,16 @@ arguments: <br>
 <p style="margin-left:22%;">Execute shell command. Only for
 connect or listen mode.</p>
 
-<p style="margin-left:11%;"><b>&minus;C</b>,
-<b>&minus;&minus;crlf</b></p>
+<p style="margin-left:11%;"><b>&minus;C</b> y/n,
+<b>&minus;&minus;crlf</b> y/n</p>
 
-<p style="margin-left:22%;">Replace LF with CRLF from stdin
-(default: don&rsquo;t)</p>
+<p style="margin-left:22%;">Specify, &rsquo;always&rsquo;,
+&rsquo;yes&rsquo; or &rsquo;y&rsquo; to alway force
+replacing LF (\n) with CRLF (\r\n) on stdin. Specify
+&rsquo;never&rsquo;, &rsquo;no&rsquo; or&rsquo;n&rsquo; to
+always force replacing CRLF (\r\n) with LF (\n) on stdin. By
+default it will not replace anything and takes what is
+entered (usually CRLF on windows and LF on unix).</p>
 
 <p style="margin-left:11%;"><b>&minus;n</b>,
 <b>&minus;&minus;nodns</b></p>
