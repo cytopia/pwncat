@@ -45,7 +45,7 @@ run_test() {
 	###
 	### Create data and files
 	###
-	data='abcdefghijklmnopqrstuvwxyz1234567890'
+	data="abcdefghijklmnopqrstuvwxyz1234567890\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"
@@ -108,7 +108,7 @@ run_test() {
 	print_h2 "(3/4) Transfer: Server -> Client (round 2)"
 
 	# [SERVER -> Client]
-	test_wait_for_data_transfer "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	wait_for_data_transferred "" "${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
