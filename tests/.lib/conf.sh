@@ -504,7 +504,7 @@ wait_for_data_transferred() {
 				echo
 				print_data "EXPECT] [${recv_name}] - [REG" "${expect_regex}"
 				print_file "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}"
-				print_data "RECVER] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+				print_data "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
 				echo
 				if [ -n "${send_name}" ]; then
 					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
@@ -536,8 +536,8 @@ wait_for_data_transferred() {
 				print_data "EXPECT] [${recv_name}] - [RAW" "${expect_data}"
 				print_file "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}"
 				echo
-				print_data "EXPECT] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
-				print_data "RECVER] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+				print_data "EXPECT] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+				print_data "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
 				echo
 				if [ -n "${send_name}" ]; then
 					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
