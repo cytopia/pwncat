@@ -115,6 +115,18 @@
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.8"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.8/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.8"><img src="https://github.com/cytopia/pwncat/workflows/win-3.8/badge.svg" /></a></td>
       </tr>
+      <tr>
+       <th>pypy2</th>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy2/badge.svg" /></a></td>
+      </tr>
+      <tr>
+       <th>pypy3</th>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy3/badge.svg" /></a></td>
+      </tr>
      </tbody>
     </table>
    </td>

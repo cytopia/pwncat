@@ -29,6 +29,10 @@ jobs:
           python-version: __PYTHON_VERSION__
           architecture: __ARCHITECTURE__
 
+      - name: Display Python version
+        shell: bash
+        run: python -c "import sys; print(sys.version)"
+
       # ------------------------------------------------------------
       # Tests: Behaviour
       # ------------------------------------------------------------
