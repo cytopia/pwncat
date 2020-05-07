@@ -21,6 +21,7 @@
 - Code: really heavy heavy code refactoring
 - Option: `-C`/`--crlf` now takes an argument to either force LF, CRLF or CR or even remove line feeds altogether on input AND output (or keep as it is, if not specified)
 - Modularized code for better plugin integration
+- Fixes #47 Change `--udp-*` options to `--*` to allow both, UDP and TCP
 
 
 ## Release 0.0.10-alpha

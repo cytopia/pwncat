@@ -5217,20 +5217,20 @@ Explicit (x1)">    if args.wait is not False and not connect_mode:</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">    # [ADVANCED] --udp-ping-init</span>
+<span class="line-empty" title="No Anys on this line!">    # [ADVANCED] --ping-init</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">    if args.udp_ping_init is not False and (args.listen or args.local):</span>
+Explicit (x5)">    if args.ping_init is not False and (args.listen or args.local):</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: --udp-ping-init mutually excl. with -l/--listen or -L/--local" % (APPNAME),</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: --ping-init mutually excl. with -l/--listen or -L/--local" % (APPNAME),</span>
 <span class="line-precise" title="No Anys on this line!">            file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">    if args.udp_ping_init is not False and not args.udp:</span>
+Explicit (x2)">    if args.ping_init is not False and not args.udp:</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: --udp-ping-init only works with -u/--udp" % (APPNAME), file=sys.stderr,</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: --ping-init only works with -u/--udp" % (APPNAME), file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -5550,10 +5550,10 @@ Explicit (x3)">    advanced.add_argument(</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    advanced.add_argument(</span>
-<span class="line-precise" title="No Anys on this line!">        "--udp-ping-init",</span>
+<span class="line-precise" title="No Anys on this line!">        "--ping-init",</span>
 <span class="line-precise" title="No Anys on this line!">        action="store_true",</span>
 <span class="line-precise" title="No Anys on this line!">        default=False,</span>
-<span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (UDP only):</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (TCP and UDP):</span>
 <span class="line-empty" title="No Anys on this line!">UDP is a stateless protocol unlike TCP, so no hand-</span>
 <span class="line-empty" title="No Anys on this line!">shake communication takes place and the client just</span>
 <span class="line-empty" title="No Anys on this line!">sends data to a server without being "accepted" by</span>
@@ -5563,38 +5563,38 @@ Explicit (x3)">    advanced.add_argument(</span>
 <span class="line-empty" title="No Anys on this line!">before the client hasn't send data first. The server</span>
 <span class="line-empty" title="No Anys on this line!">simply doesn't know the IP address before an initial</span>
 <span class="line-empty" title="No Anys on this line!">connect.</span>
-<span class="line-empty" title="No Anys on this line!">The --udp-ping-init option instructs the client to send</span>
-<span class="line-empty" title="No Anys on this line!">one single initial ping packet to the server, so that it</span>
-<span class="line-empty" title="No Anys on this line!">is able to talk to the client.</span>
+<span class="line-empty" title="No Anys on this line!">The --ping-init option instructs the client to send one</span>
+<span class="line-empty" title="No Anys on this line!">single initial ping packet to the server, so that it is</span>
+<span class="line-empty" title="No Anys on this line!">able to talk to the client.</span>
 <span class="line-empty" title="No Anys on this line!">This is the only way to make a UDP reverse shell work.</span>
-<span class="line-empty" title="No Anys on this line!">See --udp-ping-word for what char/string to send as</span>
-<span class="line-empty" title="No Anys on this line!">initial ping packet (default: '\\0')</span>
+<span class="line-empty" title="No Anys on this line!">See --ping-word for what char/string to send as initial</span>
+<span class="line-empty" title="No Anys on this line!">ping packet (default: '\\0')</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    advanced.add_argument(</span>
-<span class="line-precise" title="No Anys on this line!">        "--udp-ping-intvl",</span>
+<span class="line-precise" title="No Anys on this line!">        "--ping-intvl",</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="s",</span>
 <span class="line-precise" title="No Anys on this line!">        default=False,</span>
 <span class="line-precise" title="No Anys on this line!">        type=int,</span>
-<span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (UDP only):</span>
-<span class="line-empty" title="No Anys on this line!">Instruct the UDP client to send ping intervalls every</span>
-<span class="line-empty" title="No Anys on this line!">s seconds. This allows you to restart your UDP server</span>
-<span class="line-empty" title="No Anys on this line!">and just wait for the client to report back in.</span>
-<span class="line-empty" title="No Anys on this line!">This might be handy for stable UDP reverse shells ;-)</span>
-<span class="line-empty" title="No Anys on this line!">See --udp-ping-word for what char/string to send as</span>
-<span class="line-empty" title="No Anys on this line!">initial ping packet (default: '\\0')</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (TCP and UDP):</span>
+<span class="line-empty" title="No Anys on this line!">Instruct the client to send ping intervalls every s sec.</span>
+<span class="line-empty" title="No Anys on this line!">This allows you to restart your UDP server and just wait</span>
+<span class="line-empty" title="No Anys on this line!">for the client to report back in. This might be handy</span>
+<span class="line-empty" title="No Anys on this line!">for stable UDP reverse shells ;-)</span>
+<span class="line-empty" title="No Anys on this line!">See --ping-word for what char/string to send as initial</span>
+<span class="line-empty" title="No Anys on this line!">ping packet (default: '\\0')</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    advanced.add_argument(</span>
-<span class="line-precise" title="No Anys on this line!">        "--udp-ping-word",</span>
+<span class="line-precise" title="No Anys on this line!">        "--ping-word",</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="str",</span>
 <span class="line-precise" title="No Anys on this line!">        default="\0",</span>
 <span class="line-precise" title="No Anys on this line!">        type=str,</span>
-<span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (UDP only):</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (TCP and UDP):</span>
 <span class="line-empty" title="No Anys on this line!">Change the default character '\\0' to use for upd ping.</span>
 <span class="line-empty" title="No Anys on this line!">Single character or strings are supported.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -5602,15 +5602,15 @@ Explicit (x3)">    advanced.add_argument(</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    advanced.add_argument(</span>
-<span class="line-precise" title="No Anys on this line!">        "--udp-ping-robin",</span>
+<span class="line-precise" title="No Anys on this line!">        "--ping-robin",</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="port",</span>
 <span class="line-empty" title="No Anys on this line!">        default=[],</span>
 <span class="line-precise" title="No Anys on this line!">        type=_args_check_robin_ports,</span>
-<span class="line-precise" title="No Anys on this line!">        help="""Zero-I/O mode (UDP only):</span>
-<span class="line-empty" title="No Anys on this line!">Instruct the UDP client to shuffle the specified ports</span>
-<span class="line-empty" title="No Anys on this line!">in round-robin mode for a remote server to ping.</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (TCP and UDP):</span>
+<span class="line-empty" title="No Anys on this line!">Instruct the client to shuffle the specified ports in</span>
+<span class="line-empty" title="No Anys on this line!">round-robin mode for a remote server to ping.</span>
 <span class="line-empty" title="No Anys on this line!">This might be handy to scan outbound allowed ports.</span>
-<span class="line-empty" title="No Anys on this line!">Use --udp-ping-intvl 0 to be faster.</span>
+<span class="line-empty" title="No Anys on this line!">Use --ping-intvl 0 to be faster.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
@@ -5661,7 +5661,7 @@ Explicit (x4)">    if (connect_mode or args.zero) and not args.hostname:</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Deny unimplemented modes</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x11)">    if args.http or args.https or args.rebind or args.wait or args.udp_ping_init or args.safe_word:</span>
+Explicit (x11)">    if args.http or args.https or args.rebind or args.wait or args.ping_init or args.safe_word:</span>
 <span class="line-precise" title="No Anys on this line!">        print("Unimplemented options", file=sys.stderr)</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -5705,10 +5705,10 @@ Explicit (x4)">    srv_opts = DsIONetworkSrv(args.keep_open, args.rebind, args.r
 Explicit (x3)">    cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)</span>
 <span class="line-empty" title="No Anys on this line!">    # TODO:</span>
 <span class="line-empty" title="No Anys on this line!">    # "wait": args.wait,</span>
-<span class="line-empty" title="No Anys on this line!">    # "udp_ping_init": args.udp_ping_init,</span>
-<span class="line-empty" title="No Anys on this line!">    # "udp_ping_intvl": args.udp_ping_intvl,</span>
-<span class="line-empty" title="No Anys on this line!">    # "udp_ping_word": args.udp_ping_word,</span>
-<span class="line-empty" title="No Anys on this line!">    # "udp_ping_robing": args.udp_ping_robin,</span>
+<span class="line-empty" title="No Anys on this line!">    # "ping_init": args.ping_init,</span>
+<span class="line-empty" title="No Anys on this line!">    # "ping_intvl": args.ping_intvl,</span>
+<span class="line-empty" title="No Anys on this line!">    # "ping_word": args.ping_word,</span>
+<span class="line-empty" title="No Anys on this line!">    # "ping_robing": args.ping_robin,</span>
 <span class="line-empty" title="No Anys on this line!">    # "safe_word": args.safe_word,</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Map pwncat verbosity to Python's Logger loglevel</span>
@@ -5879,11 +5879,11 @@ Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf)
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">        if type(args.udp_ping_intvl) is int and args.udp_ping_intvl &gt; 0:</span>
+Explicit (x5)">        if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:</span>
 <span class="line-precise" title="No Anys on this line!">            run.add_timer(</span>
 <span class="line-precise" title="No Anys on this line!">                "PING",</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">                DsRunnerTimer(net.consumer, ssig, args.udp_ping_intvl, *("\x00")),  # send data</span>
+Explicit (x5)">                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *("\x00")),  # send data</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
 <span class="line-empty" title="No Anys on this line!"></span>

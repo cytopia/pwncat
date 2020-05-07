@@ -290,56 +290,54 @@ connection is silently closed and the client will exit.
 will be re&minus;opened.</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;init</b></p>
+<p style="margin-left:11%;"><b>&minus;&minus;ping&minus;init</b></p>
 
 <p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (UDP only): UDP is a stateless protocol unlike TCP, so
-no handshake communication takes place and the client just
-sends data to a server without being &quot;accepted&quot; by
-the server first. This means a server waiting for an UDP
-client to connect to, is unable to send any data to the
-client, before the client hasn&rsquo;t send data first. The
-server simply doesn&rsquo;t know the IP address before an
-initial connect. The
-<b>&minus;&minus;udp&minus;ping&minus;init</b> option
-instructs the client to send one single initial ping packet
-to the server, so that it is able to talk to the client.
-This is the only way to make a UDP reverse shell work. See
-<b>&minus;&minus;udp&minus;ping&minus;word</b> for what
-char/string to send as initial ping packet (default:
-&rsquo;\0&rsquo;)</p>
+mode (TCP and UDP): UDP is a stateless protocol unlike TCP,
+so no handshake communication takes place and the client
+just sends data to a server without being
+&quot;accepted&quot; by the server first. This means a
+server waiting for an UDP client to connect to, is unable to
+send any data to the client, before the client hasn&rsquo;t
+send data first. The server simply doesn&rsquo;t know the IP
+address before an initial connect. The
+<b>&minus;&minus;ping&minus;init</b> option instructs the
+client to send one single initial ping packet to the server,
+so that it is able to talk to the client. This is the only
+way to make a UDP reverse shell work. See
+<b>&minus;&minus;ping&minus;word</b> for what char/string to
+send as initial ping packet (default: &rsquo;\0&rsquo;)</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;intvl</b>
+<p style="margin-left:11%;"><b>&minus;&minus;ping&minus;intvl</b>
 s</p>
 
 <p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (UDP only): Instruct the UDP client to send ping
-intervalls every s seconds. This allows you to restart your
-UDP server and just wait for the client to report back in.
-This might be handy for stable UDP reverse shells ;&minus;)
-See <b>&minus;&minus;udp&minus;ping&minus;word</b> for what
-char/string to send as initial ping packet (default:
-&rsquo;\0&rsquo;)</p>
+mode (TCP and UDP): Instruct the client to send ping
+intervalls every s sec. This allows you to restart your UDP
+server and just wait for the client to report back in. This
+might be handy for stable UDP reverse shells ;&minus;) See
+<b>&minus;&minus;ping&minus;word</b> for what char/string to
+send as initial ping packet (default: &rsquo;\0&rsquo;)</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;word</b>
+<p style="margin-left:11%;"><b>&minus;&minus;ping&minus;word</b>
 str</p>
 
 <p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (UDP only): Change the default character
+mode (TCP and UDP): Change the default character
 &rsquo;\0&rsquo; to use for upd ping. Single character or
 strings are supported.</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;ping&minus;robin</b>
+<p style="margin-left:11%;"><b>&minus;&minus;ping&minus;robin</b>
 port</p>
 
-<p style="margin-left:22%;">Zero&minus;I/O mode (UDP only):
-Instruct the UDP client to shuffle the specified ports in
-round&minus;robin mode for a remote server to ping. This
-might be handy to scan outbound allowed ports. Use
-<b>&minus;&minus;udp&minus;ping&minus;intvl</b> 0 to be
+<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
+mode (TCP and UDP): Instruct the client to shuffle the
+specified ports in round&minus;robin mode for a remote
+server to ping. This might be handy to scan outbound allowed
+ports. Use <b>&minus;&minus;ping&minus;intvl</b> 0 to be
 faster.</p>
 
 

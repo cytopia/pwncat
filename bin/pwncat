@@ -2213,18 +2213,18 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [ADVANCED] --udp-ping-init
-    if args.udp_ping_init is not False and (args.listen or args.local):
+    # [ADVANCED] --ping-init
+    if args.ping_init is not False and (args.listen or args.local):
         parser.print_usage()
         print(
-            "%s: error: --udp-ping-init mutually excl. with -l/--listen or -L/--local" % (APPNAME),
+            "%s: error: --ping-init mutually excl. with -l/--listen or -L/--local" % (APPNAME),
             file=sys.stderr,
         )
         sys.exit(1)
-    if args.udp_ping_init is not False and not args.udp:
+    if args.ping_init is not False and not args.udp:
         parser.print_usage()
         print(
-            "%s: error: --udp-ping-init only works with -u/--udp" % (APPNAME), file=sys.stderr,
+            "%s: error: --ping-init only works with -u/--udp" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
 
@@ -2516,10 +2516,10 @@ re-opened.
 """,
     )
     advanced.add_argument(
-        "--udp-ping-init",
+        "--ping-init",
         action="store_true",
         default=False,
-        help="""Connect mode / Zero-I/O mode (UDP only):
+        help="""Connect mode / Zero-I/O mode (TCP and UDP):
 UDP is a stateless protocol unlike TCP, so no hand-
 shake communication takes place and the client just
 sends data to a server without being "accepted" by
@@ -2529,51 +2529,51 @@ connect to, is unable to send any data to the client,
 before the client hasn't send data first. The server
 simply doesn't know the IP address before an initial
 connect.
-The --udp-ping-init option instructs the client to send
-one single initial ping packet to the server, so that it
-is able to talk to the client.
+The --ping-init option instructs the client to send one
+single initial ping packet to the server, so that it is
+able to talk to the client.
 This is the only way to make a UDP reverse shell work.
-See --udp-ping-word for what char/string to send as
-initial ping packet (default: '\\0')
+See --ping-word for what char/string to send as initial
+ping packet (default: '\\0')
 
 """,
     )
     advanced.add_argument(
-        "--udp-ping-intvl",
+        "--ping-intvl",
         metavar="s",
         default=False,
         type=int,
-        help="""Connect mode / Zero-I/O mode (UDP only):
-Instruct the UDP client to send ping intervalls every
-s seconds. This allows you to restart your UDP server
-and just wait for the client to report back in.
-This might be handy for stable UDP reverse shells ;-)
-See --udp-ping-word for what char/string to send as
-initial ping packet (default: '\\0')
+        help="""Connect mode / Zero-I/O mode (TCP and UDP):
+Instruct the client to send ping intervalls every s sec.
+This allows you to restart your UDP server and just wait
+for the client to report back in. This might be handy
+for stable UDP reverse shells ;-)
+See --ping-word for what char/string to send as initial
+ping packet (default: '\\0')
 
 """,
     )
     advanced.add_argument(
-        "--udp-ping-word",
+        "--ping-word",
         metavar="str",
         default="\0",
         type=str,
-        help="""Connect mode / Zero-I/O mode (UDP only):
+        help="""Connect mode / Zero-I/O mode (TCP and UDP):
 Change the default character '\\0' to use for upd ping.
 Single character or strings are supported.
 
 """,
     )
     advanced.add_argument(
-        "--udp-ping-robin",
+        "--ping-robin",
         metavar="port",
         default=[],
         type=_args_check_robin_ports,
-        help="""Zero-I/O mode (UDP only):
-Instruct the UDP client to shuffle the specified ports
-in round-robin mode for a remote server to ping.
+        help="""Connect mode / Zero-I/O mode (TCP and UDP):
+Instruct the client to shuffle the specified ports in
+round-robin mode for a remote server to ping.
 This might be handy to scan outbound allowed ports.
-Use --udp-ping-intvl 0 to be faster.
+Use --ping-intvl 0 to be faster.
 
 """,
     )
@@ -2618,7 +2618,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if args.http or args.https or args.rebind or args.wait or args.udp_ping_init or args.safe_word:
+    if args.http or args.https or args.rebind or args.wait or args.ping_init or args.safe_word:
         print("Unimplemented options", file=sys.stderr)
         sys.exit(1)
 
@@ -2656,10 +2656,10 @@ def main():
     cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # "wait": args.wait,
-    # "udp_ping_init": args.udp_ping_init,
-    # "udp_ping_intvl": args.udp_ping_intvl,
-    # "udp_ping_word": args.udp_ping_word,
-    # "udp_ping_robing": args.udp_ping_robin,
+    # "ping_init": args.ping_init,
+    # "ping_intvl": args.ping_intvl,
+    # "ping_word": args.ping_word,
+    # "ping_robing": args.ping_robin,
     # "safe_word": args.safe_word,
 
     # Map pwncat verbosity to Python's Logger loglevel
@@ -2805,10 +2805,9 @@ def main():
                 [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
-        if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
+        if type(args.ping_intvl) is int and args.ping_intvl > 0:
             run.add_timer(
-                "PING",
-                DsRunnerTimer(net.consumer, ssig, args.udp_ping_intvl, *("\x00")),  # send data
+                "PING", DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *("\x00")),  # send data
             )
         run.run()
 

