@@ -180,11 +180,17 @@ print_file_raw() {
 	local clr_rst="\\033[m"      # Reset to normal
 
 	print_h3 "[${name}] Filename: ${file}"
-	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF FILE"
+	printf "${clr_div}############################ %s ############################${clr_rst}\\n" "START OF FILE (RAW) "
 	if [ "${quote}" == "1"  ]; then
 		printf "'%s'\\n" "$(cat_raw "${file}")"
 	else
 		printf "%s\\n" "$(cat_raw "${file}")"
+	fi
+	printf "${clr_div}############################ %s ###########################${clr_rst}\\n" "START OF FILE (CTRL) "
+	if [ "${quote}" == "1"  ]; then
+		printf "'%s'\\n" "$(cat -ev "${file}")"
+	else
+		printf "%s\\n" "$(cat -ev "${file}")"
 	fi
 	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF FILE"
 	printf "\\n"
