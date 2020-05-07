@@ -2807,7 +2807,7 @@ def main():
         )
         if type(args.ping_intvl) is int and args.ping_intvl > 0:
             run.add_timer(
-                "PING", DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *("\x00")),  # send data
+                "PING", DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),
             )
         run.run()
 

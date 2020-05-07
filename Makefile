@@ -219,6 +219,7 @@ test: _test-options--crlf
 test: _test-options--keep_open
 test: _test-options--reconn
 test: _test-options--ping_intvl
+test: _test-options--ping_word
 
 .PHONY: _test-behaviour-quit--client
 _test-behaviour-quit--client:
@@ -255,6 +256,10 @@ _test-options--reconn:
 .PHONY: _test-options--ping_init
 _test-options--ping_intvl:
 	tests/integration/run.sh "25-options---ping_intvl" "localhost" "4444" "8" "1"
+
+.PHONY: _test-options--ping_word
+_test-options--ping_word:
+	tests/integration/run.sh "26-options---ping_word" "localhost" "4444" "8" "1"
 
 
 # -------------------------------------------------------------------------------------------------

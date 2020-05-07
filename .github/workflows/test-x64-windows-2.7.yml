@@ -77,3 +77,8 @@ jobs:
         shell: bash
         run: |
           make _test-options--ping_intvl
+
+      - name: "[OPTIONS] --ping-word"
+        shell: bash
+        run: |
+          make _test-options--ping_word

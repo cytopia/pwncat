@@ -13,6 +13,7 @@
 - Fixed shutdown behaviour with Ctrl+c for --reconn
 
 #### Added
+- Feature: Custom ping word (`--ping-word`): #49
 - Python type coverage report
 - CI: Added ca. 13,000 LoC integration tests and fixed findings accordingly
 - CI: Added dockerized interactive tests to simulate Ctrl+c

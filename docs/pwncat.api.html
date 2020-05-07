@@ -2834,7 +2834,7 @@ def main():
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
-                &#34;PING&#34;, DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *(&#34;\x00&#34;)),  # send data
+                &#34;PING&#34;, DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),
             )
         run.run()
 
@@ -3457,7 +3457,7 @@ accidentally by other input.
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
-                &#34;PING&#34;, DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *(&#34;\x00&#34;)),  # send data
+                &#34;PING&#34;, DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),
             )
         run.run()</code></pre>
 </details>

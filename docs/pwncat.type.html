@@ -5881,7 +5881,7 @@ Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf)
 Explicit (x5)">        if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:</span>
 <span class="line-precise" title="No Anys on this line!">            run.add_timer(</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">                "PING", DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *("\x00")),  # send data</span>
+Explicit (x6)">                "PING", DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
