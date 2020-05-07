@@ -1285,6 +1285,17 @@ class TransformLinefeed(Transform):
         if self.__opts.crlf is None:
             return data
 
+        # ? -> No line feeds
+        if self.__opts.crlf == "no":
+            if data.endswith("\r\n"):
+                self.log.debug("Removing CRLF")
+                return data[:-2]
+            if data.endswith("\n"):
+                self.log.debug("Removing LF")
+                return data[:-1]
+            if data.endswith("\r"):
+                self.log.debug("Removing CR")
+                return data[:-1]
         # ? -> CRLF
         if self.__opts.crlf == "crlf" and not data.endswith("\r\n"):
             if data.endswith("\n"):
@@ -2012,12 +2023,12 @@ def get_version():
     )
 
 
-def _args_check_crlf(value):
+def _args_check_lf(value):
     # type: (Optional[str]) -> Optional[str]
     """Evaluate a yes/no choice into True, False or None."""
     if value is None:
         return None
-    if value.lower() in ["crlf", "lf", "cr"]:
+    if value.lower() in ["crlf", "lf", "cr", "no"]:
         return value.lower()
     raise argparse.ArgumentTypeError("'%s' is an invalid choice" % value)
 
@@ -2320,14 +2331,15 @@ target machine via the positional arguments.
     optional.add_argument(
         "-C",
         "--crlf",
-        type=_args_check_crlf,
+        type=_args_check_lf,
         metavar="lf",
         default=None,
         help="""Specify, 'lf', 'crlf' or 'cr' to always force replacing
-line endings for input and outout accordingly. By
-default it will not replace anything and takes what is
-entered (usually CRLF on Windows, LF on Linux and some
-times CR on MacOS).""",
+line endings for input and outout accordingly. Specify
+'no' to completely remove any line feeds. By default
+it will not replace anything and takes what is entered
+(usually CRLF on Windows, LF on Linux and some times
+CR on MacOS).""",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",

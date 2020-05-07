@@ -1312,6 +1312,17 @@ class TransformLinefeed(Transform):
         if self.__opts.crlf is None:
             return data
 
+        # ? -&gt; No line feeds
+        if self.__opts.crlf == &#34;no&#34;:
+            if data.endswith(&#34;\r\n&#34;):
+                self.log.debug(&#34;Removing CRLF&#34;)
+                return data[:-2]
+            if data.endswith(&#34;\n&#34;):
+                self.log.debug(&#34;Removing LF&#34;)
+                return data[:-1]
+            if data.endswith(&#34;\r&#34;):
+                self.log.debug(&#34;Removing CR&#34;)
+                return data[:-1]
         # ? -&gt; CRLF
         if self.__opts.crlf == &#34;crlf&#34; and not data.endswith(&#34;\r\n&#34;):
             if data.endswith(&#34;\n&#34;):
@@ -2039,12 +2050,12 @@ def get_version():
     )
 
 
-def _args_check_crlf(value):
+def _args_check_lf(value):
     # type: (Optional[str]) -&gt; Optional[str]
     &#34;&#34;&#34;Evaluate a yes/no choice into True, False or None.&#34;&#34;&#34;
     if value is None:
         return None
-    if value.lower() in [&#34;crlf&#34;, &#34;lf&#34;, &#34;cr&#34;]:
+    if value.lower() in [&#34;crlf&#34;, &#34;lf&#34;, &#34;cr&#34;, &#34;no&#34;]:
         return value.lower()
     raise argparse.ArgumentTypeError(&#34;&#39;%s&#39; is an invalid choice&#34; % value)
 
@@ -2347,14 +2358,15 @@ target machine via the positional arguments.
     optional.add_argument(
         &#34;-C&#34;,
         &#34;--crlf&#34;,
-        type=_args_check_crlf,
+        type=_args_check_lf,
         metavar=&#34;lf&#34;,
         default=None,
         help=&#34;&#34;&#34;Specify, &#39;lf&#39;, &#39;crlf&#39; or &#39;cr&#39; to always force replacing
-line endings for input and outout accordingly. By
-default it will not replace anything and takes what is
-entered (usually CRLF on Windows, LF on Linux and some
-times CR on MacOS).&#34;&#34;&#34;,
+line endings for input and outout accordingly. Specify
+&#39;no&#39; to completely remove any line feeds. By default
+it will not replace anything and takes what is entered
+(usually CRLF on Windows, LF on Linux and some times
+CR on MacOS).&#34;&#34;&#34;,
     )
     optional.add_argument(
         &#34;-n&#34;, &#34;--nodns&#34;, action=&#34;store_true&#34;, default=False, help=&#34;Do not resolve DNS.&#34;,
@@ -2955,14 +2967,15 @@ target machine via the positional arguments.
     optional.add_argument(
         &#34;-C&#34;,
         &#34;--crlf&#34;,
-        type=_args_check_crlf,
+        type=_args_check_lf,
         metavar=&#34;lf&#34;,
         default=None,
         help=&#34;&#34;&#34;Specify, &#39;lf&#39;, &#39;crlf&#39; or &#39;cr&#39; to always force replacing
-line endings for input and outout accordingly. By
-default it will not replace anything and takes what is
-entered (usually CRLF on Windows, LF on Linux and some
-times CR on MacOS).&#34;&#34;&#34;,
+line endings for input and outout accordingly. Specify
+&#39;no&#39; to completely remove any line feeds. By default
+it will not replace anything and takes what is entered
+(usually CRLF on Windows, LF on Linux and some times
+CR on MacOS).&#34;&#34;&#34;,
     )
     optional.add_argument(
         &#34;-n&#34;, &#34;--nodns&#34;, action=&#34;store_true&#34;, default=False, help=&#34;Do not resolve DNS.&#34;,
@@ -7257,6 +7270,17 @@ def transform(self, data):
         if self.__opts.crlf is None:
             return data
 
+        # ? -&gt; No line feeds
+        if self.__opts.crlf == &#34;no&#34;:
+            if data.endswith(&#34;\r\n&#34;):
+                self.log.debug(&#34;Removing CRLF&#34;)
+                return data[:-2]
+            if data.endswith(&#34;\n&#34;):
+                self.log.debug(&#34;Removing LF&#34;)
+                return data[:-1]
+            if data.endswith(&#34;\r&#34;):
+                self.log.debug(&#34;Removing CR&#34;)
+                return data[:-1]
         # ? -&gt; CRLF
         if self.__opts.crlf == &#34;crlf&#34; and not data.endswith(&#34;\r\n&#34;):
             if data.endswith(&#34;\n&#34;):
@@ -7317,6 +7341,17 @@ def transform(self, data):
     if self.__opts.crlf is None:
         return data
 
+    # ? -&gt; No line feeds
+    if self.__opts.crlf == &#34;no&#34;:
+        if data.endswith(&#34;\r\n&#34;):
+            self.log.debug(&#34;Removing CRLF&#34;)
+            return data[:-2]
+        if data.endswith(&#34;\n&#34;):
+            self.log.debug(&#34;Removing LF&#34;)
+            return data[:-1]
+        if data.endswith(&#34;\r&#34;):
+            self.log.debug(&#34;Removing CR&#34;)
+            return data[:-1]
     # ? -&gt; CRLF
     if self.__opts.crlf == &#34;crlf&#34; and not data.endswith(&#34;\r\n&#34;):
         if data.endswith(&#34;\n&#34;):

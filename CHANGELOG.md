@@ -16,7 +16,7 @@
 
 #### Changed
 - Code: really heavy heavy code refactoring
-- Option: `-C`/`--crlf` now takes an argument to either force LF, CRLF or CR on input AND output (or keep as it is, if not specified)
+- Option: `-C`/`--crlf` now takes an argument to either force LF, CRLF or CR or even remove line feeds altogether on input AND output (or keep as it is, if not specified)
 - Modularized code for better plugin integration
 
 

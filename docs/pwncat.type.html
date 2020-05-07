@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.29% imprecise</th>
-<th class="summary summary-lines">2799 LOC</th>
+<th class="summary summary-precision">6.37% imprecise</th>
+<th class="summary summary-lines">2811 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.29% imprecise</td>
-<td class="summary summary-lines">2799 LOC</td>
+<td class="summary summary-precision">6.37% imprecise</td>
+<td class="summary summary-lines">2811 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2834,6 +2834,18 @@
 <span id="L2797" class="lineno"><a class="lineno" href="#L2797">2797</a></span>
 <span id="L2798" class="lineno"><a class="lineno" href="#L2798">2798</a></span>
 <span id="L2799" class="lineno"><a class="lineno" href="#L2799">2799</a></span>
+<span id="L2800" class="lineno"><a class="lineno" href="#L2800">2800</a></span>
+<span id="L2801" class="lineno"><a class="lineno" href="#L2801">2801</a></span>
+<span id="L2802" class="lineno"><a class="lineno" href="#L2802">2802</a></span>
+<span id="L2803" class="lineno"><a class="lineno" href="#L2803">2803</a></span>
+<span id="L2804" class="lineno"><a class="lineno" href="#L2804">2804</a></span>
+<span id="L2805" class="lineno"><a class="lineno" href="#L2805">2805</a></span>
+<span id="L2806" class="lineno"><a class="lineno" href="#L2806">2806</a></span>
+<span id="L2807" class="lineno"><a class="lineno" href="#L2807">2807</a></span>
+<span id="L2808" class="lineno"><a class="lineno" href="#L2808">2808</a></span>
+<span id="L2809" class="lineno"><a class="lineno" href="#L2809">2809</a></span>
+<span id="L2810" class="lineno"><a class="lineno" href="#L2810">2810</a></span>
+<span id="L2811" class="lineno"><a class="lineno" href="#L2811">2811</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -4196,6 +4208,20 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf is None:</span>
 <span class="line-precise" title="No Anys on this line!">            return data</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # ? -&gt; No line feeds</span>
+<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf == "no":</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\r\n"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Removing CRLF")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-2]</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\n"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Removing LF")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-1]</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\r"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Removing CR")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-1]</span>
 <span class="line-empty" title="No Anys on this line!">        # ? -&gt; CRLF</span>
 <span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf == "crlf" and not data.endswith("\r\n"):</span>
 <span class="line-precise" title="No Anys on this line!">            if data.endswith("\n"):</span>
@@ -4973,12 +4999,12 @@ Error (x2)">                    self.log.trace("Joining %s", self.__threads[key]
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">def _args_check_crlf(value):</span>
+<span class="line-precise" title="No Anys on this line!">def _args_check_lf(value):</span>
 <span class="line-empty" title="No Anys on this line!">    # type: (Optional[str]) -&gt; Optional[str]</span>
 <span class="line-empty" title="No Anys on this line!">    """Evaluate a yes/no choice into True, False or None."""</span>
 <span class="line-precise" title="No Anys on this line!">    if value is None:</span>
 <span class="line-precise" title="No Anys on this line!">        return None</span>
-<span class="line-precise" title="No Anys on this line!">    if value.lower() in ["crlf", "lf", "cr"]:</span>
+<span class="line-precise" title="No Anys on this line!">    if value.lower() in ["crlf", "lf", "cr", "no"]:</span>
 <span class="line-precise" title="No Anys on this line!">        return value.lower()</span>
 <span class="line-precise" title="No Anys on this line!">    raise argparse.ArgumentTypeError("'%s' is an invalid choice" % value)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -5310,14 +5336,15 @@ Explicit (x3)">    optional.add_argument(</span>
 Explicit (x3)">    optional.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "-C",</span>
 <span class="line-precise" title="No Anys on this line!">        "--crlf",</span>
-<span class="line-precise" title="No Anys on this line!">        type=_args_check_crlf,</span>
+<span class="line-precise" title="No Anys on this line!">        type=_args_check_lf,</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="lf",</span>
 <span class="line-precise" title="No Anys on this line!">        default=None,</span>
 <span class="line-precise" title="No Anys on this line!">        help="""Specify, 'lf', 'crlf' or 'cr' to always force replacing</span>
-<span class="line-empty" title="No Anys on this line!">line endings for input and outout accordingly. By</span>
-<span class="line-empty" title="No Anys on this line!">default it will not replace anything and takes what is</span>
-<span class="line-empty" title="No Anys on this line!">entered (usually CRLF on Windows, LF on Linux and some</span>
-<span class="line-empty" title="No Anys on this line!">times CR on MacOS).""",</span>
+<span class="line-empty" title="No Anys on this line!">line endings for input and outout accordingly. Specify</span>
+<span class="line-empty" title="No Anys on this line!">'no' to completely remove any line feeds. By default</span>
+<span class="line-empty" title="No Anys on this line!">it will not replace anything and takes what is entered</span>
+<span class="line-empty" title="No Anys on this line!">(usually CRLF on Windows, LF on Linux and some times</span>
+<span class="line-empty" title="No Anys on this line!">CR on MacOS).""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    optional.add_argument(</span>

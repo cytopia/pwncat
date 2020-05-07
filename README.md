@@ -122,7 +122,7 @@
  </tbody>
 <table>
 
-> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.71%)</strong></sup>
+> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.63%)</strong></sup>
 
 
 #### Motivation
@@ -336,10 +336,11 @@ mode arguments:
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
-                        line endings for input and outout accordingly. By
-                        default it will not replace anything and takes what is
-                        entered (usually CRLF on Windows, LF on Linux and some
-                        times CR on MacOS).
+                        line endings for input and outout accordingly. Specify
+                        'no' to completely remove any line feeds. By default
+                        it will not replace anything and takes what is entered
+                        (usually CRLF on Windows, LF on Linux and some times
+                        CR on MacOS).
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
