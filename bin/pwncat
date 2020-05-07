@@ -6,10 +6,11 @@
 # 1. Data structure types
 # 2. Library classes
 # 3. Network
-# 4. Plugins
-# 5. Plugin runner
-# 6. Command line arguments
-# 7. Main entrypoint
+# 4. Transformer
+# 5. IO modules
+# 6. IO Runner
+# 7. Command line arguments
+# 8. Main entrypoint
 #
 # How does it work?
 # ------------------------------------
@@ -111,13 +112,13 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   1 / 7   D A T A   S T R U C T U R E   T Y P E S
+# ###   1 / 8   D A T A   S T R U C T U R E   T Y P E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (1/8) DsRunnerAction
+# [1/8 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
 class DsRunnerAction(object):
     """A type-safe data structure for Action functions for the Runner class."""
@@ -128,20 +129,26 @@ class DsRunnerAction(object):
     @property
     def producer(self):
         # type: () -> Callable[[], Iterator[str]]
-        """`Plugin.producer`: Data producer function."""
+        """`IO.producer`: Data producer function."""
         return self.__producer
 
     @property
     def consumer(self):
         # type: () -> Callable[[str], None]
-        """`Plugin.consumer`: Data consumer function."""
+        """`IO.consumer`: Data consumer function."""
         return self.__consumer
 
     @property
     def interrupts(self):
         # type: () -> List[Callable[[], None]]
-        """`List[Callable[[], None]]`: List of interrupt functions."""
+        """`[List[Callable[[], None]]]`: List of interrupt functions for the producer/consumer."""
         return self.__interrupts
+
+    @property
+    def transformers(self):
+        # type: () -> List[Callable[[str], str]]
+        """`[Transform.transformer]`: List of transformer functions applied before consumer."""
+        return self.__transformers
 
     # --------------------------------------------------------------------------
     # Contrcutor
@@ -151,15 +158,17 @@ class DsRunnerAction(object):
         producer,  # type: Callable[[], Iterator[str]]
         consumer,  # type: Callable[[str], None]
         interrupts,  # type: List[Callable[[], None]]
+        transformers,  # type: List[Callable[[str], str]]
     ):
         # type: (...) -> None
         self.__producer = producer
         self.__consumer = consumer
         self.__interrupts = interrupts
+        self.__transformers = transformers
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (2/8) DsRunnerTimer
+# [1/8 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer
 # -------------------------------------------------------------------------------------------------
 class DsRunnerTimer(object):
     """A type-safe data structure for Timer functions for the Runner class."""
@@ -219,7 +228,7 @@ class DsRunnerTimer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (3/8) DsSock
+# [1/8 DATA STRUCTURE TYPES]: (3/9) DsSock
 # -------------------------------------------------------------------------------------------------
 class DsSock(object):
     """A type-safe data structure for DsSock options."""
@@ -275,10 +284,10 @@ class DsSock(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (4/8) DsPluginNetworkSock
+# [1/8 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock
 # -------------------------------------------------------------------------------------------------
-class DsPluginNetworkSock(DsSock):
-    """A type-safe data structure for PluginNetwork socket options."""
+class DsIONetworkSock(DsSock):
+    """A type-safe data structure for IONetwork socket options."""
 
     # --------------------------------------------------------------------------
     # Properties
@@ -296,14 +305,14 @@ class DsPluginNetworkSock(DsSock):
         # type: (int, int, Optional[float], int, bool, bool) -> None
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
-        super(DsPluginNetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)
+        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (5/8) DsPluginNetworkCli
+# [1/8 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli
 # -------------------------------------------------------------------------------------------------
-class DsPluginNetworkCli(object):
-    """A type-safe data structure for PluginNetwork client options."""
+class DsIONetworkCli(object):
+    """A type-safe data structure for IONetwork client options."""
 
     # --------------------------------------------------------------------------
     # Properties
@@ -354,10 +363,10 @@ class DsPluginNetworkCli(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (6/8) DsPluginNetworkSrv
+# [1/8 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv
 # -------------------------------------------------------------------------------------------------
-class DsPluginNetworkSrv(object):
-    """A type-safe data structure for PluginNetwork server options."""
+class DsIONetworkSrv(object):
+    """A type-safe data structure for IONetwork server options."""
 
     # --------------------------------------------------------------------------
     # Properties
@@ -411,10 +420,34 @@ class DsPluginNetworkSrv(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (7/8) DsPluginOutput
+# [1/8 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed
 # -------------------------------------------------------------------------------------------------
-class DsPluginOutput(object):
-    """A type-safe data structure for PluginOutput options."""
+class DsTransformLinefeed(object):
+    """A type-safe data structure for DsTransformLinefeed options."""
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def crlf(self):
+        # type: () -> Optional[str]
+        """`bool`: Converts line endings to LF, CRLF or CR and noop on `None`."""
+        return self.__crlf
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, crlf):
+        # type: (Optional[str]) -> None
+        super(DsTransformLinefeed, self).__init__()
+        self.__crlf = crlf
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/8 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout
+# -------------------------------------------------------------------------------------------------
+class DsIOStdinStdout(object):
+    """A type-safe data structure for IOStdinStdout options."""
 
     # --------------------------------------------------------------------------
     # Properties
@@ -426,12 +459,6 @@ class DsPluginOutput(object):
         return self.__enc
 
     @property
-    def crlf(self):
-        # type: () -> Optional[bool]
-        """`bool`: Converts LF to CRLF on `True`, CRLF to LF on `False` and noop on `None`."""
-        return self.__crlf
-
-    @property
     def input_timeout(self):
         # type: () -> Optional[float]
         """`float`: Input timeout in seconds for non-blocking read or `None` for blocking."""
@@ -440,19 +467,18 @@ class DsPluginOutput(object):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, encoder, crlf, input_timeout):
-        # type: (StringEncoder, Optional[bool], Optional[float]) -> None
-        super(DsPluginOutput, self).__init__()
+    def __init__(self, encoder, input_timeout):
+        # type: (StringEncoder, Optional[float]) -> None
+        super(DsIOStdinStdout, self).__init__()
         self.__enc = encoder
-        self.__crlf = crlf
         self.__input_timeout = input_timeout
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/7 DATA STRUCTURE TYPES]: (8/8) DsPluginCommand
+# [1/8 DATA STRUCTURE TYPES]: (9/9) DsIOCommand
 # -------------------------------------------------------------------------------------------------
-class DsPluginCommand(object):
-    """A type-safe data structure for PluginCommand options."""
+class DsIOCommand(object):
+    """A type-safe data structure for IOCommand options."""
 
     # --------------------------------------------------------------------------
     # Properties
@@ -495,13 +521,13 @@ class DsPluginCommand(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   2 / 7   L I B R A R Y   C L A S S E S
+# ###   2 / 8   L I B R A R Y   C L A S S E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [2/7 LIBRARY CLASSES]: (1/4) TraceLogger
+# [2/8 LIBRARY CLASSES]: (1/4) TraceLogger
 # -------------------------------------------------------------------------------------------------
 class TraceLogger(logging.getLoggerClass()):  # type: ignore
     """Extend Python's default logger class with TRACE level logging."""
@@ -541,7 +567,7 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/7 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
+# [2/8 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
 # -------------------------------------------------------------------------------------------------
 class ColoredLogFormatter(logging.Formatter):
     """Custom log formatter which adds different details and color support."""
@@ -612,7 +638,7 @@ class ColoredLogFormatter(logging.Formatter):
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/7 LIBRARY CLASSES]: (3/4) StringEncoder
+# [2/8 LIBRARY CLASSES]: (3/4) StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
     """Takes care about Python 2/3 string encoding/decoding.
@@ -651,7 +677,7 @@ class StringEncoder(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/7 LIBRARY CLASSES]: (4/4): StopSignal
+# [2/8 LIBRARY CLASSES]: (4/4): StopSignal
 # -------------------------------------------------------------------------------------------------
 class StopSignal(object):
     """Provide a simple boolean switch."""
@@ -681,13 +707,13 @@ class StopSignal(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   3 / 7   N E T W O R K
+# ###   3 / 8   N E T W O R K
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [3/7 NETWORK]: (1/1) Sock
+# [3/8 NETWORK]: (1/1) Sock
 # -------------------------------------------------------------------------------------------------
 class Sock(object):
     """Provides an abstracted server client socket for TCP and UDP."""
@@ -1179,18 +1205,130 @@ class Sock(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   4 / 7   P L U G I N S
+# ###   4 / 8   T R A N S F O R M E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [4/7 PLUGINS]: (1/4): Plugin
+# [4/8 TRANSFORM]: (1/2): Transform
 # -------------------------------------------------------------------------------------------------
-class Plugin(ABC):  # type: ignore
-    """Abstract class to for pwncat plugins.
+class Transform(ABC):  # type: ignore
+    """Abstract class to for pwncat I/O transformers.
 
-    This is a skeleton that defines how the plugins for pwncat should look like.
+    This is a skeleton that defines how the transformer for pwncat should look like.
+    """
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def log(self):
+        # type: () -> logging.Logger
+        """`TraceLogger`: Logger instance."""
+        return self.__log
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    @abstractmethod
+    def __init__(self):
+        # type: () -> None
+        """Set specific options for this transformer."""
+        super(Transform, self).__init__()
+        self.__log = logging.getLogger(__name__)
+
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
+    @abstractmethod
+    def transform(self, data):
+        # type: (str) -> str
+        """Implement a transformer function which transforms a string..
+
+        Returns:
+            str: The transformed string.
+        """
+
+
+# -------------------------------------------------------------------------------------------------
+# [4/8 TRANSFORM]: (2/2) TransformLinefeed
+# -------------------------------------------------------------------------------------------------
+class TransformLinefeed(Transform):
+    """Implement basic linefeed replacement."""
+
+    # --------------------------------------------------------------------------
+    # Constructor / Destructor
+    # --------------------------------------------------------------------------
+    # FIXME: Make a struct for this
+    def __init__(self, DsTransformLinefeed):
+        # type: (DsTransformLinefeed) -> None
+        """Set specific options for this transformer.
+
+        Args:
+            opts (Dict): Transformer options.
+        """
+        super(TransformLinefeed, self).__init__()
+        self.__opts = DsTransformLinefeed
+
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
+    def transform(self, data):
+        # type: (str) -> str
+        """Change linefeeds
+
+        Returns:
+            str: The string with altered linefeeds
+        """
+        # 'auto' keep it as it is
+        if self.__opts.crlf is None:
+            return data
+
+        # ? -> CRLF
+        if self.__opts.crlf == "crlf" and not data.endswith("\r\n"):
+            if data.endswith("\n"):
+                self.log.debug("Replacing LF with CRLF")
+                return data[:-1] + "\r\n"
+            if data.endswith("\r"):
+                self.log.debug("Replacing CR with CRLF")
+                return data[:-1] + "\r\n"
+        # ? -> LF
+        if self.__opts.crlf == "lf":
+            if data.endswith("\r\n"):
+                self.log.debug("Replacing CRLF with LF")
+                return data[:-2] + "\n"
+            if data.endswith("\r"):
+                self.log.debug("Replacing CR with LF")
+                return data[:-1] + "\n"
+        # ? -> CR
+        if self.__opts.crlf == "cr":
+            if data.endswith("\r\n"):
+                self.log.debug("Replacing CRLF with CR")
+                return data[:-2] + "\r"
+            if data.endswith("\n"):
+                self.log.debug("Replacing LF with CR")
+                return data[:-1] + "\r"
+
+        # Otherwise just return it as it is
+        return data
+
+
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   5 / 8   I O   M O D U L E S
+# ###
+# #################################################################################################
+# #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# [5/8 IO]: (1/4): IO
+# -------------------------------------------------------------------------------------------------
+class IO(ABC):  # type: ignore
+    """Abstract class to for pwncat I/O modules.
+
+    This is a skeleton that defines how the I/O module for pwncat should look like.
 
     The "producer" should constantly yield data received from some sort of input
     which could be user input, output from a shell command data from a socket.
@@ -1209,7 +1347,7 @@ class Plugin(ABC):  # type: ignore
     @property
     def ssig(self):
         # type: () -> StopSignal
-        """`StopSignal`: Read only property to provide a StopSignal instance to plugins."""
+        """`StopSignal`: Read only property to provide a StopSignal instance to IO."""
         return self.__ssig
 
     @property
@@ -1224,12 +1362,12 @@ class Plugin(ABC):  # type: ignore
     @abstractmethod
     def __init__(self, ssig):
         # type: (StopSignal) -> None
-        """Set specific options for this plugin.
+        """Set specific options for this IO module.
 
         Args:
             ssig (StopSignal): StopSignal instance used by the interrupter.
         """
-        super(Plugin, self).__init__()
+        super(IO, self).__init__()
         self.__ssig = ssig
         self.__log = logging.getLogger(__name__)
 
@@ -1271,9 +1409,9 @@ class Plugin(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/7 PLUGINS]: (2/4) PluginNetwork
+# [5/8 IONetwork]: (2/4) IONetwork
 # -------------------------------------------------------------------------------------------------
-class PluginNetwork(Plugin):
+class IONetwork(IO):
     """Pwncat implementation based on custom Socket library."""
 
     # --------------------------------------------------------------------------
@@ -1286,9 +1424,9 @@ class PluginNetwork(Plugin):
         host,  # type: str
         port,  # type: int
         role,  # type: str
-        srv_opts,  # type: DsPluginNetworkSrv
-        cli_opts,  # type: DsPluginNetworkCli
-        sock_opts,  # type: DsPluginNetworkSock
+        srv_opts,  # type: DsIONetworkSrv
+        cli_opts,  # type: DsIONetworkCli
+        sock_opts,  # type: DsIONetworkSock
     ):
         # type: (...) -> None
         """Create a Pwncat instance of either a server or a client.
@@ -1299,12 +1437,12 @@ class PluginNetwork(Plugin):
             host (str): The hostname to resolve.
             port (int): The port of the hostname to resolve.
             role (str): Either "server" or "client".
-            srv_opts (DsPluginNetworkSrv):   Options for the server.
-            cli_opts (DsPluginNetworkCli):   Options for the client.
-            sock_opts (DsPluginNetworkSock): Options to parse back to Sock.
+            srv_opts (DsIONetworkSrv):   Options for the server.
+            cli_opts (DsIONetworkCli):   Options for the client.
+            sock_opts (DsIONetworkSock): Options to parse back to Sock.
         """
         assert role in ["server", "client"], "The role must be 'server' or 'client'."
-        super(PluginNetwork, self).__init__(ssig)
+        super(IONetwork, self).__init__(ssig)
 
         self.__role = role
         self.__net = Sock(encoder, ssig, sock_opts)
@@ -1392,7 +1530,7 @@ class PluginNetwork(Plugin):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
         self.log.trace(  # type: ignore
-            "[PluginNetwork] socket.close was raised by calling interrupt() externally."
+            "[IONetwork] socket.close was raised by calling interrupt() externally."
         )
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
@@ -1468,12 +1606,12 @@ class PluginNetwork(Plugin):
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/7 PLUGINS]: (3/4) PluginOutput
+# [5/8 IOStdinStdout]: (3/4) IOStdinStdout
 # -------------------------------------------------------------------------------------------------
-class PluginOutput(Plugin):
-    """Implement basic input/output plugin.
+class IOStdinStdout(IO):
+    """Implement basic stdin/stdout I/O module.
 
-    This plugin provides a generator which continuously reads from stdin
+    This I/O module provides a generator which continuously reads from stdin
     (non-blocking on POSIX and blocking on Windows) as well as a
     callback that writes to stdout.
     """
@@ -1482,14 +1620,14 @@ class PluginOutput(Plugin):
     # Constructor / Destructor
     # --------------------------------------------------------------------------
     def __init__(self, ssig, opts):
-        # type: (StopSignal, DsPluginOutput) -> None
-        """Set specific options for this plugin.
+        # type: (StopSignal, DsIOStdinStdout) -> None
+        """Set specific options for this I/O module.
 
         Args:
             ssig (StopSignal): StopSignal instance.
-            opts (DsPluginOutput): Plugin options.
+            opts (DsIOStdinStdout): IO options.
         """
-        super(PluginOutput, self).__init__(ssig)
+        super(IOStdinStdout, self).__init__(ssig)
         self.__opts = opts
 
     # --------------------------------------------------------------------------
@@ -1525,7 +1663,7 @@ class PluginOutput(Plugin):
             if line:
                 self.log.debug("Received %d bytes from STDIN", len(line))
                 self.log.trace("Received: %s", repr(line))  # type: ignore
-                yield self.__use_linefeeds(line)
+                yield line
             # EOF or <Ctrl>+<d>
             else:
                 # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
@@ -1543,7 +1681,7 @@ class PluginOutput(Plugin):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
         self.log.trace(  # type: ignore
-            "[PluginOutput] interrupt() invoked"
+            "[IOStdinStdout] interrupt() invoked"
         )
         # Raise stop signal
         # TODO: Check if this is required???
@@ -1552,27 +1690,6 @@ class PluginOutput(Plugin):
     # --------------------------------------------------------------------------
     # Private Functions
     # --------------------------------------------------------------------------
-    def __use_linefeeds(self, data):
-        # type: (str) -> str
-        """Ensure the user input has the desired linefeeds: LF, CRLF or as entered."""
-        # 'auto' keep it as it is
-        if self.__opts.crlf is None:
-            return data
-
-        # LF -> CRLF
-        if self.__opts.crlf is True:
-            if not data.endswith("\r\n") and data.endswith("\n"):
-                self.log.debug("Replacing LF with CRLF")
-                return data[:-1] + "\r\n"
-        # CRLF -> LF
-        if self.__opts.crlf is False:
-            if data.endswith("\r\n"):
-                self.log.debug("Replacing CRLF with LF")
-                return data[:-2] + "\n"
-
-        # Otherwise just return it as it is
-        return data
-
     def __set_input_timeout(self):
         # type: () -> None
         """Throws a catchable EOFError exception for sys.stdin after timeout (Linux only)."""
@@ -1584,9 +1701,9 @@ class PluginOutput(Plugin):
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/7 PLUGINS]: (4/4) PluginCommand
+# [5/8 IOCommand]: (4/4) IOCommand
 # -------------------------------------------------------------------------------------------------
-class PluginCommand(Plugin):
+class IOCommand(IO):
     """Implement command execution functionality.
 
     Attributes:
@@ -1597,14 +1714,14 @@ class PluginCommand(Plugin):
     # Constructor / Destructor
     # --------------------------------------------------------------------------
     def __init__(self, ssig, opts):
-        # type: (StopSignal, DsPluginCommand) -> None
-        """Set specific options for this plugin.
+        # type: (StopSignal, DsIOCommand) -> None
+        """Set specific options for this I/O module.
 
         Args:
             ssig (StopSignal): Instance of StopSignal.
-            opts (DsPluginCommand): Custom module options.
+            opts (DsIOCommand): Custom module options.
         """
-        super(PluginCommand, self).__init__(ssig)
+        super(IOCommand, self).__init__(ssig)
         self.__opts = opts
         self.log.debug("Setting '%s' as executable", self.__opts.executable)
 
@@ -1679,7 +1796,7 @@ class PluginCommand(Plugin):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
         self.log.trace(  # type: ignore
-            "[PluginCommand] subprocess.kill() was raised by input_unterrupter()"
+            "[IOCommand] subprocess.kill() was raised by input_unterrupter()"
         )
         self.proc.kill()
         # Raise stop signal
@@ -1690,13 +1807,13 @@ class PluginCommand(Plugin):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   5 / 7   P L U G I N   R U N N E R
+# ###   6 / 8   P L U G I N   R U N N E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [5/7 PLUGIN RUNNER]: (1/1) Runner
+# [6/8 IO RUNNER]: (1/1) Runner
 # -------------------------------------------------------------------------------------------------
 class Runner(object):
     """Runner class that takes care about putting everything into threads."""
@@ -1747,20 +1864,29 @@ class Runner(object):
 
     def run(self):
         # type: () -> None
-        """Run threaded pwncat plugins."""
+        """Run threaded pwncat I/O modules."""
 
-        def run_action(name, producer, consumer):
-            # type: (str, Callable[[], str], Callable[[str], None]) -> None
+        def run_action(
+            name,  # type: str
+            producer,  # type: Callable[[], str]
+            consumer,  # type: Callable[[str], None]
+            transformers,  # type: List[Callable[[str], str]]
+        ):
+            # type: (...) -> None
             """Producer/consumer run function to be thrown into a thread.
 
             Args:
                 name (str): Name for logging output.
                 producer (function): A generator function which yields data.
                 consumer (function): A callback which consumes data from the generator.
+                transformers ([function]): List of transformer functions applied before consumer.
             """
             self.log.trace("[%s] Producer Start", name)  # type: ignore
             for data in producer():
                 self.log.trace("[%s] Producer received: %s", name, repr(data))  # type: ignore
+                # Transform data before sending it to the consumer
+                for transformer in transformers:
+                    data = transformer(data)
                 consumer(data)
             self.log.trace("[%s] Producer Stop", name)  # type: ignore
 
@@ -1795,7 +1921,12 @@ class Runner(object):
             thread = threading.Thread(
                 target=run_action,
                 name=key,
-                args=(key, self.__actions[key].producer, self.__actions[key].consumer,),
+                args=(
+                    key,
+                    self.__actions[key].producer,
+                    self.__actions[key].consumer,
+                    self.__actions[key].transformers,
+                ),
             )
             thread.daemon = False
             thread.start()
@@ -1865,13 +1996,13 @@ class Runner(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   6 / 7   C O M M A N D   L I N E   A R G U M E N T S
+# ###   7 / 8   C O M M A N D   L I N E   A R G U M E N T S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [6/7 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
+# [7/8 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
 # -------------------------------------------------------------------------------------------------
 def get_version():
     # type: () -> str
@@ -1881,15 +2012,13 @@ def get_version():
     )
 
 
-def _args_check_yes_no(value):
-    # type: (Optional[str]) -> Optional[bool]
+def _args_check_crlf(value):
+    # type: (Optional[str]) -> Optional[str]
     """Evaluate a yes/no choice into True, False or None."""
     if value is None:
         return None
-    if value in ["always", "yes", "y", "fuckyes"]:
-        return True
-    if value in ["never", "no", "n", "fuckno"]:
-        return False
+    if value.lower() in ["crlf", "lf", "cr"]:
+        return value.lower()
     raise argparse.ArgumentTypeError("'%s' is an invalid choice" % value)
 
 
@@ -2076,7 +2205,7 @@ def _args_check_mutually_exclusive(parser, args):
 
 
 # -------------------------------------------------------------------------------------------------
-# [6/7 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
+# [7/8 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
 # -------------------------------------------------------------------------------------------------
 def get_args():
     # type: () -> argparse.Namespace
@@ -2186,19 +2315,18 @@ target machine via the positional arguments.
         type=str,
         help="Execute shell command. Only for connect or listen mode.",
     )
+    # TODO: add --crlf-i and --crlf-o to only do this on input or output and have
+    # --crlf to always do it on input and output!
     optional.add_argument(
         "-C",
         "--crlf",
-        type=_args_check_yes_no,
-        metavar="y/n",
+        type=_args_check_crlf,
+        metavar="lf",
         default=None,
-        help="""Specify, 'always', 'yes' or 'y' to alway force replacing
-LF (\\n) with CRLF (\\r\\n) on stdin.
-Specify 'never', 'no' or'n' to always force replacing
-CRLF (\\r\\n) with LF (\\n) on stdin.
-By default it will not replace anything and takes
-what is entered (usually CRLF on windows and LF
-on unix).""",
+        help="""Specify, 'lf', 'crlf' or 'cr' to always force replacing
+line endings for input accordingly. By default it will
+not replace anything and takes what is entered (usually
+CRLF on Windows, LF on Linux and sometimes CR on MacOS).""",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
@@ -2473,13 +2601,13 @@ accidentally by other input.
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   7 / 7   M A I N   E N T R Y P O I N T
+# ###   8 / 8   M A I N   E N T R Y P O I N T
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [7/7 MAIN ENTRYPOINT]: (1/2) main
+# [8/8 MAIN ENTRYPOINT]: (1/2) main
 # -------------------------------------------------------------------------------------------------
 def main():
     # type: () -> None
@@ -2489,7 +2617,7 @@ def main():
     port = args.port
 
     # Set pwncat options
-    sock_opts = DsPluginNetworkSock(
+    sock_opts = DsIONetworkSock(
         RECV_BUFSIZE,
         LISTEN_BACKLOG,
         TIMEOUT_RECV_SOCKET,
@@ -2497,8 +2625,8 @@ def main():
         args.nodns,
         args.udp,
     )
-    srv_opts = DsPluginNetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)
-    cli_opts = DsPluginNetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)
+    srv_opts = DsIONetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)
+    cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # "wait": args.wait,
     # "udp_ping_init": args.udp_ping_init,
@@ -2536,10 +2664,10 @@ def main():
 
     # Use command modulde
     if args.cmd:
-        mod = PluginCommand(ssig, DsPluginCommand(enc, args.cmd, POPEN_BUFSIZE))
+        mod = IOCommand(ssig, DsIOCommand(enc, args.cmd, POPEN_BUFSIZE))
     # Use output module
     else:
-        mod = PluginOutput(ssig, DsPluginOutput(enc, args.crlf, TIMEOUT_READ_STDIN))
+        mod = IOStdinStdout(ssig, DsIOStdinStdout(enc, TIMEOUT_READ_STDIN))
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
@@ -2549,8 +2677,8 @@ def main():
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
         # Create listen and client instances
-        net_srv = PluginNetwork(ssig, enc, lhost, lport, "server", srv_opts, cli_opts, sock_opts)
-        net_cli = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net_srv = IONetwork(ssig, enc, lhost, lport, "server", srv_opts, cli_opts, sock_opts)
+        net_cli = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -2559,6 +2687,7 @@ def main():
                 net_srv.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
+                [],
             ),
         )
         run.add_action(
@@ -2567,6 +2696,7 @@ def main():
                 net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
+                [],
             ),
         )
         run.run()
@@ -2579,8 +2709,8 @@ def main():
         lhost = args.remote.split(":")[0]
         lport = int(args.remote.split(":")[1])
         # Create local and remote client
-        net_cli_l = PluginNetwork(ssig, enc, lhost, lport, "client", srv_opts, cli_opts, sock_opts)
-        net_cli_r = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net_cli_l = IONetwork(ssig, enc, lhost, lport, "client", srv_opts, cli_opts, sock_opts)
+        net_cli_r = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -2588,6 +2718,7 @@ def main():
             DsRunnerAction(
                 net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
+                [],
                 [],
             ),
         )
@@ -2597,12 +2728,13 @@ def main():
                 net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
+                [],
             ),
         )
         run.run()
     # Run server
     if args.listen:
-        net = PluginNetwork(ssig, enc, host, port, "server", srv_opts, cli_opts, sock_opts)
+        net = IONetwork(ssig, enc, host, port, "server", srv_opts, cli_opts, sock_opts)
         run = Runner()
         run.add_action(
             "RECV",
@@ -2610,6 +2742,7 @@ def main():
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
+                [],
             ),
         )
         run.add_action(
@@ -2618,13 +2751,14 @@ def main():
                 mod.producer,
                 net.consumer,  # send data
                 [mod.interrupt],  # Externally stop the produer itself
+                [],
             ),
         )
         run.run()
 
     # Run client
     else:
-        net = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
         run = Runner()
         run.add_action(
             "RECV",
@@ -2632,6 +2766,7 @@ def main():
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
+                [],
             ),
         )
         run.add_action(
@@ -2640,6 +2775,7 @@ def main():
                 mod.producer,
                 net.consumer,  # send data
                 [net.interrupt, mod.interrupt],  # Externally stop the produer itself
+                [],
             ),
         )
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:
@@ -2651,7 +2787,7 @@ def main():
 
 
 # -------------------------------------------------------------------------------------------------
-# [7/7 MAIN ENTRYPOINT]: (2/2) start
+# [8/8 MAIN ENTRYPOINT]: (2/2) start
 # -------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Catch Ctrl+c and exit without error message
