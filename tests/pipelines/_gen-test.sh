@@ -55,7 +55,7 @@ for v in "${VERSION_MATRIX[@]}"; do
 	py="${v//*--}"
 
 	flw_file="${FLW_PATH}/test-${arch}-${os}-${py}.yml"
-	flw_name="${os:0:3}-${py}"
+	flw_name="${os:0:3}-${py//pypy/py}"
 	job_name="[${arch}] [${os}] python-${py}"
 
 	printf "%s\\n" "-----------------------------------------------------------"

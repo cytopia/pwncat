@@ -117,15 +117,15 @@
       </tr>
       <tr>
        <th>pypy2</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy2/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy2/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-py2"><img src="https://github.com/cytopia/pwncat/workflows/ubu-py2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-py2"><img src="https://github.com/cytopia/pwncat/workflows/mac-py2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-py2"><img src="https://github.com/cytopia/pwncat/workflows/win-py2/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>pypy3</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy3/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy3/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-py3"><img src="https://github.com/cytopia/pwncat/workflows/ubu-py3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-py3"><img src="https://github.com/cytopia/pwncat/workflows/mac-py3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-py3"><img src="https://github.com/cytopia/pwncat/workflows/win-py3/badge.svg" /></a></td>
       </tr>
      </tbody>
     </table>
