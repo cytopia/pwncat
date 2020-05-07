@@ -115,7 +115,12 @@ mode arguments:
 <pre class="hi"><code>
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
-  -C, --crlf            Replace LF with CRLF from stdin (default: don't)
+  -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
+                        line endings for input and outout accordingly. Specify
+                        'no' to completely remove any line feeds. By default
+                        it will not replace anything and takes what is entered
+                        (usually CRLF on Windows, LF on Linux and some times
+                        CR on MacOS).
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
@@ -143,7 +148,7 @@ advanced arguments:
 
   --rebind x            Listen mode (TCP and UDP):
                         If the server is unable to bind, it will re-initialize
-                        itself x many times before giving up. Use 0 to re-init
+                        itself x many times before giving up. Use -1 to re-init
                         endlessly. (default: fail after first unsuccessful try).
 
   --rebind-wait s       Listen mode (TCP and UDP):
@@ -160,7 +165,7 @@ advanced arguments:
   --reconn x            Connect mode / Zero-I/O mode (TCP only):
                         If the remote server is not reachable or the connection
                         is interrupted, the client will connect again x many
-                        times before giving up. Use 0 to retry endlessly.
+                        times before giving up. Use -1 to retry endlessly.
                         (default: quit if the remote is not available or the
                         connection was interrupted)
                         This might be handy for stable TCP reverse shells ;-)
