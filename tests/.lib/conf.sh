@@ -12,6 +12,18 @@ SOURCEDIR="$( dirname "${SOURCEPATH}" )"
 # -------------------------------------------------------------------------------------------------
 
 
+# Show newline characters as they are
+cat_raw() {
+	local file="${1}"
+	cat -ev "${1}" \
+		| sed 's/\^M\$$/\\r\\n/g' \
+		| sed 's/\$$/\\n/g' \
+		| sed 's/\^M$/\\r/g' \
+		| tr -d '\r\n' \
+		| tr -d '\n' \
+		| tr -d '\r'
+}
+
 # -------------------------------------------------------------------------------------------------
 # PRINT HEADLINES
 # -------------------------------------------------------------------------------------------------
@@ -130,13 +142,15 @@ print_error() {
 print_file() {
 	local name="${1}"
 	local file="${2}"
+	local add_str="${3:-}"       # Append some string (to compensate for missing newline)
 	local clr_div="\\033[0;33m"  # Yellow
 	local clr_rst="\\033[m"      # Reset to normal
 
 	print_h3 "[${name}] Filename: ${file}"
 	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF FILE"
 	cat "${file}"
-	printf "\\n"
+	# shellcheck disable=SC2059
+	printf "${add_str}"
 	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF FILE"
 	printf "\\n"
 }
@@ -144,6 +158,7 @@ print_file() {
 print_data() {
 	local name="${1}"
 	local data="${2}"
+	local add_str="${3:-}"       # Append some string (to compensate for missing newline)
 	local clr_div="\\033[0;33m"  # Yellow
 	local clr_rst="\\033[m"      # Reset to normal
 
@@ -151,10 +166,49 @@ print_data() {
 	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF DATA"
 	# shellcheck disable=SC2059
 	printf "${data}"
-	printf "\\n"
+	# shellcheck disable=SC2059
+	printf "${add_str}"
 	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF DATA"
 	printf "\\n"
 }
+
+print_file_raw() {
+	local name="${1}"
+	local file="${2}"
+	local quote="${3:-0}"
+	local clr_div="\\033[0;33m"  # Yellow
+	local clr_rst="\\033[m"      # Reset to normal
+
+	print_h3 "[${name}] Filename: ${file}"
+	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF FILE"
+	if [ "${quote}" == "1"  ]; then
+		printf "'%s'\\n" "$(cat_raw "${file}")"
+	else
+		printf "%s\\n" "$(cat_raw "${file}")"
+	fi
+	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF FILE"
+	printf "\\n"
+}
+
+print_data_raw() {
+	local name="${1}"
+	local data="${2}"
+	local quote="${3:-0}"
+	local add_str="${3:-}"       # Append some string (to compensate for missing newline)
+	local clr_div="\\033[0;33m"  # Yellow
+	local clr_rst="\\033[m"      # Reset to normal
+
+	print_h3 "[${name}]"
+	printf "${clr_div}############################## %s ##############################${clr_rst}\\n" "START OF DATA"
+	if [ "${quote}" == "1"  ]; then
+		printf "'%s'\\n" "${data}"
+	else
+		printf "%s\\n" "${data}"
+	fi
+	printf "${clr_div}############################### %s ###############################${clr_rst}\\n" "END OF DATA"
+	printf "\\n"
+}
+
 
 
 # -------------------------------------------------------------------------------------------------
@@ -507,7 +561,7 @@ wait_for_data_transferred() {
 				echo
 				print_data "EXPECT] [${recv_name}] - [REG" "${expect_regex}"
 				print_file "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}"
-				print_data "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
+				print_data "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )" "\\n"
 				echo
 				if [ -n "${send_name}" ]; then
 					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
@@ -519,9 +573,11 @@ wait_for_data_transferred() {
 				exit 1
 			fi
 			sleep 1
+		echo
 		done
 	# 2/2 Check against exact match of expected vs received
 	else
+		# TODO: Might have to diff without od -c
 		# shellcheck disable=SC2059
 		while ! diff  \
 			<(printf "${expect_data}" | od -c) \
@@ -536,12 +592,20 @@ wait_for_data_transferred() {
 				fi
 				print_file "RECVER] [${recv_name}] - [/dev/stderr" "${recv_file_stderr}"
 				echo
-				print_data "EXPECT] [${recv_name}] - [RAW" "${expect_data}"
-				print_file "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}"
+				print_data_raw "EXPECT] [${recv_name}] - [RAW" "${expect_data}" 1
+				print_file_raw "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}" 1
 				echo
-				print_data "EXPECT] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
-				print_data "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
+				print_data_raw "EXPECT] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+				print_data_raw "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
+				# Show some diff's
+				echo '---------- diff <(printf expect | od -c) <(cat file_stdout | od -c) ----------'
+				# shellcheck disable=SC2002
+				diff <(printf "${expect_data}" | od -c) <(cat "${recv_file_stdout}" | od -c) || true
+				echo '---------- diff <(printf expect | od -c) <(od -c file_stdout) ----------'
 				diff <(printf "${expect_data}" | od -c) <(od -c "${recv_file_stdout}") || true
+				echo '---------- diff <(printf expect) file_stdout ----------'
+				diff <(printf "${expect_data}") "${recv_file_stdout}" || true
+
 				echo
 				if [ -n "${send_name}" ]; then
 					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
@@ -554,10 +618,17 @@ wait_for_data_transferred() {
 			fi
 			sleep 1
 		done
+		print_data_raw "EXPECT] [${recv_name}] - [RAW" "${expect_data}" 1
+		# shellcheck disable=SC2059
+		print_data_raw "EXPECT] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+		echo
+
 	fi
-	echo
-	print_file "RECVER] [${recv_name}] received - [RAW" "${recv_file_stdout}"
-	print_data "RECVER] [${recv_name}] received - [HEX" "$( od -c "${recv_file_stdout}" )"
+	print_file     "RECVER] [${recv_name}] - [/dev/stderr" "${recv_file_stderr}"
+	print_file_raw "RECVER] [${recv_name}] received - [RAW" "${recv_file_stdout}" 1
+	print_data_raw "RECVER] [${recv_name}] received - [HEX" "$( od -c "${recv_file_stdout}" )"
+	# shellcheck disable=SC2002
+	print_data_raw "RECVER] [${recv_name}] received - [HEX" "$( cat "${recv_file_stdout}" | od -c )"
 }
 
 
