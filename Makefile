@@ -93,9 +93,7 @@ _lint-usage:
 	@echo "# -------------------------------------------------------------------- #"
 	@echo "# Lint usage"
 	@echo "# -------------------------------------------------------------------- #"
-	diff --ignore-trailing-space \
-		<($(BINPATH)$(BINNAME) -h) \
-		<(cat README.md | grep -E -A 10000 'usage:[[:space:]]' | grep -E -B 10000 '^[[:space:]]+\-V')
+	$(PWD)/tests/bin/check-usage.sh
 
 .PHONY: _lint-files
 _lint-files:
