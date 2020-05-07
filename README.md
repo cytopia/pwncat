@@ -212,6 +212,8 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 
 ## :star: Features
 
+### At a glance
+
 `pwncat` has many features, below is only a list of outstanding characteristics.
 
 | Feature        | Description |
@@ -228,6 +230,42 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Python 2+3     | Works with Python 2 and Python 3 |
 | Cross OS       | Should work on Linux, MacOS and Windows as long as Python is available |
 | Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
+
+
+### Feature comparison matrix
+
+|                     | pwncat | netcat | ncat |
+|---------------------|--------|---------|-----|
+| Scripting engine    | Python | :x:     | Lua |
+| IP ToS              | :x:    | ✔       | :x: |
+| IPv4                | ✔      | ✔       | ✔   |
+| IPv6                | *      | ✔       | ✔   |
+| Unix domain sockets | :x:    | ✔       | ✔   |
+| TCP                 | ✔      | ✔       | ✔   |
+| UDP                 | ✔      | ✔       | ✔   |
+| SCTP                | :x:    | :x:     | ✔   |
+| Command exec        | ✔      | ✔       | ✔   |
+| Inbound port scan   | *      | ✔       | ✔   |
+| Outbound port scan  | *      | :x:     | :x: |
+| Hex dump            | *      | ✔       | ✔   |
+| Telnet              | :x:    | ✔       | ✔   |
+| SSL                 | :x:    | :x:     | ✔   |
+| HTTP                | *      | :x:     | :x: |
+| HTTPS               | *      | :x:     | :x: |
+| Chat                | ✔      | ✔       | ✔   |
+| Broker              | :x:    | :x:     | ✔   |
+| Simultaneous conns  | :x:    | :x:     | ✔   |
+| Allow/deny          | :x:    | :x:     | ✔   |
+| Local port forward  | ✔      | :x:     | :x: |
+| Remote port forward | ✔      | :x:     | :x: |
+| Re-accept           | ✔      | ✔       | ✔   |
+| Proxy               | :x:    | ✔       | ✔   |
+| UDP reverse shell   | ✔      | :x:     | :x: |
+| Respawning client   | ✔      | :x:     | :x: |
+| Port hopping        | *      | :x:     | :x: |
+| Emergency shutdown  | ✔      | :x:     | :x: |
+
+> <sup>`*` Feature is currently under development.
 
 
 ## :cop: Behaviour
