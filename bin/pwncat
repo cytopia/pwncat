@@ -1870,7 +1870,7 @@ class Runner(object):
             name,  # type: str
             producer,  # type: Callable[[], str]
             consumer,  # type: Callable[[str], None]
-            transformers,  # type: List[Callable[[str], str]]
+            transformers,  # type: List[Transform]
         ):
             # type: (...) -> None
             """Producer/consumer run function to be thrown into a thread.
@@ -1886,7 +1886,7 @@ class Runner(object):
                 self.log.trace("[%s] Producer received: %s", name, repr(data))  # type: ignore
                 # Transform data before sending it to the consumer
                 for transformer in transformers:
-                    data = transformer(data)
+                    data = transformer.transform(data)
                 consumer(data)
             self.log.trace("[%s] Producer Stop", name)  # type: ignore
 
@@ -2324,9 +2324,10 @@ target machine via the positional arguments.
         metavar="lf",
         default=None,
         help="""Specify, 'lf', 'crlf' or 'cr' to always force replacing
-line endings for input accordingly. By default it will
-not replace anything and takes what is entered (usually
-CRLF on Windows, LF on Linux and sometimes CR on MacOS).""",
+line endings for input and outout accordingly. By
+default it will not replace anything and takes what is
+entered (usually CRLF on Windows, LF on Linux and some
+times CR on MacOS).""",
     )
     optional.add_argument(
         "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
@@ -2696,7 +2697,7 @@ def main():
                 net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
-                [],
+                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
         run.run()
@@ -2719,7 +2720,7 @@ def main():
                 net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
-                [],
+                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
         run.add_action(
@@ -2728,7 +2729,7 @@ def main():
                 net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
-                [],
+                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
         run.run()
@@ -2742,7 +2743,7 @@ def main():
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                [],
+                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
         run.add_action(
@@ -2751,7 +2752,7 @@ def main():
                 mod.producer,
                 net.consumer,  # send data
                 [mod.interrupt],  # Externally stop the produer itself
-                [],
+                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
         run.run()
@@ -2766,7 +2767,7 @@ def main():
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                [],
+                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
         run.add_action(
@@ -2775,7 +2776,7 @@ def main():
                 mod.producer,
                 net.consumer,  # send data
                 [net.interrupt, mod.interrupt],  # Externally stop the produer itself
-                [],
+                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
             ),
         )
         if type(args.udp_ping_intvl) is int and args.udp_ping_intvl > 0:

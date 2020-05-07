@@ -47,7 +47,7 @@ run_test() {
 	###
 	data="$(tmp_file)"
 	printf "abcdefghijklmnopqrstuvwxyz1234567890\\n" > "${data}"
-	expect="abcdefghijklmnopqrstuvwxyz1234567890\\n"
+	expect="abcdefghijklmnopqrstuvwxyz1234567890\\r"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"
@@ -62,7 +62,7 @@ run_test() {
 	# Start Server
 	print_info "Start Server"
 	# shellcheck disable=SC2086
-	if ! srv_pid="$( run_bg "" "${PYTHON}" "${BINARY}" ${srv_opts} "${srv_stdout}" "${srv_stderr}" )"; then
+	if ! srv_pid="$( run_bg "cat ${data}" "${PYTHON}" "${BINARY}" ${srv_opts} "${srv_stdout}" "${srv_stderr}" )"; then
 		printf ""
 	fi
 
@@ -84,7 +84,7 @@ run_test() {
 	# Start Client
 	print_info "Start Client"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "cat ${data}" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli_stdout}" "${cli_stderr}" )"; then
+	if ! cli_pid="$( run_bg "" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
 	fi
 
@@ -107,10 +107,10 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# DATA TRANSFER
 	# --------------------------------------------------------------------------------
-	print_h2 "(3/4) Transfer: Client -> Server"
+	print_h2 "(3/4) Transfer: Server -> Client"
 
-	# [CLIENT -> SERVER]
-	wait_for_data_transferred "" "${expect}" "" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	# [SERVER -> Client]
+	wait_for_data_transferred "" "${expect}" "" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -136,19 +136,19 @@ run_test() {
 for curr_round in $(seq "${RUNS}"); do
 	echo
 	#         server opts         client opts
-	run_test "-l ${RPORT} --crlf no -vvvv" "${RHOST} ${RPORT} --crlf no -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -vvv " "${RHOST} ${RPORT} --crlf no -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -vv  " "${RHOST} ${RPORT} --crlf no -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -v   " "${RHOST} ${RPORT} --crlf no -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no      " "${RHOST} ${RPORT} --crlf no -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --crlf cr -vvvv" "${RHOST} ${RPORT} --crlf cr -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vvv " "${RHOST} ${RPORT} --crlf cr -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vv  " "${RHOST} ${RPORT} --crlf cr -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -v   " "${RHOST} ${RPORT} --crlf cr -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr      " "${RHOST} ${RPORT} --crlf cr -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
 
-	#run_test "-l ${RPORT} --crlf no -vvvv" "${RHOST} ${RPORT} --crlf no -vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -vvvv" "${RHOST} ${RPORT} --crlf no -vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -vvvv" "${RHOST} ${RPORT} --crlf no -v   "  "8" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -vvvv" "${RHOST} ${RPORT} --crlf no      "  "9" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vvvv" "${RHOST} ${RPORT} --crlf cr -vvv "  "6" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vvvv" "${RHOST} ${RPORT} --crlf cr -vv  "  "7" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vvvv" "${RHOST} ${RPORT} --crlf cr -v   "  "8" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vvvv" "${RHOST} ${RPORT} --crlf cr      "  "9" "13" "${curr_round}" "${RUNS}"
 
-	#run_test "-l ${RPORT} --crlf no -vvv " "${RHOST} ${RPORT} --crlf no -vvv " "10" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -vv  " "${RHOST} ${RPORT} --crlf no -vv  " "11" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no -v   " "${RHOST} ${RPORT} --crlf no -v   " "12" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf no      " "${RHOST} ${RPORT} --crlf no      " "13" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vvv " "${RHOST} ${RPORT} --crlf cr -vvv " "10" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -vv  " "${RHOST} ${RPORT} --crlf cr -vv  " "11" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr -v   " "${RHOST} ${RPORT} --crlf cr -v   " "12" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --crlf cr      " "${RHOST} ${RPORT} --crlf cr      " "13" "13" "${curr_round}" "${RUNS}"
 done

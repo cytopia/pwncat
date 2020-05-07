@@ -335,13 +335,11 @@ mode arguments:
 
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
-  -C y/n, --crlf y/n    Specify, 'always', 'yes' or 'y' to alway force replacing
-                        LF (\n) with CRLF (\r\n) on stdin.
-                        Specify 'never', 'no' or'n' to always force replacing
-                        CRLF (\r\n) with LF (\n) on stdin.
-                        By default it will not replace anything and takes
-                        what is entered (usually CRLF on windows and LF
-                        on unix).
+  -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
+                        line endings for input and outout accordingly. By
+                        default it will not replace anything and takes what is
+                        entered (usually CRLF on Windows, LF on Linux and some
+                        times CR on MacOS).
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
