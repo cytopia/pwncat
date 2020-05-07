@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.37% imprecise</th>
-<th class="summary summary-lines">2811 LOC</th>
+<th class="summary summary-precision">6.36% imprecise</th>
+<th class="summary summary-lines">2815 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.37% imprecise</td>
-<td class="summary summary-lines">2811 LOC</td>
+<td class="summary summary-precision">6.36% imprecise</td>
+<td class="summary summary-lines">2815 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2846,6 +2846,10 @@
 <span id="L2809" class="lineno"><a class="lineno" href="#L2809">2809</a></span>
 <span id="L2810" class="lineno"><a class="lineno" href="#L2810">2810</a></span>
 <span id="L2811" class="lineno"><a class="lineno" href="#L2811">2811</a></span>
+<span id="L2812" class="lineno"><a class="lineno" href="#L2812">2812</a></span>
+<span id="L2813" class="lineno"><a class="lineno" href="#L2813">2813</a></span>
+<span id="L2814" class="lineno"><a class="lineno" href="#L2814">2814</a></span>
+<span id="L2815" class="lineno"><a class="lineno" href="#L2815">2815</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -4480,7 +4484,6 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__net.close_conn_sock()</span>
 <span class="line-precise" title="No Anys on this line!">        self.__net.close_bind_sock()</span>
 <span class="line-empty" title="No Anys on this line!">        # Raise stop signal</span>
-<span class="line-empty" title="No Anys on this line!">        # TODO: Check if this is required</span>
 <span class="line-precise" title="No Anys on this line!">        self.ssig.raise_stop()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
@@ -4547,12 +4550,17 @@ Explicit (x4)">        self.log.info("Reconnect count is used up. Shutting down.
 Explicit (x4)">            self.log.info("No automatic re-accept specified. Shutting down.")</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [YES] Re-accept indefinitely</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">        self.log.info("Re-accepting new clients")</span>
-<span class="line-precise" title="No Anys on this line!">        while not self.__net.re_accept_client():</span>
+<span class="line-empty" title="No Anys on this line!">        # [MAYBE] Check stop signal and otherwise try until success.</span>
+<span class="line-precise" title="No Anys on this line!">        while True:</span>
 <span class="line-precise" title="No Anys on this line!">            time.sleep(0.1)</span>
-<span class="line-precise" title="No Anys on this line!">        return True</span>
+<span class="line-empty" title="No Anys on this line!">            # [NO] We have a stop signal</span>
+<span class="line-precise" title="No Anys on this line!">            if self.ssig.has_stop():</span>
+<span class="line-precise" title="No Anys on this line!">                return False</span>
+<span class="line-empty" title="No Anys on this line!">            # [YES] Re-accept indefinitely</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">            self.log.info("Re-accepting new clients")</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__net.re_accept_client():</span>
+<span class="line-precise" title="No Anys on this line!">                return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>

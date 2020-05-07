@@ -1546,7 +1546,6 @@ class IONetwork(IO):
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
         # Raise stop signal
-        # TODO: Check if this is required
         self.ssig.raise_stop()
 
     # --------------------------------------------------------------------------
@@ -1609,11 +1608,16 @@ class IONetwork(IO):
             self.log.info("No automatic re-accept specified. Shutting down.")
             return False
 
-        # [YES] Re-accept indefinitely
-        self.log.info("Re-accepting new clients")
-        while not self.__net.re_accept_client():
+        # [MAYBE] Check stop signal and otherwise try until success.
+        while True:
             time.sleep(0.1)
-        return True
+            # [NO] We have a stop signal
+            if self.ssig.has_stop():
+                return False
+            # [YES] Re-accept indefinitely
+            self.log.info("Re-accepting new clients")
+            if self.__net.re_accept_client():
+                return True
 
 
 # -------------------------------------------------------------------------------------------------

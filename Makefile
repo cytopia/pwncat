@@ -193,9 +193,19 @@ smoke: _smoke-keep_open-after_client_send
 
 .PHONY:
 _smoke-keep_open-before_send:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
 	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
 
 _smoke-keep_open-after_client_send:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
 	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
 
 

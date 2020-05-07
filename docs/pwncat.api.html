@@ -1573,7 +1573,6 @@ class IONetwork(IO):
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
         # Raise stop signal
-        # TODO: Check if this is required
         self.ssig.raise_stop()
 
     # --------------------------------------------------------------------------
@@ -1636,11 +1635,16 @@ class IONetwork(IO):
             self.log.info(&#34;No automatic re-accept specified. Shutting down.&#34;)
             return False
 
-        # [YES] Re-accept indefinitely
-        self.log.info(&#34;Re-accepting new clients&#34;)
-        while not self.__net.re_accept_client():
+        # [MAYBE] Check stop signal and otherwise try until success.
+        while True:
             time.sleep(0.1)
-        return True
+            # [NO] We have a stop signal
+            if self.ssig.has_stop():
+                return False
+            # [YES] Re-accept indefinitely
+            self.log.info(&#34;Re-accepting new clients&#34;)
+            if self.__net.re_accept_client():
+                return True
 
 
 # -------------------------------------------------------------------------------------------------
@@ -5105,7 +5109,6 @@ def producer(self):
         self.__net.close_conn_sock()
         self.__net.close_bind_sock()
         # Raise stop signal
-        # TODO: Check if this is required
         self.ssig.raise_stop()
 
     # --------------------------------------------------------------------------
@@ -5168,11 +5171,16 @@ def producer(self):
             self.log.info(&#34;No automatic re-accept specified. Shutting down.&#34;)
             return False
 
-        # [YES] Re-accept indefinitely
-        self.log.info(&#34;Re-accepting new clients&#34;)
-        while not self.__net.re_accept_client():
+        # [MAYBE] Check stop signal and otherwise try until success.
+        while True:
             time.sleep(0.1)
-        return True</code></pre>
+            # [NO] We have a stop signal
+            if self.ssig.has_stop():
+                return False
+            # [YES] Re-accept indefinitely
+            self.log.info(&#34;Re-accepting new clients&#34;)
+            if self.__net.re_accept_client():
+                return True</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -5214,7 +5222,6 @@ def producer(self):
     self.__net.close_conn_sock()
     self.__net.close_bind_sock()
     # Raise stop signal
-    # TODO: Check if this is required
     self.ssig.raise_stop()</code></pre>
 </details>
 </dd>

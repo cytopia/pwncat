@@ -7,12 +7,14 @@
 ## Release 0.0.11-alpha
 
 #### Fixed
-- Various bugs with `--reconn`, `--keep-open`, `--local` and `--remote`
-- Various bugs with threads
+- Fixed various bugs with `--reconn`, `--keep-open`, `--local` and `--remote`
+- Fixed various bugs with threads
+- Fixed shutdown behaviour with Ctrl+c
 
 #### Added
 - Python type coverage report
-- CI: Added ca. 10,000 LoC integration tests and fixed findings accordingly
+- CI: Added ca. 13,000 LoC integration tests and fixed findings accordingly
+- CI: Added dockerized interactive tests to simulate Ctrl+c
 
 #### Changed
 - Code: really heavy heavy code refactoring
