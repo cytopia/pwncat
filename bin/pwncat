@@ -1260,26 +1260,26 @@ class TransformLinefeed(Transform):
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    # FIXME: Make a struct for this
-    def __init__(self, DsTransformLinefeed):
+    def __init__(self, opts):
         # type: (DsTransformLinefeed) -> None
         """Set specific options for this transformer.
 
         Args:
-            opts (Dict): Transformer options.
+            opts (DsTransformLinefeed): Transformer options.
+
         """
         super(TransformLinefeed, self).__init__()
-        self.__opts = DsTransformLinefeed
+        self.__opts = opts
 
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
     def transform(self, data):
         # type: (str) -> str
-        """Change linefeeds
+        """Transform linefeeds to CRLF, LF or CR if requested.
 
         Returns:
-            str: The string with altered linefeeds
+            str: The string with altered linefeeds.
         """
         # 'auto' keep it as it is
         if self.__opts.crlf is None:

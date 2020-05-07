@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.24% imprecise</th>
-<th class="summary summary-lines">2662 LOC</th>
+<th class="summary summary-precision">6.29% imprecise</th>
+<th class="summary summary-lines">2799 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.24% imprecise</td>
-<td class="summary summary-lines">2662 LOC</td>
+<td class="summary summary-precision">6.29% imprecise</td>
+<td class="summary summary-lines">2799 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2697,6 +2697,143 @@
 <span id="L2660" class="lineno"><a class="lineno" href="#L2660">2660</a></span>
 <span id="L2661" class="lineno"><a class="lineno" href="#L2661">2661</a></span>
 <span id="L2662" class="lineno"><a class="lineno" href="#L2662">2662</a></span>
+<span id="L2663" class="lineno"><a class="lineno" href="#L2663">2663</a></span>
+<span id="L2664" class="lineno"><a class="lineno" href="#L2664">2664</a></span>
+<span id="L2665" class="lineno"><a class="lineno" href="#L2665">2665</a></span>
+<span id="L2666" class="lineno"><a class="lineno" href="#L2666">2666</a></span>
+<span id="L2667" class="lineno"><a class="lineno" href="#L2667">2667</a></span>
+<span id="L2668" class="lineno"><a class="lineno" href="#L2668">2668</a></span>
+<span id="L2669" class="lineno"><a class="lineno" href="#L2669">2669</a></span>
+<span id="L2670" class="lineno"><a class="lineno" href="#L2670">2670</a></span>
+<span id="L2671" class="lineno"><a class="lineno" href="#L2671">2671</a></span>
+<span id="L2672" class="lineno"><a class="lineno" href="#L2672">2672</a></span>
+<span id="L2673" class="lineno"><a class="lineno" href="#L2673">2673</a></span>
+<span id="L2674" class="lineno"><a class="lineno" href="#L2674">2674</a></span>
+<span id="L2675" class="lineno"><a class="lineno" href="#L2675">2675</a></span>
+<span id="L2676" class="lineno"><a class="lineno" href="#L2676">2676</a></span>
+<span id="L2677" class="lineno"><a class="lineno" href="#L2677">2677</a></span>
+<span id="L2678" class="lineno"><a class="lineno" href="#L2678">2678</a></span>
+<span id="L2679" class="lineno"><a class="lineno" href="#L2679">2679</a></span>
+<span id="L2680" class="lineno"><a class="lineno" href="#L2680">2680</a></span>
+<span id="L2681" class="lineno"><a class="lineno" href="#L2681">2681</a></span>
+<span id="L2682" class="lineno"><a class="lineno" href="#L2682">2682</a></span>
+<span id="L2683" class="lineno"><a class="lineno" href="#L2683">2683</a></span>
+<span id="L2684" class="lineno"><a class="lineno" href="#L2684">2684</a></span>
+<span id="L2685" class="lineno"><a class="lineno" href="#L2685">2685</a></span>
+<span id="L2686" class="lineno"><a class="lineno" href="#L2686">2686</a></span>
+<span id="L2687" class="lineno"><a class="lineno" href="#L2687">2687</a></span>
+<span id="L2688" class="lineno"><a class="lineno" href="#L2688">2688</a></span>
+<span id="L2689" class="lineno"><a class="lineno" href="#L2689">2689</a></span>
+<span id="L2690" class="lineno"><a class="lineno" href="#L2690">2690</a></span>
+<span id="L2691" class="lineno"><a class="lineno" href="#L2691">2691</a></span>
+<span id="L2692" class="lineno"><a class="lineno" href="#L2692">2692</a></span>
+<span id="L2693" class="lineno"><a class="lineno" href="#L2693">2693</a></span>
+<span id="L2694" class="lineno"><a class="lineno" href="#L2694">2694</a></span>
+<span id="L2695" class="lineno"><a class="lineno" href="#L2695">2695</a></span>
+<span id="L2696" class="lineno"><a class="lineno" href="#L2696">2696</a></span>
+<span id="L2697" class="lineno"><a class="lineno" href="#L2697">2697</a></span>
+<span id="L2698" class="lineno"><a class="lineno" href="#L2698">2698</a></span>
+<span id="L2699" class="lineno"><a class="lineno" href="#L2699">2699</a></span>
+<span id="L2700" class="lineno"><a class="lineno" href="#L2700">2700</a></span>
+<span id="L2701" class="lineno"><a class="lineno" href="#L2701">2701</a></span>
+<span id="L2702" class="lineno"><a class="lineno" href="#L2702">2702</a></span>
+<span id="L2703" class="lineno"><a class="lineno" href="#L2703">2703</a></span>
+<span id="L2704" class="lineno"><a class="lineno" href="#L2704">2704</a></span>
+<span id="L2705" class="lineno"><a class="lineno" href="#L2705">2705</a></span>
+<span id="L2706" class="lineno"><a class="lineno" href="#L2706">2706</a></span>
+<span id="L2707" class="lineno"><a class="lineno" href="#L2707">2707</a></span>
+<span id="L2708" class="lineno"><a class="lineno" href="#L2708">2708</a></span>
+<span id="L2709" class="lineno"><a class="lineno" href="#L2709">2709</a></span>
+<span id="L2710" class="lineno"><a class="lineno" href="#L2710">2710</a></span>
+<span id="L2711" class="lineno"><a class="lineno" href="#L2711">2711</a></span>
+<span id="L2712" class="lineno"><a class="lineno" href="#L2712">2712</a></span>
+<span id="L2713" class="lineno"><a class="lineno" href="#L2713">2713</a></span>
+<span id="L2714" class="lineno"><a class="lineno" href="#L2714">2714</a></span>
+<span id="L2715" class="lineno"><a class="lineno" href="#L2715">2715</a></span>
+<span id="L2716" class="lineno"><a class="lineno" href="#L2716">2716</a></span>
+<span id="L2717" class="lineno"><a class="lineno" href="#L2717">2717</a></span>
+<span id="L2718" class="lineno"><a class="lineno" href="#L2718">2718</a></span>
+<span id="L2719" class="lineno"><a class="lineno" href="#L2719">2719</a></span>
+<span id="L2720" class="lineno"><a class="lineno" href="#L2720">2720</a></span>
+<span id="L2721" class="lineno"><a class="lineno" href="#L2721">2721</a></span>
+<span id="L2722" class="lineno"><a class="lineno" href="#L2722">2722</a></span>
+<span id="L2723" class="lineno"><a class="lineno" href="#L2723">2723</a></span>
+<span id="L2724" class="lineno"><a class="lineno" href="#L2724">2724</a></span>
+<span id="L2725" class="lineno"><a class="lineno" href="#L2725">2725</a></span>
+<span id="L2726" class="lineno"><a class="lineno" href="#L2726">2726</a></span>
+<span id="L2727" class="lineno"><a class="lineno" href="#L2727">2727</a></span>
+<span id="L2728" class="lineno"><a class="lineno" href="#L2728">2728</a></span>
+<span id="L2729" class="lineno"><a class="lineno" href="#L2729">2729</a></span>
+<span id="L2730" class="lineno"><a class="lineno" href="#L2730">2730</a></span>
+<span id="L2731" class="lineno"><a class="lineno" href="#L2731">2731</a></span>
+<span id="L2732" class="lineno"><a class="lineno" href="#L2732">2732</a></span>
+<span id="L2733" class="lineno"><a class="lineno" href="#L2733">2733</a></span>
+<span id="L2734" class="lineno"><a class="lineno" href="#L2734">2734</a></span>
+<span id="L2735" class="lineno"><a class="lineno" href="#L2735">2735</a></span>
+<span id="L2736" class="lineno"><a class="lineno" href="#L2736">2736</a></span>
+<span id="L2737" class="lineno"><a class="lineno" href="#L2737">2737</a></span>
+<span id="L2738" class="lineno"><a class="lineno" href="#L2738">2738</a></span>
+<span id="L2739" class="lineno"><a class="lineno" href="#L2739">2739</a></span>
+<span id="L2740" class="lineno"><a class="lineno" href="#L2740">2740</a></span>
+<span id="L2741" class="lineno"><a class="lineno" href="#L2741">2741</a></span>
+<span id="L2742" class="lineno"><a class="lineno" href="#L2742">2742</a></span>
+<span id="L2743" class="lineno"><a class="lineno" href="#L2743">2743</a></span>
+<span id="L2744" class="lineno"><a class="lineno" href="#L2744">2744</a></span>
+<span id="L2745" class="lineno"><a class="lineno" href="#L2745">2745</a></span>
+<span id="L2746" class="lineno"><a class="lineno" href="#L2746">2746</a></span>
+<span id="L2747" class="lineno"><a class="lineno" href="#L2747">2747</a></span>
+<span id="L2748" class="lineno"><a class="lineno" href="#L2748">2748</a></span>
+<span id="L2749" class="lineno"><a class="lineno" href="#L2749">2749</a></span>
+<span id="L2750" class="lineno"><a class="lineno" href="#L2750">2750</a></span>
+<span id="L2751" class="lineno"><a class="lineno" href="#L2751">2751</a></span>
+<span id="L2752" class="lineno"><a class="lineno" href="#L2752">2752</a></span>
+<span id="L2753" class="lineno"><a class="lineno" href="#L2753">2753</a></span>
+<span id="L2754" class="lineno"><a class="lineno" href="#L2754">2754</a></span>
+<span id="L2755" class="lineno"><a class="lineno" href="#L2755">2755</a></span>
+<span id="L2756" class="lineno"><a class="lineno" href="#L2756">2756</a></span>
+<span id="L2757" class="lineno"><a class="lineno" href="#L2757">2757</a></span>
+<span id="L2758" class="lineno"><a class="lineno" href="#L2758">2758</a></span>
+<span id="L2759" class="lineno"><a class="lineno" href="#L2759">2759</a></span>
+<span id="L2760" class="lineno"><a class="lineno" href="#L2760">2760</a></span>
+<span id="L2761" class="lineno"><a class="lineno" href="#L2761">2761</a></span>
+<span id="L2762" class="lineno"><a class="lineno" href="#L2762">2762</a></span>
+<span id="L2763" class="lineno"><a class="lineno" href="#L2763">2763</a></span>
+<span id="L2764" class="lineno"><a class="lineno" href="#L2764">2764</a></span>
+<span id="L2765" class="lineno"><a class="lineno" href="#L2765">2765</a></span>
+<span id="L2766" class="lineno"><a class="lineno" href="#L2766">2766</a></span>
+<span id="L2767" class="lineno"><a class="lineno" href="#L2767">2767</a></span>
+<span id="L2768" class="lineno"><a class="lineno" href="#L2768">2768</a></span>
+<span id="L2769" class="lineno"><a class="lineno" href="#L2769">2769</a></span>
+<span id="L2770" class="lineno"><a class="lineno" href="#L2770">2770</a></span>
+<span id="L2771" class="lineno"><a class="lineno" href="#L2771">2771</a></span>
+<span id="L2772" class="lineno"><a class="lineno" href="#L2772">2772</a></span>
+<span id="L2773" class="lineno"><a class="lineno" href="#L2773">2773</a></span>
+<span id="L2774" class="lineno"><a class="lineno" href="#L2774">2774</a></span>
+<span id="L2775" class="lineno"><a class="lineno" href="#L2775">2775</a></span>
+<span id="L2776" class="lineno"><a class="lineno" href="#L2776">2776</a></span>
+<span id="L2777" class="lineno"><a class="lineno" href="#L2777">2777</a></span>
+<span id="L2778" class="lineno"><a class="lineno" href="#L2778">2778</a></span>
+<span id="L2779" class="lineno"><a class="lineno" href="#L2779">2779</a></span>
+<span id="L2780" class="lineno"><a class="lineno" href="#L2780">2780</a></span>
+<span id="L2781" class="lineno"><a class="lineno" href="#L2781">2781</a></span>
+<span id="L2782" class="lineno"><a class="lineno" href="#L2782">2782</a></span>
+<span id="L2783" class="lineno"><a class="lineno" href="#L2783">2783</a></span>
+<span id="L2784" class="lineno"><a class="lineno" href="#L2784">2784</a></span>
+<span id="L2785" class="lineno"><a class="lineno" href="#L2785">2785</a></span>
+<span id="L2786" class="lineno"><a class="lineno" href="#L2786">2786</a></span>
+<span id="L2787" class="lineno"><a class="lineno" href="#L2787">2787</a></span>
+<span id="L2788" class="lineno"><a class="lineno" href="#L2788">2788</a></span>
+<span id="L2789" class="lineno"><a class="lineno" href="#L2789">2789</a></span>
+<span id="L2790" class="lineno"><a class="lineno" href="#L2790">2790</a></span>
+<span id="L2791" class="lineno"><a class="lineno" href="#L2791">2791</a></span>
+<span id="L2792" class="lineno"><a class="lineno" href="#L2792">2792</a></span>
+<span id="L2793" class="lineno"><a class="lineno" href="#L2793">2793</a></span>
+<span id="L2794" class="lineno"><a class="lineno" href="#L2794">2794</a></span>
+<span id="L2795" class="lineno"><a class="lineno" href="#L2795">2795</a></span>
+<span id="L2796" class="lineno"><a class="lineno" href="#L2796">2796</a></span>
+<span id="L2797" class="lineno"><a class="lineno" href="#L2797">2797</a></span>
+<span id="L2798" class="lineno"><a class="lineno" href="#L2798">2798</a></span>
+<span id="L2799" class="lineno"><a class="lineno" href="#L2799">2799</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -2706,10 +2843,11 @@
 <span class="line-empty" title="No Anys on this line!"># 1. Data structure types</span>
 <span class="line-empty" title="No Anys on this line!"># 2. Library classes</span>
 <span class="line-empty" title="No Anys on this line!"># 3. Network</span>
-<span class="line-empty" title="No Anys on this line!"># 4. Plugins</span>
-<span class="line-empty" title="No Anys on this line!"># 5. Plugin runner</span>
-<span class="line-empty" title="No Anys on this line!"># 6. Command line arguments</span>
-<span class="line-empty" title="No Anys on this line!"># 7. Main entrypoint</span>
+<span class="line-empty" title="No Anys on this line!"># 4. Transformer</span>
+<span class="line-empty" title="No Anys on this line!"># 5. IO modules</span>
+<span class="line-empty" title="No Anys on this line!"># 6. IO Runner</span>
+<span class="line-empty" title="No Anys on this line!"># 7. Command line arguments</span>
+<span class="line-empty" title="No Anys on this line!"># 8. Main entrypoint</span>
 <span class="line-empty" title="No Anys on this line!">#</span>
 <span class="line-empty" title="No Anys on this line!"># How does it work?</span>
 <span class="line-empty" title="No Anys on this line!"># ------------------------------------</span>
@@ -2812,13 +2950,13 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   1 / 7   D A T A   S T R U C T U R E   T Y P E S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   1 / 8   D A T A   S T R U C T U R E   T Y P E S</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (1/8) DsRunnerAction</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsRunnerAction(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for Action functions for the Runner class."""</span>
@@ -2829,20 +2967,26 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def producer(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Callable[[], Iterator[str]]</span>
-<span class="line-empty" title="No Anys on this line!">        """`Plugin.producer`: Data producer function."""</span>
+<span class="line-empty" title="No Anys on this line!">        """`IO.producer`: Data producer function."""</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__producer</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def consumer(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Callable[[str], None]</span>
-<span class="line-empty" title="No Anys on this line!">        """`Plugin.consumer`: Data consumer function."""</span>
+<span class="line-empty" title="No Anys on this line!">        """`IO.consumer`: Data consumer function."""</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__consumer</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def interrupts(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; List[Callable[[], None]]</span>
-<span class="line-empty" title="No Anys on this line!">        """`List[Callable[[], None]]`: List of interrupt functions."""</span>
+<span class="line-empty" title="No Anys on this line!">        """`[List[Callable[[], None]]]`: List of interrupt functions for the producer/consumer."""</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__interrupts</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def transformers(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; List[Callable[[str], str]]</span>
+<span class="line-empty" title="No Anys on this line!">        """`[Transform.transformer]`: List of transformer functions applied before consumer."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__transformers</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Contrcutor</span>
@@ -2852,15 +2996,17 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!">        producer,  # type: Callable[[], Iterator[str]]</span>
 <span class="line-empty" title="No Anys on this line!">        consumer,  # type: Callable[[str], None]</span>
 <span class="line-empty" title="No Anys on this line!">        interrupts,  # type: List[Callable[[], None]]</span>
+<span class="line-empty" title="No Anys on this line!">        transformers,  # type: List[Callable[[str], str]]</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="No Anys on this line!">        self.__producer = producer</span>
 <span class="line-precise" title="No Anys on this line!">        self.__consumer = consumer</span>
 <span class="line-precise" title="No Anys on this line!">        self.__interrupts = interrupts</span>
+<span class="line-precise" title="No Anys on this line!">        self.__transformers = transformers</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (2/8) DsRunnerTimer</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsRunnerTimer(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for Timer functions for the Runner class."""</span>
@@ -2932,7 +3078,7 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (3/8) DsSock</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (3/9) DsSock</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsSock(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for DsSock options."""</span>
@@ -2993,10 +3139,10 @@ Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (4/8) DsPluginNetworkSock</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class DsPluginNetworkSock(DsSock):</span>
-<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for PluginNetwork socket options."""</span>
+<span class="line-precise" title="No Anys on this line!">class DsIONetworkSock(DsSock):</span>
+<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IONetwork socket options."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Properties</span>
@@ -3015,14 +3161,14 @@ Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(recv_timeout_retry) is int, type(recv_timeout_retry)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout_retry = recv_timeout_retry</span>
-<span class="line-precise" title="No Anys on this line!">        super(DsPluginNetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)</span>
+<span class="line-precise" title="No Anys on this line!">        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (5/8) DsPluginNetworkCli</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class DsPluginNetworkCli(object):</span>
-<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for PluginNetwork client options."""</span>
+<span class="line-precise" title="No Anys on this line!">class DsIONetworkCli(object):</span>
+<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IONetwork client options."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Properties</span>
@@ -3079,10 +3225,10 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (6/8) DsPluginNetworkSrv</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class DsPluginNetworkSrv(object):</span>
-<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for PluginNetwork server options."""</span>
+<span class="line-precise" title="No Anys on this line!">class DsIONetworkSrv(object):</span>
+<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IONetwork server options."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Properties</span>
@@ -3142,10 +3288,34 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (7/8) DsPluginOutput</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class DsPluginOutput(object):</span>
-<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for PluginOutput options."""</span>
+<span class="line-precise" title="No Anys on this line!">class DsTransformLinefeed(object):</span>
+<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for DsTransformLinefeed options."""</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Properties</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def crlf(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Optional[str]</span>
+<span class="line-empty" title="No Anys on this line!">        """`bool`: Converts line endings to LF, CRLF or CR and noop on `None`."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__crlf</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Constructor</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, crlf):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (Optional[str]) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">        super(DsTransformLinefeed, self).__init__()</span>
+<span class="line-precise" title="No Anys on this line!">        self.__crlf = crlf</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout</span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">class DsIOStdinStdout(object):</span>
+<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IOStdinStdout options."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Properties</span>
@@ -3157,12 +3327,6 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__enc</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
-<span class="line-precise" title="No Anys on this line!">    def crlf(self):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Optional[bool]</span>
-<span class="line-empty" title="No Anys on this line!">        """`bool`: Converts LF to CRLF on `True`, CRLF to LF on `False` and noop on `None`."""</span>
-<span class="line-precise" title="No Anys on this line!">        return self.__crlf</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def input_timeout(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Optional[float]</span>
 <span class="line-empty" title="No Anys on this line!">        """`float`: Input timeout in seconds for non-blocking read or `None` for blocking."""</span>
@@ -3171,19 +3335,18 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __init__(self, encoder, crlf, input_timeout):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (StringEncoder, Optional[bool], Optional[float]) -&gt; None</span>
-<span class="line-precise" title="No Anys on this line!">        super(DsPluginOutput, self).__init__()</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, encoder, input_timeout):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (StringEncoder, Optional[float]) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">        super(DsIOStdinStdout, self).__init__()</span>
 <span class="line-precise" title="No Anys on this line!">        self.__enc = encoder</span>
-<span class="line-precise" title="No Anys on this line!">        self.__crlf = crlf</span>
 <span class="line-precise" title="No Anys on this line!">        self.__input_timeout = input_timeout</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/7 DATA STRUCTURE TYPES]: (8/8) DsPluginCommand</span>
+<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (9/9) DsIOCommand</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class DsPluginCommand(object):</span>
-<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for PluginCommand options."""</span>
+<span class="line-precise" title="No Anys on this line!">class DsIOCommand(object):</span>
+<span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IOCommand options."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Properties</span>
@@ -3226,13 +3389,13 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   2 / 7   L I B R A R Y   C L A S S E S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   2 / 8   L I B R A R Y   C L A S S E S</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/7 LIBRARY CLASSES]: (1/4) TraceLogger</span>
+<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (1/4) TraceLogger</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class TraceLogger(logging.getLoggerClass()):  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">    """Extend Python's default logger class with TRACE level logging."""</span>
@@ -3274,7 +3437,7 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/7 LIBRARY CLASSES]: (2/4) ColoredLogFormatter</span>
+<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (2/4) ColoredLogFormatter</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class ColoredLogFormatter(logging.Formatter):</span>
 <span class="line-empty" title="No Anys on this line!">    """Custom log formatter which adds different details and color support."""</span>
@@ -3345,7 +3508,7 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/7 LIBRARY CLASSES]: (3/4) StringEncoder</span>
+<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (3/4) StringEncoder</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class StringEncoder(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Takes care about Python 2/3 string encoding/decoding.</span>
@@ -3384,7 +3547,7 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/7 LIBRARY CLASSES]: (4/4): StopSignal</span>
+<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (4/4): StopSignal</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class StopSignal(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Provide a simple boolean switch."""</span>
@@ -3414,13 +3577,13 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   3 / 7   N E T W O R K</span>
+<span class="line-empty" title="No Anys on this line!"># ###   3 / 8   N E T W O R K</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [3/7 NETWORK]: (1/1) Sock</span>
+<span class="line-empty" title="No Anys on this line!"># [3/8 NETWORK]: (1/1) Sock</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class Sock(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Provides an abstracted server client socket for TCP and UDP."""</span>
@@ -3953,18 +4116,136 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   4 / 7   P L U G I N S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   4 / 8   T R A N S F O R M E R</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [4/7 PLUGINS]: (1/4): Plugin</span>
+<span class="line-empty" title="No Anys on this line!"># [4/8 TRANSFORM]: (1/2): Transform</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class Plugin(ABC):  # type: ignore</span>
-<span class="line-empty" title="No Anys on this line!">    """Abstract class to for pwncat plugins.</span>
+<span class="line-precise" title="No Anys on this line!">class Transform(ABC):  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">    """Abstract class to for pwncat I/O transformers.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">    This is a skeleton that defines how the plugins for pwncat should look like.</span>
+<span class="line-empty" title="No Anys on this line!">    This is a skeleton that defines how the transformer for pwncat should look like.</span>
+<span class="line-empty" title="No Anys on this line!">    """</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Properties</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def log(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; logging.Logger</span>
+<span class="line-empty" title="No Anys on this line!">        """`TraceLogger`: Logger instance."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__log</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Constructor</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    @abstractmethod</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Set specific options for this transformer."""</span>
+<span class="line-precise" title="No Anys on this line!">        super(Transform, self).__init__()</span>
+<span class="line-precise" title="No Anys on this line!">        self.__log = logging.getLogger(__name__)</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Public Functions</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    @abstractmethod</span>
+<span class="line-precise" title="No Anys on this line!">    def transform(self, data):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
+<span class="line-empty" title="No Anys on this line!">        """Implement a transformer function which transforms a string..</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            str: The transformed string.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!"># [4/8 TRANSFORM]: (2/2) TransformLinefeed</span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">class TransformLinefeed(Transform):</span>
+<span class="line-empty" title="No Anys on this line!">    """Implement basic linefeed replacement."""</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Constructor / Destructor</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, opts):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (DsTransformLinefeed) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Set specific options for this transformer.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Args:</span>
+<span class="line-empty" title="No Anys on this line!">            opts (DsTransformLinefeed): Transformer options.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        super(TransformLinefeed, self).__init__()</span>
+<span class="line-precise" title="No Anys on this line!">        self.__opts = opts</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Public Functions</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">    def transform(self, data):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
+<span class="line-empty" title="No Anys on this line!">        """Transform linefeeds to CRLF, LF or CR if requested.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            str: The string with altered linefeeds.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-empty" title="No Anys on this line!">        # 'auto' keep it as it is</span>
+<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf is None:</span>
+<span class="line-precise" title="No Anys on this line!">            return data</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # ? -&gt; CRLF</span>
+<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf == "crlf" and not data.endswith("\r\n"):</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\n"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Replacing LF with CRLF")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-1] + "\r\n"</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\r"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Replacing CR with CRLF")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-1] + "\r\n"</span>
+<span class="line-empty" title="No Anys on this line!">        # ? -&gt; LF</span>
+<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf == "lf":</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\r\n"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Replacing CRLF with LF")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-2] + "\n"</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\r"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Replacing CR with LF")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-1] + "\n"</span>
+<span class="line-empty" title="No Anys on this line!">        # ? -&gt; CR</span>
+<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf == "cr":</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\r\n"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Replacing CRLF with CR")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-2] + "\r"</span>
+<span class="line-precise" title="No Anys on this line!">            if data.endswith("\n"):</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.log.debug("Replacing LF with CR")</span>
+<span class="line-precise" title="No Anys on this line!">                return data[:-1] + "\r"</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # Otherwise just return it as it is</span>
+<span class="line-precise" title="No Anys on this line!">        return data</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"># ###</span>
+<span class="line-empty" title="No Anys on this line!"># ###   5 / 8   I O   M O D U L E S</span>
+<span class="line-empty" title="No Anys on this line!"># ###</span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!"># [5/8 IO]: (1/4): IO</span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">class IO(ABC):  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">    """Abstract class to for pwncat I/O modules.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    This is a skeleton that defines how the I/O module for pwncat should look like.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    The "producer" should constantly yield data received from some sort of input</span>
 <span class="line-empty" title="No Anys on this line!">    which could be user input, output from a shell command data from a socket.</span>
@@ -3983,7 +4264,7 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def ssig(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; StopSignal</span>
-<span class="line-empty" title="No Anys on this line!">        """`StopSignal`: Read only property to provide a StopSignal instance to plugins."""</span>
+<span class="line-empty" title="No Anys on this line!">        """`StopSignal`: Read only property to provide a StopSignal instance to IO."""</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__ssig</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
@@ -3998,12 +4279,12 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!">    @abstractmethod</span>
 <span class="line-precise" title="No Anys on this line!">    def __init__(self, ssig):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (StopSignal) -&gt; None</span>
-<span class="line-empty" title="No Anys on this line!">        """Set specific options for this plugin.</span>
+<span class="line-empty" title="No Anys on this line!">        """Set specific options for this IO module.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            ssig (StopSignal): StopSignal instance used by the interrupter.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
-<span class="line-precise" title="No Anys on this line!">        super(Plugin, self).__init__()</span>
+<span class="line-precise" title="No Anys on this line!">        super(IO, self).__init__()</span>
 <span class="line-precise" title="No Anys on this line!">        self.__ssig = ssig</span>
 <span class="line-precise" title="No Anys on this line!">        self.__log = logging.getLogger(__name__)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4045,9 +4326,9 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [4/7 PLUGINS]: (2/4) PluginNetwork</span>
+<span class="line-empty" title="No Anys on this line!"># [5/8 IONetwork]: (2/4) IONetwork</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class PluginNetwork(Plugin):</span>
+<span class="line-precise" title="No Anys on this line!">class IONetwork(IO):</span>
 <span class="line-empty" title="No Anys on this line!">    """Pwncat implementation based on custom Socket library."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
@@ -4060,9 +4341,9 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!">        host,  # type: str</span>
 <span class="line-empty" title="No Anys on this line!">        port,  # type: int</span>
 <span class="line-empty" title="No Anys on this line!">        role,  # type: str</span>
-<span class="line-empty" title="No Anys on this line!">        srv_opts,  # type: DsPluginNetworkSrv</span>
-<span class="line-empty" title="No Anys on this line!">        cli_opts,  # type: DsPluginNetworkCli</span>
-<span class="line-empty" title="No Anys on this line!">        sock_opts,  # type: DsPluginNetworkSock</span>
+<span class="line-empty" title="No Anys on this line!">        srv_opts,  # type: DsIONetworkSrv</span>
+<span class="line-empty" title="No Anys on this line!">        cli_opts,  # type: DsIONetworkCli</span>
+<span class="line-empty" title="No Anys on this line!">        sock_opts,  # type: DsIONetworkSock</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Create a Pwncat instance of either a server or a client.</span>
@@ -4073,12 +4354,12 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!">            host (str): The hostname to resolve.</span>
 <span class="line-empty" title="No Anys on this line!">            port (int): The port of the hostname to resolve.</span>
 <span class="line-empty" title="No Anys on this line!">            role (str): Either "server" or "client".</span>
-<span class="line-empty" title="No Anys on this line!">            srv_opts (DsPluginNetworkSrv):   Options for the server.</span>
-<span class="line-empty" title="No Anys on this line!">            cli_opts (DsPluginNetworkCli):   Options for the client.</span>
-<span class="line-empty" title="No Anys on this line!">            sock_opts (DsPluginNetworkSock): Options to parse back to Sock.</span>
+<span class="line-empty" title="No Anys on this line!">            srv_opts (DsIONetworkSrv):   Options for the server.</span>
+<span class="line-empty" title="No Anys on this line!">            cli_opts (DsIONetworkCli):   Options for the client.</span>
+<span class="line-empty" title="No Anys on this line!">            sock_opts (DsIONetworkSock): Options to parse back to Sock.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-precise" title="No Anys on this line!">        assert role in ["server", "client"], "The role must be 'server' or 'client'."</span>
-<span class="line-precise" title="No Anys on this line!">        super(PluginNetwork, self).__init__(ssig)</span>
+<span class="line-precise" title="No Anys on this line!">        super(IONetwork, self).__init__(ssig)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        self.__role = role</span>
 <span class="line-precise" title="No Anys on this line!">        self.__net = Sock(encoder, ssig, sock_opts)</span>
@@ -4168,7 +4449,7 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">        """Stop function that can be called externally to close this instance."""</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">        self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">            "[PluginNetwork] socket.close was raised by calling interrupt() externally."</span>
+<span class="line-precise" title="No Anys on this line!">            "[IONetwork] socket.close was raised by calling interrupt() externally."</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        self.__net.close_conn_sock()</span>
 <span class="line-precise" title="No Anys on this line!">        self.__net.close_bind_sock()</span>
@@ -4249,12 +4530,12 @@ Explicit (x4)">        self.log.info("Re-accepting new clients")</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [4/7 PLUGINS]: (3/4) PluginOutput</span>
+<span class="line-empty" title="No Anys on this line!"># [5/8 IOStdinStdout]: (3/4) IOStdinStdout</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class PluginOutput(Plugin):</span>
-<span class="line-empty" title="No Anys on this line!">    """Implement basic input/output plugin.</span>
+<span class="line-precise" title="No Anys on this line!">class IOStdinStdout(IO):</span>
+<span class="line-empty" title="No Anys on this line!">    """Implement basic stdin/stdout I/O module.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">    This plugin provides a generator which continuously reads from stdin</span>
+<span class="line-empty" title="No Anys on this line!">    This I/O module provides a generator which continuously reads from stdin</span>
 <span class="line-empty" title="No Anys on this line!">    (non-blocking on POSIX and blocking on Windows) as well as a</span>
 <span class="line-empty" title="No Anys on this line!">    callback that writes to stdout.</span>
 <span class="line-empty" title="No Anys on this line!">    """</span>
@@ -4263,14 +4544,14 @@ Explicit (x4)">        self.log.info("Re-accepting new clients")</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor / Destructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">    def __init__(self, ssig, opts):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (StopSignal, DsPluginOutput) -&gt; None</span>
-<span class="line-empty" title="No Anys on this line!">        """Set specific options for this plugin.</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (StopSignal, DsIOStdinStdout) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Set specific options for this I/O module.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            ssig (StopSignal): StopSignal instance.</span>
-<span class="line-empty" title="No Anys on this line!">            opts (DsPluginOutput): Plugin options.</span>
+<span class="line-empty" title="No Anys on this line!">            opts (DsIOStdinStdout): IO options.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
-<span class="line-precise" title="No Anys on this line!">        super(PluginOutput, self).__init__(ssig)</span>
+<span class="line-precise" title="No Anys on this line!">        super(IOStdinStdout, self).__init__(ssig)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__opts = opts</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
@@ -4310,7 +4591,7 @@ Error (x2)">                    self.log.trace("Stop signal acknowledged for rea
 Explicit (x4)">                self.log.debug("Received %d bytes from STDIN", len(line))</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">                self.log.trace("Received: %s", repr(line))  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                yield self.__use_linefeeds(line)</span>
+<span class="line-precise" title="No Anys on this line!">                yield line</span>
 <span class="line-empty" title="No Anys on this line!">            # EOF or &lt;Ctrl&gt;+&lt;d&gt;</span>
 <span class="line-empty" title="No Anys on this line!">            else:</span>
 <span class="line-empty" title="No Anys on this line!">                # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!</span>
@@ -4330,7 +4611,7 @@ Error (x2)">                    self.log.trace("Stop signal acknowledged for rea
 <span class="line-empty" title="No Anys on this line!">        """Stop function that can be called externally to close this instance."""</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">        self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">            "[PluginOutput] interrupt() invoked"</span>
+<span class="line-precise" title="No Anys on this line!">            "[IOStdinStdout] interrupt() invoked"</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-empty" title="No Anys on this line!">        # Raise stop signal</span>
 <span class="line-empty" title="No Anys on this line!">        # TODO: Check if this is required???</span>
@@ -4339,29 +4620,6 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Private Functions</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __use_linefeeds(self, data):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
-<span class="line-empty" title="No Anys on this line!">        """Ensure the user input has the desired linefeeds: LF, CRLF or as entered."""</span>
-<span class="line-empty" title="No Anys on this line!">        # 'auto' keep it as it is</span>
-<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf is None:</span>
-<span class="line-precise" title="No Anys on this line!">            return data</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # LF -&gt; CRLF</span>
-<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf is True:</span>
-<span class="line-precise" title="No Anys on this line!">            if not data.endswith("\r\n") and data.endswith("\n"):</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                self.log.debug("Replacing LF with CRLF")</span>
-<span class="line-precise" title="No Anys on this line!">                return data[:-1] + "\r\n"</span>
-<span class="line-empty" title="No Anys on this line!">        # CRLF -&gt; LF</span>
-<span class="line-precise" title="No Anys on this line!">        if self.__opts.crlf is False:</span>
-<span class="line-precise" title="No Anys on this line!">            if data.endswith("\r\n"):</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                self.log.debug("Replacing CRLF with LF")</span>
-<span class="line-precise" title="No Anys on this line!">                return data[:-2] + "\n"</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # Otherwise just return it as it is</span>
-<span class="line-precise" title="No Anys on this line!">        return data</span>
-<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def __set_input_timeout(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Throws a catchable EOFError exception for sys.stdin after timeout (Linux only)."""</span>
@@ -4374,9 +4632,9 @@ Explicit (x10)">        if not select.select([sys.stdin], [], [], self.__opts.in
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [4/7 PLUGINS]: (4/4) PluginCommand</span>
+<span class="line-empty" title="No Anys on this line!"># [5/8 IOCommand]: (4/4) IOCommand</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">class PluginCommand(Plugin):</span>
+<span class="line-precise" title="No Anys on this line!">class IOCommand(IO):</span>
 <span class="line-empty" title="No Anys on this line!">    """Implement command execution functionality.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    Attributes:</span>
@@ -4387,14 +4645,14 @@ Explicit (x10)">        if not select.select([sys.stdin], [], [], self.__opts.in
 <span class="line-empty" title="No Anys on this line!">    # Constructor / Destructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">    def __init__(self, ssig, opts):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (StopSignal, DsPluginCommand) -&gt; None</span>
-<span class="line-empty" title="No Anys on this line!">        """Set specific options for this plugin.</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (StopSignal, DsIOCommand) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Set specific options for this I/O module.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            ssig (StopSignal): Instance of StopSignal.</span>
-<span class="line-empty" title="No Anys on this line!">            opts (DsPluginCommand): Custom module options.</span>
+<span class="line-empty" title="No Anys on this line!">            opts (DsIOCommand): Custom module options.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
-<span class="line-precise" title="No Anys on this line!">        super(PluginCommand, self).__init__(ssig)</span>
+<span class="line-precise" title="No Anys on this line!">        super(IOCommand, self).__init__(ssig)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__opts = opts</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.log.debug("Setting '%s' as executable", self.__opts.executable)</span>
@@ -4482,7 +4740,7 @@ Error (x2)">        self.log.trace("Appending to stdin: %s", repr(byte))  # type
 <span class="line-empty" title="No Anys on this line!">        """Stop function that can be called externally to close this instance."""</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">        self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">            "[PluginCommand] subprocess.kill() was raised by input_unterrupter()"</span>
+<span class="line-precise" title="No Anys on this line!">            "[IOCommand] subprocess.kill() was raised by input_unterrupter()"</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        self.proc.kill()</span>
 <span class="line-empty" title="No Anys on this line!">        # Raise stop signal</span>
@@ -4493,13 +4751,13 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   5 / 7   P L U G I N   R U N N E R</span>
+<span class="line-empty" title="No Anys on this line!"># ###   6 / 8   P L U G I N   R U N N E R</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [5/7 PLUGIN RUNNER]: (1/1) Runner</span>
+<span class="line-empty" title="No Anys on this line!"># [6/8 IO RUNNER]: (1/1) Runner</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class Runner(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Runner class that takes care about putting everything into threads."""</span>
@@ -4550,22 +4808,31 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def run(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
-<span class="line-empty" title="No Anys on this line!">        """Run threaded pwncat plugins."""</span>
+<span class="line-empty" title="No Anys on this line!">        """Run threaded pwncat I/O modules."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">        def run_action(name, producer, consumer):</span>
-<span class="line-empty" title="No Anys on this line!">            # type: (str, Callable[[], str], Callable[[str], None]) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">        def run_action(</span>
+<span class="line-empty" title="No Anys on this line!">            name,  # type: str</span>
+<span class="line-empty" title="No Anys on this line!">            producer,  # type: Callable[[], str]</span>
+<span class="line-empty" title="No Anys on this line!">            consumer,  # type: Callable[[str], None]</span>
+<span class="line-empty" title="No Anys on this line!">            transformers,  # type: List[Transform]</span>
+<span class="line-empty" title="No Anys on this line!">        ):</span>
+<span class="line-empty" title="No Anys on this line!">            # type: (...) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">            """Producer/consumer run function to be thrown into a thread.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            Args:</span>
 <span class="line-empty" title="No Anys on this line!">                name (str): Name for logging output.</span>
 <span class="line-empty" title="No Anys on this line!">                producer (function): A generator function which yields data.</span>
 <span class="line-empty" title="No Anys on this line!">                consumer (function): A callback which consumes data from the generator.</span>
+<span class="line-empty" title="No Anys on this line!">                transformers ([function]): List of transformer functions applied before consumer.</span>
 <span class="line-empty" title="No Anys on this line!">            """</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.log.trace("[%s] Producer Start", name)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            for data in producer():</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">                self.log.trace("[%s] Producer received: %s", name, repr(data))  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">                # Transform data before sending it to the consumer</span>
+<span class="line-precise" title="No Anys on this line!">                for transformer in transformers:</span>
+<span class="line-precise" title="No Anys on this line!">                    data = transformer.transform(data)</span>
 <span class="line-precise" title="No Anys on this line!">                consumer(data)</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.log.trace("[%s] Producer Stop", name)  # type: ignore</span>
@@ -4607,7 +4874,12 @@ Explicit (x4)">                    action(*args, **kwargs)</span>
 Explicit (x5)">            thread = threading.Thread(</span>
 <span class="line-precise" title="No Anys on this line!">                target=run_action,</span>
 <span class="line-precise" title="No Anys on this line!">                name=key,</span>
-<span class="line-precise" title="No Anys on this line!">                args=(key, self.__actions[key].producer, self.__actions[key].consumer,),</span>
+<span class="line-empty" title="No Anys on this line!">                args=(</span>
+<span class="line-precise" title="No Anys on this line!">                    key,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__actions[key].producer,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__actions[key].consumer,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__actions[key].transformers,</span>
+<span class="line-empty" title="No Anys on this line!">                ),</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">            thread.daemon = False</span>
 <span class="line-precise" title="No Anys on this line!">            thread.start()</span>
@@ -4685,13 +4957,13 @@ Error (x2)">                    self.log.trace("Joining %s", self.__threads[key]
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   6 / 7   C O M M A N D   L I N E   A R G U M E N T S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   7 / 8   C O M M A N D   L I N E   A R G U M E N T S</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [6/7 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions</span>
+<span class="line-empty" title="No Anys on this line!"># [7/8 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">def get_version():</span>
 <span class="line-empty" title="No Anys on this line!">    # type: () -&gt; str</span>
@@ -4701,15 +4973,13 @@ Error (x2)">                    self.log.trace("Joining %s", self.__threads[key]
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">def _args_check_yes_no(value):</span>
-<span class="line-empty" title="No Anys on this line!">    # type: (Optional[str]) -&gt; Optional[bool]</span>
+<span class="line-precise" title="No Anys on this line!">def _args_check_crlf(value):</span>
+<span class="line-empty" title="No Anys on this line!">    # type: (Optional[str]) -&gt; Optional[str]</span>
 <span class="line-empty" title="No Anys on this line!">    """Evaluate a yes/no choice into True, False or None."""</span>
 <span class="line-precise" title="No Anys on this line!">    if value is None:</span>
 <span class="line-precise" title="No Anys on this line!">        return None</span>
-<span class="line-precise" title="No Anys on this line!">    if value in ["always", "yes", "y", "fuckyes"]:</span>
-<span class="line-precise" title="No Anys on this line!">        return True</span>
-<span class="line-precise" title="No Anys on this line!">    if value in ["never", "no", "n", "fuckno"]:</span>
-<span class="line-precise" title="No Anys on this line!">        return False</span>
+<span class="line-precise" title="No Anys on this line!">    if value.lower() in ["crlf", "lf", "cr"]:</span>
+<span class="line-precise" title="No Anys on this line!">        return value.lower()</span>
 <span class="line-precise" title="No Anys on this line!">    raise argparse.ArgumentTypeError("'%s' is an invalid choice" % value)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4912,7 +5182,7 @@ Explicit (x2)">    if args.udp_ping_init is not False and not args.udp:</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [6/7 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser</span>
+<span class="line-empty" title="No Anys on this line!"># [7/8 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">def get_args():</span>
 <span class="line-empty" title="No Anys on this line!">    # type: () -&gt; argparse.Namespace</span>
@@ -5034,20 +5304,20 @@ Explicit (x3)">    optional.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        type=str,</span>
 <span class="line-precise" title="No Anys on this line!">        help="Execute shell command. Only for connect or listen mode.",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
+<span class="line-empty" title="No Anys on this line!">    # TODO: add --crlf-i and --crlf-o to only do this on input or output and have</span>
+<span class="line-empty" title="No Anys on this line!">    # --crlf to always do it on input and output!</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    optional.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "-C",</span>
 <span class="line-precise" title="No Anys on this line!">        "--crlf",</span>
-<span class="line-precise" title="No Anys on this line!">        type=_args_check_yes_no,</span>
-<span class="line-precise" title="No Anys on this line!">        metavar="y/n",</span>
+<span class="line-precise" title="No Anys on this line!">        type=_args_check_crlf,</span>
+<span class="line-precise" title="No Anys on this line!">        metavar="lf",</span>
 <span class="line-precise" title="No Anys on this line!">        default=None,</span>
-<span class="line-precise" title="No Anys on this line!">        help="""Specify, 'always', 'yes' or 'y' to alway force replacing</span>
-<span class="line-empty" title="No Anys on this line!">LF (\\n) with CRLF (\\r\\n) on stdin.</span>
-<span class="line-empty" title="No Anys on this line!">Specify 'never', 'no' or'n' to always force replacing</span>
-<span class="line-empty" title="No Anys on this line!">CRLF (\\r\\n) with LF (\\n) on stdin.</span>
-<span class="line-empty" title="No Anys on this line!">By default it will not replace anything and takes</span>
-<span class="line-empty" title="No Anys on this line!">what is entered (usually CRLF on windows and LF</span>
-<span class="line-empty" title="No Anys on this line!">on unix).""",</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Specify, 'lf', 'crlf' or 'cr' to always force replacing</span>
+<span class="line-empty" title="No Anys on this line!">line endings for input and outout accordingly. By</span>
+<span class="line-empty" title="No Anys on this line!">default it will not replace anything and takes what is</span>
+<span class="line-empty" title="No Anys on this line!">entered (usually CRLF on Windows, LF on Linux and some</span>
+<span class="line-empty" title="No Anys on this line!">times CR on MacOS).""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    optional.add_argument(</span>
@@ -5346,13 +5616,13 @@ Explicit (x11)">    if args.http or args.https or args.rebind or args.wait or ar
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   7 / 7   M A I N   E N T R Y P O I N T</span>
+<span class="line-empty" title="No Anys on this line!"># ###   8 / 8   M A I N   E N T R Y P O I N T</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [7/7 MAIN ENTRYPOINT]: (1/2) main</span>
+<span class="line-empty" title="No Anys on this line!"># [8/8 MAIN ENTRYPOINT]: (1/2) main</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">def main():</span>
 <span class="line-empty" title="No Anys on this line!">    # type: () -&gt; None</span>
@@ -5364,7 +5634,7 @@ Explicit (x2)">    host = args.hostname</span>
 Explicit (x2)">    port = args.port</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Set pwncat options</span>
-<span class="line-precise" title="No Anys on this line!">    sock_opts = DsPluginNetworkSock(</span>
+<span class="line-precise" title="No Anys on this line!">    sock_opts = DsIONetworkSock(</span>
 <span class="line-precise" title="No Anys on this line!">        RECV_BUFSIZE,</span>
 <span class="line-precise" title="No Anys on this line!">        LISTEN_BACKLOG,</span>
 <span class="line-precise" title="No Anys on this line!">        TIMEOUT_RECV_SOCKET,</span>
@@ -5375,9 +5645,9 @@ Explicit (x1)">        args.nodns,</span>
 Explicit (x1)">        args.udp,</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">    srv_opts = DsPluginNetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)</span>
+Explicit (x4)">    srv_opts = DsIONetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x3)">    cli_opts = DsPluginNetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)</span>
+Explicit (x3)">    cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)</span>
 <span class="line-empty" title="No Anys on this line!">    # TODO:</span>
 <span class="line-empty" title="No Anys on this line!">    # "wait": args.wait,</span>
 <span class="line-empty" title="No Anys on this line!">    # "udp_ping_init": args.udp_ping_init,</span>
@@ -5419,11 +5689,10 @@ Explicit (x1)">    formatter = ColoredLogFormatter(args.color, loglevel)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">    if args.cmd:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">        mod = PluginCommand(ssig, DsPluginCommand(enc, args.cmd, POPEN_BUFSIZE))</span>
+Explicit (x1)">        mod = IOCommand(ssig, DsIOCommand(enc, args.cmd, POPEN_BUFSIZE))</span>
 <span class="line-empty" title="No Anys on this line!">    # Use output module</span>
 <span class="line-empty" title="No Anys on this line!">    else:</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x1)">        mod = PluginOutput(ssig, DsPluginOutput(enc, args.crlf, TIMEOUT_READ_STDIN))</span>
+<span class="line-precise" title="No Anys on this line!">        mod = IOStdinStdout(ssig, DsIOStdinStdout(enc, TIMEOUT_READ_STDIN))</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Run local port-forward</span>
 <span class="line-empty" title="No Anys on this line!">    # -&gt; listen locally and forward traffic to remote (connect)</span>
@@ -5437,9 +5706,9 @@ Explicit (x5)">        lhost = args.local.split(":")[0]</span>
 Explicit (x4)">        lport = int(args.local.split(":")[1])</span>
 <span class="line-empty" title="No Anys on this line!">        # Create listen and client instances</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">        net_srv = PluginNetwork(ssig, enc, lhost, lport, "server", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x1)">        net_srv = IONetwork(ssig, enc, lhost, lport, "server", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net_cli = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x2)">        net_cli = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-empty" title="No Anys on this line!">        # Create Runner</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -5448,6 +5717,7 @@ Explicit (x2)">        net_cli = PluginNetwork(ssig, enc, host, port, "client", 
 <span class="line-precise" title="No Anys on this line!">                net_srv.producer,  # (receive) USER sends data to PC-SERVER</span>
 <span class="line-precise" title="No Anys on this line!">                net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET</span>
 <span class="line-precise" title="No Anys on this line!">                [net_cli.interrupt, net_srv.interrupt],</span>
+<span class="line-empty" title="No Anys on this line!">                [],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -5456,6 +5726,8 @@ Explicit (x2)">        net_cli = PluginNetwork(ssig, enc, host, port, "client", 
 <span class="line-precise" title="No Anys on this line!">                net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT</span>
 <span class="line-precise" title="No Anys on this line!">                net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER</span>
 <span class="line-precise" title="No Anys on this line!">                [net_cli.interrupt, net_srv.interrupt],</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf))],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
@@ -5472,9 +5744,9 @@ Explicit (x5)">        lhost = args.remote.split(":")[0]</span>
 Explicit (x4)">        lport = int(args.remote.split(":")[1])</span>
 <span class="line-empty" title="No Anys on this line!">        # Create local and remote client</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">        net_cli_l = PluginNetwork(ssig, enc, lhost, lport, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x1)">        net_cli_l = IONetwork(ssig, enc, lhost, lport, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net_cli_r = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x2)">        net_cli_r = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-empty" title="No Anys on this line!">        # Create Runner</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -5483,6 +5755,8 @@ Explicit (x2)">        net_cli_r = PluginNetwork(ssig, enc, host, port, "client"
 <span class="line-precise" title="No Anys on this line!">                net_cli_l.producer,  # (receive) USER sends data to PC-SERVER</span>
 <span class="line-precise" title="No Anys on this line!">                net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf))],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -5491,6 +5765,8 @@ Explicit (x2)">        net_cli_r = PluginNetwork(ssig, enc, host, port, "client"
 <span class="line-precise" title="No Anys on this line!">                net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT</span>
 <span class="line-precise" title="No Anys on this line!">                net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf))],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
@@ -5498,7 +5774,7 @@ Explicit (x2)">        net_cli_r = PluginNetwork(ssig, enc, host, port, "client"
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">    if args.listen:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net = PluginNetwork(ssig, enc, host, port, "server", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x2)">        net = IONetwork(ssig, enc, host, port, "server", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>
@@ -5506,6 +5782,8 @@ Explicit (x2)">        net = PluginNetwork(ssig, enc, host, port, "server", srv_
 <span class="line-precise" title="No Anys on this line!">                net.producer,  # receive data</span>
 <span class="line-precise" title="No Anys on this line!">                mod.consumer,</span>
 <span class="line-precise" title="No Anys on this line!">                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf))],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -5514,6 +5792,8 @@ Explicit (x2)">        net = PluginNetwork(ssig, enc, host, port, "server", srv_
 <span class="line-precise" title="No Anys on this line!">                mod.producer,</span>
 <span class="line-precise" title="No Anys on this line!">                net.consumer,  # send data</span>
 <span class="line-precise" title="No Anys on this line!">                [mod.interrupt],  # Externally stop the produer itself</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf))],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
@@ -5521,7 +5801,7 @@ Explicit (x2)">        net = PluginNetwork(ssig, enc, host, port, "server", srv_
 <span class="line-empty" title="No Anys on this line!">    # Run client</span>
 <span class="line-empty" title="No Anys on this line!">    else:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net = PluginNetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x2)">        net = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>
@@ -5529,6 +5809,8 @@ Explicit (x2)">        net = PluginNetwork(ssig, enc, host, port, "client", srv_
 <span class="line-precise" title="No Anys on this line!">                net.producer,  # receive data</span>
 <span class="line-precise" title="No Anys on this line!">                mod.consumer,</span>
 <span class="line-precise" title="No Anys on this line!">                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf))],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -5537,6 +5819,8 @@ Explicit (x2)">        net = PluginNetwork(ssig, enc, host, port, "client", srv_
 <span class="line-precise" title="No Anys on this line!">                mod.producer,</span>
 <span class="line-precise" title="No Anys on this line!">                net.consumer,  # send data</span>
 <span class="line-precise" title="No Anys on this line!">                [net.interrupt, mod.interrupt],  # Externally stop the produer itself</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf))],</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-any" title="Any Types on this line: 
@@ -5550,7 +5834,7 @@ Explicit (x5)">                DsRunnerTimer(net.consumer, ssig, args.udp_ping_i
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [7/7 MAIN ENTRYPOINT]: (2/2) start</span>
+<span class="line-empty" title="No Anys on this line!"># [8/8 MAIN ENTRYPOINT]: (2/2) start</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">if __name__ == "pwncat":</span>
 <span class="line-empty" title="No Anys on this line!">    # Catch Ctrl+c and exit without error message</span>

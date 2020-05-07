@@ -67,14 +67,12 @@ target machine via the positional arguments.
 \fB\-e\fR cmd, \fB\-\-exec\fR cmd
 Execute shell command. Only for connect or listen mode.
 .TP
-\fB\-C\fR y/n, \fB\-\-crlf\fR y/n
-Specify, 'always', 'yes' or 'y' to alway force replacing
-LF (\en) with CRLF (\er\en) on stdin.
-Specify 'never', 'no' or'n' to always force replacing
-CRLF (\er\en) with LF (\en) on stdin.
-By default it will not replace anything and takes
-what is entered (usually CRLF on windows and LF
-on unix).
+\fB\-C\fR lf, \fB\-\-crlf\fR lf
+Specify, 'lf', 'crlf' or 'cr' to always force replacing
+line endings for input and outout accordingly. By
+default it will not replace anything and takes what is
+entered (usually CRLF on Windows, LF on Linux and some
+times CR on MacOS).
 .TP
 \fB\-n\fR, \fB\-\-nodns\fR
 Do not resolve DNS.
