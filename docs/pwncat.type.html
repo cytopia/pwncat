@@ -15,12 +15,12 @@
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
 <th class="summary summary-precision">6.34% imprecise</th>
-<th class="summary summary-lines">2825 LOC</th>
+<th class="summary summary-lines">2824 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
 <td class="summary summary-precision">6.34% imprecise</td>
-<td class="summary summary-lines">2825 LOC</td>
+<td class="summary summary-lines">2824 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2859,7 +2859,6 @@
 <span id="L2822" class="lineno"><a class="lineno" href="#L2822">2822</a></span>
 <span id="L2823" class="lineno"><a class="lineno" href="#L2823">2823</a></span>
 <span id="L2824" class="lineno"><a class="lineno" href="#L2824">2824</a></span>
-<span id="L2825" class="lineno"><a class="lineno" href="#L2825">2825</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5881,9 +5880,8 @@ Explicit (x1)">                [TransformLinefeed(DsTransformLinefeed(args.crlf)
 <span class="line-any" title="Any Types on this line: 
 Explicit (x5)">        if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:</span>
 <span class="line-precise" title="No Anys on this line!">            run.add_timer(</span>
-<span class="line-precise" title="No Anys on this line!">                "PING",</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *("\x00")),  # send data</span>
+Explicit (x5)">                "PING", DsRunnerTimer(net.consumer, ssig, args.ping_intvl, *("\x00")),  # send data</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
