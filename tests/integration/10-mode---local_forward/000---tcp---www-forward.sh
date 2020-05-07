@@ -95,8 +95,8 @@ run_test() {
 		printf ""
 	fi
 	test_case_instance_is_running "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-	wait_for_data_transferred "^Content-Type:" "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
-	wait_for_data_transferred "^Set-Cookie:" "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
+	wait_for_data_transferred "^Content-Type:" "" "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
+	wait_for_data_transferred "^Set-Cookie:" "" "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
 	test_case_instance_has_no_errors "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 	action_stop_instance "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
@@ -113,8 +113,8 @@ run_test() {
 		printf ""
 	fi
 	test_case_instance_is_running "Client-2" "${cli_pid}" "${cli2_stdout}" "${cli2_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-	wait_for_data_transferred "^Content-Type:" "" "Client-2" "${cli_pid}" "${cli2_stdout}" "${cli2_stderr}"
-	wait_for_data_transferred "^Set-Cookie:" "" "Client-1" "${cli_pid}" "${cli2_stdout}" "${cli2_stderr}"
+	wait_for_data_transferred "^Content-Type:" "" "" "Client-2" "${cli_pid}" "${cli2_stdout}" "${cli2_stderr}"
+	wait_for_data_transferred "^Set-Cookie:" "" "" "Client-1" "${cli_pid}" "${cli2_stdout}" "${cli2_stderr}"
 	test_case_instance_has_no_errors "Client-2" "${cli_pid}" "${cli2_stdout}" "${cli2_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 	action_stop_instance "Client-2" "${cli_pid}" "${cli2_stdout}" "${cli2_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
@@ -131,8 +131,8 @@ run_test() {
 		printf ""
 	fi
 	test_case_instance_is_running "Client-3" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-	wait_for_data_transferred "^Content-Type:" "" "Client-3" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}"
-	wait_for_data_transferred "^Set-Cookie:" "" "Client-1" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}"
+	wait_for_data_transferred "^Content-Type:" "" "" "Client-3" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}"
+	wait_for_data_transferred "^Set-Cookie:" "" "" "Client-1" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}"
 	test_case_instance_has_no_errors "Client-3" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 	action_stop_instance "Client-3" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 

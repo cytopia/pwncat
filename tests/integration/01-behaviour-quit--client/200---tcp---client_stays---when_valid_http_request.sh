@@ -68,7 +68,7 @@ run_test() {
 	print_h2 "(2/4) Transfer: Client -> Google -> Client"
 
 	# [CLIENT] -> [GOOGLE] -> CLIENT]
-	wait_for_data_transferred "^Set-Cookie:" "" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	wait_for_data_transferred "^Set-Cookie:" "" "" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------

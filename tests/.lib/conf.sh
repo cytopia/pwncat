@@ -518,16 +518,20 @@ tmp_file() {
 wait_for_data_transferred() {
 	local expect_regex="${1}"
 	local expect_data="${2}"
+	# If not empty, will be OR'ed with expect_data. This is useful/required
+	# to overcome different newlines on OS \n vs \r\n. So when not testing against
+	# newlines, we will OR the data to ignore newline changes.
+	local expect_data_or="${3}"
 
-	local recv_name="${3}"
-	local recv_pid="${4}"
-	local recv_file_stdout="${5}"
-	local recv_file_stderr="${6}"
+	local recv_name="${4}"
+	local recv_pid="${5}"
+	local recv_file_stdout="${6}"
+	local recv_file_stderr="${7}"
 
-	local send_name="${7:-}"
-	local send_pid="${8:-}"
-	local send_file_stdout="${9:-}"
-	local send_file_stderr="${10:-}"
+	local send_name="${8:-}"
+	local send_pid="${9:-}"
+	local send_file_stdout="${10:-}"
+	local send_file_stderr="${11:-}"
 
 	# ASSERTS
 	if [ -n "${send_name}" ]; then
@@ -575,9 +579,73 @@ wait_for_data_transferred() {
 			sleep 1
 		echo
 		done
-	# 2/2 Check against exact match of expected vs received
+	# 2/3 Check against exact match or exact other match of expected vs received (\r\n vs \n)
+	elif [ -n "${expect_data_or}" ]; then
+	# 3/3 Check against exact match of expected vs received
+		# shellcheck disable=SC2059
+		while ! diff  \
+			<(printf "${expect_data}" | od -c) \
+			<(od -c "${recv_file_stdout}") >/dev/null \
+			&& ! diff \
+			<(printf "${expect_data_or}" | od -c) \
+			<(od -c "${recv_file_stdout}") >/dev/null; do
+			printf "."
+			cnt=$(( cnt + 1 ))
+			if [ "${cnt}" -gt "${retry}" ]; then
+				echo
+				if [ -n "${send_name}" ]; then
+					print_file "SENDER] [${send_name}] - [/dev/stdout" "${send_file_stdout}"
+					print_file "SENDER] [${send_name}] - [/dev/stderr" "${send_file_stderr}"
+				fi
+				print_file "RECVER] [${recv_name}] - [/dev/stderr" "${recv_file_stderr}"
+				echo
+				print_data_raw "EXPCT1] [${recv_name}] - [RAW" "${expect_data}" 1
+				print_data_raw "EXPCT2] [${recv_name}] - [RAW" "${expect_data_or}" 1
+				print_file_raw "RECVER] [${recv_name}] - [RAW" "${recv_file_stdout}" 1
+				echo
+				print_data_raw "EXPCT1] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+				print_data_raw "EXPCT2] [${recv_name}] - [HEX" "$( printf "${expect_data_or}" | od -c )"
+				print_data_raw "RECVER] [${recv_name}] - [HEX" "$( od -c "${recv_file_stdout}" )"
+				# Show some diff's
+				echo '---------- diff <(printf expect | od -c) <(cat file_stdout | od -c) ----------'
+				# shellcheck disable=SC2002
+				diff <(printf "${expect_data}" | od -c) <(cat "${recv_file_stdout}" | od -c) || true
+
+				echo '---------- diff <(printf expect_or | od -c) <(cat file_stdout | od -c) ----------'
+				# shellcheck disable=SC2002
+				diff <(printf "${expect_data_or}" | od -c) <(cat "${recv_file_stdout}" | od -c) || true
+
+				echo '---------- diff <(printf expect | od -c) <(od -c file_stdout) ----------'
+				diff <(printf "${expect_data}" | od -c) <(od -c "${recv_file_stdout}") || true
+
+				echo '---------- diff <(printf expect_or | od -c) <(od -c file_stdout) ----------'
+				diff <(printf "${expect_data_or}" | od -c) <(od -c "${recv_file_stdout}") || true
+
+				echo '---------- diff <(printf expect) file_stdout ----------'
+				diff <(printf "${expect_data}") "${recv_file_stdout}" || true
+
+				echo '---------- diff <(printf expect_or) file_stdout ----------'
+				diff <(printf "${expect_data_or}") "${recv_file_stdout}" || true
+
+				echo
+				if [ -n "${send_name}" ]; then
+					print_error "[Receive Error] Received data on ${recv_name} does not match send data from ${send_name}."
+				else
+					print_error "[Receive Error] Received data on ${recv_name} does not match expected data."
+				fi
+				kill_pid "${send_pid}" || true
+				kill_pid "${recv_pid}" || true
+				exit 1
+			fi
+			sleep 1
+		done
+		print_data_raw "EXPCT1] [${recv_name}] - [RAW" "${expect_data}" 1
+		print_data_raw "EXPCT2] [${recv_name}] - [RAW" "${expect_data_or}" 1
+		# shellcheck disable=SC2059
+		print_data_raw "EXPCT1] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+		print_data_raw "EXPCT2] [${recv_name}] - [HEX" "$( printf "${expect_data_or}" | od -c )"
+		echo
 	else
-		# TODO: Might have to diff without od -c
 		# shellcheck disable=SC2059
 		while ! diff  \
 			<(printf "${expect_data}" | od -c) \
@@ -622,7 +690,6 @@ wait_for_data_transferred() {
 		# shellcheck disable=SC2059
 		print_data_raw "EXPECT] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
 		echo
-
 	fi
 	print_file     "RECVER] [${recv_name}] - [/dev/stderr" "${recv_file_stderr}"
 	print_file_raw "RECVER] [${recv_name}] received - [RAW" "${recv_file_stdout}" 1

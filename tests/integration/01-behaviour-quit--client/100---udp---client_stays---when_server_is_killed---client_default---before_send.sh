@@ -38,6 +38,7 @@ run_test() {
 	local curr_round="${5}"
 	local total_round="${6}"
 	#local data=
+	#local data_or=
 
 	print_h1 "[ROUND: ${curr_round}/${total_round}] (mutation: ${curr_mutation}/${total_mutation}) Starting Test Round (srv '${srv_opts}' vs cli '${cli_opts}')"
 	run "sleep 1"
@@ -45,7 +46,8 @@ run_test() {
 	###
 	### Create data and files
 	###
-	#data='abcdefghijklmnopqrstuvwxyz1234567890'
+	#data="abcdefghijklmnopqrstuvwxyz1234567890\\n"
+	#data="abcdefghijklmnopqrstuvwxyz1234567890\\r\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"

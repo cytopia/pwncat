@@ -110,7 +110,7 @@ run_test() {
 	print_h2 "(3/4) Transfer: Client -> Server"
 
 	# [CLIENT -> SERVER]
-	wait_for_data_transferred "" "${expect}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	wait_for_data_transferred "" "${expect}" "" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------

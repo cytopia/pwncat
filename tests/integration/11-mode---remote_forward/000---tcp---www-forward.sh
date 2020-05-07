@@ -97,8 +97,8 @@ run_test() {
 		printf ""
 	fi
 	test_case_instance_is_running "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-	wait_for_data_transferred "^Content-Type:" "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
-	wait_for_data_transferred "^Set-Cookie:"   "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
+	wait_for_data_transferred "^Content-Type:" "" "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
+	wait_for_data_transferred "^Set-Cookie:"   "" "" "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}"
 	test_case_instance_has_no_errors "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 	action_stop_instance "Client-1" "${cli_pid}" "${cli1_stdout}" "${cli1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
@@ -115,8 +115,8 @@ run_test() {
 		printf ""
 	fi
 	test_case_instance_is_running "Listener-1" "${cli_pid}" "${lis1_stdout}" "${lis1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-	wait_for_data_transferred "^Content-Type:" "" "Listener-1" "${cli_pid}" "${lis1_stdout}" "${lis1_stderr}"
-	wait_for_data_transferred "^Set-Cookie:"   "" "Listener-1" "${cli_pid}" "${lis1_stdout}" "${lis1_stderr}"
+	wait_for_data_transferred "^Content-Type:" "" "" "Listener-1" "${cli_pid}" "${lis1_stdout}" "${lis1_stderr}"
+	wait_for_data_transferred "^Set-Cookie:"   "" "" "Listener-1" "${cli_pid}" "${lis1_stdout}" "${lis1_stderr}"
 	test_case_instance_has_no_errors "Listener-1" "${cli_pid}" "${lis1_stdout}" "${lis1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 	action_stop_instance "Listener-1" "${cli_pid}" "${lis1_stdout}" "${lis1_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
@@ -133,8 +133,8 @@ run_test() {
 		printf ""
 	fi
 	test_case_instance_is_running "Listener-2" "${cli_pid}" "${lis2_stdout}" "${lis2_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-	wait_for_data_transferred "^Content-Type:" "" "Listener-2" "${cli_pid}" "${lis2_stdout}" "${lis2_stderr}"
-	wait_for_data_transferred "^Set-Cookie:"   "" "Listener-2" "${cli_pid}" "${lis2_stdout}" "${lis2_stderr}"
+	wait_for_data_transferred "^Content-Type:" "" "" "Listener-2" "${cli_pid}" "${lis2_stdout}" "${lis2_stderr}"
+	wait_for_data_transferred "^Set-Cookie:"   "" "" "Listener-2" "${cli_pid}" "${lis2_stdout}" "${lis2_stderr}"
 	test_case_instance_has_no_errors "Listener-2" "${cli_pid}" "${lis2_stdout}" "${lis2_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 	action_stop_instance "Listener-2" "${cli_pid}" "${lis2_stdout}" "${lis2_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 

@@ -47,6 +47,7 @@ run_test() {
 	###
 	data="whoami\\n"
 	expect="$(whoami)\\n"
+	expect_or="$(whoami)\\r\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 
@@ -244,7 +245,7 @@ run_test() {
 	print_h2 "(9/12) Transfer: Client -> Server -> Client (round 3)"
 
 	# [CLIENT -> SERVER -> Client]
-	wait_for_data_transferred "" "${expect}" "Client" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	wait_for_data_transferred "" "${expect}" "${expect_or}" "Client" "${cli_pid}" "${cli3_stdout}" "${cli3_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------

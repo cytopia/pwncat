@@ -38,6 +38,7 @@ run_test() {
 	local curr_round="${5}"
 	local total_round="${6}"
 	local data=
+	local data_or=
 
 	print_h1 "[ROUND: ${curr_round}/${total_round}] (mutation: ${curr_mutation}/${total_mutation}) Starting Test Round (srv '${srv_opts}' vs cli '${cli_opts}')"
 	run "sleep 1"
@@ -46,6 +47,7 @@ run_test() {
 	### Create data and files
 	###
 	data="abcdefghijklmnopqrstuvwxyz1234567890\\n"
+	data_or="abcdefghijklmnopqrstuvwxyz1234567890\\r\\n"
 
 	srv1_stdout="$(tmp_file)"
 	srv1_stderr="$(tmp_file)"
@@ -126,7 +128,7 @@ run_test() {
 	print_h2 "(3/10) Transfer: Client -> Server (round 1)"
 
 	# [CLIENT -> SERVER]
-	wait_for_data_transferred "" "${data}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	wait_for_data_transferred "" "${data}" "${data_or}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -233,7 +235,7 @@ run_test() {
 	print_h2 "(8/10) Transfer: Server -> Client (round 3)"
 
 	# [SERVER -> CLIENT]
-	wait_for_data_transferred "" "${data}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
+	wait_for_data_transferred "" "${data}" "${data_or}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
 
 
 	# --------------------------------------------------------------------------------

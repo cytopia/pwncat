@@ -47,6 +47,7 @@ run_test() {
 	###
 	data="whoami\\n"
 	expect="$(whoami)\\n"
+	expect_or="$(whoami)\\r\\n"
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"
@@ -109,7 +110,7 @@ run_test() {
 	print_h2 "(3/10) Transfer: Client -> Server -> Client (round 1)"
 
 	# [CLIENT -> SERVER -> CLIENT]
-	wait_for_data_transferred "" "${expect}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	wait_for_data_transferred "" "${expect}" "${expect_or}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -171,7 +172,7 @@ run_test() {
 	print_h2 "(7/10) Transfer: Client -> Server -> Client (round 2)"
 
 	# [CLIENT -> SERVER -> CLIENT]
-	wait_for_data_transferred "" "${expect}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	wait_for_data_transferred "" "${expect}" "${expect_or}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------

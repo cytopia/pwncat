@@ -68,7 +68,7 @@ run_test() {
 	print_h2 "(2/3) Transfer: Client -> Google -> Client"
 
 	# [CLIENT] -> [GOOGLE] -> CLIENT]
-	wait_for_data_transferred "Bad Request" "" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	wait_for_data_transferred "Bad Request" "" "" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------
