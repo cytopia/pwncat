@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.36% imprecise</th>
-<th class="summary summary-lines">2815 LOC</th>
+<th class="summary summary-precision">6.34% imprecise</th>
+<th class="summary summary-lines">2825 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.36% imprecise</td>
-<td class="summary summary-lines">2815 LOC</td>
+<td class="summary summary-precision">6.34% imprecise</td>
+<td class="summary summary-lines">2825 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2850,6 +2850,16 @@
 <span id="L2813" class="lineno"><a class="lineno" href="#L2813">2813</a></span>
 <span id="L2814" class="lineno"><a class="lineno" href="#L2814">2814</a></span>
 <span id="L2815" class="lineno"><a class="lineno" href="#L2815">2815</a></span>
+<span id="L2816" class="lineno"><a class="lineno" href="#L2816">2816</a></span>
+<span id="L2817" class="lineno"><a class="lineno" href="#L2817">2817</a></span>
+<span id="L2818" class="lineno"><a class="lineno" href="#L2818">2818</a></span>
+<span id="L2819" class="lineno"><a class="lineno" href="#L2819">2819</a></span>
+<span id="L2820" class="lineno"><a class="lineno" href="#L2820">2820</a></span>
+<span id="L2821" class="lineno"><a class="lineno" href="#L2821">2821</a></span>
+<span id="L2822" class="lineno"><a class="lineno" href="#L2822">2822</a></span>
+<span id="L2823" class="lineno"><a class="lineno" href="#L2823">2823</a></span>
+<span id="L2824" class="lineno"><a class="lineno" href="#L2824">2824</a></span>
+<span id="L2825" class="lineno"><a class="lineno" href="#L2825">2825</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -4504,6 +4514,18 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        while self.__cli_opts.reconn != 0:</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # [1/5] Let's ask the interrupter() function if we should terminate?</span>
+<span class="line-empty" title="No Anys on this line!">            # We need a little wait here in order for the stop signal to propagate.</span>
+<span class="line-empty" title="No Anys on this line!">            # Don't know how fast the other threads are.</span>
+<span class="line-precise" title="No Anys on this line!">            time.sleep(0.1)</span>
+<span class="line-precise" title="No Anys on this line!">            if self.ssig.has_stop():</span>
+<span class="line-precise" title="No Anys on this line!">                return False</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">            # [2/5] Wait</span>
+<span class="line-precise" title="No Anys on this line!">            time.sleep(self.__cli_opts.reconn_wait)</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">            # [3/5] Let's ask the interrupter() function if we should terminate?</span>
+<span class="line-empty" title="No Anys on this line!">            # In case the other threads were slower as the sleep time in [1/5]</span>
+<span class="line-empty" title="No Anys on this line!">            # we will check again here.</span>
 <span class="line-precise" title="No Anys on this line!">            if self.ssig.has_stop():</span>
 <span class="line-precise" title="No Anys on this line!">                return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4517,14 +4539,12 @@ Explicit (x4)">                self.log.info(</span>
 <span class="line-empty" title="No Anys on this line!">            else:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                self.log.info("Reconnecting in %f sec (indefinitely)", self.__cli_opts.reconn_wait)</span>
-<span class="line-empty" title="No Anys on this line!">            # [2/5] Decrease reconnect counter</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">            # [4/5] Decrease reconnect counter</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__cli_opts.reconn &gt; 0:</span>
 <span class="line-precise" title="No Anys on this line!">                self.__cli_opts.reconn -= 1</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">            # [3/5] Wait</span>
-<span class="line-precise" title="No Anys on this line!">            time.sleep(self.__cli_opts.reconn_wait)</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">            # [4/5] Recurse until True or reconnect count is used up</span>
+<span class="line-empty" title="No Anys on this line!">            # [5/5] Recurse until True or reconnect count is used up</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__net.run_client(self.__addr, self.__port):</span>
 <span class="line-precise" title="No Anys on this line!">                return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>

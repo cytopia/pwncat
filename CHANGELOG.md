@@ -9,7 +9,8 @@
 #### Fixed
 - Fixed various bugs with `--reconn`, `--keep-open`, `--local` and `--remote`
 - Fixed various bugs with threads
-- Fixed shutdown behaviour with Ctrl+c
+- Fixed shutdown behaviour with Ctrl+c for --keep-open
+- Fixed shutdown behaviour with Ctrl+c for --reconn
 
 #### Added
 - Python type coverage report

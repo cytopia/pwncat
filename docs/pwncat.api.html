@@ -1593,6 +1593,18 @@ class IONetwork(IO):
         while self.__cli_opts.reconn != 0:
 
             # [1/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # We need a little wait here in order for the stop signal to propagate.
+            # Don&#39;t know how fast the other threads are.
+            time.sleep(0.1)
+            if self.ssig.has_stop():
+                return False
+
+            # [2/5] Wait
+            time.sleep(self.__cli_opts.reconn_wait)
+
+            # [3/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # In case the other threads were slower as the sleep time in [1/5]
+            # we will check again here.
             if self.ssig.has_stop():
                 return False
 
@@ -1604,14 +1616,12 @@ class IONetwork(IO):
                 )
             else:
                 self.log.info(&#34;Reconnecting in %f sec (indefinitely)&#34;, self.__cli_opts.reconn_wait)
-            # [2/5] Decrease reconnect counter
+
+            # [4/5] Decrease reconnect counter
             if self.__cli_opts.reconn &gt; 0:
                 self.__cli_opts.reconn -= 1
 
-            # [3/5] Wait
-            time.sleep(self.__cli_opts.reconn_wait)
-
-            # [4/5] Recurse until True or reconnect count is used up
+            # [5/5] Recurse until True or reconnect count is used up
             if self.__net.run_client(self.__addr, self.__port):
                 return True
 
@@ -5129,6 +5139,18 @@ def producer(self):
         while self.__cli_opts.reconn != 0:
 
             # [1/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # We need a little wait here in order for the stop signal to propagate.
+            # Don&#39;t know how fast the other threads are.
+            time.sleep(0.1)
+            if self.ssig.has_stop():
+                return False
+
+            # [2/5] Wait
+            time.sleep(self.__cli_opts.reconn_wait)
+
+            # [3/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # In case the other threads were slower as the sleep time in [1/5]
+            # we will check again here.
             if self.ssig.has_stop():
                 return False
 
@@ -5140,14 +5162,12 @@ def producer(self):
                 )
             else:
                 self.log.info(&#34;Reconnecting in %f sec (indefinitely)&#34;, self.__cli_opts.reconn_wait)
-            # [2/5] Decrease reconnect counter
+
+            # [4/5] Decrease reconnect counter
             if self.__cli_opts.reconn &gt; 0:
                 self.__cli_opts.reconn -= 1
 
-            # [3/5] Wait
-            time.sleep(self.__cli_opts.reconn_wait)
-
-            # [4/5] Recurse until True or reconnect count is used up
+            # [5/5] Recurse until True or reconnect count is used up
             if self.__net.run_client(self.__addr, self.__port):
                 return True
 
