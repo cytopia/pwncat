@@ -115,7 +115,12 @@ mode arguments:
 <pre class="hi"><code>
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
-  -C, --crlf            Replace LF with CRLF from stdin (default: don't)
+  -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
+                        line endings for input and outout accordingly. Specify
+                        'no' to completely remove any line feeds. By default
+                        it will not replace anything and takes what is entered
+                        (usually CRLF on Windows, LF on Linux and some times
+                        CR on MacOS).
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
@@ -143,7 +148,7 @@ advanced arguments:
 
   --rebind x            Listen mode (TCP and UDP):
                         If the server is unable to bind, it will re-initialize
-                        itself x many times before giving up. Use 0 to re-init
+                        itself x many times before giving up. Use -1 to re-init
                         endlessly. (default: fail after first unsuccessful try).
 
   --rebind-wait s       Listen mode (TCP and UDP):
@@ -160,7 +165,7 @@ advanced arguments:
   --reconn x            Connect mode / Zero-I/O mode (TCP only):
                         If the remote server is not reachable or the connection
                         is interrupted, the client will connect again x many
-                        times before giving up. Use 0 to retry endlessly.
+                        times before giving up. Use -1 to retry endlessly.
                         (default: quit if the remote is not available or the
                         connection was interrupted)
                         This might be handy for stable TCP reverse shells ;-)
@@ -188,7 +193,7 @@ advanced arguments:
                         Note: if --reconn is specified, the connection will be
                         re-opened.
 
-  --udp-ping-init       Connect mode / Zero-I/O mode (UDP only):
+  --ping-init           Connect mode / Zero-I/O mode (TCP and UDP):
                         UDP is a stateless protocol unlike TCP, so no hand-
                         shake communication takes place and the client just
                         sends data to a server without being "accepted" by
@@ -198,31 +203,30 @@ advanced arguments:
                         before the client hasn't send data first. The server
                         simply doesn't know the IP address before an initial
                         connect.
-                        The --udp-ping-init option instructs the client to send
-                        one single initial ping packet to the server, so that it
-                        is able to talk to the client.
+                        The --ping-init option instructs the client to send one
+                        single initial ping packet to the server, so that it is
+                        able to talk to the client.
                         This is the only way to make a UDP reverse shell work.
-                        See --udp-ping-word for what char/string to send as
-                        initial ping packet (default: '\0')
+                        See --ping-word for what char/string to send as initial
+                        ping packet (default: '\0')
 
-  --udp-ping-intvl s    Connect mode / Zero-I/O mode (UDP only):
-                        Instruct the UDP client to send ping intervalls every
-                        s seconds. This allows you to restart your UDP server
-                        and just wait for the client to report back in.
-                        This might be handy for stable UDP reverse shells ;-)
-                        See --udp-ping-word for what char/string to send as
-                        initial ping packet (default: '\0')
+  --ping-intvl s        Connect mode / Zero-I/O mode (TCP and UDP):
+                        Instruct the client to send ping intervalls every s sec.
+                        This allows you to restart your UDP server and just wait
+                        for the client to report back in. This might be handy
+                        for stable UDP reverse shells ;-)
+                        See --ping-word for what char/string to send as initial
+                        ping packet (default: '\0')
 
-  --udp-ping-word str   Connect mode / Zero-I/O mode (UDP only):
+  --ping-word str       Connect mode / Zero-I/O mode (TCP and UDP):
                         Change the default character '\0' to use for upd ping.
                         Single character or strings are supported.
 
-  --udp-ping-robin port
-                        Zero-I/O mode (UDP only):
-                        Instruct the UDP client to shuffle the specified ports
-                        in round-robin mode for a remote server to ping.
+  --ping-robin port     Connect mode / Zero-I/O mode (TCP and UDP):
+                        Instruct the client to shuffle the specified ports in
+                        round-robin mode for a remote server to ping.
                         This might be handy to scan outbound allowed ports.
-                        Use --udp-ping-intvl 0 to be faster.
+                        Use --ping-intvl 0 to be faster.
 
   --safe-word str       All modes:
                         If pwncat is started with this argument, it will shut

@@ -20,6 +20,7 @@ jobs:
       matrix:
         version:
           - '2.7'
+          - '3.5'
           - '3.6'
           - '3.7'
           - '3.8'
@@ -29,14 +30,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@master
 
-      - name: Make build
+      - name: Build source distribution
         run: |
-          make build VERSION=${version}
+          make _build-source_dist PYTHON_VERSION=${version}
         env:
           version: ${{ matrix.version }}
 
-      - name: Make dist
+      - name: Build binary distribution
         run: |
-          make dist VERSION=${version}
+          make _build-binary_dist PYTHON_VERSION=${version}
+        env:
+          version: ${{ matrix.version }}
+
+      - name: Build Python package
+        run: |
+          make _build-python_package PYTHON_VERSION=${version}
         env:
           version: ${{ matrix.version }}

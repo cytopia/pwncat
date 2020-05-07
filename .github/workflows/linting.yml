@@ -27,20 +27,24 @@ jobs:
 
       - name: Lint files
         run: |
-          make lint-files
+          make _lint-files
 
-      - name: Check consistent version
+      - name: "Check equal version in CHANGELOG.md, setup.py and pwncat -v"
         run: |
-          make version
+          make _lint-version
 
-      - name: Check consistent Usage in Readme
+      - name: "Check equal usage in README.md and pwncat -h"
         run: |
-          make lint-usage
+          make _lint-usage
 
       - name: Check up-to-date docs
         run: |
-          make lint-docs
+          make _lint-docs
 
       - name: Check up-to-date man page
         run: |
-          make lint-man
+          make _lint-man
+
+      - name: Check up-to-date GitHub Action workflow pipelines
+        run: |
+          make _lint-pipeline

@@ -1,12 +1,16 @@
 # Tests
 
 
-## Filenames
+## [Integration](integration/)
 
-Test files start with the following numbers:
+These are integration tests run on every operating system against every Python version.
 
-* `0xx`: Reserved for future
-* `1xx`: Testing Behaviour (socket, auto-shutdown, etc)
-* `2xx`: Testing Basics
-* `3xx`: Testing Options
-* `4xx`: Testing modes
+
+## [Smoke](smoke/)
+
+Dockerized smoke tests (yet to be implemented).
+
+
+## [Pipelines](pipelines/)
+
+Scripts to generate GitHub Action workflow pipelines.

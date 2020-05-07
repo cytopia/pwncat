@@ -1,0 +1,38 @@
+---
+# https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions
+# https://github.com/actions/python-versions/blob/master/versions-manifest.json
+name: smoke-3.5
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+
+    name: "[smoke] python-3.5"
+    steps:
+      # ------------------------------------------------------------
+      # Setup
+      # ------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # ------------------------------------------------------------
+      # Tests: Behaviour
+      # ------------------------------------------------------------
+
+      - name: "[keep-open] before send"
+        shell: bash
+        run: |
+          make _smoke-keep_open-before_send PYTHON_VERSION=3.5
+
+      - name: "[keep-open] after client sends"
+        shell: bash
+        run: |
+          make _smoke-keep_open-after_client_send PYTHON_VERSION=3.5

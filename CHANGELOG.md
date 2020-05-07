@@ -4,6 +4,27 @@
 ## Unreleased
 
 
+## Release 0.0.11-alpha
+
+#### Fixed
+- Fixed various bugs with `--reconn`, `--keep-open`, `--local` and `--remote`
+- Fixed various bugs with threads
+- Fixed shutdown behaviour with Ctrl+c for --keep-open
+- Fixed shutdown behaviour with Ctrl+c for --reconn
+
+#### Added
+- Feature: Custom ping word (`--ping-word`): #49
+- Python type coverage report
+- CI: Added ca. 13,000 LoC integration tests and fixed findings accordingly
+- CI: Added dockerized interactive tests to simulate Ctrl+c
+
+#### Changed
+- Code: really heavy heavy code refactoring
+- Option: `-C`/`--crlf` now takes an argument to either force LF, CRLF or CR or even remove line feeds altogether on input AND output (or keep as it is, if not specified)
+- Modularized code for better plugin integration
+- Fixes #47 Change `--udp-*` options to `--*` to allow both, UDP and TCP
+
+
 ## Release 0.0.10-alpha
 
 #### Added

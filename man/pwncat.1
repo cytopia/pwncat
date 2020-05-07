@@ -67,8 +67,13 @@ target machine via the positional arguments.
 \fB\-e\fR cmd, \fB\-\-exec\fR cmd
 Execute shell command. Only for connect or listen mode.
 .TP
-\fB\-C\fR, \fB\-\-crlf\fR
-Replace LF with CRLF from stdin (default: don't)
+\fB\-C\fR lf, \fB\-\-crlf\fR lf
+Specify, 'lf', 'crlf' or 'cr' to always force replacing
+line endings for input and outout accordingly. Specify
+\&'no' to completely remove any line feeds. By default
+it will not replace anything and takes what is entered
+(usually CRLF on Windows, LF on Linux and some times
+CR on MacOS).
 .TP
 \fB\-n\fR, \fB\-\-nodns\fR
 Do not resolve DNS.
@@ -106,7 +111,7 @@ disconnected or the connection is unterrupted otherwise.
 \fB\-\-rebind\fR x
 Listen mode (TCP and UDP):
 If the server is unable to bind, it will re\-initialize
-itself x many times before giving up. Use 0 to re\-init
+itself x many times before giving up. Use \fB\-1\fR to re\-init
 endlessly. (default: fail after first unsuccessful try).
 .TP
 \fB\-\-rebind\-wait\fR s
@@ -126,7 +131,7 @@ This option requires \fB\-\-rebind\fR to be specified.
 Connect mode / Zero\-I/O mode (TCP only):
 If the remote server is not reachable or the connection
 is interrupted, the client will connect again x many
-times before giving up. Use 0 to retry endlessly.
+times before giving up. Use \fB\-1\fR to retry endlessly.
 (default: quit if the remote is not available or the
 connection was interrupted)
 This might be handy for stable TCP reverse shells ;\-)
@@ -157,8 +162,8 @@ will exit. (default: wait forever).
 Note: if \fB\-\-reconn\fR is specified, the connection will be
 re\-opened.
 .TP
-\fB\-\-udp\-ping\-init\fR
-Connect mode / Zero\-I/O mode (UDP only):
+\fB\-\-ping\-init\fR
+Connect mode / Zero\-I/O mode (TCP and UDP):
 UDP is a stateless protocol unlike TCP, so no handshake communication takes place and the client just
 sends data to a server without being "accepted" by
 the server first.
@@ -167,33 +172,33 @@ connect to, is unable to send any data to the client,
 before the client hasn't send data first. The server
 simply doesn't know the IP address before an initial
 connect.
-The \fB\-\-udp\-ping\-init\fR option instructs the client to send
-one single initial ping packet to the server, so that it
-is able to talk to the client.
+The \fB\-\-ping\-init\fR option instructs the client to send one
+single initial ping packet to the server, so that it is
+able to talk to the client.
 This is the only way to make a UDP reverse shell work.
-See \fB\-\-udp\-ping\-word\fR for what char/string to send as
-initial ping packet (default: '\e0')
+See \fB\-\-ping\-word\fR for what char/string to send as initial
+ping packet (default: '\e0')
 .TP
-\fB\-\-udp\-ping\-intvl\fR s
-Connect mode / Zero\-I/O mode (UDP only):
-Instruct the UDP client to send ping intervalls every
-s seconds. This allows you to restart your UDP server
-and just wait for the client to report back in.
-This might be handy for stable UDP reverse shells ;\-)
-See \fB\-\-udp\-ping\-word\fR for what char/string to send as
-initial ping packet (default: '\e0')
+\fB\-\-ping\-intvl\fR s
+Connect mode / Zero\-I/O mode (TCP and UDP):
+Instruct the client to send ping intervalls every s sec.
+This allows you to restart your UDP server and just wait
+for the client to report back in. This might be handy
+for stable UDP reverse shells ;\-)
+See \fB\-\-ping\-word\fR for what char/string to send as initial
+ping packet (default: '\e0')
 .TP
-\fB\-\-udp\-ping\-word\fR str
-Connect mode / Zero\-I/O mode (UDP only):
+\fB\-\-ping\-word\fR str
+Connect mode / Zero\-I/O mode (TCP and UDP):
 Change the default character '\e0' to use for upd ping.
 Single character or strings are supported.
 .TP
-\fB\-\-udp\-ping\-robin\fR port
-Zero\-I/O mode (UDP only):
-Instruct the UDP client to shuffle the specified ports
-in round\-robin mode for a remote server to ping.
+\fB\-\-ping\-robin\fR port
+Connect mode / Zero\-I/O mode (TCP and UDP):
+Instruct the client to shuffle the specified ports in
+round\-robin mode for a remote server to ping.
 This might be handy to scan outbound allowed ports.
-Use \fB\-\-udp\-ping\-intvl\fR 0 to be faster.
+Use \fB\-\-ping\-intvl\fR 0 to be faster.
 .TP
 \fB\-\-safe\-word\fR str
 All modes:
