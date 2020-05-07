@@ -55,7 +55,7 @@
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=black"><img src="https://github.com/cytopia/pwncat/workflows/black/badge.svg" /></a></td>
       </tr>
       <tr>
-       <td><a href="https://github.com/python/mypy">mypy</a> <sup>[1]</sup></td>
+       <td><a href="https://github.com/python/mypy">mypy</a> <sup><small>[1]</small></sup></td>
        <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mypy"><img src="https://github.com/cytopia/pwncat/workflows/mypy/badge.svg" /></a></td>
       </tr>
       <tr>
@@ -81,7 +81,7 @@
        <th><sub>Python</sub><sup>OS</sup></th>
        <th>Linux</th>
        <th>MacOS</th>
-       <th>Windows</th>
+       <th>Windows <sup><small>[2]</small></sup></th>
       </tr>
      </thead>
      <tbody>
@@ -122,7 +122,8 @@
  </tbody>
 <table>
 
-> <sup><a href="https://cytopia.github.io/pwncat/pwncat.type.html">[1] mypy type coverage</a> <strong>(fully typed: 93.66%)</strong></sup>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.66%)</strong></sup><br/>
+> <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
 #### Motivation
