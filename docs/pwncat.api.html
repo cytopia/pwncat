@@ -3004,7 +3004,7 @@ def main():
     # Run server
     if args.listen:
         net = IONetwork(ssig, enc, host, ports, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
-        run = Runner(PSEStore(ssig, net))
+        run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
@@ -3032,7 +3032,7 @@ def main():
         net = IONetwork(
             ssig, enc, host, ports + args.reconn_robin, &#34;client&#34;, srv_opts, cli_opts, sock_opts
         )
-        run = Runner(PSEStore(ssig, net))
+        run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
@@ -3699,7 +3699,7 @@ accidentally by other input.
     # Run server
     if args.listen:
         net = IONetwork(ssig, enc, host, ports, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
-        run = Runner(PSEStore(ssig, net))
+        run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
@@ -3727,7 +3727,7 @@ accidentally by other input.
         net = IONetwork(
             ssig, enc, host, ports + args.reconn_robin, &#34;client&#34;, srv_opts, cli_opts, sock_opts
         )
-        run = Runner(PSEStore(ssig, net))
+        run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(

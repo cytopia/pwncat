@@ -6282,7 +6282,7 @@ Explicit (x2)">        net_cli_r = IONetwork(ssig, enc, host, ports, "client", s
 Explicit (x1)">    if args.listen:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">        net = IONetwork(ssig, enc, host, ports, "server", srv_opts, cli_opts, sock_opts)</span>
-<span class="line-precise" title="No Anys on this line!">        run = Runner(PSEStore(ssig, net))</span>
+<span class="line-precise" title="No Anys on this line!">        run = Runner(PSEStore(ssig, [net]))</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>
 <span class="line-precise" title="No Anys on this line!">            DsRunnerAction(</span>
@@ -6313,7 +6313,7 @@ Explicit (x1)">                code_send,</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            ssig, enc, host, ports + args.reconn_robin, "client", srv_opts, cli_opts, sock_opts</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
-<span class="line-precise" title="No Anys on this line!">        run = Runner(PSEStore(ssig, net))</span>
+<span class="line-precise" title="No Anys on this line!">        run = Runner(PSEStore(ssig, [net]))</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>
 <span class="line-precise" title="No Anys on this line!">            DsRunnerAction(</span>
