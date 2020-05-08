@@ -1,7 +1,7 @@
 """PSE module pack data into a HTTP POST request."""
 
 
-def transform(data):
+def transform(data, pse):
     """The transformer function."""
     param = "payload"
     body = param + "=" + data

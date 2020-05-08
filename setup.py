@@ -6,8 +6,8 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pwncat",
-    version="0.0.13-alpha",
-    description="Netcat on steroids with Firewall and IPS evasion, bind and reverse shell, port-forwarding and scripting engine (PSE).",
+    version="0.0.14-alpha",
+    description="Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell and port forwarding magic - and its  fully scriptable with Python (PSE).",
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",

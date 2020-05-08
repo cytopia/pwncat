@@ -35,9 +35,10 @@
 # 3. Network
 # 4. Transformer
 # 5. IO modules
-# 6. IO Runner
-# 7. Command line arguments
-# 8. Main entrypoint
+# 6. PSE Store
+# 7. IO Runner
+# 8. Command line arguments
+# 9. Main entrypoint
 #
 # How does it work?
 # ------------------------------------
@@ -115,7 +116,7 @@ if os.name != &#34;nt&#34;:
 
 APPNAME = &#34;pwncat&#34;
 APPREPO = &#34;https://github.com/cytopia/pwncat&#34;
-VERSION = &#34;0.0.13-alpha&#34;
+VERSION = &#34;0.0.14-alpha&#34;
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -181,7 +182,7 @@ class DsRunnerAction(object):
     @property
     def code(self):
         # type: () -&gt; Optional[Union[str, bytes, CodeType]]
-        &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data) -&gt; str` function.&#34;&#34;&#34;
+        &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data, pse) -&gt; str` function.&#34;&#34;&#34;
         return self.__code
 
     # --------------------------------------------------------------------------
@@ -1888,13 +1889,88 @@ class IOCommand(IO):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   6 / 8   P L U G I N   R U N N E R
+# ###   6 / 9   P S E   S T O R E
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [6/8 IO RUNNER]: (1/1) Runner
+# [6/9 PSE]: (1/1) PSEStore
+# -------------------------------------------------------------------------------------------------
+class PSEStore(object):
+    &#34;&#34;&#34;Pwncats Scripting Engine store to persist and exchange data for send/recv scripts.
+
+    The same instance of this class will be available to your send and receive scripts
+    that allow you to exchange data or manipulate themselves. You even have access to the
+    currently used instance of the networking class to manipulate the active socket.
+    As well as to the logger and StopSignal instances.
+    &#34;&#34;&#34;
+
+    @property
+    def messages(self):
+        # type: () -&gt; Dict[str, List[str]]
+        &#34;&#34;&#34;`Dict[str, List[str]]`: Stores sent and received messages by its thread name.&#34;&#34;&#34;
+        return self.__messages
+
+    @messages.setter
+    def messages(self, value):
+        # type: (Dict[str, List[str]]) -&gt; None
+        self.__messages = value
+
+    @property
+    def store(self):
+        # type: () -&gt; Any
+        &#34;&#34;&#34;`Any`: Custom data store to be used in PSE scripts to persist your data between calls.&#34;&#34;&#34;
+        return self.__store
+
+    @store.setter
+    def store(self, value):
+        # type: (Any) -&gt; None
+        self.__store = value
+
+    @property
+    def ssig(self):
+        # type: () -&gt; StopSignal
+        &#34;&#34;&#34;`StopSignal`: Instance of Logging.logger class.&#34;&#34;&#34;
+        return self.__ssig
+
+    @property
+    def net(self):
+        # type: () -&gt; List[IONetwork]
+        &#34;&#34;&#34;`IONetwork`: List of active IONetwork instances (client or server).&#34;&#34;&#34;
+        return self.__net
+
+    @property
+    def log(self):
+        # type: () -&gt; logging.Logger
+        &#34;&#34;&#34;`Logging.logger`: Instance of Logging.logger class.&#34;&#34;&#34;
+        return self.__log
+
+    def __init__(self, ssig, net):
+        # type: (StopSignal, List[IONetwork]) -&gt; None
+        &#34;&#34;&#34;Instantiate the PSE class.
+
+        Args:
+            ssig (StopSignal): Instance of the StopSignal class to force a shutdown.
+            net (IONetwork): Instance of the current network class to manipulate the socket.
+        &#34;&#34;&#34;
+        self.__messages = {}
+        self.__store = None
+        self.__ssig = ssig
+        self.__net = net
+        self.__log = logging.getLogger(__name__)
+
+
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   7 / 9   R U N N E R
+# ###
+# #################################################################################################
+# #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# [7/9 IO RUNNER]: (1/1) Runner
 # -------------------------------------------------------------------------------------------------
 class Runner(object):
     &#34;&#34;&#34;Runner class that takes care about putting everything into threads.&#34;&#34;&#34;
@@ -1902,9 +1978,13 @@ class Runner(object):
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self):
-        # type: () -&gt; None
-        &#34;&#34;&#34;Create a new Runner object.&#34;&#34;&#34;
+    def __init__(self, pse):
+        # type: (PSEStore) -&gt; None
+        &#34;&#34;&#34;Create a new Runner object.
+
+        Args:
+            pse (PSEStore): Pwncat Scripting Engine store.
+        &#34;&#34;&#34;
         self.log = logging.getLogger(__name__)
 
         # Dict of producer/consumer action to run in a thread.
@@ -1919,6 +1999,8 @@ class Runner(object):
         # The name is based on the __actions name
         # {&#34;name&#34;: &#34;&lt;thread&gt;&#34;}
         self.__threads = {}  # type: Dict[str, threading.Thread]
+
+        self.__pse = pse
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -1979,10 +2061,17 @@ class Runner(object):
                 # [2/3] Apply custom user-supplied code transformations
                 if code is not None:
                     self.log.debug(
-                        &#34;[%s] Executing user supplied transform(data) -&gt; data function&#34;, name
+                        &#34;[%s] Executing user supplied transform(data, pse) -&gt; data function&#34;, name
                     )
+                    pse = self.__pse
+                    # Add current message to PSE store
+                    if name in self.__pse.messages:
+                        self.__pse.messages[name] = self.__pse.messages[name] + [data]
+                    else:
+                        self.__pse.messages[name] = [data]
+                    # Execute script code
                     exec(code, {}, locals())  # pylint: disable=exec-used
-                    data = locals()[&#34;transform&#34;](data)
+                    data = locals()[&#34;transform&#34;](data, pse)
 
                     self.log.trace(  # type: ignore
                         &#34;[%s] Producer data after user supplied transformer: %s&#34;, name, repr(data)
@@ -2099,13 +2188,13 @@ class Runner(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   7 / 8   C O M M A N D   L I N E   A R G U M E N T S
+# ###   8 / 9   C O M M A N D   L I N E   A R G U M E N T S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [7/8 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
+# [8/9 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
 # -------------------------------------------------------------------------------------------------
 def get_version():
     # type: () -&gt; str
@@ -2318,7 +2407,7 @@ def _args_check_mutually_exclusive(parser, args):
 
 
 # -------------------------------------------------------------------------------------------------
-# [7/8 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
+# [8/9 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
 # -------------------------------------------------------------------------------------------------
 def get_args():
     # type: () -&gt; argparse.Namespace
@@ -2487,7 +2576,7 @@ transformer function which will be executed before
 sending data to a remote endpoint. Your file must
 contain the exact following function which will:
 be applied as the transformer:
-def transform(data):
+def transform(data, pse):
     # NOTE: the function name must be &#39;transform&#39;
     # NOTE: the function param name must be &#39;data&#39;
     # NOTE: indentation must be 4 spaces
@@ -2511,7 +2600,7 @@ transformer function which will be executed after
 receiving data from a remote endpoint. Your file must
 contain the exact following function which will:
 be applied as the transformer:
-def transform(data):
+def transform(data, pse):
     # NOTE: the function name must be &#39;transform&#39;
     # NOTE: the function param name must be &#39;data&#39;
     # NOTE: indentation must be 4 spaces
@@ -2764,13 +2853,13 @@ accidentally by other input.
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   8 / 8   M A I N   E N T R Y P O I N T
+# ###   9 / 9   M A I N   E N T R Y P O I N T
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [8/8 MAIN ENTRYPOINT]: (1/2) main
+# [9/9 MAIN ENTRYPOINT]: (1/2) main
 # -------------------------------------------------------------------------------------------------
 def main():
     # type: () -&gt; None
@@ -2856,7 +2945,7 @@ def main():
         net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner()
+        run = Runner(PSEStore(ssig, [net_srv, net_cli]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -2890,7 +2979,7 @@ def main():
         net_cli_l = IONetwork(ssig, enc, lhost, [lport], &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         net_cli_r = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner()
+        run = Runner(PSEStore(ssig, [net_cli_l, net_cli_r]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -2915,7 +3004,7 @@ def main():
     # Run server
     if args.listen:
         net = IONetwork(ssig, enc, host, ports, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
-        run = Runner()
+        run = Runner(PSEStore(ssig, net))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
@@ -2943,7 +3032,7 @@ def main():
         net = IONetwork(
             ssig, enc, host, ports + args.reconn_robin, &#34;client&#34;, srv_opts, cli_opts, sock_opts
         )
-        run = Runner()
+        run = Runner(PSEStore(ssig, net))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
@@ -2973,7 +3062,7 @@ def main():
 
 
 # -------------------------------------------------------------------------------------------------
-# [8/8 MAIN ENTRYPOINT]: (2/2) start
+# [9/9 MAIN ENTRYPOINT]: (2/2) start
 # -------------------------------------------------------------------------------------------------
 if __name__ == &#34;__main__&#34;:
     # Catch Ctrl+c and exit without error message
@@ -3167,7 +3256,7 @@ transformer function which will be executed before
 sending data to a remote endpoint. Your file must
 contain the exact following function which will:
 be applied as the transformer:
-def transform(data):
+def transform(data, pse):
     # NOTE: the function name must be &#39;transform&#39;
     # NOTE: the function param name must be &#39;data&#39;
     # NOTE: indentation must be 4 spaces
@@ -3191,7 +3280,7 @@ transformer function which will be executed after
 receiving data from a remote endpoint. Your file must
 contain the exact following function which will:
 be applied as the transformer:
-def transform(data):
+def transform(data, pse):
     # NOTE: the function name must be &#39;transform&#39;
     # NOTE: the function param name must be &#39;data&#39;
     # NOTE: indentation must be 4 spaces
@@ -3551,7 +3640,7 @@ accidentally by other input.
         net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner()
+        run = Runner(PSEStore(ssig, [net_srv, net_cli]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -3585,7 +3674,7 @@ accidentally by other input.
         net_cli_l = IONetwork(ssig, enc, lhost, [lport], &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         net_cli_r = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner()
+        run = Runner(PSEStore(ssig, [net_cli_l, net_cli_r]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -3610,7 +3699,7 @@ accidentally by other input.
     # Run server
     if args.listen:
         net = IONetwork(ssig, enc, host, ports, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
-        run = Runner()
+        run = Runner(PSEStore(ssig, net))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
@@ -3638,7 +3727,7 @@ accidentally by other input.
         net = IONetwork(
             ssig, enc, host, ports + args.reconn_robin, &#34;client&#34;, srv_opts, cli_opts, sock_opts
         )
-        run = Runner()
+        run = Runner(PSEStore(ssig, net))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
@@ -4314,7 +4403,7 @@ def input_timeout(self):
     @property
     def code(self):
         # type: () -&gt; Optional[Union[str, bytes, CodeType]]
-        &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data) -&gt; str` function.&#34;&#34;&#34;
+        &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data, pse) -&gt; str` function.&#34;&#34;&#34;
         return self.__code
 
     # --------------------------------------------------------------------------
@@ -4339,7 +4428,7 @@ def input_timeout(self):
 <dl>
 <dt id="pwncat.DsRunnerAction.code"><code class="name">var <span class="ident">code</span></code></dt>
 <dd>
-<div class="desc"><p><code>ast.AST</code>: custom Python code which provides a <code>transform(data) -&gt; str</code> function.</p></div>
+<div class="desc"><p><code>ast.AST</code>: custom Python code which provides a <code>transform(data, pse) -&gt; str</code> function.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4347,7 +4436,7 @@ def input_timeout(self):
 <pre><code class="python">@property
 def code(self):
     # type: () -&gt; Optional[Union[str, bytes, CodeType]]
-    &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data) -&gt; str` function.&#34;&#34;&#34;
+    &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data, pse) -&gt; str` function.&#34;&#34;&#34;
     return self.__code</code></pre>
 </details>
 </dd>
@@ -5781,12 +5870,177 @@ callback that writes to stdout.</p>
 </li>
 </ul>
 </dd>
+<dt id="pwncat.PSEStore"><code class="flex name class">
+<span>class <span class="ident">PSEStore</span></span>
+<span>(</span><span>ssig, net)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pwncats Scripting Engine store to persist and exchange data for send/recv scripts.</p>
+<p>The same instance of this class will be available to your send and receive scripts
+that allow you to exchange data or manipulate themselves. You even have access to the
+currently used instance of the networking class to manipulate the active socket.
+As well as to the logger and StopSignal instances.</p>
+<p>Instantiate the PSE class.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ssig</code></strong> :&ensp;<code><a title="pwncat.StopSignal" href="#pwncat.StopSignal">StopSignal</a></code></dt>
+<dd>Instance of the StopSignal class to force a shutdown.</dd>
+<dt><strong><code>net</code></strong> :&ensp;<code><a title="pwncat.IONetwork" href="#pwncat.IONetwork">IONetwork</a></code></dt>
+<dd>Instance of the current network class to manipulate the socket.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PSEStore(object):
+    &#34;&#34;&#34;Pwncats Scripting Engine store to persist and exchange data for send/recv scripts.
+
+    The same instance of this class will be available to your send and receive scripts
+    that allow you to exchange data or manipulate themselves. You even have access to the
+    currently used instance of the networking class to manipulate the active socket.
+    As well as to the logger and StopSignal instances.
+    &#34;&#34;&#34;
+
+    @property
+    def messages(self):
+        # type: () -&gt; Dict[str, List[str]]
+        &#34;&#34;&#34;`Dict[str, List[str]]`: Stores sent and received messages by its thread name.&#34;&#34;&#34;
+        return self.__messages
+
+    @messages.setter
+    def messages(self, value):
+        # type: (Dict[str, List[str]]) -&gt; None
+        self.__messages = value
+
+    @property
+    def store(self):
+        # type: () -&gt; Any
+        &#34;&#34;&#34;`Any`: Custom data store to be used in PSE scripts to persist your data between calls.&#34;&#34;&#34;
+        return self.__store
+
+    @store.setter
+    def store(self, value):
+        # type: (Any) -&gt; None
+        self.__store = value
+
+    @property
+    def ssig(self):
+        # type: () -&gt; StopSignal
+        &#34;&#34;&#34;`StopSignal`: Instance of Logging.logger class.&#34;&#34;&#34;
+        return self.__ssig
+
+    @property
+    def net(self):
+        # type: () -&gt; List[IONetwork]
+        &#34;&#34;&#34;`IONetwork`: List of active IONetwork instances (client or server).&#34;&#34;&#34;
+        return self.__net
+
+    @property
+    def log(self):
+        # type: () -&gt; logging.Logger
+        &#34;&#34;&#34;`Logging.logger`: Instance of Logging.logger class.&#34;&#34;&#34;
+        return self.__log
+
+    def __init__(self, ssig, net):
+        # type: (StopSignal, List[IONetwork]) -&gt; None
+        &#34;&#34;&#34;Instantiate the PSE class.
+
+        Args:
+            ssig (StopSignal): Instance of the StopSignal class to force a shutdown.
+            net (IONetwork): Instance of the current network class to manipulate the socket.
+        &#34;&#34;&#34;
+        self.__messages = {}
+        self.__store = None
+        self.__ssig = ssig
+        self.__net = net
+        self.__log = logging.getLogger(__name__)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pwncat.PSEStore.log"><code class="name">var <span class="ident">log</span></code></dt>
+<dd>
+<div class="desc"><p><code>Logging.logger</code>: Instance of Logging.logger class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def log(self):
+    # type: () -&gt; logging.Logger
+    &#34;&#34;&#34;`Logging.logger`: Instance of Logging.logger class.&#34;&#34;&#34;
+    return self.__log</code></pre>
+</details>
+</dd>
+<dt id="pwncat.PSEStore.messages"><code class="name">var <span class="ident">messages</span></code></dt>
+<dd>
+<div class="desc"><p><code>Dict[str, List[str]]</code>: Stores sent and received messages by its thread name.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def messages(self):
+    # type: () -&gt; Dict[str, List[str]]
+    &#34;&#34;&#34;`Dict[str, List[str]]`: Stores sent and received messages by its thread name.&#34;&#34;&#34;
+    return self.__messages</code></pre>
+</details>
+</dd>
+<dt id="pwncat.PSEStore.net"><code class="name">var <span class="ident">net</span></code></dt>
+<dd>
+<div class="desc"><p><code><a title="pwncat.IONetwork" href="#pwncat.IONetwork">IONetwork</a></code>: List of active IONetwork instances (client or server).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def net(self):
+    # type: () -&gt; List[IONetwork]
+    &#34;&#34;&#34;`IONetwork`: List of active IONetwork instances (client or server).&#34;&#34;&#34;
+    return self.__net</code></pre>
+</details>
+</dd>
+<dt id="pwncat.PSEStore.ssig"><code class="name">var <span class="ident">ssig</span></code></dt>
+<dd>
+<div class="desc"><p><code><a title="pwncat.StopSignal" href="#pwncat.StopSignal">StopSignal</a></code>: Instance of Logging.logger class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ssig(self):
+    # type: () -&gt; StopSignal
+    &#34;&#34;&#34;`StopSignal`: Instance of Logging.logger class.&#34;&#34;&#34;
+    return self.__ssig</code></pre>
+</details>
+</dd>
+<dt id="pwncat.PSEStore.store"><code class="name">var <span class="ident">store</span></code></dt>
+<dd>
+<div class="desc"><p><code>Any</code>: Custom data store to be used in PSE scripts to persist your data between calls.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def store(self):
+    # type: () -&gt; Any
+    &#34;&#34;&#34;`Any`: Custom data store to be used in PSE scripts to persist your data between calls.&#34;&#34;&#34;
+    return self.__store</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="pwncat.Runner"><code class="flex name class">
 <span>class <span class="ident">Runner</span></span>
+<span>(</span><span>pse)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runner class that takes care about putting everything into threads.</p>
-<p>Create a new Runner object.</p></div>
+<p>Create a new Runner object.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pse</code></strong> :&ensp;<code><a title="pwncat.PSEStore" href="#pwncat.PSEStore">PSEStore</a></code></dt>
+<dd>Pwncat Scripting Engine store.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5797,9 +6051,13 @@ callback that writes to stdout.</p>
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self):
-        # type: () -&gt; None
-        &#34;&#34;&#34;Create a new Runner object.&#34;&#34;&#34;
+    def __init__(self, pse):
+        # type: (PSEStore) -&gt; None
+        &#34;&#34;&#34;Create a new Runner object.
+
+        Args:
+            pse (PSEStore): Pwncat Scripting Engine store.
+        &#34;&#34;&#34;
         self.log = logging.getLogger(__name__)
 
         # Dict of producer/consumer action to run in a thread.
@@ -5814,6 +6072,8 @@ callback that writes to stdout.</p>
         # The name is based on the __actions name
         # {&#34;name&#34;: &#34;&lt;thread&gt;&#34;}
         self.__threads = {}  # type: Dict[str, threading.Thread]
+
+        self.__pse = pse
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -5874,10 +6134,17 @@ callback that writes to stdout.</p>
                 # [2/3] Apply custom user-supplied code transformations
                 if code is not None:
                     self.log.debug(
-                        &#34;[%s] Executing user supplied transform(data) -&gt; data function&#34;, name
+                        &#34;[%s] Executing user supplied transform(data, pse) -&gt; data function&#34;, name
                     )
+                    pse = self.__pse
+                    # Add current message to PSE store
+                    if name in self.__pse.messages:
+                        self.__pse.messages[name] = self.__pse.messages[name] + [data]
+                    else:
+                        self.__pse.messages[name] = [data]
+                    # Execute script code
                     exec(code, {}, locals())  # pylint: disable=exec-used
-                    data = locals()[&#34;transform&#34;](data)
+                    data = locals()[&#34;transform&#34;](data, pse)
 
                     self.log.trace(  # type: ignore
                         &#34;[%s] Producer data after user supplied transformer: %s&#34;, name, repr(data)
@@ -6091,10 +6358,17 @@ callback that writes to stdout.</p>
             # [2/3] Apply custom user-supplied code transformations
             if code is not None:
                 self.log.debug(
-                    &#34;[%s] Executing user supplied transform(data) -&gt; data function&#34;, name
+                    &#34;[%s] Executing user supplied transform(data, pse) -&gt; data function&#34;, name
                 )
+                pse = self.__pse
+                # Add current message to PSE store
+                if name in self.__pse.messages:
+                    self.__pse.messages[name] = self.__pse.messages[name] + [data]
+                else:
+                    self.__pse.messages[name] = [data]
+                # Execute script code
                 exec(code, {}, locals())  # pylint: disable=exec-used
-                data = locals()[&#34;transform&#34;](data)
+                data = locals()[&#34;transform&#34;](data, pse)
 
                 self.log.trace(  # type: ignore
                     &#34;[%s] Producer data after user supplied transformer: %s&#34;, name, repr(data)
@@ -7837,6 +8111,16 @@ def transform(self, data):
 <li><code><a title="pwncat.IOStdinStdout.consumer" href="#pwncat.IOStdinStdout.consumer">consumer</a></code></li>
 <li><code><a title="pwncat.IOStdinStdout.interrupt" href="#pwncat.IOStdinStdout.interrupt">interrupt</a></code></li>
 <li><code><a title="pwncat.IOStdinStdout.producer" href="#pwncat.IOStdinStdout.producer">producer</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="pwncat.PSEStore" href="#pwncat.PSEStore">PSEStore</a></code></h4>
+<ul class="">
+<li><code><a title="pwncat.PSEStore.log" href="#pwncat.PSEStore.log">log</a></code></li>
+<li><code><a title="pwncat.PSEStore.messages" href="#pwncat.PSEStore.messages">messages</a></code></li>
+<li><code><a title="pwncat.PSEStore.net" href="#pwncat.PSEStore.net">net</a></code></li>
+<li><code><a title="pwncat.PSEStore.ssig" href="#pwncat.PSEStore.ssig">ssig</a></code></li>
+<li><code><a title="pwncat.PSEStore.store" href="#pwncat.PSEStore.store">store</a></code></li>
 </ul>
 </li>
 <li>

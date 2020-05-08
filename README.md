@@ -25,7 +25,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall and IDS/IPS evasion, bind and reverse shell, port forwarding magic and scripting engine ([PSE](pse/)).
+> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.54%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.57%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -218,7 +218,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 
 | Feature        | Description |
 |----------------|-------------|
-| [PSE](pse)     | pwncat scripting engine to apply custom Python scripts for sent and/or received data |
+| [PSE](pse)     | Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive |
 | Bind shell     | Create bind shells |
 | Reverse shell  | Create reverse shells |
 | Port Forward   | Local and remote port forward (Proxy server/client) |
@@ -412,7 +412,7 @@ advanced arguments:
                         sending data to a remote endpoint. Your file must
                         contain the exact following function which will:
                         be applied as the transformer:
-                        def transform(data):
+                        def transform(data, pse):
                             # NOTE: the function name must be 'transform'
                             # NOTE: the function param name must be 'data'
                             # NOTE: indentation must be 4 spaces
@@ -429,7 +429,7 @@ advanced arguments:
                         receiving data from a remote endpoint. Your file must
                         contain the exact following function which will:
                         be applied as the transformer:
-                        def transform(data):
+                        def transform(data, pse):
                             # NOTE: the function name must be 'transform'
                             # NOTE: the function param name must be 'data'
                             # NOTE: indentation must be 4 spaces
@@ -772,17 +772,19 @@ after receiving data.
 
 #### How it works
 
-You will simply need to provide a Python file with the following function:
+You will simply need to provide a Python file with the following entrypoint function:
 ```python
-def transform(data):
+def transform(data, pse):
     # Example to reverse a string
     return data[::-1]
 ```
-Both, the function name must be named `transform` and the parsed argument name must be `data`.
+Both, the function name must be named `transform` and the parsed arguments must be named `data` and `pse`.
 Other than that you can add as much code as you like. Each instance of `pwncat` can take two scripts:
 
 1. `--script-send`: script will be applied before sending
 2. `--script-recv`: script will be applied after receiving
+
+See [here](pse) for API and more details
 
 
 #### Example 1: Self-built asymmetric encryption

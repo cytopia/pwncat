@@ -101,7 +101,7 @@ transformer function which will be executed before
 sending data to a remote endpoint. Your file must
 contain the exact following function which will:
 be applied as the transformer:
-def transform(data):
+def transform(data, pse):
 .TP
 # NOTE: the function name must be 'transform'
 # NOTE: the function param name must be 'data'
@@ -121,7 +121,7 @@ transformer function which will be executed after
 receiving data from a remote endpoint. Your file must
 contain the exact following function which will:
 be applied as the transformer:
-def transform(data):
+def transform(data, pse):
 .TP
 # NOTE: the function name must be 'transform'
 # NOTE: the function param name must be 'data'
