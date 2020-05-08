@@ -629,7 +629,9 @@ class ColoredLogFormatter(logging.Formatter):
             return "%(levelname)s [%(threadName)s]: %(message)s"
         # In lower than debug logging we will add even more info to all log formats
         if self.loglevel < logging.DEBUG:
-            return "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
+            return (
+                "%(asctime)s %(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"
+            )
         # By default, we will only add basic info
         return "%(levelname)s: %(message)s"
 
