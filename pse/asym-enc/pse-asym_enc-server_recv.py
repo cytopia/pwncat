@@ -1,7 +1,7 @@
 """PSE module to shift the ASCII number by -14."""
 
 
-def transform(data):
+def transform(data, pse):
     """The transformer function."""
     __PSE_ASYM_ENC_SERVER_RECV_SHIFT = 14
 

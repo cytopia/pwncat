@@ -4,6 +4,14 @@
 ## Unreleased
 
 
+## Release 0.0.14-alpha
+
+#### Added
+- Added feature: Made `PSEStore` instance available to all PSE scripts to persist data, interacti with sockets, stop signal and logger
+- Added chat-bot PSE
+- Added documentation for PSE API
+
+
 ## Release 0.0.13-alpha
 
 #### Added

@@ -1,7 +1,7 @@
 """PSE module unpack data from a HTTP POST request."""
 
 
-def transform(data):
+def transform(data, pse):
     """The transformer function."""
     param = "payload"
     pos = data.find(param + "=")
