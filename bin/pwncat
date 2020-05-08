@@ -2480,6 +2480,7 @@ You can also define as many custom functions or classes
 within this file, but ensure to prefix them uniquely to
 not collide with pwncat's function or classes, as the
 file will be called with exec().
+
 """,
     )
     advanced.add_argument(
