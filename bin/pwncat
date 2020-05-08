@@ -88,7 +88,7 @@ if os.name != "nt":
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.12-alpha"
+VERSION = "0.0.13-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -1449,7 +1449,7 @@ class IONetwork(IO):
         ssig,  # type: StopSignal
         encoder,  # type: StringEncoder
         host,  # type: str
-        port,  # type: int
+        ports,  # type: List[int]
         role,  # type: str
         srv_opts,  # type: DsIONetworkSrv
         cli_opts,  # type: DsIONetworkCli
@@ -1462,7 +1462,7 @@ class IONetwork(IO):
             ssig (StopSignal): Stop signal instance
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
             host (str): The hostname to resolve.
-            port (int): The port of the hostname to resolve.
+            ports ([int]): List of ports to connect to or listen on.
             role (str): Either "server" or "client".
             srv_opts (DsIONetworkSrv):   Options for the server.
             cli_opts (DsIONetworkCli):   Options for the client.
@@ -1478,19 +1478,20 @@ class IONetwork(IO):
         self.__cli_opts = cli_opts
 
         try:
-            addr = self.__net.gethostbyname(host, port)
+            addr = self.__net.gethostbyname(host, ports[0])
         except socket.gaierror:
             sys.exit(1)
 
         # Internally store addresses for reconn or rebind functions
         self.__addr = addr
-        self.__port = port
+        self.__ports = ports
+        self.__pport = 0  # pointer to the current port
 
         if role == "server":
-            if not self.__net.run_server(addr, port):
+            if not self.__net.run_server(self.__addr, self.__ports[self.__pport]):
                 sys.exit(1)
         if role == "client":
-            if not self.__net.run_client(addr, port):
+            if not self.__net.run_client(self.__addr, self.__ports[self.__pport]):
                 if not self.__client_reconnect_to_server():
                     sys.exit(1)
 
@@ -1581,37 +1582,49 @@ class IONetwork(IO):
         # reconn > 0 (reconnect until counter reaches zero)
         while self.__cli_opts.reconn != 0:
 
-            # [1/5] Let's ask the interrupter() function if we should terminate?
+            # [1/6] Let's ask the interrupter() function if we should terminate?
             # We need a little wait here in order for the stop signal to propagate.
             # Don't know how fast the other threads are.
-            time.sleep(0.1)
-            if self.ssig.has_stop():
-                return False
+            # time.sleep(0.1)
+            # if self.ssig.has_stop():
+            #     return False
 
-            # [2/5] Wait
+            # [2/6] Wait
             time.sleep(self.__cli_opts.reconn_wait)
 
-            # [3/5] Let's ask the interrupter() function if we should terminate?
+            # [3/6] Let's ask the interrupter() function if we should terminate?
             # In case the other threads were slower as the sleep time in [1/5]
             # we will check again here.
             if self.ssig.has_stop():
                 return False
 
+            # [4/6] Increment the port numer (if --reconn-robin has multiple)
+            self.__pport += 1
+            if self.__pport == len(self.__ports):
+                self.__pport = 0
+
             if self.__cli_opts.reconn > 0:
                 self.log.info(
-                    "Reconnecting in %f sec (%d more times left)",
+                    "Reconnecting to %s:%d in %.1f sec (%d more times left)",
+                    self.__addr,
+                    self.__ports[self.__pport],
                     self.__cli_opts.reconn_wait,
                     self.__cli_opts.reconn,
                 )
             else:
-                self.log.info("Reconnecting in %f sec (indefinitely)", self.__cli_opts.reconn_wait)
+                self.log.info(
+                    "Reconnecting to %s:%d in %.1f sec (indefinitely)",
+                    self.__addr,
+                    self.__ports[self.__pport],
+                    self.__cli_opts.reconn_wait,
+                )
 
-            # [4/5] Decrease reconnect counter
+            # [5/6] Decrease reconnect counter
             if self.__cli_opts.reconn > 0:
                 self.__cli_opts.reconn -= 1
 
-            # [5/5] Recurse until True or reconnect count is used up
-            if self.__net.run_client(self.__addr, self.__port):
+            # [6/6] Recurse until True or reconnect count is used up
+            if self.__net.run_client(self.__addr, self.__ports[self.__pport]):
                 return True
 
         # [5/5] Signal failure
@@ -2149,7 +2162,6 @@ def _args_check_robin_ports(value):
             )
         ports = []
         for port in range(ranges[0], ranges[1] + 1):
-            print(type(port))
             _args_check_port(str(port))
             ports.append(port)
         return ports
@@ -2738,7 +2750,7 @@ def main():
     """Run the program."""
     args = get_args()
     host = args.hostname
-    port = args.port
+    ports = [args.port]
 
     # Set pwncat options
     sock_opts = DsIONetworkSock(
@@ -2814,8 +2826,8 @@ def main():
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
         # Create listen and client instances
-        net_srv = IONetwork(ssig, enc, lhost, lport, "server", srv_opts, cli_opts, sock_opts)
-        net_cli = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net_srv = IONetwork(ssig, enc, lhost, [lport], "server", srv_opts, cli_opts, sock_opts)
+        net_cli = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -2848,8 +2860,8 @@ def main():
         lhost = args.remote.split(":")[0]
         lport = int(args.remote.split(":")[1])
         # Create local and remote client
-        net_cli_l = IONetwork(ssig, enc, lhost, lport, "client", srv_opts, cli_opts, sock_opts)
-        net_cli_r = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net_cli_l = IONetwork(ssig, enc, lhost, [lport], "client", srv_opts, cli_opts, sock_opts)
+        net_cli_r = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -2875,7 +2887,7 @@ def main():
         run.run()
     # Run server
     if args.listen:
-        net = IONetwork(ssig, enc, host, port, "server", srv_opts, cli_opts, sock_opts)
+        net = IONetwork(ssig, enc, host, ports, "server", srv_opts, cli_opts, sock_opts)
         run = Runner()
         run.add_action(
             "RECV",
@@ -2901,7 +2913,9 @@ def main():
 
     # Run client
     else:
-        net = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)
+        net = IONetwork(
+            ssig, enc, host, ports + args.reconn_robin, "client", srv_opts, cli_opts, sock_opts
+        )
         run = Runner()
         run.add_action(
             "RECV",

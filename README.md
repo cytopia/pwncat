@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.51%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.54%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -223,14 +223,15 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Reverse shell  | Create reverse shells |
 | Port Forward   | Local and remote port forward (Proxy server/client) |
 | <kbd>Ctrl</kbd>+<kbd>c</kbd> | Reverse shell can reconnect if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> |
-| Detect Egress  | Scan and report open egress ports on the target |
-| Evade FW       | Evade egress firewalls by round-robin outgoing ports |
-| Evade IPS      | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts |
+| Detect Egress  | Scan and report open egress ports on the target (port hopping) |
+| Evade FW       | Evade egress firewalls by round-robin outgoing ports (port hopping) |
+| Evade IPS      | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping) |
 | UDP rev shell  | Try this with the traditional `netcat` |
 | TCP / UDP      | Full TCP and UDP support |
-| Python 2+3     | Works with Python 2 and Python 3 |
-| Cross OS       | Should work on Linux, MacOS and Windows as long as Python is available |
+| Python 2+3     | Works with Python 2, Python 3, pypy2 and pypy3 |
+| Cross OS       | Work on Linux, MacOS and Windows as long as Python is available |
 | Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
+| Portable       | Single file which only uses core packages - no external dependencies required. |
 
 
 ### Feature comparison matrix
@@ -263,7 +264,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Proxy               | :x:    | ✔       | ✔   |
 | UDP reverse shell   | ✔      | :x:     | :x: |
 | Respawning client   | ✔      | :x:     | :x: |
-| Port hopping        | *      | :x:     | :x: |
+| Port hopping        | ✔      | :x:     | :x: |
 | Emergency shutdown  | ✔      | :x:     | :x: |
 
 > <sup>`*` Feature is currently under development.
