@@ -102,7 +102,8 @@ ABC = ABCMeta(&#34;ABC&#34;, (object,), {&#34;__slots__&#34;: ()})
 
 # Only used with mypy for static source code analysis
 if os.environ.get(&#34;MYPY_CHECK&#34;, False):
-    from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple
+    from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union
+    from types import CodeType
 
 # TODO: Find windows import
 if os.name != &#34;nt&#34;:
@@ -114,7 +115,7 @@ if os.name != &#34;nt&#34;:
 
 APPNAME = &#34;pwncat&#34;
 APPREPO = &#34;https://github.com/cytopia/pwncat&#34;
-VERSION = &#34;0.0.11-alpha&#34;
+VERSION = &#34;0.0.12-alpha&#34;
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -173,9 +174,15 @@ class DsRunnerAction(object):
 
     @property
     def transformers(self):
-        # type: () -&gt; List[Callable[[str], str]]
+        # type: () -&gt; List[Transform]
         &#34;&#34;&#34;`[Transform.transformer]`: List of transformer functions applied before consumer.&#34;&#34;&#34;
         return self.__transformers
+
+    @property
+    def code(self):
+        # type: () -&gt; Optional[Union[str, bytes, CodeType]]
+        &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data) -&gt; str` function.&#34;&#34;&#34;
+        return self.__code
 
     # --------------------------------------------------------------------------
     # Contrcutor
@@ -185,13 +192,15 @@ class DsRunnerAction(object):
         producer,  # type: Callable[[], Iterator[str]]
         consumer,  # type: Callable[[str], None]
         interrupts,  # type: List[Callable[[], None]]
-        transformers,  # type: List[Callable[[str], str]]
+        transformers,  # type: List[Transform]
+        code,  # type: Optional[Union[str, bytes, CodeType]]
     ):
         # type: (...) -&gt; None
         self.__producer = producer
         self.__consumer = consumer
         self.__interrupts = interrupts
         self.__transformers = transformers
+        self.__code = code
 
 
 # -------------------------------------------------------------------------------------------------
@@ -674,16 +683,17 @@ class StringEncoder(object):
     classes or functions as strings to keep full Python 2/3 compat.
     &#34;&#34;&#34;
 
-    # https://stackoverflow.com/questions/606191/27527728#27527728
-    codec = &#34;cp437&#34;
-
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
     def __init__(self):
         # type: () -&gt; None
         &#34;&#34;&#34;Create a StringEncoder instance which converts str/bytes according to Python version.&#34;&#34;&#34;
-        self.py3 = sys.version_info &gt;= (3, 0)  # type: bool
+        self.__py3 = sys.version_info &gt;= (3, 0)  # type: bool
+
+        # https://stackoverflow.com/questions/606191/27527728#27527728
+        self.__codec = &#34;cp437&#34;
+        self.__fallback = &#34;latin-1&#34;
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -691,15 +701,19 @@ class StringEncoder(object):
     def encode(self, data):
         # type: (str) -&gt; bytes
         &#34;&#34;&#34;Convert string into a byte type for Python3.&#34;&#34;&#34;
-        if self.py3:
-            return data.encode(self.codec)
+        if self.__py3:
+            try:
+                return data.encode(self.__codec)
+            except UnicodeEncodeError:
+                # TODO: Add logging
+                return data.encode(self.__fallback)
         return data  # type: ignore
 
     def decode(self, data):
         # type: (bytes) -&gt; str
         &#34;&#34;&#34;Convert bytes into a string type for Python3.&#34;&#34;&#34;
-        if self.py3:
-            return data.decode(self.codec)
+        if self.__py3:
+            return data.decode(self.__codec)
         return data  # type: ignore
 
 
@@ -1923,6 +1937,7 @@ class Runner(object):
             producer,  # type: Callable[[], str]
             consumer,  # type: Callable[[str], None]
             transformers,  # type: List[Transform]
+            code,  # type: Optional[Union[str, bytes, CodeType]]
         ):
             # type: (...) -&gt; None
             &#34;&#34;&#34;Producer/consumer run function to be thrown into a thread.
@@ -1932,13 +1947,33 @@ class Runner(object):
                 producer (function): A generator function which yields data.
                 consumer (function): A callback which consumes data from the generator.
                 transformers ([function]): List of transformer functions applied before consumer.
+                code (ast.AST): User-supplied python code with a transform(data) -&gt; str function.
             &#34;&#34;&#34;
             self.log.trace(&#34;[%s] Producer Start&#34;, name)  # type: ignore
             for data in producer():
                 self.log.trace(&#34;[%s] Producer received: %s&#34;, name, repr(data))  # type: ignore
-                # Transform data before sending it to the consumer
+
+                # [1/3] Transform data before sending it to the consumer
                 for transformer in transformers:
                     data = transformer.transform(data)
+                if transformers:
+                    self.log.trace(  # type: ignore
+                        &#34;[%s] Producer data after transformers: %s&#34;, name, repr(data)
+                    )
+
+                # [2/3] Apply custom user-supplied code transformations
+                if code is not None:
+                    self.log.debug(
+                        &#34;[%s] Executing user supplied transform(data) -&gt; data function&#34;, name
+                    )
+                    exec(code, {}, locals())  # pylint: disable=exec-used
+                    data = locals()[&#34;transform&#34;](data)
+
+                    self.log.trace(  # type: ignore
+                        &#34;[%s] Producer data after user supplied transformer: %s&#34;, name, repr(data)
+                    )
+
+                # [3/3] Consume it
                 consumer(data)
             self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
@@ -1978,6 +2013,7 @@ class Runner(object):
                     self.__actions[key].producer,
                     self.__actions[key].consumer,
                     self.__actions[key].transformers,
+                    self.__actions[key].code,
                 ),
             )
             thread.daemon = False
@@ -2079,6 +2115,17 @@ def _args_check_color(value):
     if value not in [&#34;auto&#34;, &#34;always&#34;, &#34;never&#34;]:
         raise argparse.ArgumentTypeError(&#34;%s is an invalid color definition&#34; % value)
     return value
+
+
+def _args_check_script(value):
+    # type: (str) -&gt; str
+    if not os.path.isfile(value):
+        raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
+
+    fhandle = open(value, mode=&#34;r&#34;)
+    script = fhandle.read()
+    fhandle.close()
+    return script
 
 
 def _args_check_port(value):
@@ -2416,6 +2463,54 @@ color on Windows by default. (default: auto)
     )
 
     advanced.add_argument(
+        &#34;--script-send&#34;,
+        metavar=&#34;file&#34;,
+        default=None,
+        type=_args_check_script,
+        help=&#34;&#34;&#34;All modes (TCP and UDP):
+A Python scripting engine to define your own custom
+transformer function which will be executed before
+sending data to a remote endpoint. Your file must
+contain the exact following function which will:
+be applied as the transformer:
+def transform(data):
+    # NOTE: the function name must be &#39;transform&#39;
+    # NOTE: the function param name must be &#39;data&#39;
+    # NOTE: indentation must be 4 spaces
+    # ... your transformations goes here
+    return data
+You can also define as many custom functions or classes
+within this file, but ensure to prefix them uniquely to
+not collide with pwncat&#39;s function or classes, as the
+file will be called with exec().
+
+&#34;&#34;&#34;,
+    )
+    advanced.add_argument(
+        &#34;--script-recv&#34;,
+        metavar=&#34;file&#34;,
+        default=None,
+        type=_args_check_script,
+        help=&#34;&#34;&#34;All modes (TCP and UDP):
+A Python scripting engine to define your own custom
+transformer function which will be executed after
+receiving data from a remote endpoint. Your file must
+contain the exact following function which will:
+be applied as the transformer:
+def transform(data):
+    # NOTE: the function name must be &#39;transform&#39;
+    # NOTE: the function param name must be &#39;data&#39;
+    # NOTE: indentation must be 4 spaces
+    # ... your transformations goes here
+    return data
+You can also define as many custom functions or classes
+within this file, but ensure to prefix them uniquely to
+not collide with pwncat&#39;s function or classes, as the
+file will be called with exec().
+
+&#34;&#34;&#34;,
+    )
+    advanced.add_argument(
         &#34;--http&#34;,
         action=&#34;store_true&#34;,
         default=False,
@@ -2713,8 +2808,21 @@ def main():
     # Initialize encoder
     enc = StringEncoder()
 
-    # initialize StopSignal
+    # Initialize StopSignal
     ssig = StopSignal()
+
+    # Initialize transformers
+    transformers = []
+    if args.crlf is not None:
+        transformers.append(TransformLinefeed(DsTransformLinefeed(args.crlf)))
+
+    # Initialize scripting engine transformers
+    code_send = None
+    code_recv = None
+    if args.script_send is not None:
+        code_send = compile(args.script_send, &#34;&lt;script-send&gt;&#34;, &#34;exec&#34;)
+    if args.script_recv is not None:
+        code_recv = compile(args.script_recv, &#34;&lt;script-recv&gt;&#34;, &#34;exec&#34;)
 
     # Use command modulde
     if args.cmd:
@@ -2741,7 +2849,8 @@ def main():
                 net_srv.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
-                [],
+                transformers,
+                None,
             ),
         )
         run.add_action(
@@ -2750,7 +2859,8 @@ def main():
                 net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                None,
             ),
         )
         run.run()
@@ -2773,7 +2883,8 @@ def main():
                 net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                None,
             ),
         )
         run.add_action(
@@ -2782,7 +2893,8 @@ def main():
                 net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                None,
             ),
         )
         run.run()
@@ -2796,7 +2908,8 @@ def main():
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_recv,
             ),
         )
         run.add_action(
@@ -2805,7 +2918,8 @@ def main():
                 mod.producer,
                 net.consumer,  # send data
                 [mod.interrupt],  # Externally stop the produer itself
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_send,
             ),
         )
         run.run()
@@ -2820,7 +2934,8 @@ def main():
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_recv,
             ),
         )
         run.add_action(
@@ -2829,12 +2944,14 @@ def main():
                 mod.producer,
                 net.consumer,  # send data
                 [net.interrupt, mod.interrupt],  # Externally stop the produer itself
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_send,
             ),
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
-                &#34;PING&#34;, DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),
+                &#34;PING&#34;,
+                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
             )
         run.run()
 
@@ -3023,6 +3140,54 @@ color on Windows by default. (default: auto)
 &#34;&#34;&#34;,
     )
 
+    advanced.add_argument(
+        &#34;--script-send&#34;,
+        metavar=&#34;file&#34;,
+        default=None,
+        type=_args_check_script,
+        help=&#34;&#34;&#34;All modes (TCP and UDP):
+A Python scripting engine to define your own custom
+transformer function which will be executed before
+sending data to a remote endpoint. Your file must
+contain the exact following function which will:
+be applied as the transformer:
+def transform(data):
+    # NOTE: the function name must be &#39;transform&#39;
+    # NOTE: the function param name must be &#39;data&#39;
+    # NOTE: indentation must be 4 spaces
+    # ... your transformations goes here
+    return data
+You can also define as many custom functions or classes
+within this file, but ensure to prefix them uniquely to
+not collide with pwncat&#39;s function or classes, as the
+file will be called with exec().
+
+&#34;&#34;&#34;,
+    )
+    advanced.add_argument(
+        &#34;--script-recv&#34;,
+        metavar=&#34;file&#34;,
+        default=None,
+        type=_args_check_script,
+        help=&#34;&#34;&#34;All modes (TCP and UDP):
+A Python scripting engine to define your own custom
+transformer function which will be executed after
+receiving data from a remote endpoint. Your file must
+contain the exact following function which will:
+be applied as the transformer:
+def transform(data):
+    # NOTE: the function name must be &#39;transform&#39;
+    # NOTE: the function param name must be &#39;data&#39;
+    # NOTE: indentation must be 4 spaces
+    # ... your transformations goes here
+    return data
+You can also define as many custom functions or classes
+within this file, but ensure to prefix them uniquely to
+not collide with pwncat&#39;s function or classes, as the
+file will be called with exec().
+
+&#34;&#34;&#34;,
+    )
     advanced.add_argument(
         &#34;--http&#34;,
         action=&#34;store_true&#34;,
@@ -3336,8 +3501,21 @@ accidentally by other input.
     # Initialize encoder
     enc = StringEncoder()
 
-    # initialize StopSignal
+    # Initialize StopSignal
     ssig = StopSignal()
+
+    # Initialize transformers
+    transformers = []
+    if args.crlf is not None:
+        transformers.append(TransformLinefeed(DsTransformLinefeed(args.crlf)))
+
+    # Initialize scripting engine transformers
+    code_send = None
+    code_recv = None
+    if args.script_send is not None:
+        code_send = compile(args.script_send, &#34;&lt;script-send&gt;&#34;, &#34;exec&#34;)
+    if args.script_recv is not None:
+        code_recv = compile(args.script_recv, &#34;&lt;script-recv&gt;&#34;, &#34;exec&#34;)
 
     # Use command modulde
     if args.cmd:
@@ -3364,7 +3542,8 @@ accidentally by other input.
                 net_srv.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
-                [],
+                transformers,
+                None,
             ),
         )
         run.add_action(
@@ -3373,7 +3552,8 @@ accidentally by other input.
                 net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                None,
             ),
         )
         run.run()
@@ -3396,7 +3576,8 @@ accidentally by other input.
                 net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                None,
             ),
         )
         run.add_action(
@@ -3405,7 +3586,8 @@ accidentally by other input.
                 net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                None,
             ),
         )
         run.run()
@@ -3419,7 +3601,8 @@ accidentally by other input.
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_recv,
             ),
         )
         run.add_action(
@@ -3428,7 +3611,8 @@ accidentally by other input.
                 mod.producer,
                 net.consumer,  # send data
                 [mod.interrupt],  # Externally stop the produer itself
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_send,
             ),
         )
         run.run()
@@ -3443,7 +3627,8 @@ accidentally by other input.
                 net.producer,  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_recv,
             ),
         )
         run.add_action(
@@ -3452,12 +3637,14 @@ accidentally by other input.
                 mod.producer,
                 net.consumer,  # send data
                 [net.interrupt, mod.interrupt],  # Externally stop the produer itself
-                [TransformLinefeed(DsTransformLinefeed(args.crlf))],
+                transformers,
+                code_send,
             ),
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
-                &#34;PING&#34;, DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),
+                &#34;PING&#34;,
+                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
             )
         run.run()</code></pre>
 </details>
@@ -4066,7 +4253,7 @@ def input_timeout(self):
 </dd>
 <dt id="pwncat.DsRunnerAction"><code class="flex name class">
 <span>class <span class="ident">DsRunnerAction</span></span>
-<span>(</span><span>producer, consumer, interrupts, transformers)</span>
+<span>(</span><span>producer, consumer, interrupts, transformers, code)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for Action functions for the Runner class.</p></div>
@@ -4100,9 +4287,15 @@ def input_timeout(self):
 
     @property
     def transformers(self):
-        # type: () -&gt; List[Callable[[str], str]]
+        # type: () -&gt; List[Transform]
         &#34;&#34;&#34;`[Transform.transformer]`: List of transformer functions applied before consumer.&#34;&#34;&#34;
         return self.__transformers
+
+    @property
+    def code(self):
+        # type: () -&gt; Optional[Union[str, bytes, CodeType]]
+        &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data) -&gt; str` function.&#34;&#34;&#34;
+        return self.__code
 
     # --------------------------------------------------------------------------
     # Contrcutor
@@ -4112,16 +4305,32 @@ def input_timeout(self):
         producer,  # type: Callable[[], Iterator[str]]
         consumer,  # type: Callable[[str], None]
         interrupts,  # type: List[Callable[[], None]]
-        transformers,  # type: List[Callable[[str], str]]
+        transformers,  # type: List[Transform]
+        code,  # type: Optional[Union[str, bytes, CodeType]]
     ):
         # type: (...) -&gt; None
         self.__producer = producer
         self.__consumer = consumer
         self.__interrupts = interrupts
-        self.__transformers = transformers</code></pre>
+        self.__transformers = transformers
+        self.__code = code</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
+<dt id="pwncat.DsRunnerAction.code"><code class="name">var <span class="ident">code</span></code></dt>
+<dd>
+<div class="desc"><p><code>ast.AST</code>: custom Python code which provides a <code>transform(data) -&gt; str</code> function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def code(self):
+    # type: () -&gt; Optional[Union[str, bytes, CodeType]]
+    &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data) -&gt; str` function.&#34;&#34;&#34;
+    return self.__code</code></pre>
+</details>
+</dd>
 <dt id="pwncat.DsRunnerAction.consumer"><code class="name">var <span class="ident">consumer</span></code></dt>
 <dd>
 <div class="desc"><p><code><a title="pwncat.IO.consumer" href="#pwncat.IO.consumer">IO.consumer()</a></code>: Data consumer function.</p></div>
@@ -4173,7 +4382,7 @@ def producer(self):
 </summary>
 <pre><code class="python">@property
 def transformers(self):
-    # type: () -&gt; List[Callable[[str], str]]
+    # type: () -&gt; List[Transform]
     &#34;&#34;&#34;`[Transform.transformer]`: List of transformer functions applied before consumer.&#34;&#34;&#34;
     return self.__transformers</code></pre>
 </details>
@@ -5605,6 +5814,7 @@ callback that writes to stdout.</p>
             producer,  # type: Callable[[], str]
             consumer,  # type: Callable[[str], None]
             transformers,  # type: List[Transform]
+            code,  # type: Optional[Union[str, bytes, CodeType]]
         ):
             # type: (...) -&gt; None
             &#34;&#34;&#34;Producer/consumer run function to be thrown into a thread.
@@ -5614,13 +5824,33 @@ callback that writes to stdout.</p>
                 producer (function): A generator function which yields data.
                 consumer (function): A callback which consumes data from the generator.
                 transformers ([function]): List of transformer functions applied before consumer.
+                code (ast.AST): User-supplied python code with a transform(data) -&gt; str function.
             &#34;&#34;&#34;
             self.log.trace(&#34;[%s] Producer Start&#34;, name)  # type: ignore
             for data in producer():
                 self.log.trace(&#34;[%s] Producer received: %s&#34;, name, repr(data))  # type: ignore
-                # Transform data before sending it to the consumer
+
+                # [1/3] Transform data before sending it to the consumer
                 for transformer in transformers:
                     data = transformer.transform(data)
+                if transformers:
+                    self.log.trace(  # type: ignore
+                        &#34;[%s] Producer data after transformers: %s&#34;, name, repr(data)
+                    )
+
+                # [2/3] Apply custom user-supplied code transformations
+                if code is not None:
+                    self.log.debug(
+                        &#34;[%s] Executing user supplied transform(data) -&gt; data function&#34;, name
+                    )
+                    exec(code, {}, locals())  # pylint: disable=exec-used
+                    data = locals()[&#34;transform&#34;](data)
+
+                    self.log.trace(  # type: ignore
+                        &#34;[%s] Producer data after user supplied transformer: %s&#34;, name, repr(data)
+                    )
+
+                # [3/3] Consume it
                 consumer(data)
             self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
@@ -5660,6 +5890,7 @@ callback that writes to stdout.</p>
                     self.__actions[key].producer,
                     self.__actions[key].consumer,
                     self.__actions[key].transformers,
+                    self.__actions[key].code,
                 ),
             )
             thread.daemon = False
@@ -5800,6 +6031,7 @@ callback that writes to stdout.</p>
         producer,  # type: Callable[[], str]
         consumer,  # type: Callable[[str], None]
         transformers,  # type: List[Transform]
+        code,  # type: Optional[Union[str, bytes, CodeType]]
     ):
         # type: (...) -&gt; None
         &#34;&#34;&#34;Producer/consumer run function to be thrown into a thread.
@@ -5809,13 +6041,33 @@ callback that writes to stdout.</p>
             producer (function): A generator function which yields data.
             consumer (function): A callback which consumes data from the generator.
             transformers ([function]): List of transformer functions applied before consumer.
+            code (ast.AST): User-supplied python code with a transform(data) -&gt; str function.
         &#34;&#34;&#34;
         self.log.trace(&#34;[%s] Producer Start&#34;, name)  # type: ignore
         for data in producer():
             self.log.trace(&#34;[%s] Producer received: %s&#34;, name, repr(data))  # type: ignore
-            # Transform data before sending it to the consumer
+
+            # [1/3] Transform data before sending it to the consumer
             for transformer in transformers:
                 data = transformer.transform(data)
+            if transformers:
+                self.log.trace(  # type: ignore
+                    &#34;[%s] Producer data after transformers: %s&#34;, name, repr(data)
+                )
+
+            # [2/3] Apply custom user-supplied code transformations
+            if code is not None:
+                self.log.debug(
+                    &#34;[%s] Executing user supplied transform(data) -&gt; data function&#34;, name
+                )
+                exec(code, {}, locals())  # pylint: disable=exec-used
+                data = locals()[&#34;transform&#34;](data)
+
+                self.log.trace(  # type: ignore
+                    &#34;[%s] Producer data after user supplied transformer: %s&#34;, name, repr(data)
+                )
+
+            # [3/3] Consume it
             consumer(data)
         self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
@@ -5855,6 +6107,7 @@ callback that writes to stdout.</p>
                 self.__actions[key].producer,
                 self.__actions[key].consumer,
                 self.__actions[key].transformers,
+                self.__actions[key].code,
             ),
         )
         thread.daemon = False
@@ -6968,16 +7221,17 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
     classes or functions as strings to keep full Python 2/3 compat.
     &#34;&#34;&#34;
 
-    # https://stackoverflow.com/questions/606191/27527728#27527728
-    codec = &#34;cp437&#34;
-
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
     def __init__(self):
         # type: () -&gt; None
         &#34;&#34;&#34;Create a StringEncoder instance which converts str/bytes according to Python version.&#34;&#34;&#34;
-        self.py3 = sys.version_info &gt;= (3, 0)  # type: bool
+        self.__py3 = sys.version_info &gt;= (3, 0)  # type: bool
+
+        # https://stackoverflow.com/questions/606191/27527728#27527728
+        self.__codec = &#34;cp437&#34;
+        self.__fallback = &#34;latin-1&#34;
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -6985,24 +7239,21 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
     def encode(self, data):
         # type: (str) -&gt; bytes
         &#34;&#34;&#34;Convert string into a byte type for Python3.&#34;&#34;&#34;
-        if self.py3:
-            return data.encode(self.codec)
+        if self.__py3:
+            try:
+                return data.encode(self.__codec)
+            except UnicodeEncodeError:
+                # TODO: Add logging
+                return data.encode(self.__fallback)
         return data  # type: ignore
 
     def decode(self, data):
         # type: (bytes) -&gt; str
         &#34;&#34;&#34;Convert bytes into a string type for Python3.&#34;&#34;&#34;
-        if self.py3:
-            return data.decode(self.codec)
+        if self.__py3:
+            return data.decode(self.__codec)
         return data  # type: ignore</code></pre>
 </details>
-<h3>Class variables</h3>
-<dl>
-<dt id="pwncat.StringEncoder.codec"><code class="name">var <span class="ident">codec</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="pwncat.StringEncoder.decode"><code class="name flex">
@@ -7017,8 +7268,8 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
 <pre><code class="python">def decode(self, data):
     # type: (bytes) -&gt; str
     &#34;&#34;&#34;Convert bytes into a string type for Python3.&#34;&#34;&#34;
-    if self.py3:
-        return data.decode(self.codec)
+    if self.__py3:
+        return data.decode(self.__codec)
     return data  # type: ignore</code></pre>
 </details>
 </dd>
@@ -7034,8 +7285,12 @@ classes or functions as strings to keep full Python 2/3 compat.</p>
 <pre><code class="python">def encode(self, data):
     # type: (str) -&gt; bytes
     &#34;&#34;&#34;Convert string into a byte type for Python3.&#34;&#34;&#34;
-    if self.py3:
-        return data.encode(self.codec)
+    if self.__py3:
+        try:
+            return data.encode(self.__codec)
+        except UnicodeEncodeError:
+            # TODO: Add logging
+            return data.encode(self.__fallback)
     return data  # type: ignore</code></pre>
 </details>
 </dd>
@@ -7484,6 +7739,7 @@ def transform(self, data):
 <li>
 <h4><code><a title="pwncat.DsRunnerAction" href="#pwncat.DsRunnerAction">DsRunnerAction</a></code></h4>
 <ul class="">
+<li><code><a title="pwncat.DsRunnerAction.code" href="#pwncat.DsRunnerAction.code">code</a></code></li>
 <li><code><a title="pwncat.DsRunnerAction.consumer" href="#pwncat.DsRunnerAction.consumer">consumer</a></code></li>
 <li><code><a title="pwncat.DsRunnerAction.interrupts" href="#pwncat.DsRunnerAction.interrupts">interrupts</a></code></li>
 <li><code><a title="pwncat.DsRunnerAction.producer" href="#pwncat.DsRunnerAction.producer">producer</a></code></li>
@@ -7581,7 +7837,6 @@ def transform(self, data):
 <li>
 <h4><code><a title="pwncat.StringEncoder" href="#pwncat.StringEncoder">StringEncoder</a></code></h4>
 <ul class="">
-<li><code><a title="pwncat.StringEncoder.codec" href="#pwncat.StringEncoder.codec">codec</a></code></li>
 <li><code><a title="pwncat.StringEncoder.decode" href="#pwncat.StringEncoder.decode">decode</a></code></li>
 <li><code><a title="pwncat.StringEncoder.encode" href="#pwncat.StringEncoder.encode">encode</a></code></li>
 </ul>

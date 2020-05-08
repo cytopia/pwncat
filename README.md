@@ -25,7 +25,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall and IDS/IPS evasion, bind and reverse shell and port forwarding magic.
+> #### Netcat on steroids with Firewall and IDS/IPS evasion, bind and reverse shell, port forwarding magic and scripting engine ([PSE](pse/)).
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
@@ -117,15 +117,15 @@
       </tr>
       <tr>
        <th>pypy2</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy2/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy2/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy2"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-py2"><img src="https://github.com/cytopia/pwncat/workflows/ubu-py2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-py2"><img src="https://github.com/cytopia/pwncat/workflows/mac-py2/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-py2"><img src="https://github.com/cytopia/pwncat/workflows/win-py2/badge.svg" /></a></td>
       </tr>
       <tr>
        <th>pypy3</th>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/ubu-pypy3/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/mac-pypy3/badge.svg" /></a></td>
-       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-pypy3"><img src="https://github.com/cytopia/pwncat/workflows/win-pypy3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=ubu-py3"><img src="https://github.com/cytopia/pwncat/workflows/ubu-py3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=mac-py3"><img src="https://github.com/cytopia/pwncat/workflows/mac-py3/badge.svg" /></a></td>
+       <td><a href="https://github.com/cytopia/pwncat/actions?workflow=win-py3"><img src="https://github.com/cytopia/pwncat/workflows/win-py3/badge.svg" /></a></td>
       </tr>
      </tbody>
     </table>
@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.66%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.51%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -212,10 +212,13 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 
 ## :star: Features
 
+### At a glance
+
 `pwncat` has many features, below is only a list of outstanding characteristics.
 
 | Feature        | Description |
 |----------------|-------------|
+| [PSE](pse)     | pwncat scripting engine to apply custom Python scripts for sent and/or received data |
 | Bind shell     | Create bind shells |
 | Reverse shell  | Create reverse shells |
 | Port Forward   | Local and remote port forward (Proxy server/client) |
@@ -228,6 +231,42 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Python 2+3     | Works with Python 2 and Python 3 |
 | Cross OS       | Should work on Linux, MacOS and Windows as long as Python is available |
 | Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
+
+
+### Feature comparison matrix
+
+|                     | pwncat | netcat | ncat |
+|---------------------|--------|---------|-----|
+| Scripting engine    | Python | :x:     | Lua |
+| IP ToS              | :x:    | ✔       | :x: |
+| IPv4                | ✔      | ✔       | ✔   |
+| IPv6                | *      | ✔       | ✔   |
+| Unix domain sockets | :x:    | ✔       | ✔   |
+| TCP                 | ✔      | ✔       | ✔   |
+| UDP                 | ✔      | ✔       | ✔   |
+| SCTP                | :x:    | :x:     | ✔   |
+| Command exec        | ✔      | ✔       | ✔   |
+| Inbound port scan   | *      | ✔       | ✔   |
+| Outbound port scan  | *      | :x:     | :x: |
+| Hex dump            | *      | ✔       | ✔   |
+| Telnet              | :x:    | ✔       | ✔   |
+| SSL                 | :x:    | :x:     | ✔   |
+| HTTP                | *      | :x:     | :x: |
+| HTTPS               | *      | :x:     | :x: |
+| Chat                | ✔      | ✔       | ✔   |
+| Broker              | :x:    | :x:     | ✔   |
+| Simultaneous conns  | :x:    | :x:     | ✔   |
+| Allow/deny          | :x:    | :x:     | ✔   |
+| Local port forward  | ✔      | :x:     | :x: |
+| Remote port forward | ✔      | :x:     | :x: |
+| Re-accept           | ✔      | ✔       | ✔   |
+| Proxy               | :x:    | ✔       | ✔   |
+| UDP reverse shell   | ✔      | :x:     | :x: |
+| Respawning client   | ✔      | :x:     | :x: |
+| Port hopping        | *      | :x:     | :x: |
+| Emergency shutdown  | ✔      | :x:     | :x: |
+
+> <sup>`*` Feature is currently under development.
 
 
 ## :cop: Behaviour
@@ -366,6 +405,40 @@ optional arguments:
                         color on Windows by default. (default: auto)
 
 advanced arguments:
+  --script-send file    All modes (TCP and UDP):
+                        A Python scripting engine to define your own custom
+                        transformer function which will be executed before
+                        sending data to a remote endpoint. Your file must
+                        contain the exact following function which will:
+                        be applied as the transformer:
+                        def transform(data):
+                            # NOTE: the function name must be 'transform'
+                            # NOTE: the function param name must be 'data'
+                            # NOTE: indentation must be 4 spaces
+                            # ... your transformations goes here
+                            return data
+                        You can also define as many custom functions or classes
+                        within this file, but ensure to prefix them uniquely to
+                        not collide with pwncat's function or classes, as the
+                        file will be called with exec().
+
+  --script-recv file    All modes (TCP and UDP):
+                        A Python scripting engine to define your own custom
+                        transformer function which will be executed after
+                        receiving data from a remote endpoint. Your file must
+                        contain the exact following function which will:
+                        be applied as the transformer:
+                        def transform(data):
+                            # NOTE: the function name must be 'transform'
+                            # NOTE: the function param name must be 'data'
+                            # NOTE: indentation must be 4 spaces
+                            # ... your transformations goes here
+                            return data
+                        You can also define as many custom functions or classes
+                        within this file, but ensure to prefix them uniquely to
+                        not collide with pwncat's function or classes, as the
+                        file will be called with exec().
+
   --http                Connect / Listen / Local forward mode (TCP only):
                         Hide traffic in http packets to fool Firewalls/IDS/IPS.
 
@@ -656,6 +729,65 @@ tail -fn50 comm.txt
 <!--
 </details>
 -->
+
+### Pwncat Scripting Engine ([PSE](pse))
+
+`pwncat` offers a Python based scripting engine to inject your custom code before sending and
+after receiving data.
+
+#### How it works
+
+You will simply need to provide a Python file with the following function:
+```python
+def transform(data):
+    # Example to reverse a string
+    return data[::-1]
+```
+Both, the function name must be named `transform` and the parsed argument name must be `data`.
+Other than that you can add as much code as you like. Each instance of `pwncat` can take two scripts:
+
+1. `--script-send`: script will be applied before sending
+2. `--script-recv`: script will be applied after receiving
+
+
+#### Example 1: Self-built asymmetric encryption
+
+> PSE: [asym-enc](pse/asym-enc) source code
+
+This will encrypt your traffic asymmetrically. It is just a very basic [ROT13](https://en.wikipedia.org/wiki/ROT13) implementation with different shift lengths on both sides to *emulate* asymmetry. You could do the same and implement GPG based asymmetric encryption for PSE.
+
+```bash
+# server
+pwncat -vvvv -l localhost 4444 \
+  --script-send pse/asym-enc/pse-asym_enc-server_send.py \
+  --script-recv pse/asym-enc/pse-asym_enc-server_recv.py
+```
+```bash
+# client
+pwncat -vvvv localhost 4444 \
+  --script-send pse/asym-enc/pse-asym_enc-client_send.py \
+  --script-recv pse/asym-enc/pse-asym_enc-client_recv.py
+```
+
+#### Example 2: Self-built HTTP POST wrapper
+
+> PSE: [http-post](pse/http-post) source code
+
+This will wrap all traffic into a valid HTTP POST request, making it look like normal HTTP traffic.
+
+```bash
+# server
+pwncat -vvvv -l localhost 4444 \
+  --script-send pse/http-post/pse-http_post-pack.py \
+  --script-recv pse/http-post/pse-http_post-unpack.py
+```
+```bash
+# client
+pwncat -vvvv localhost 4444 \
+  --script-send pse/http-post/pse-http_post-pack.py \
+  --script-recv pse/http-post/pse-http_post-unpack.py
+```
+
 
 ## :information_source: FAQ
 

@@ -94,6 +94,46 @@ will automatically be disabled. This mode also disables
 color on Windows by default. (default: auto)
 .SS "advanced arguments:"
 .TP
+\fB\-\-script\-send\fR file
+All modes (TCP and UDP):
+A Python scripting engine to define your own custom
+transformer function which will be executed before
+sending data to a remote endpoint. Your file must
+contain the exact following function which will:
+be applied as the transformer:
+def transform(data):
+.TP
+# NOTE: the function name must be 'transform'
+# NOTE: the function param name must be 'data'
+# NOTE: indentation must be 4 spaces
+# ... your transformations goes here
+return data
+.TP
+You can also define as many custom functions or classes
+within this file, but ensure to prefix them uniquely to
+not collide with pwncat's function or classes, as the
+file will be called with exec().
+.TP
+\fB\-\-script\-recv\fR file
+All modes (TCP and UDP):
+A Python scripting engine to define your own custom
+transformer function which will be executed after
+receiving data from a remote endpoint. Your file must
+contain the exact following function which will:
+be applied as the transformer:
+def transform(data):
+.TP
+# NOTE: the function name must be 'transform'
+# NOTE: the function param name must be 'data'
+# NOTE: indentation must be 4 spaces
+# ... your transformations goes here
+return data
+.TP
+You can also define as many custom functions or classes
+within this file, but ensure to prefix them uniquely to
+not collide with pwncat's function or classes, as the
+file will be called with exec().
+.TP
 \fB\-\-http\fR
 Connect / Listen / Local forward mode (TCP only):
 Hide traffic in http packets to fool Firewalls/IDS/IPS.

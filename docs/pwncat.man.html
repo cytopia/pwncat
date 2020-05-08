@@ -180,7 +180,56 @@ This mode also disables color on Windows by default.
 (default: auto)</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>advanced
-arguments:</b></p>
+arguments: <br>
+&minus;&minus;script&minus;send</b> file</p>
+
+<p style="margin-left:22%;">All modes (TCP and UDP): A
+Python scripting engine to define your own custom
+transformer function which will be executed before sending
+data to a remote endpoint. Your file must contain the exact
+following function which will: be applied as the
+transformer: def transform(data):</p>
+
+<p style="margin-left:11%;"># NOTE: the function name must
+be &rsquo;transform&rsquo;</p>
+
+<p style="margin-left:22%;"># NOTE: the function param name
+must be &rsquo;data&rsquo; # NOTE: indentation must be 4
+spaces # ... your transformations goes here return data</p>
+
+<p style="margin-left:11%;">You can also define as many
+custom functions or classes</p>
+
+<p style="margin-left:22%;">within this file, but ensure to
+prefix them uniquely to not collide with pwncat&rsquo;s
+function or classes, as the file will be called with
+exec().</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;script&minus;recv</b>
+file</p>
+
+<p style="margin-left:22%;">All modes (TCP and UDP): A
+Python scripting engine to define your own custom
+transformer function which will be executed after receiving
+data from a remote endpoint. Your file must contain the
+exact following function which will: be applied as the
+transformer: def transform(data):</p>
+
+<p style="margin-left:11%;"># NOTE: the function name must
+be &rsquo;transform&rsquo;</p>
+
+<p style="margin-left:22%;"># NOTE: the function param name
+must be &rsquo;data&rsquo; # NOTE: indentation must be 4
+spaces # ... your transformations goes here return data</p>
+
+<p style="margin-left:11%;">You can also define as many
+custom functions or classes</p>
+
+<p style="margin-left:22%;">within this file, but ensure to
+prefix them uniquely to not collide with pwncat&rsquo;s
+function or classes, as the file will be called with
+exec().</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
