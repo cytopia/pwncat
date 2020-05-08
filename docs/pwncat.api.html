@@ -115,7 +115,7 @@ if os.name != &#34;nt&#34;:
 
 APPNAME = &#34;pwncat&#34;
 APPREPO = &#34;https://github.com/cytopia/pwncat&#34;
-VERSION = &#34;0.0.12-alpha&#34;
+VERSION = &#34;0.0.13-alpha&#34;
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -656,7 +656,9 @@ class ColoredLogFormatter(logging.Formatter):
             return &#34;%(levelname)s [%(threadName)s]: %(message)s&#34;
         # In lower than debug logging we will add even more info to all log formats
         if self.loglevel &lt; logging.DEBUG:
-            return &#34;%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s&#34;
+            return (
+                &#34;%(asctime)s %(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s&#34;
+            )
         # By default, we will only add basic info
         return &#34;%(levelname)s: %(message)s&#34;
 
@@ -1474,7 +1476,7 @@ class IONetwork(IO):
         ssig,  # type: StopSignal
         encoder,  # type: StringEncoder
         host,  # type: str
-        port,  # type: int
+        ports,  # type: List[int]
         role,  # type: str
         srv_opts,  # type: DsIONetworkSrv
         cli_opts,  # type: DsIONetworkCli
@@ -1487,7 +1489,7 @@ class IONetwork(IO):
             ssig (StopSignal): Stop signal instance
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
             host (str): The hostname to resolve.
-            port (int): The port of the hostname to resolve.
+            ports ([int]): List of ports to connect to or listen on.
             role (str): Either &#34;server&#34; or &#34;client&#34;.
             srv_opts (DsIONetworkSrv):   Options for the server.
             cli_opts (DsIONetworkCli):   Options for the client.
@@ -1503,19 +1505,20 @@ class IONetwork(IO):
         self.__cli_opts = cli_opts
 
         try:
-            addr = self.__net.gethostbyname(host, port)
+            addr = self.__net.gethostbyname(host, ports[0])
         except socket.gaierror:
             sys.exit(1)
 
         # Internally store addresses for reconn or rebind functions
         self.__addr = addr
-        self.__port = port
+        self.__ports = ports
+        self.__pport = 0  # pointer to the current port
 
         if role == &#34;server&#34;:
-            if not self.__net.run_server(addr, port):
+            if not self.__net.run_server(self.__addr, self.__ports[self.__pport]):
                 sys.exit(1)
         if role == &#34;client&#34;:
-            if not self.__net.run_client(addr, port):
+            if not self.__net.run_client(self.__addr, self.__ports[self.__pport]):
                 if not self.__client_reconnect_to_server():
                     sys.exit(1)
 
@@ -1606,37 +1609,49 @@ class IONetwork(IO):
         # reconn &gt; 0 (reconnect until counter reaches zero)
         while self.__cli_opts.reconn != 0:
 
-            # [1/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # [1/6] Let&#39;s ask the interrupter() function if we should terminate?
             # We need a little wait here in order for the stop signal to propagate.
             # Don&#39;t know how fast the other threads are.
-            time.sleep(0.1)
-            if self.ssig.has_stop():
-                return False
+            # time.sleep(0.1)
+            # if self.ssig.has_stop():
+            #     return False
 
-            # [2/5] Wait
+            # [2/6] Wait
             time.sleep(self.__cli_opts.reconn_wait)
 
-            # [3/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # [3/6] Let&#39;s ask the interrupter() function if we should terminate?
             # In case the other threads were slower as the sleep time in [1/5]
             # we will check again here.
             if self.ssig.has_stop():
                 return False
 
+            # [4/6] Increment the port numer (if --reconn-robin has multiple)
+            self.__pport += 1
+            if self.__pport == len(self.__ports):
+                self.__pport = 0
+
             if self.__cli_opts.reconn &gt; 0:
                 self.log.info(
-                    &#34;Reconnecting in %f sec (%d more times left)&#34;,
+                    &#34;Reconnecting to %s:%d in %.1f sec (%d more times left)&#34;,
+                    self.__addr,
+                    self.__ports[self.__pport],
                     self.__cli_opts.reconn_wait,
                     self.__cli_opts.reconn,
                 )
             else:
-                self.log.info(&#34;Reconnecting in %f sec (indefinitely)&#34;, self.__cli_opts.reconn_wait)
+                self.log.info(
+                    &#34;Reconnecting to %s:%d in %.1f sec (indefinitely)&#34;,
+                    self.__addr,
+                    self.__ports[self.__pport],
+                    self.__cli_opts.reconn_wait,
+                )
 
-            # [4/5] Decrease reconnect counter
+            # [5/6] Decrease reconnect counter
             if self.__cli_opts.reconn &gt; 0:
                 self.__cli_opts.reconn -= 1
 
-            # [5/5] Recurse until True or reconnect count is used up
-            if self.__net.run_client(self.__addr, self.__port):
+            # [6/6] Recurse until True or reconnect count is used up
+            if self.__net.run_client(self.__addr, self.__ports[self.__pport]):
                 return True
 
         # [5/5] Signal failure
@@ -2174,7 +2189,6 @@ def _args_check_robin_ports(value):
             )
         ports = []
         for port in range(ranges[0], ranges[1] + 1):
-            print(type(port))
             _args_check_port(str(port))
             ports.append(port)
         return ports
@@ -2763,7 +2777,7 @@ def main():
     &#34;&#34;&#34;Run the program.&#34;&#34;&#34;
     args = get_args()
     host = args.hostname
-    port = args.port
+    ports = [args.port]
 
     # Set pwncat options
     sock_opts = DsIONetworkSock(
@@ -2839,8 +2853,8 @@ def main():
         lhost = args.local.split(&#34;:&#34;)[0]
         lport = int(args.local.split(&#34;:&#34;)[1])
         # Create listen and client instances
-        net_srv = IONetwork(ssig, enc, lhost, lport, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
-        net_cli = IONetwork(ssig, enc, host, port, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
+        net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -2873,8 +2887,8 @@ def main():
         lhost = args.remote.split(&#34;:&#34;)[0]
         lport = int(args.remote.split(&#34;:&#34;)[1])
         # Create local and remote client
-        net_cli_l = IONetwork(ssig, enc, lhost, lport, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
-        net_cli_r = IONetwork(ssig, enc, host, port, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net_cli_l = IONetwork(ssig, enc, lhost, [lport], &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net_cli_r = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -2900,7 +2914,7 @@ def main():
         run.run()
     # Run server
     if args.listen:
-        net = IONetwork(ssig, enc, host, port, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
+        net = IONetwork(ssig, enc, host, ports, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         run = Runner()
         run.add_action(
             &#34;RECV&#34;,
@@ -2926,7 +2940,9 @@ def main():
 
     # Run client
     else:
-        net = IONetwork(ssig, enc, host, port, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net = IONetwork(
+            ssig, enc, host, ports + args.reconn_robin, &#34;client&#34;, srv_opts, cli_opts, sock_opts
+        )
         run = Runner()
         run.add_action(
             &#34;RECV&#34;,
@@ -3456,7 +3472,7 @@ accidentally by other input.
     &#34;&#34;&#34;Run the program.&#34;&#34;&#34;
     args = get_args()
     host = args.hostname
-    port = args.port
+    ports = [args.port]
 
     # Set pwncat options
     sock_opts = DsIONetworkSock(
@@ -3532,8 +3548,8 @@ accidentally by other input.
         lhost = args.local.split(&#34;:&#34;)[0]
         lport = int(args.local.split(&#34;:&#34;)[1])
         # Create listen and client instances
-        net_srv = IONetwork(ssig, enc, lhost, lport, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
-        net_cli = IONetwork(ssig, enc, host, port, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
+        net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -3566,8 +3582,8 @@ accidentally by other input.
         lhost = args.remote.split(&#34;:&#34;)[0]
         lport = int(args.remote.split(&#34;:&#34;)[1])
         # Create local and remote client
-        net_cli_l = IONetwork(ssig, enc, lhost, lport, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
-        net_cli_r = IONetwork(ssig, enc, host, port, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net_cli_l = IONetwork(ssig, enc, lhost, [lport], &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net_cli_r = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
         run = Runner()
         run.add_action(
@@ -3593,7 +3609,7 @@ accidentally by other input.
         run.run()
     # Run server
     if args.listen:
-        net = IONetwork(ssig, enc, host, port, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
+        net = IONetwork(ssig, enc, host, ports, &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         run = Runner()
         run.add_action(
             &#34;RECV&#34;,
@@ -3619,7 +3635,9 @@ accidentally by other input.
 
     # Run client
     else:
-        net = IONetwork(ssig, enc, host, port, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
+        net = IONetwork(
+            ssig, enc, host, ports + args.reconn_robin, &#34;client&#34;, srv_opts, cli_opts, sock_opts
+        )
         run = Runner()
         run.add_action(
             &#34;RECV&#34;,
@@ -3723,7 +3741,9 @@ accidentally by other input.
             return &#34;%(levelname)s [%(threadName)s]: %(message)s&#34;
         # In lower than debug logging we will add even more info to all log formats
         if self.loglevel &lt; logging.DEBUG:
-            return &#34;%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s&#34;
+            return (
+                &#34;%(asctime)s %(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s&#34;
+            )
         # By default, we will only add basic info
         return &#34;%(levelname)s: %(message)s&#34;
 
@@ -5174,7 +5194,7 @@ def producer(self):
 </dd>
 <dt id="pwncat.IONetwork"><code class="flex name class">
 <span>class <span class="ident">IONetwork</span></span>
-<span>(</span><span>ssig, encoder, host, port, role, srv_opts, cli_opts, sock_opts)</span>
+<span>(</span><span>ssig, encoder, host, ports, role, srv_opts, cli_opts, sock_opts)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pwncat implementation based on custom Socket library.</p>
@@ -5187,8 +5207,8 @@ def producer(self):
 <dd>Instance of StringEncoder (Python2/3 str/byte compat).</dd>
 <dt><strong><code>host</code></strong> :&ensp;<code>str</code></dt>
 <dd>The hostname to resolve.</dd>
-<dt><strong><code>port</code></strong> :&ensp;<code>int</code></dt>
-<dd>The port of the hostname to resolve.</dd>
+<dt><strong><code>ports</code></strong> :&ensp;<code>[int]</code></dt>
+<dd>List of ports to connect to or listen on.</dd>
 <dt><strong><code>role</code></strong> :&ensp;<code>str</code></dt>
 <dd>Either "server" or "client".</dd>
 <dt><strong><code>srv_opts</code></strong> :&ensp;<code><a title="pwncat.DsIONetworkSrv" href="#pwncat.DsIONetworkSrv">DsIONetworkSrv</a></code></dt>
@@ -5213,7 +5233,7 @@ def producer(self):
         ssig,  # type: StopSignal
         encoder,  # type: StringEncoder
         host,  # type: str
-        port,  # type: int
+        ports,  # type: List[int]
         role,  # type: str
         srv_opts,  # type: DsIONetworkSrv
         cli_opts,  # type: DsIONetworkCli
@@ -5226,7 +5246,7 @@ def producer(self):
             ssig (StopSignal): Stop signal instance
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
             host (str): The hostname to resolve.
-            port (int): The port of the hostname to resolve.
+            ports ([int]): List of ports to connect to or listen on.
             role (str): Either &#34;server&#34; or &#34;client&#34;.
             srv_opts (DsIONetworkSrv):   Options for the server.
             cli_opts (DsIONetworkCli):   Options for the client.
@@ -5242,19 +5262,20 @@ def producer(self):
         self.__cli_opts = cli_opts
 
         try:
-            addr = self.__net.gethostbyname(host, port)
+            addr = self.__net.gethostbyname(host, ports[0])
         except socket.gaierror:
             sys.exit(1)
 
         # Internally store addresses for reconn or rebind functions
         self.__addr = addr
-        self.__port = port
+        self.__ports = ports
+        self.__pport = 0  # pointer to the current port
 
         if role == &#34;server&#34;:
-            if not self.__net.run_server(addr, port):
+            if not self.__net.run_server(self.__addr, self.__ports[self.__pport]):
                 sys.exit(1)
         if role == &#34;client&#34;:
-            if not self.__net.run_client(addr, port):
+            if not self.__net.run_client(self.__addr, self.__ports[self.__pport]):
                 if not self.__client_reconnect_to_server():
                     sys.exit(1)
 
@@ -5345,37 +5366,49 @@ def producer(self):
         # reconn &gt; 0 (reconnect until counter reaches zero)
         while self.__cli_opts.reconn != 0:
 
-            # [1/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # [1/6] Let&#39;s ask the interrupter() function if we should terminate?
             # We need a little wait here in order for the stop signal to propagate.
             # Don&#39;t know how fast the other threads are.
-            time.sleep(0.1)
-            if self.ssig.has_stop():
-                return False
+            # time.sleep(0.1)
+            # if self.ssig.has_stop():
+            #     return False
 
-            # [2/5] Wait
+            # [2/6] Wait
             time.sleep(self.__cli_opts.reconn_wait)
 
-            # [3/5] Let&#39;s ask the interrupter() function if we should terminate?
+            # [3/6] Let&#39;s ask the interrupter() function if we should terminate?
             # In case the other threads were slower as the sleep time in [1/5]
             # we will check again here.
             if self.ssig.has_stop():
                 return False
 
+            # [4/6] Increment the port numer (if --reconn-robin has multiple)
+            self.__pport += 1
+            if self.__pport == len(self.__ports):
+                self.__pport = 0
+
             if self.__cli_opts.reconn &gt; 0:
                 self.log.info(
-                    &#34;Reconnecting in %f sec (%d more times left)&#34;,
+                    &#34;Reconnecting to %s:%d in %.1f sec (%d more times left)&#34;,
+                    self.__addr,
+                    self.__ports[self.__pport],
                     self.__cli_opts.reconn_wait,
                     self.__cli_opts.reconn,
                 )
             else:
-                self.log.info(&#34;Reconnecting in %f sec (indefinitely)&#34;, self.__cli_opts.reconn_wait)
+                self.log.info(
+                    &#34;Reconnecting to %s:%d in %.1f sec (indefinitely)&#34;,
+                    self.__addr,
+                    self.__ports[self.__pport],
+                    self.__cli_opts.reconn_wait,
+                )
 
-            # [4/5] Decrease reconnect counter
+            # [5/6] Decrease reconnect counter
             if self.__cli_opts.reconn &gt; 0:
                 self.__cli_opts.reconn -= 1
 
-            # [5/5] Recurse until True or reconnect count is used up
-            if self.__net.run_client(self.__addr, self.__port):
+            # [6/6] Recurse until True or reconnect count is used up
+            if self.__net.run_client(self.__addr, self.__ports[self.__pport]):
                 return True
 
         # [5/5] Signal failure

@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.13-alpha
+
+#### Added
+- Feature: Client port hopping (`--reconn-robin`): #43
+
+
 ## Release 0.0.12-alpha
 
 #### Added

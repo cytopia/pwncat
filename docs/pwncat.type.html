@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.49% imprecise</th>
-<th class="summary summary-lines">2941 LOC</th>
+<th class="summary summary-precision">6.46% imprecise</th>
+<th class="summary summary-lines">2957 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.49% imprecise</td>
-<td class="summary summary-lines">2941 LOC</td>
+<td class="summary summary-precision">6.46% imprecise</td>
+<td class="summary summary-lines">2957 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -2976,6 +2976,22 @@
 <span id="L2939" class="lineno"><a class="lineno" href="#L2939">2939</a></span>
 <span id="L2940" class="lineno"><a class="lineno" href="#L2940">2940</a></span>
 <span id="L2941" class="lineno"><a class="lineno" href="#L2941">2941</a></span>
+<span id="L2942" class="lineno"><a class="lineno" href="#L2942">2942</a></span>
+<span id="L2943" class="lineno"><a class="lineno" href="#L2943">2943</a></span>
+<span id="L2944" class="lineno"><a class="lineno" href="#L2944">2944</a></span>
+<span id="L2945" class="lineno"><a class="lineno" href="#L2945">2945</a></span>
+<span id="L2946" class="lineno"><a class="lineno" href="#L2946">2946</a></span>
+<span id="L2947" class="lineno"><a class="lineno" href="#L2947">2947</a></span>
+<span id="L2948" class="lineno"><a class="lineno" href="#L2948">2948</a></span>
+<span id="L2949" class="lineno"><a class="lineno" href="#L2949">2949</a></span>
+<span id="L2950" class="lineno"><a class="lineno" href="#L2950">2950</a></span>
+<span id="L2951" class="lineno"><a class="lineno" href="#L2951">2951</a></span>
+<span id="L2952" class="lineno"><a class="lineno" href="#L2952">2952</a></span>
+<span id="L2953" class="lineno"><a class="lineno" href="#L2953">2953</a></span>
+<span id="L2954" class="lineno"><a class="lineno" href="#L2954">2954</a></span>
+<span id="L2955" class="lineno"><a class="lineno" href="#L2955">2955</a></span>
+<span id="L2956" class="lineno"><a class="lineno" href="#L2956">2956</a></span>
+<span id="L2957" class="lineno"><a class="lineno" href="#L2957">2957</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -3068,7 +3084,7 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.12-alpha"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.13-alpha"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.1</span>
@@ -3641,7 +3657,9 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-precise" title="No Anys on this line!">            return "%(levelname)s [%(threadName)s]: %(message)s"</span>
 <span class="line-empty" title="No Anys on this line!">        # In lower than debug logging we will add even more info to all log formats</span>
 <span class="line-precise" title="No Anys on this line!">        if self.loglevel &lt; logging.DEBUG:</span>
-<span class="line-precise" title="No Anys on this line!">            return "%(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"</span>
+<span class="line-empty" title="No Anys on this line!">            return (</span>
+<span class="line-precise" title="No Anys on this line!">                "%(asctime)s %(levelname)s [%(threadName)s] %(lineno)d:%(funcName)s(): %(message)s"</span>
+<span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-empty" title="No Anys on this line!">        # By default, we will only add basic info</span>
 <span class="line-precise" title="No Anys on this line!">        return "%(levelname)s: %(message)s"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4509,7 +4527,7 @@ Explicit (x4)">                self.log.debug("Replacing LF with CR")</span>
 <span class="line-empty" title="No Anys on this line!">        ssig,  # type: StopSignal</span>
 <span class="line-empty" title="No Anys on this line!">        encoder,  # type: StringEncoder</span>
 <span class="line-empty" title="No Anys on this line!">        host,  # type: str</span>
-<span class="line-empty" title="No Anys on this line!">        port,  # type: int</span>
+<span class="line-empty" title="No Anys on this line!">        ports,  # type: List[int]</span>
 <span class="line-empty" title="No Anys on this line!">        role,  # type: str</span>
 <span class="line-empty" title="No Anys on this line!">        srv_opts,  # type: DsIONetworkSrv</span>
 <span class="line-empty" title="No Anys on this line!">        cli_opts,  # type: DsIONetworkCli</span>
@@ -4522,7 +4540,7 @@ Explicit (x4)">                self.log.debug("Replacing LF with CR")</span>
 <span class="line-empty" title="No Anys on this line!">            ssig (StopSignal): Stop signal instance</span>
 <span class="line-empty" title="No Anys on this line!">            encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).</span>
 <span class="line-empty" title="No Anys on this line!">            host (str): The hostname to resolve.</span>
-<span class="line-empty" title="No Anys on this line!">            port (int): The port of the hostname to resolve.</span>
+<span class="line-empty" title="No Anys on this line!">            ports ([int]): List of ports to connect to or listen on.</span>
 <span class="line-empty" title="No Anys on this line!">            role (str): Either "server" or "client".</span>
 <span class="line-empty" title="No Anys on this line!">            srv_opts (DsIONetworkSrv):   Options for the server.</span>
 <span class="line-empty" title="No Anys on this line!">            cli_opts (DsIONetworkCli):   Options for the client.</span>
@@ -4538,19 +4556,20 @@ Explicit (x4)">                self.log.debug("Replacing LF with CR")</span>
 <span class="line-precise" title="No Anys on this line!">        self.__cli_opts = cli_opts</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
-<span class="line-precise" title="No Anys on this line!">            addr = self.__net.gethostbyname(host, port)</span>
+<span class="line-precise" title="No Anys on this line!">            addr = self.__net.gethostbyname(host, ports[0])</span>
 <span class="line-precise" title="No Anys on this line!">        except socket.gaierror:</span>
 <span class="line-precise" title="No Anys on this line!">            sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Internally store addresses for reconn or rebind functions</span>
 <span class="line-precise" title="No Anys on this line!">        self.__addr = addr</span>
-<span class="line-precise" title="No Anys on this line!">        self.__port = port</span>
+<span class="line-precise" title="No Anys on this line!">        self.__ports = ports</span>
+<span class="line-precise" title="No Anys on this line!">        self.__pport = 0  # pointer to the current port</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        if role == "server":</span>
-<span class="line-precise" title="No Anys on this line!">            if not self.__net.run_server(addr, port):</span>
+<span class="line-precise" title="No Anys on this line!">            if not self.__net.run_server(self.__addr, self.__ports[self.__pport]):</span>
 <span class="line-precise" title="No Anys on this line!">                sys.exit(1)</span>
 <span class="line-precise" title="No Anys on this line!">        if role == "client":</span>
-<span class="line-precise" title="No Anys on this line!">            if not self.__net.run_client(addr, port):</span>
+<span class="line-precise" title="No Anys on this line!">            if not self.__net.run_client(self.__addr, self.__ports[self.__pport]):</span>
 <span class="line-precise" title="No Anys on this line!">                if not self.__client_reconnect_to_server():</span>
 <span class="line-precise" title="No Anys on this line!">                    sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4643,39 +4662,51 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">        # reconn &gt; 0 (reconnect until counter reaches zero)</span>
 <span class="line-precise" title="No Anys on this line!">        while self.__cli_opts.reconn != 0:</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">            # [1/5] Let's ask the interrupter() function if we should terminate?</span>
+<span class="line-empty" title="No Anys on this line!">            # [1/6] Let's ask the interrupter() function if we should terminate?</span>
 <span class="line-empty" title="No Anys on this line!">            # We need a little wait here in order for the stop signal to propagate.</span>
 <span class="line-empty" title="No Anys on this line!">            # Don't know how fast the other threads are.</span>
-<span class="line-precise" title="No Anys on this line!">            time.sleep(0.1)</span>
-<span class="line-precise" title="No Anys on this line!">            if self.ssig.has_stop():</span>
-<span class="line-precise" title="No Anys on this line!">                return False</span>
+<span class="line-empty" title="No Anys on this line!">            # time.sleep(0.1)</span>
+<span class="line-empty" title="No Anys on this line!">            # if self.ssig.has_stop():</span>
+<span class="line-empty" title="No Anys on this line!">            #     return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">            # [2/5] Wait</span>
+<span class="line-empty" title="No Anys on this line!">            # [2/6] Wait</span>
 <span class="line-precise" title="No Anys on this line!">            time.sleep(self.__cli_opts.reconn_wait)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">            # [3/5] Let's ask the interrupter() function if we should terminate?</span>
+<span class="line-empty" title="No Anys on this line!">            # [3/6] Let's ask the interrupter() function if we should terminate?</span>
 <span class="line-empty" title="No Anys on this line!">            # In case the other threads were slower as the sleep time in [1/5]</span>
 <span class="line-empty" title="No Anys on this line!">            # we will check again here.</span>
 <span class="line-precise" title="No Anys on this line!">            if self.ssig.has_stop():</span>
 <span class="line-precise" title="No Anys on this line!">                return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">            # [4/6] Increment the port numer (if --reconn-robin has multiple)</span>
+<span class="line-precise" title="No Anys on this line!">            self.__pport += 1</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__pport == len(self.__ports):</span>
+<span class="line-precise" title="No Anys on this line!">                self.__pport = 0</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">            if self.__cli_opts.reconn &gt; 0:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                self.log.info(</span>
-<span class="line-precise" title="No Anys on this line!">                    "Reconnecting in %f sec (%d more times left)",</span>
+<span class="line-precise" title="No Anys on this line!">                    "Reconnecting to %s:%d in %.1f sec (%d more times left)",</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__addr,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__ports[self.__pport],</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__cli_opts.reconn_wait,</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__cli_opts.reconn,</span>
 <span class="line-empty" title="No Anys on this line!">                )</span>
 <span class="line-empty" title="No Anys on this line!">            else:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                self.log.info("Reconnecting in %f sec (indefinitely)", self.__cli_opts.reconn_wait)</span>
+Explicit (x4)">                self.log.info(</span>
+<span class="line-precise" title="No Anys on this line!">                    "Reconnecting to %s:%d in %.1f sec (indefinitely)",</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__addr,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__ports[self.__pport],</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__cli_opts.reconn_wait,</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">            # [4/5] Decrease reconnect counter</span>
+<span class="line-empty" title="No Anys on this line!">            # [5/6] Decrease reconnect counter</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__cli_opts.reconn &gt; 0:</span>
 <span class="line-precise" title="No Anys on this line!">                self.__cli_opts.reconn -= 1</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">            # [5/5] Recurse until True or reconnect count is used up</span>
-<span class="line-precise" title="No Anys on this line!">            if self.__net.run_client(self.__addr, self.__port):</span>
+<span class="line-empty" title="No Anys on this line!">            # [6/6] Recurse until True or reconnect count is used up</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__net.run_client(self.__addr, self.__ports[self.__pport]):</span>
 <span class="line-precise" title="No Anys on this line!">                return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [5/5] Signal failure</span>
@@ -5260,8 +5291,6 @@ Explicit (x2)">    fhandle = open(value, mode="r")</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">        ports = []</span>
 <span class="line-precise" title="No Anys on this line!">        for port in range(ranges[0], ranges[1] + 1):</span>
-<span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">            print(type(port))</span>
 <span class="line-precise" title="No Anys on this line!">            _args_check_port(str(port))</span>
 <span class="line-precise" title="No Anys on this line!">            ports.append(port)</span>
 <span class="line-precise" title="No Anys on this line!">        return ports</span>
@@ -5906,7 +5935,7 @@ Explicit (x11)">    if args.http or args.https or args.rebind or args.wait or ar
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">    host = args.hostname</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">    port = args.port</span>
+Explicit (x2)">    ports = [args.port]</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Set pwncat options</span>
 <span class="line-precise" title="No Anys on this line!">    sock_opts = DsIONetworkSock(</span>
@@ -6000,9 +6029,9 @@ Explicit (x5)">        lhost = args.local.split(":")[0]</span>
 Explicit (x4)">        lport = int(args.local.split(":")[1])</span>
 <span class="line-empty" title="No Anys on this line!">        # Create listen and client instances</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">        net_srv = IONetwork(ssig, enc, lhost, lport, "server", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x1)">        net_srv = IONetwork(ssig, enc, lhost, [lport], "server", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net_cli = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x2)">        net_cli = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-empty" title="No Anys on this line!">        # Create Runner</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -6039,9 +6068,9 @@ Explicit (x5)">        lhost = args.remote.split(":")[0]</span>
 Explicit (x4)">        lport = int(args.remote.split(":")[1])</span>
 <span class="line-empty" title="No Anys on this line!">        # Create local and remote client</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">        net_cli_l = IONetwork(ssig, enc, lhost, lport, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x1)">        net_cli_l = IONetwork(ssig, enc, lhost, [lport], "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net_cli_r = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x2)">        net_cli_r = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-empty" title="No Anys on this line!">        # Create Runner</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
@@ -6069,7 +6098,7 @@ Explicit (x2)">        net_cli_r = IONetwork(ssig, enc, host, port, "client", sr
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">    if args.listen:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net = IONetwork(ssig, enc, host, port, "server", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x2)">        net = IONetwork(ssig, enc, host, ports, "server", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>
@@ -6097,8 +6126,10 @@ Explicit (x1)">                code_send,</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Run client</span>
 <span class="line-empty" title="No Anys on this line!">    else:</span>
+<span class="line-precise" title="No Anys on this line!">        net = IONetwork(</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x2)">        net = IONetwork(ssig, enc, host, port, "client", srv_opts, cli_opts, sock_opts)</span>
+Explicit (x4)">            ssig, enc, host, ports + args.reconn_robin, "client", srv_opts, cli_opts, sock_opts</span>
+<span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner()</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>

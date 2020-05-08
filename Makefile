@@ -73,7 +73,7 @@ _lint-version:
 	@VERSION_PWNCAT=$$( grep -E '^VERSION = "[.0-9]+(-\w+)?"' bin/pwncat | awk -F'"' '{print $$2}' || true ); \
 	VERSION_SETUP=$$( grep version= setup.py | awk -F'"' '{print $$2}' || true ); \
 	VERSION_CHANGE=$$( grep -E '## Release [.0-9]+(-\w+)?$$' CHANGELOG.md | head -1 | sed 's/.*[[:space:]]//g' || true ); \
-	if [ "$${VERSION_PWNCAT}" != "$${VERSION_SETUP}" ] && [ "$${VERSION_SETUP}" != "$${VERSION_CHANGE}" ]; then \
+	if [ "$${VERSION_PWNCAT}" != "$${VERSION_SETUP}" ] || [ "$${VERSION_SETUP}" != "$${VERSION_CHANGE}" ]; then \
 		echo "[ERROR] Version mismatch"; \
 		echo "bin/pwncat:   $${VERSION_PWNCAT}"; \
 		echo "setup.py:     $${VERSION_SETUP}"; \
