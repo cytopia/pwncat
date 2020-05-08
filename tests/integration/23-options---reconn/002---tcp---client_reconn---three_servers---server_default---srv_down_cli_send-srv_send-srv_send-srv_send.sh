@@ -85,7 +85,7 @@ run_test() {
 	test_case_instance_is_running "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 	# [CLIENT] Ensure Client has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "" "" "" "" "Connection refused"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "" "" "" "" "(Connection refused)|(timed out)"
 
 
 	###
@@ -119,7 +119,7 @@ run_test() {
 	test_case_instance_is_running "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}"
 
 	# [CLIENT] Ensure Client still has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "Connection refused"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "(Connection refused)|(timed out)"
 
 
 	# --------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ run_test() {
 	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 	# [CLIENT] Ensure Client still has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "Connection refused"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv1_stdout}" "${srv1_stderr}" "(Connection refused)|(timed out)"
 
 
 	###
@@ -186,7 +186,7 @@ run_test() {
 	test_case_instance_is_running "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
 
 	# [CLIENT] Ensure Client still has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}" "Connection refused"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}" "(Connection refused)|(timed out)"
 
 
 	# --------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ run_test() {
 	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 	# [CLIENT] Ensure Client still has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}" "Connection refused"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}" "(Connection refused)|(timed out)"
 
 
 	###
@@ -244,7 +244,7 @@ run_test() {
 	test_case_instance_is_running "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}"
 
 	# [CLIENT] Ensure Client still has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}" "Connection refused"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}" "(Connection refused)|(timed out)"
 
 
 	# --------------------------------------------------------------------------------
@@ -268,7 +268,7 @@ run_test() {
 	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 	# [CLIENT] Ensure Client still has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}" "Connection refused"
+	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv3_stdout}" "${srv3_stderr}" "(Connection refused)|(timed out)"
 
 
 	###
