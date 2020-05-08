@@ -248,7 +248,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | SCTP                | :x:    | :x:     | ✔   |
 | Command exec        | ✔      | ✔       | ✔   |
 | Inbound port scan   | *      | ✔       | ✔   |
-| Outbound port scan  | *      | :x:     | :x: |
+| Outbound port scan  | ✔      | :x:     | :x: |
 | Hex dump            | *      | ✔       | ✔   |
 | Telnet              | :x:    | ✔       | ✔   |
 | SSL                 | :x:    | :x:     | ✔   |
