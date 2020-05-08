@@ -25,7 +25,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall and IDS/IPS evasion, bind and reverse shell and port forwarding magic.
+> #### Netcat on steroids with Firewall and IDS/IPS evasion, bind and reverse shell, port forwarding magic and scripting engine ([PSE](pse/)).
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.66%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.50%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -218,6 +218,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 
 | Feature        | Description |
 |----------------|-------------|
+| [PSE](pse)     | pwncat scripting engine to apply custom Python scripts for sent and/or received data |
 | Bind shell     | Create bind shells |
 | Reverse shell  | Create reverse shells |
 | Port Forward   | Local and remote port forward (Proxy server/client) |
@@ -728,6 +729,65 @@ tail -fn50 comm.txt
 <!--
 </details>
 -->
+
+### Pwncat Scripting Engine ([PSE](pse))
+
+`pwncat` offers a Python based scripting engine to inject your custom code before sending and
+after receiving data.
+
+#### How it works
+
+You will simply need to provide a Python file with the following function:
+```python
+def transform(data):
+    # Example to reverse a string
+    return data[::-1]
+```
+Both, the function name must be named `transform` and the parsed argument name must be `data`.
+Other than that you can add as much code as you like. Each instance of `pwncat` can take two scripts:
+
+1. `--script-send`: script will be applied before sending
+2. `--script-recv`: script will be applied after receiving
+
+
+#### Example 1: Self-built asymmetric encryption
+
+> PSE: [asym-enc](pse/asym-enc) source code
+
+This will encrypt your traffic asymmetrically. It is just a very basic [ROT13](https://en.wikipedia.org/wiki/ROT13) implementation with different shift lengths on both sides to *emulate* asymmetry. You could do the same and implement GPG based asymmetric encryption for PSE.
+
+```bash
+# server
+pwncat -vvvv -l localhost 4444 \
+  --script-send pse/asym-enc/pse-asym_enc-server_send.py \
+  --script-recv pse/asym-enc/pse-asym_enc-server_recv.py
+```
+```bash
+# client
+pwncat -vvvv localhost 4444 \
+  --script-send pse/asym-enc/pse-asym_enc-client_send.py \
+  --script-recv pse/asym-enc/pse-asym_enc-client_recv.py
+```
+
+#### Example 2: Self-built HTTP POST wrapper
+
+> PSE: [http-post](pse/http-post) source code
+
+This will wrap all traffic into a valid HTTP POST request, making it look like normal HTTP traffic.
+
+```bash
+# server
+pwncat -vvvv -l localhost 4444 \
+  --script-send pse/http-post/pse-http_post-pack.py \
+  --script-recv pse/http-post/pse-http_post-unpack.py
+```
+```bash
+# client
+pwncat -vvvv localhost 4444 \
+  --script-send pse/http-post/pse-http_post-pack.py \
+  --script-recv pse/http-post/pse-http_post-unpack.py
+```
+
 
 ## :information_source: FAQ
 
