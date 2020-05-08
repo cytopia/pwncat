@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.12-alpha
+
+#### Added
+- Feature: Adedd PSE: Pwncat Scripting Engine (`--script-send` and `--script-recv`): #62
+
+
 ## Release 0.0.11-alpha
 
 #### Fixed
