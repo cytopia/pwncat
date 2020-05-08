@@ -40,49 +40,177 @@ jobs:
       - name: "[BEHAVIOUR] Client quits correctly"
         shell: bash
         run: |
-          make _test-behaviour-quit--client
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-behaviour-quit--client
+        env:
+          RETRIES: 5
 
       - name: "[BEHAVIOUR] Server quits correctly"
         shell: bash
         run: |
-          make _test-behaviour-quit--server
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-behaviour-quit--server
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Modes
+      # ------------------------------------------------------------
 
       - name: "[MODES] Local port forwarding"
         shell: bash
         run: |
-          make _test-mode--local_forward
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-mode--local_forward
+        env:
+          RETRIES: 5
 
       - name: "[MODES] Remote port forwarding"
         shell: bash
         run: |
-          make _test-mode--remote_forward
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-mode--remote_forward
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Options
+      # ------------------------------------------------------------
 
       - name: "[OPTIONS] -n/--nodns"
         shell: bash
         run: |
-          make _test-options--nodns
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-options--nodns
+        env:
+          RETRIES: 5
 
-      - name: "[OPTIONS] -C/--crlf"
-        shell: bash
-        run: |
-          make _test-options--crlf
+      __DISABLE_CRLF__- name: "[OPTIONS] -C/--crlf"
+      __DISABLE_CRLF__  shell: bash
+      __DISABLE_CRLF__  run: |
+      __DISABLE_CRLF__    retry() {
+      __DISABLE_CRLF__      for n in $(seq ${RETRIES}); do
+      __DISABLE_CRLF__        echo "[${n}/${RETRIES}] ${*}";
+      __DISABLE_CRLF__        if eval "${*}"; then
+      __DISABLE_CRLF__          return 0;
+      __DISABLE_CRLF__        fi;
+      __DISABLE_CRLF__        sleep 10;
+      __DISABLE_CRLF__      done;
+      __DISABLE_CRLF__      return 1;
+      __DISABLE_CRLF__    }
+      __DISABLE_CRLF__    retry make _test-options--crlf
+      __DISABLE_CRLF__  env:
+      __DISABLE_CRLF__    RETRIES: 5
 
       - name: "[OPTIONS] --keep-open"
         shell: bash
         run: |
-          make _test-options--keep_open
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-options--keep_open
+        env:
+          RETRIES: 5
 
       - name: "[OPTIONS] --reconn"
         shell: bash
         run: |
-          make _test-options--reconn
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-options--reconn
+        env:
+          RETRIES: 5
 
       - name: "[OPTIONS] --ping-intvl"
         shell: bash
         run: |
-          make _test-options--ping_intvl
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-options--ping_intvl
+        env:
+          RETRIES: 5
 
       - name: "[OPTIONS] --ping-word"
         shell: bash
         run: |
-          make _test-options--ping_word
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+          retry make _test-options--ping_word
+        env:
+          RETRIES: 5

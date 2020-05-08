@@ -38,6 +38,15 @@ VERSION_MATRIX=(
 	"x64--windows--pypy3"
 )
 
+DISABLE_CRLF=(
+	"x64--windows--2.7"
+	"x64--windows--3.5"
+	"x64--windows--3.6"
+	"x64--windows--3.7"
+	"x64--windows--3.8"
+	"x64--windows--pypy2"
+	"x64--windows--pypy3"
+)
 
 ###
 ### Ensure old flows are removed
@@ -66,8 +75,14 @@ for v in "${VERSION_MATRIX[@]}"; do
 	printf "Arch:      %s\\n" "${arch}"
 	printf "Python:    %s\\n" "${py}"
 
+	crlf_comment=""
+	if [[ " ${DISABLE_CRLF[@]} " =~ " ${v} " ]]; then
+		crlf_comment="#"
+	fi
+
 	# shellcheck disable=SC2002
 	cat "${TPL_PATH}" \
+		| sed "s/__DISABLE_CRLF__/${crlf_comment}/g" \
 		| sed "s/__WORKFLOW_NAME__/${flw_name}/g" \
 		| sed "s/__OS__/${os}-latest/g" \
 		| sed "s/__PYTHON_VERSION__/${py}/g" \
