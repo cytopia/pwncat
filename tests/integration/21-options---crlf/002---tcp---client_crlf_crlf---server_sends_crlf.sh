@@ -48,6 +48,7 @@ run_test() {
 	data="$(tmp_file)"
 	printf "abcdefghijklmnopqrstuvwxyz1234567890\\r\\n" > "${data}"
 	expect="abcdefghijklmnopqrstuvwxyz1234567890\\r\\n"
+	expect_or="abcdefghijklmnopqrstuvwxyz1234567890\\r\\r\\n"  # some output issue on windows
 	srv_stdout="$(tmp_file)"
 	srv_stderr="$(tmp_file)"
 	cli_stdout="$(tmp_file)"
@@ -110,7 +111,7 @@ run_test() {
 	print_h2 "(3/4) Transfer: Server -> Client"
 
 	# [SERVER -> Client]
-	wait_for_data_transferred "" "${expect}" "" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	wait_for_data_transferred "" "${expect}" "${expect_or}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------

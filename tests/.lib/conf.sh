@@ -15,10 +15,13 @@ SOURCEDIR="$( dirname "${SOURCEPATH}" )"
 # Show newline characters as they are
 cat_raw() {
 	local file="${1}"
+	# shellcheck disable=SC2020
 	cat -ev "${1}" \
+		| sed 's/\^M^M\$$/\\r\\r\\n/g' \
 		| sed 's/\^M\$$/\\r\\n/g' \
 		| sed 's/\$$/\\n/g' \
 		| sed 's/\^M$/\\r/g' \
+		| tr -d '\r\r\n' \
 		| tr -d '\r\n' \
 		| tr -d '\n' \
 		| tr -d '\r'
