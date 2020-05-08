@@ -50,7 +50,7 @@ jobs:
             done;
             return 1;
           }
-          retry make _test-behaviour-quit--client; then
+          retry make _test-behaviour-quit--client
         env:
           RETRIES: 5
 
@@ -130,22 +130,22 @@ jobs:
         env:
           RETRIES: 5
 
-      - name: "[OPTIONS] -C/--crlf"
-        shell: bash
-        run: |
-          retry() {
-            for n in $(seq ${RETRIES}); do
-              echo "[${n}/${RETRIES}] ${*}";
-              if eval "${*}"; then
-                return 0;
-              fi;
-              sleep 10;
-            done;
-            return 1;
-          }
-          retry make _test-options--crlf
-        env:
-          RETRIES: 5
+      #- name: "[OPTIONS] -C/--crlf"
+      #  shell: bash
+      #  run: |
+      #    retry() {
+      #      for n in $(seq ${RETRIES}); do
+      #        echo "[${n}/${RETRIES}] ${*}";
+      #        if eval "${*}"; then
+      #          return 0;
+      #        fi;
+      #        sleep 10;
+      #      done;
+      #      return 1;
+      #    }
+      #    retry make _test-options--crlf
+      #  env:
+      #    RETRIES: 5
 
       - name: "[OPTIONS] --keep-open"
         shell: bash

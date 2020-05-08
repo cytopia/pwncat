@@ -50,7 +50,7 @@ jobs:
             done;
             return 1;
           }
-          retry make _test-behaviour-quit--client; then
+          retry make _test-behaviour-quit--client
         env:
           RETRIES: 5
 
