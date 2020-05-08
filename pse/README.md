@@ -32,6 +32,12 @@ These scripts currently only serve as a way to give you an idea about how this c
    <td>✔</td>
    <td>✔</td>
   </tr>
+  <tr>
+   <td><a href="chat-bot">chat-bot</a></td>
+   <td>Basic <i>dummy</i> chat bot that wants you to greet it, tell it your name and will then ask you a couple of questions.</td>
+   <td>✔</td>
+   <td>✔</td>
+  </tr>
  </tbody>
 </table>
 
