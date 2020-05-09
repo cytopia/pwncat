@@ -219,106 +219,61 @@ print_data_raw() {
 }
 
 
+readonly PRINT_TEST_DATETIME_INIT_START_SEC="$( date '+%s' )"  # The first test started
+PRINT_TEST_DATETIME_TEST_START_SEC=0
+PRINT_TEST_DATETIME_TEST_COUNT_NUM=0
+print_test_datetime() {
+	local now_date=
+	local now_sec=0
+	local curr_round=0   # time in seconds for current round
+	local all_rounds=0   # time in seconds for all rounds
 
-# -------------------------------------------------------------------------------------------------
-# RUN FUNCTIONS
-# -------------------------------------------------------------------------------------------------
+	now_date="$( date )"
+	now_sec="$( date '+%s' )"
 
-###
-### Run a command in foreground
-###
-run() {
-	local cmd="${1}"
+	>&2 printf -- '-%.0s' {1..80}
 
-	local clr_cmd="\\033[0;35m"   # Purple
-	local clr_ok="\\033[0;32m"    # Green
-	local clr_fail="\\033[0;31m"  # Red
-	local clr_rst="\\033[m"       # Reset to normal
-
-	printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
-	if eval "${cmd}"; then
-		printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
-		return 0
-	fi
-	printf "${clr_fail}%s${clr_rst}\\n" "[FAIL]"
-	return 1
-}
-
-###
-### Run a command in foreground and ensure it failed
-###
-run_fail() {
-	local cmd="${1}"
-
-	local clr_cmd="\\033[0;35m"   # Purple
-	local clr_ok="\\033[0;32m"    # Green
-	local clr_fail="\\033[0;31m"  # Red
-	local clr_rst="\\033[m"       # Reset to normal
-
-	>&2 printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
-	if ! eval "${cmd}"; then
-		>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK] (failed - was supposed to fail)"
-		return 0
-	fi
-	>&2 printf "${clr_fail}%s${clr_rst}\\n" "[FAIL] (succeeded - was supposed to fail)"
-	return 1
-}
-
-###
-### Run a command in background and return its pid
-###
-run_bg() {
-	local pipe="${1}"
-	shift
-	local index_stdout=$(( ${#} - 2 ))
-	local index_stderr=$(( ${#} - 1 ))
-
-	local stdout=
-	local stderr=
-	local cnt=0
-	for arg in "${@}"; do
-		if [ "${cnt}" -eq "${index_stdout}" ]; then
-			stdout="${arg}"
-		fi
-		if [ "${cnt}" -eq "${index_stderr}" ]; then
-			stderr="${arg}"
-		fi
-		cnt=$(( cnt + 1 ))
-	done
-
-	# Remove last two arguments
-	set -- "${@:1:$(($#-1))}"
-	set -- "${@:1:$(($#-1))}"
-
-	local clr_cmd="\\033[0;35m"   # Purple
-	local clr_ok="\\033[0;32m"    # Green
-	local clr_fail="\\033[0;31m"  # Red
-	local clr_rst="\\033[m"       # Reset to normal
-	local pid
-
-	# Piped command
-	if [ -n "${pipe}" ]; then
-		>&2 printf "${clr_cmd}%s | %s${clr_rst}\\n" "${pipe}" "${*} > ${stdout} 2> ${stderr}"
-		${pipe} | "${@}"  > "${stdout}" 2> "${stderr}" &
-		pid="${!:-}"
-	# Normal command
+	# Test starte
+	if [ "$(( PRINT_TEST_DATETIME_TEST_COUNT_NUM % 2 ))" -eq "0" ]; then
+		PRINT_TEST_DATETIME_TEST_START_SEC="${now_sec}"
+		>&2 printf "[TEST START]: %s" "${now_date}"
+	# Test finished
 	else
-		>&2 printf "${clr_cmd}%s${clr_rst}\\n" "${*} > ${stdout} 2> ${stderr}"
-		"${@}" > "${stdout}" 2> "${stderr}" &
-		pid="${!:-}"
+		curr_round=$(( now_sec - PRINT_TEST_DATETIME_TEST_START_SEC ))
+		all_rounds=$(( now_sec - PRINT_TEST_DATETIME_INIT_START_SEC ))
+		>&2 printf "[TEST DONE]:  %s (curr: %s sec) (total: %s sec)" "${now_date}" "${curr_round}" "${all_rounds}"
 	fi
-
-	# Check PID
-	if [ -z "${pid}" ]; then
-		>&2 printf "${clr_fail}%s${clr_rst}\\n" "[FAIL]"
-		return 1
-	fi
-
-	>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
-	echo "${pid}"
-	return 0
+	>&2 echo
+	PRINT_TEST_DATETIME_TEST_COUNT_NUM=$(( PRINT_TEST_DATETIME_TEST_COUNT_NUM + 1 ))
 }
 
+readonly PRINT_RUN_DATETIME_INIT_START_SEC="$( date '+%s' )"  # The first test started
+PRINT_RUN_DATETIME_TEST_START_SEC=0
+PRINT_RUN_DATETIME_TEST_COUNT_NUM=0
+print_run_datetime() {
+	local now_date=
+	local now_sec=0
+	local curr_round=0   # time in seconds for current round
+	local all_rounds=0   # time in seconds for all rounds
+
+	now_date="$( date )"
+	now_sec="$( date '+%s' )"
+
+	>&2 printf -- '.%.0s' {1..60}
+
+	# Test starte
+	if [ "$(( PRINT_RUN_DATETIME_TEST_COUNT_NUM % 2 ))" -eq "0" ]; then
+		PRINT_RUN_DATETIME_TEST_START_SEC="${now_sec}"
+		>&2 printf "[RUN START]" "${now_date}"
+	# Test finished
+	else
+		curr_round=$(( now_sec - PRINT_RUN_DATETIME_TEST_START_SEC ))
+		all_rounds=$(( now_sec - PRINT_RUN_DATETIME_INIT_START_SEC ))
+		>&2 printf "[RUN DONE] (%s sec)" "${curr_round}"
+	fi
+	>&2 echo
+	PRINT_RUN_DATETIME_TEST_COUNT_NUM=$(( PRINT_RUN_DATETIME_TEST_COUNT_NUM + 1 ))
+}
 
 # -------------------------------------------------------------------------------------------------
 # LOW LEVEL FUNCTIONS
@@ -518,6 +473,115 @@ tmp_file() {
 
 
 # -------------------------------------------------------------------------------------------------
+# RUN FUNCTIONS
+# -------------------------------------------------------------------------------------------------
+
+###
+### Run a command in foreground
+###
+run() {
+	print_run_datetime
+	local cmd="${1}"
+
+	local clr_cmd="\\033[0;35m"   # Purple
+	local clr_ok="\\033[0;32m"    # Green
+	local clr_fail="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"       # Reset to normal
+
+	printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
+	if eval "${cmd}"; then
+		printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
+		print_run_datetime
+		return 0
+	fi
+	printf "${clr_fail}%s${clr_rst}\\n" "[FAIL]"
+	print_run_datetime
+	return 1
+}
+
+###
+### Run a command in foreground and ensure it failed
+###
+run_fail() {
+	print_run_datetime
+	local cmd="${1}"
+
+	local clr_cmd="\\033[0;35m"   # Purple
+	local clr_ok="\\033[0;32m"    # Green
+	local clr_fail="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"       # Reset to normal
+
+	>&2 printf "${clr_cmd}%s${clr_rst}\\n" "${cmd}"
+	if ! eval "${cmd}"; then
+		>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK] (failed - was supposed to fail)"
+		print_run_datetime
+		return 0
+	fi
+	>&2 printf "${clr_fail}%s${clr_rst}\\n" "[FAIL] (succeeded - was supposed to fail)"
+	print_run_datetime
+	return 1
+}
+
+###
+### Run a command in background and return its pid
+###
+run_bg() {
+	print_test_datetime
+	local pipe="${1}"
+	shift
+	local index_stdout=$(( ${#} - 2 ))
+	local index_stderr=$(( ${#} - 1 ))
+
+	local stdout=
+	local stderr=
+	local cnt=0
+	for arg in "${@}"; do
+		if [ "${cnt}" -eq "${index_stdout}" ]; then
+			stdout="${arg}"
+		fi
+		if [ "${cnt}" -eq "${index_stderr}" ]; then
+			stderr="${arg}"
+		fi
+		cnt=$(( cnt + 1 ))
+	done
+
+	# Remove last two arguments
+	set -- "${@:1:$(($#-1))}"
+	set -- "${@:1:$(($#-1))}"
+
+	local clr_cmd="\\033[0;35m"   # Purple
+	local clr_ok="\\033[0;32m"    # Green
+	local clr_fail="\\033[0;31m"  # Red
+	local clr_rst="\\033[m"       # Reset to normal
+	local pid
+
+	# Piped command
+	if [ -n "${pipe}" ]; then
+		>&2 printf "${clr_cmd}%s | %s${clr_rst}\\n" "${pipe}" "${*} > ${stdout} 2> ${stderr}"
+		${pipe} | "${@}"  > "${stdout}" 2> "${stderr}" &
+		pid="${!:-}"
+	# Normal command
+	else
+		>&2 printf "${clr_cmd}%s${clr_rst}\\n" "${*} > ${stdout} 2> ${stderr}"
+		"${@}" > "${stdout}" 2> "${stderr}" &
+		pid="${!:-}"
+	fi
+
+	# Check PID
+	if [ -z "${pid}" ]; then
+		>&2 printf "${clr_fail}%s${clr_rst}\\n" "[FAIL]"
+		print_test_datetime
+		return 1
+	fi
+
+	>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
+	echo "${pid}"
+	print_test_datetime
+	return 0
+}
+
+
+# -------------------------------------------------------------------------------------------------
 # HIGH LEVEL CHECK FUNCTIONS    -    they will automatically exit the script!!!
 # -------------------------------------------------------------------------------------------------
 
@@ -525,6 +589,7 @@ tmp_file() {
 ###
 ###
 wait_for_data_transferred() {
+	print_test_datetime
 	local expect_regex="${1}"
 	local expect_data="${2}"
 	# If not empty, will be OR'ed with expect_data. This is useful/required
@@ -546,6 +611,7 @@ wait_for_data_transferred() {
 	if [ -n "${send_name}" ]; then
 		if [ -z "${send_pid}" ] || [ -z "${send_file_stdout}" ] || [ -z "${send_file_stderr}" ]; then
 			print_error "[Meta] (wait_for_data_transferred(): send_pid, send_file_stdout or send_file_stderr  not specified."
+			print_test_datetime
 			exit 1
 		fi
 	fi
@@ -583,6 +649,7 @@ wait_for_data_transferred() {
 				fi
 				kill_pid "${send_pid}" || true
 				kill_pid "${recv_pid}" || true
+				print_test_datetime
 				exit 1
 			fi
 			sleep 1
@@ -644,6 +711,7 @@ wait_for_data_transferred() {
 				fi
 				kill_pid "${send_pid}" || true
 				kill_pid "${recv_pid}" || true
+				print_test_datetime
 				exit 1
 			fi
 			sleep 1
@@ -691,6 +759,7 @@ wait_for_data_transferred() {
 				fi
 				kill_pid "${send_pid}" || true
 				kill_pid "${recv_pid}" || true
+				print_test_datetime
 				exit 1
 			fi
 			sleep 1
@@ -705,6 +774,7 @@ wait_for_data_transferred() {
 	print_data_raw "RECVER] [${recv_name}] received - [HEX" "$( od -c "${recv_file_stdout}" )"
 	# shellcheck disable=SC2002
 	print_data_raw "RECVER] [${recv_name}] received - [HEX" "$( cat "${recv_file_stdout}" | od -c )"
+	print_test_datetime
 }
 
 
@@ -713,6 +783,7 @@ wait_for_data_transferred() {
 ### Stop instance gratefully, or kill and exit
 ###
 action_stop_instance() {
+	print_test_datetime
 	local name="${1}"
 	local pid="${2}"
 	local file_stdout="${3}"
@@ -727,6 +798,7 @@ action_stop_instance() {
 	if [ -n "${name2}" ]; then
 		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
 			print_error "[Meta] (action_stop_instance(): pid2, stdout2 or stderr2  not specified."
+			print_test_datetime
 			exit 1
 		fi
 	fi
@@ -734,6 +806,7 @@ action_stop_instance() {
 	# (1/3) Normal stop
 	print_info "Stopping ${name} gracefully (pid: ${pid})..."
 	if stop_pid "${pid}"; then
+		print_test_datetime
 		return 0
 	fi
 
@@ -756,6 +829,7 @@ action_stop_instance() {
 	print_file "${name} STDERR" "${file_stderr}"
 	print_file "${name} STDOUT" "${file_stdout}"
 	print_error "[Meta] Could not stop ${name} gracefully process with pid: ${pid}"
+	print_test_datetime
 	exit 1
 }
 
@@ -764,6 +838,7 @@ action_stop_instance() {
 ### Ensure instance is running
 ###
 test_case_instance_is_running() {
+	print_test_datetime
 	local name="${1}"
 	local pid="${2}"
 	local file_stdout="${3}"
@@ -778,6 +853,7 @@ test_case_instance_is_running() {
 	if [ -n "${name2}" ]; then
 		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
 			print_error "[Meta] (test_case_instance_is_running(): pid2, stdout2 or stderr2  not specified."
+			print_test_datetime
 			exit 1
 		fi
 	fi
@@ -786,6 +862,7 @@ test_case_instance_is_running() {
 
 	if pid_is_running "${pid}"; then
 		print_info "${name} is running with pid: ${pid}"
+		print_test_datetime
 		return 0
 	fi
 
@@ -801,6 +878,7 @@ test_case_instance_is_running() {
 	if [ -n "${name2}" ]; then
 		kill_pid "${pid2}" || true
 	fi
+	print_test_datetime
 	exit 1
 }
 
@@ -809,6 +887,7 @@ test_case_instance_is_running() {
 ### Ensure instance is stopped
 ###
 test_case_instance_is_stopped() {
+	print_test_datetime
 	local name="${1}"
 	local pid="${2}"
 	local file_stdout="${3}"
@@ -823,6 +902,7 @@ test_case_instance_is_stopped() {
 	if [ -n "${name2}" ]; then
 		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
 			print_error "[Meta] (test_case_instance_is_stopped(): pid2, stdout2 or stderr2  not specified."
+			print_test_datetime
 			exit 1
 		fi
 	fi
@@ -833,6 +913,7 @@ test_case_instance_is_stopped() {
 	# shellcheck disable=SC2034
 	for i in {1..10}; do
 		if pid_is_not_running "${pid}"; then
+			print_test_datetime
 			return 0
 		fi
 		sleep 1
@@ -852,6 +933,7 @@ test_case_instance_is_stopped() {
 	if [ -n "${name2}" ]; then
 		kill_pid "${pid2}" || true
 	fi
+	print_test_datetime
 	exit 1
 }
 
@@ -860,6 +942,7 @@ test_case_instance_is_stopped() {
 ### Ensure instance has no errors
 ###
 test_case_instance_has_no_errors() {
+	print_test_datetime
 	# This is a mysterious bash error. We need to somehow use these parameters
 	# in case only 1,2,3,4 and 9 are specified... no idea why. But this way the 9th
 	# parameter will have a value as it is supposed to be
@@ -892,6 +975,7 @@ test_case_instance_has_no_errors() {
 	if [ -n "${name2}" ]; then
 		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
 			print_error "[Meta] (test_case_instance_has_no_errors(): pid2, stdout2 or stderr2  not specified."
+			print_test_datetime
 			exit 1
 		fi
 	fi
@@ -903,6 +987,7 @@ test_case_instance_has_no_errors() {
 	fi
 
 	if ! has_errors "${file_stderr}" "${reg_ignore_err}"; then
+		print_test_datetime
 		return 0
 	fi
 
@@ -919,6 +1004,7 @@ test_case_instance_has_no_errors() {
 	if [ -n "${name2}" ]; then
 		kill_pid "${pid2}" || true
 	fi
+	print_test_datetime
 	exit 1
 }
 
@@ -926,6 +1012,7 @@ test_case_instance_has_no_errors() {
 ### Ensure instance does have errors
 ###
 test_case_instance_has_errors() {
+	print_test_datetime
 	local name="${1}"
 	local pid="${2:-}"
 	local file_stdout="${3}"
@@ -940,6 +1027,7 @@ test_case_instance_has_errors() {
 	if [ -n "${name2}" ]; then
 		if [ -z "${pid2}" ] || [ -z "${file_stdout2}" ] || [ -z "${file_stderr2}" ]; then
 			print_error "[Meta] (test_case_instance_has_errors(): pid2, stdout2 or stderr2  not specified."
+			print_test_datetime
 			exit 1
 		fi
 	fi
@@ -947,6 +1035,7 @@ test_case_instance_has_errors() {
 	print_info "Check ${name} for errors"
 
 	if ! has_no_errors "${file_stderr}"; then
+		print_test_datetime
 		return 0
 	fi
 
@@ -963,5 +1052,6 @@ test_case_instance_has_errors() {
 	if [ -n "${name2}" ]; then
 		kill_pid "${pid2}" || true
 	fi
+	print_test_datetime
 	exit 1
 }
