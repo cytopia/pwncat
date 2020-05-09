@@ -4,6 +4,15 @@
 ## Unreleased
 
 
+## Release 0.0.15-alpha
+
+#### Fixed
+- Fixed broken pipe with `tail -F`
+
+#### Changed
+- CI: Retry with different port on test failure
+
+
 ## Release 0.0.14-alpha
 
 #### Added
