@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -e
 set -u
 set -o pipefail
@@ -264,7 +265,7 @@ print_run_datetime() {
 	# Test starte
 	if [ "$(( PRINT_RUN_DATETIME_TEST_COUNT_NUM % 2 ))" -eq "0" ]; then
 		PRINT_RUN_DATETIME_TEST_START_SEC="${now_sec}"
-		>&2 printf "[RUN START]" "${now_date}"
+		>&2 printf "[RUN START]"
 	# Test finished
 	else
 		curr_round=$(( now_sec - PRINT_RUN_DATETIME_TEST_START_SEC ))
@@ -720,6 +721,7 @@ wait_for_data_transferred() {
 		print_data_raw "EXPCT2] [${recv_name}] - [RAW" "${expect_data_or}" 1
 		# shellcheck disable=SC2059
 		print_data_raw "EXPCT1] [${recv_name}] - [HEX" "$( printf "${expect_data}" | od -c )"
+		# shellcheck disable=SC2059
 		print_data_raw "EXPCT2] [${recv_name}] - [HEX" "$( printf "${expect_data_or}" | od -c )"
 		echo
 	else
