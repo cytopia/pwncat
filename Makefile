@@ -210,6 +210,10 @@ _smoke-keep_open-after_client_send:
 # -------------------------------------------------------------------------------------------------
 # Test Targets
 # -------------------------------------------------------------------------------------------------
+TEST_PWNCAT_HOST=localhost
+TEST_PWNCAT_PORT=4444
+TEST_PWNCAT_WAIT=8
+TEST_PWNCAT_RUNS=1
 test: _test-behaviour-quit--client
 test: _test-behaviour-quit--server
 test: _test-mode--local_forward
@@ -223,43 +227,53 @@ test: _test-options--ping_word
 
 .PHONY: _test-behaviour-quit--client
 _test-behaviour-quit--client:
-	tests/integration/run.sh "01-behaviour-quit--client" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "01-behaviour-quit--client" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-behaviour-quit--server
 _test-behaviour-quit--server:
-	tests/integration/run.sh "02-behaviour-quit--server" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "02-behaviour-quit--server" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-mode--local_forward
 _test-mode--local_forward:
-	tests/integration/run.sh "10-mode---local_forward" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "10-mode---local_forward" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-mode--remote_forward
 _test-mode--remote_forward:
-	tests/integration/run.sh "11-mode---remote_forward" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "11-mode---remote_forward" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-options--nodns
 _test-options--nodns:
-	tests/integration/run.sh "20-options---nodns" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "20-options---nodns" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-options--crlf
 _test-options--crlf:
-	tests/integration/run.sh "21-options---crlf" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "21-options---crlf" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-options--keep_open
 _test-options--keep_open:
-	tests/integration/run.sh "22-options---keep_open" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "22-options---keep_open" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-options--reconn
 _test-options--reconn:
-	tests/integration/run.sh "23-options---reconn" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "23-options---reconn" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-options--ping_init
 _test-options--ping_intvl:
-	tests/integration/run.sh "25-options---ping_intvl" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "25-options---ping_intvl" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 .PHONY: _test-options--ping_word
 _test-options--ping_word:
-	tests/integration/run.sh "26-options---ping_word" "localhost" "4444" "8" "1"
+	tests/integration/run.sh "26-options---ping_word" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 
 
 # -------------------------------------------------------------------------------------------------

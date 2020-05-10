@@ -89,7 +89,7 @@ if os.name != "nt":
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.14-alpha"
+VERSION = "0.0.15-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -1729,8 +1729,17 @@ class IOStdinStdout(IO):
     def consumer(self, data):
         # type: (str) -> None
         """Print received data to stdout."""
+        # For issues with flush (when using tail -F or equal) see links below:
+        # https://stackoverflow.com/questions/26692284
+        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
         print(data, end="")
-        sys.stdout.flush()
+        try:
+            sys.stdout.flush()
+        except (BrokenPipeError, IOError):
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another BrokenPipeError at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
 
     def interrupt(self):
         # type: () -> None
