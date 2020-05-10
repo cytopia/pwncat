@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.43% imprecise</th>
-<th class="summary summary-lines">3046 LOC</th>
+<th class="summary summary-precision">6.45% imprecise</th>
+<th class="summary summary-lines">3055 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.43% imprecise</td>
-<td class="summary summary-lines">3046 LOC</td>
+<td class="summary summary-precision">6.45% imprecise</td>
+<td class="summary summary-lines">3055 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -3081,6 +3081,15 @@
 <span id="L3044" class="lineno"><a class="lineno" href="#L3044">3044</a></span>
 <span id="L3045" class="lineno"><a class="lineno" href="#L3045">3045</a></span>
 <span id="L3046" class="lineno"><a class="lineno" href="#L3046">3046</a></span>
+<span id="L3047" class="lineno"><a class="lineno" href="#L3047">3047</a></span>
+<span id="L3048" class="lineno"><a class="lineno" href="#L3048">3048</a></span>
+<span id="L3049" class="lineno"><a class="lineno" href="#L3049">3049</a></span>
+<span id="L3050" class="lineno"><a class="lineno" href="#L3050">3050</a></span>
+<span id="L3051" class="lineno"><a class="lineno" href="#L3051">3051</a></span>
+<span id="L3052" class="lineno"><a class="lineno" href="#L3052">3052</a></span>
+<span id="L3053" class="lineno"><a class="lineno" href="#L3053">3053</a></span>
+<span id="L3054" class="lineno"><a class="lineno" href="#L3054">3054</a></span>
+<span id="L3055" class="lineno"><a class="lineno" href="#L3055">3055</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -3174,7 +3183,7 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.14-alpha"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.15-alpha"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.1</span>
@@ -4908,8 +4917,18 @@ Error (x2)">                    self.log.trace("Stop signal acknowledged for rea
 <span class="line-precise" title="No Anys on this line!">    def consumer(self, data):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Print received data to stdout."""</span>
+<span class="line-empty" title="No Anys on this line!">        # For issues with flush (when using tail -F or equal) see links below:</span>
+<span class="line-empty" title="No Anys on this line!">        # https://stackoverflow.com/questions/26692284</span>
+<span class="line-empty" title="No Anys on this line!">        # https://docs.python.org/3/library/signal.html#note-on-sigpipe</span>
 <span class="line-precise" title="No Anys on this line!">        print(data, end="")</span>
-<span class="line-precise" title="No Anys on this line!">        sys.stdout.flush()</span>
+<span class="line-empty" title="No Anys on this line!">        try:</span>
+<span class="line-precise" title="No Anys on this line!">            sys.stdout.flush()</span>
+<span class="line-precise" title="No Anys on this line!">        except (BrokenPipeError, IOError):</span>
+<span class="line-empty" title="No Anys on this line!">            # Python flushes standard streams on exit; redirect remaining output</span>
+<span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another BrokenPipeError at shutdown</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
+<span class="line-precise" title="No Anys on this line!">            os.dup2(devnull, sys.stdout.fileno())</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def interrupt(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
