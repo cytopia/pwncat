@@ -873,16 +873,22 @@ pwncat -vvvv localhost 4444 \
 **Q**: Is `pwncat` compatible with `netcat`?
 
 **A**: Yes, it is fully compatible in the way it behaves in connect, listen and zero-i/o mode.
+You can even mix `pwncat` with `netcat`, `ncat` or similar tools.
 
 
 **Q**: Does it work on X?
 
-**A**: In its current state it works with Python 2 and 3 and is fully tested on Linux and MacOS. Windows support is still experimental.
+**A**: In its current state it works with Python 2, 3 pypy2 and pypy3 and is fully tested on Linux and MacOS. Windows support is available, but is considered experimental (see [integration tests](https://github.com/cytopia/pwncat/actions)).
 
 
 **Q**: I found a bug / I have to suggest a new feature! What can I do?
 
 **A**: For bug reports or enhancements, please open an issue [here](https://github.com/cytopia/pwncat/issues).
+
+
+**Q**: How can I support this project?
+
+**A**: Thanks for asking! First of all, star this project to give me some feedback and see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 
 ## :lock: [cytopia](https://github.com/cytopia) sec tools
