@@ -39,7 +39,7 @@ validate_website() {
 	# [1/5] usage:
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
 		<("${bin}" -h | grep '^positional arguments' -B 2000 | grep -v 'positional arguments') \
-		<(grep '^positional arguments' -B 2000 "${website}" | grep -v 'positional arguments' | grep '^usage:' -A 2000 | grep -v '<code>' | grep -v '</code>') \
+		<(grep '^positional arguments' -B 2000 "${website}" | grep -v 'positional arguments' | grep '^usage:' -A 2000 | grep -v '<pre' | grep -v '</pre>') \
 		; then
 		printf "%s\\n" "ERROR - usage"
 		return 1
@@ -48,7 +48,7 @@ validate_website() {
 	# [2/5] positional arguments:
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
 		<("${bin}" -h | grep '^positional arguments' -A 2000 | grep '^mode arguments' -B 2000 | grep -v 'mode arguments') \
-		<(grep '^positional arguments' -A 2000 "${website}" | grep '^mode arguments' -B 2000 | grep -v 'mode arguments' | grep -v '<code>' | grep -v '</code>') \
+		<(grep '^positional arguments' -A 2000 "${website}" | grep '^mode arguments' -B 2000 | grep -v 'mode arguments' | grep -v '<pre' | grep -v '</pre>') \
 		; then
 		printf "%s\\n" "ERROR - positional arguments"
 		return 1
@@ -57,7 +57,7 @@ validate_website() {
 	# [3/5] mode arguments:
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
 		<("${bin}" -h | grep '^mode arguments' -A 2000 | grep '^optional arguments' -B 2000 | grep -v 'optional arguments') \
-		<(grep '^mode arguments' -A 2000 "${website}" | grep '^optional arguments' -B 2000 | grep -v 'optional arguments' | grep -v '<code>' | grep -v '</code>') \
+		<(grep '^mode arguments' -A 2000 "${website}" | grep '^optional arguments' -B 2000 | grep -v 'optional arguments' | grep -v '<pre' | grep -v '</pre>') \
 		; then
 		printf "%s\\n" "ERROR - mode arguments"
 		return 1
@@ -66,7 +66,7 @@ validate_website() {
 	# [3/5] optional arguments:
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
 		<("${bin}" -h | grep '^optional arguments' -A 2000 | grep '^advanced arguments' -B 2000 | grep -v 'advanced arguments') \
-		<(grep '^optional arguments' -A 2000 "${website}" | grep '^advanced arguments' -B 2000 | grep -v 'advanced arguments' | grep -v '<code>' | grep -v '</code>') \
+		<(grep '^optional arguments' -A 2000 "${website}" | grep '^advanced arguments' -B 2000 | grep -v 'advanced arguments' | grep -v '<pre' | grep -v '</pre>') \
 		; then
 		printf "%s\\n" "ERROR - optional arguments"
 		return 1
@@ -75,7 +75,7 @@ validate_website() {
 	# [3/5] advanced arguments:
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
 		<("${bin}" -h | grep '^advanced arguments' -A 2000 | grep '^misc arguments' -B 2000 | grep -v 'misc arguments') \
-		<(grep '^advanced arguments' -A 2000 "${website}" | grep '^misc arguments' -B 2000 | grep -v 'misc arguments' | grep -v '<code>' | grep -v '</code>') \
+		<(grep '^advanced arguments' -A 2000 "${website}" | grep '^misc arguments' -B 2000 | grep -v 'misc arguments' | grep -v '<pre' | grep -v '</pre>') \
 		; then
 		printf "%s\\n" "ERROR - advanced arguments"
 		return 1
