@@ -560,20 +560,29 @@ misc arguments:
 
 When connected with a reverse or bind shell you'll notice that no interactive commands will work and
 hitting <kbd>Ctrl</kbd>+<kbd>c</kbd> will terminate your session.
-To fix this, you'll need to attach it to a TTY. Here's how:
+To fix this, you'll need to attach it to a TTY (make it interactive). Here's how:
 ```bash
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 ```
 <kbd>Ctrl</kbd>+<kbd>z</kbd>
 ```bash
+# get your current terminal size (rows and columns)
 stty size
-stty echo -raw
+
+# for bash/sh (enter raw mode and disable echo'ing)
+stty raw -echo
 fg
+
+# for zsh (enter raw mode and disable echo'ing)
+stty raw -echo; fg
+
 reset
 export SHELL=bash
 export TERM=xterm
-stty rows <num> columns <num>   # values found above by 'stty size'
+stty rows <num> columns <cols>   # <num> and <cols> values found above by 'stty size'
 ```
+> <sup>[1] [Reverse Shell Cheatsheet](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#spawn-tty-shell)</sup>
+
 <!--
 </details>
 -->
