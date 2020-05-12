@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.16-alpha
+
+### Added
+- Added self-injecting unbreakable pwncat reverse shell
+
+
 ## Release 0.0.15-alpha
 
 #### Fixed

