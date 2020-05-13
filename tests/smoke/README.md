@@ -79,7 +79,7 @@ pwncat -vvvv localhost 4444
 Fresh start server and client for each checkbox below:
 ```
 pwncat -vvvv -l 4444
-pwncat -vvvv localhost 4444 --reconn -1
+pwncat -vvvv localhost 4444 --reconn
 ```
 
 1. [ ] (TCP) Ctrl+c on server (before sending any data)

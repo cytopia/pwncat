@@ -4,6 +4,18 @@
 ## Unreleased
 
 
+## Release 0.0.17-alpha
+
+### Fixed
+- CI: Fixed test frameworks for error checking
+
+### Added
+- Feature: IPv6 support (`-6`)
+
+#### Changed
+- Changed `--rebind` to allow omitting an argument for endless connect retries
+
+
 ## Release 0.0.16-alpha
 
 ### Added

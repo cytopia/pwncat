@@ -64,6 +64,9 @@ The connection to your listening server is given by
 target machine via the positional arguments.
 .SS "optional arguments:"
 .TP
+\fB\-6\fR
+Use IPv6 instead of IPv4.
+.TP
 \fB\-e\fR cmd, \fB\-\-exec\fR cmd
 Execute shell command. Only for connect or listen mode.
 .TP
@@ -162,11 +165,14 @@ Re\-accept new clients in listen mode after a client has
 disconnected or the connection is unterrupted otherwise.
 (default: server will quit after connection is gone)
 .TP
-\fB\-\-rebind\fR x
+\fB\-\-rebind\fR [x]
 Listen mode (TCP and UDP):
 If the server is unable to bind, it will re\-initialize
-itself x many times before giving up. Use \fB\-1\fR to re\-init
-endlessly. (default: fail after first unsuccessful try).
+itself x many times before giving up. Omit the
+quantifier to rebind endlessly or specify a positive
+integer for how many times to rebind before giving up.
+See \fB\-\-rebind\-robin\fR for an interesting use\-case.
+(default: fail after first unsuccessful try).
 .TP
 \fB\-\-rebind\-wait\fR s
 Listen mode (TCP and UDP):
@@ -181,11 +187,13 @@ such as '80,81,82' or a range of ports '80\-100'.
 Set \fB\-\-rebind\fR to at least the number of ports to probe +1
 This option requires \fB\-\-rebind\fR to be specified.
 .TP
-\fB\-\-reconn\fR x
+\fB\-\-reconn\fR [x]
 Connect mode / Zero\-I/O mode (TCP only):
 If the remote server is not reachable or the connection
 is interrupted, the client will connect again x many
-times before giving up. Use \fB\-1\fR to retry endlessly.
+times before giving up. Omit the quantifier to retry
+endlessly or specify a positive integer for how many
+times to retry before giving up.
 (default: quit if the remote is not available or the
 connection was interrupted)
 This might be handy for stable TCP reverse shells ;\-)

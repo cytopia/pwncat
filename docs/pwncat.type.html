@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">5.93% imprecise</th>
-<th class="summary summary-lines">3422 LOC</th>
+<th class="summary summary-precision">6.06% imprecise</th>
+<th class="summary summary-lines">3450 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">5.93% imprecise</td>
-<td class="summary summary-lines">3422 LOC</td>
+<td class="summary summary-precision">6.06% imprecise</td>
+<td class="summary summary-lines">3450 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -3457,6 +3457,34 @@
 <span id="L3420" class="lineno"><a class="lineno" href="#L3420">3420</a></span>
 <span id="L3421" class="lineno"><a class="lineno" href="#L3421">3421</a></span>
 <span id="L3422" class="lineno"><a class="lineno" href="#L3422">3422</a></span>
+<span id="L3423" class="lineno"><a class="lineno" href="#L3423">3423</a></span>
+<span id="L3424" class="lineno"><a class="lineno" href="#L3424">3424</a></span>
+<span id="L3425" class="lineno"><a class="lineno" href="#L3425">3425</a></span>
+<span id="L3426" class="lineno"><a class="lineno" href="#L3426">3426</a></span>
+<span id="L3427" class="lineno"><a class="lineno" href="#L3427">3427</a></span>
+<span id="L3428" class="lineno"><a class="lineno" href="#L3428">3428</a></span>
+<span id="L3429" class="lineno"><a class="lineno" href="#L3429">3429</a></span>
+<span id="L3430" class="lineno"><a class="lineno" href="#L3430">3430</a></span>
+<span id="L3431" class="lineno"><a class="lineno" href="#L3431">3431</a></span>
+<span id="L3432" class="lineno"><a class="lineno" href="#L3432">3432</a></span>
+<span id="L3433" class="lineno"><a class="lineno" href="#L3433">3433</a></span>
+<span id="L3434" class="lineno"><a class="lineno" href="#L3434">3434</a></span>
+<span id="L3435" class="lineno"><a class="lineno" href="#L3435">3435</a></span>
+<span id="L3436" class="lineno"><a class="lineno" href="#L3436">3436</a></span>
+<span id="L3437" class="lineno"><a class="lineno" href="#L3437">3437</a></span>
+<span id="L3438" class="lineno"><a class="lineno" href="#L3438">3438</a></span>
+<span id="L3439" class="lineno"><a class="lineno" href="#L3439">3439</a></span>
+<span id="L3440" class="lineno"><a class="lineno" href="#L3440">3440</a></span>
+<span id="L3441" class="lineno"><a class="lineno" href="#L3441">3441</a></span>
+<span id="L3442" class="lineno"><a class="lineno" href="#L3442">3442</a></span>
+<span id="L3443" class="lineno"><a class="lineno" href="#L3443">3443</a></span>
+<span id="L3444" class="lineno"><a class="lineno" href="#L3444">3444</a></span>
+<span id="L3445" class="lineno"><a class="lineno" href="#L3445">3445</a></span>
+<span id="L3446" class="lineno"><a class="lineno" href="#L3446">3446</a></span>
+<span id="L3447" class="lineno"><a class="lineno" href="#L3447">3447</a></span>
+<span id="L3448" class="lineno"><a class="lineno" href="#L3448">3448</a></span>
+<span id="L3449" class="lineno"><a class="lineno" href="#L3449">3449</a></span>
+<span id="L3450" class="lineno"><a class="lineno" href="#L3450">3450</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -3552,7 +3580,7 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.16-alpha"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.17-alpha"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.1</span>
@@ -3746,6 +3774,12 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__nodns</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def ipv6(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; bool</span>
+<span class="line-empty" title="No Anys on this line!">        """`bool`: Determines if we use IPv6 instead of IPv4."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__ipv6</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def udp(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; bool</span>
 <span class="line-empty" title="No Anys on this line!">        """`bool`: Determines if we use TCP or UDP."""</span>
@@ -3754,8 +3788,8 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __init__(self, bufsize, backlog, recv_timeout, nodns, udp):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (int, int, Optional[float], bool, bool) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (int, int, Optional[float], bool, bool, bool) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(bufsize) is int, type(bufsize)</span>
 <span class="line-precise" title="Any Types on this line: 
@@ -3765,11 +3799,14 @@ Explicit (x2)">        assert type(recv_timeout) is float, type(recv_timeout)</s
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(nodns) is bool, type(nodns)</span>
 <span class="line-precise" title="Any Types on this line: 
+Explicit (x2)">        assert type(ipv6) is bool, type(ipv6)</span>
+<span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__bufsize = bufsize</span>
 <span class="line-precise" title="No Anys on this line!">        self.__backlog = backlog</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout = recv_timeout</span>
 <span class="line-precise" title="No Anys on this line!">        self.__nodns = nodns</span>
+<span class="line-precise" title="No Anys on this line!">        self.__ipv6 = ipv6</span>
 <span class="line-precise" title="No Anys on this line!">        self.__udp = udp</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -3791,12 +3828,12 @@ Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, udp):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (int, int, Optional[float], int, bool, bool) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (int, int, Optional[float], int, bool, bool, bool) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(recv_timeout_retry) is int, type(recv_timeout_retry)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout_retry = recv_timeout_retry</span>
-<span class="line-precise" title="No Anys on this line!">        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)</span>
+<span class="line-precise" title="No Anys on this line!">        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, ipv6, udp)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
@@ -4383,7 +4420,8 @@ Explicit (x4)">            self.__log.warning("Connection error: %s", error)</sp
 <span class="line-empty" title="No Anys on this line!">        # we can firstly/finally set its addr/port in order</span>
 <span class="line-empty" title="No Anys on this line!">        # to send data back to it (see send() function)</span>
 <span class="line-precise" title="No Anys on this line!">        if self.__options.udp:</span>
-<span class="line-precise" title="No Anys on this line!">            self.__remote_addr, self.__remote_port = addr</span>
+<span class="line-precise" title="No Anys on this line!">            self.__remote_addr = addr[0]</span>
+<span class="line-precise" title="No Anys on this line!">            self.__remote_port = addr[1]</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.debug("Client connected: %s:%d", self.__remote_addr, self.__remote_port)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4423,7 +4461,7 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!">        Raises:</span>
 <span class="line-empty" title="No Anys on this line!">            socket.gaierror: If hostname cannot be resolved.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
-<span class="line-precise" title="No Anys on this line!">        family = socket.AF_INET</span>
+<span class="line-precise" title="No Anys on this line!">        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET</span>
 <span class="line-precise" title="No Anys on this line!">        socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM</span>
 <span class="line-precise" title="No Anys on this line!">        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP</span>
 <span class="line-precise" title="No Anys on this line!">        flags = 0</span>
@@ -4431,8 +4469,12 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!">        # Quickly do wildcards for listening addresses</span>
 <span class="line-precise" title="No Anys on this line!">        if host is None:</span>
 <span class="line-precise" title="No Anys on this line!">            if family == socket.AF_INET:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.__log.debug("Resolving hostname not required, using wildcard: 0.0.0.0")</span>
 <span class="line-precise" title="No Anys on this line!">                return "0.0.0.0"</span>
 <span class="line-precise" title="No Anys on this line!">            if family == socket.AF_INET6:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.__log.debug("Resolving hostname not required, using wildcard: ::")</span>
 <span class="line-precise" title="No Anys on this line!">                return "::"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        if self.__options.nodns:</span>
@@ -4517,11 +4559,13 @@ Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close("sock", sock)</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [UDP 3/4] There is no listen or accept for UDP</span>
 <span class="line-precise" title="No Anys on this line!">        if self.__options.udp:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__conn = sock</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.info("Listening on %s (family %d/UDP, port %d)", addr, socket.AF_INET, port)</span>
+Explicit (x4)">            self.__log.info("Listening on %s (family %d/UDP, port %d)", addr, family, port)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [TCP 3/4] Requires listen and accept</span>
 <span class="line-empty" title="No Anys on this line!">        else:</span>
@@ -4530,7 +4574,7 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/UDP, port
 <span class="line-precise" title="No Anys on this line!">                self.__close("sock", sock)</span>
 <span class="line-precise" title="No Anys on this line!">                return False</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port %d)", addr, socket.AF_INET, port)</span>
+Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port %d)", addr, family, port)</span>
 <span class="line-empty" title="No Anys on this line!">            # Accept</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
 <span class="line-precise" title="No Anys on this line!">                conn = self.__accept(sock)</span>
@@ -4595,17 +4639,19 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port
 <span class="line-empty" title="No Anys on this line!">        Raises:</span>
 <span class="line-empty" title="No Anys on this line!">            socket.error: If socket cannot be created.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        family_sock = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET</span>
+<span class="line-precise" title="No Anys on this line!">        family_name = "IPv6" if self.__options.ipv6 else "IPv4"</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__options.udp:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                self.__log.debug("Creating UDP socket")</span>
-<span class="line-precise" title="No Anys on this line!">                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span>
+Explicit (x4)">                self.__log.debug("Creating %s UDP socket", family_name)</span>
+<span class="line-precise" title="No Anys on this line!">                sock = socket.socket(family_sock, socket.SOCK_DGRAM)</span>
 <span class="line-empty" title="No Anys on this line!">            else:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                self.__log.debug("Creating TCP socket")</span>
-<span class="line-precise" title="No Anys on this line!">                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+Explicit (x4)">                self.__log.debug("Creating %s TCP socket", family_name)</span>
+<span class="line-precise" title="No Anys on this line!">                sock = socket.socket(family_sock, socket.SOCK_STREAM)</span>
 <span class="line-precise" title="No Anys on this line!">        except socket.error as error:</span>
-<span class="line-precise" title="No Anys on this line!">            msg = "Failed to create the socket: {}".format(error)</span>
+<span class="line-precise" title="No Anys on this line!">            msg = "Failed to create {} socket: {}".format(family_name, error)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.error(msg)</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.error(msg)</span>
@@ -6090,7 +6136,7 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">        command.append(self.python)</span>
 <span class="line-precise" title="No Anys on this line!">        command.append(remote_path)</span>
 <span class="line-precise" title="No Anys on this line!">        command.append("--exec {}".format(binary))</span>
-<span class="line-precise" title="No Anys on this line!">        command.append("--reconn -1")</span>
+<span class="line-precise" title="No Anys on this line!">        command.append("--reconn")</span>
 <span class="line-precise" title="No Anys on this line!">        command.append("--reconn-wait 1")</span>
 <span class="line-precise" title="No Anys on this line!">        command.append(host)</span>
 <span class="line-precise" title="No Anys on this line!">        command.append(port)</span>
@@ -6464,6 +6510,10 @@ Explicit (x3)">    mode.add_argument(</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    optional.add_argument(</span>
+<span class="line-precise" title="No Anys on this line!">        "-6", dest="ipv6", action="store_true", default=False, help="Use IPv6 instead of IPv4.",</span>
+<span class="line-empty" title="No Anys on this line!">    )</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">    optional.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "-e",</span>
 <span class="line-precise" title="No Anys on this line!">        "--exec",</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="cmd",</span>
@@ -6529,8 +6579,8 @@ Explicit (x3)">    optional.add_argument(</span>
 Explicit (x3)">    cnc.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "--self-inject",</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="cmd:host:port",</span>
-<span class="line-precise" title="No Anys on this line!">        type=_args_check_upload_myself,</span>
 <span class="line-precise" title="No Anys on this line!">        default=None,</span>
+<span class="line-precise" title="No Anys on this line!">        type=_args_check_upload_myself,</span>
 <span class="line-precise" title="No Anys on this line!">        help="""Listen mode (TCP only):</span>
 <span class="line-empty" title="No Anys on this line!">If you are about to inject a reverse shell onto the</span>
 <span class="line-empty" title="No Anys on this line!">victim machine (via php, bash, nc, ncat or similar),</span>
@@ -6631,12 +6681,16 @@ Explicit (x3)">    advanced.add_argument(</span>
 Explicit (x3)">    advanced.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "--rebind",</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="x",</span>
+<span class="line-precise" title="No Anys on this line!">        nargs="?",</span>
 <span class="line-precise" title="No Anys on this line!">        default=0,</span>
 <span class="line-precise" title="No Anys on this line!">        type=int,</span>
 <span class="line-precise" title="No Anys on this line!">        help="""Listen mode (TCP and UDP):</span>
 <span class="line-empty" title="No Anys on this line!">If the server is unable to bind, it will re-initialize</span>
-<span class="line-empty" title="No Anys on this line!">itself x many times before giving up. Use -1 to re-init</span>
-<span class="line-empty" title="No Anys on this line!">endlessly. (default: fail after first unsuccessful try).</span>
+<span class="line-empty" title="No Anys on this line!">itself x many times before giving up. Omit the</span>
+<span class="line-empty" title="No Anys on this line!">quantifier to rebind endlessly or specify a positive</span>
+<span class="line-empty" title="No Anys on this line!">integer for how many times to rebind before giving up.</span>
+<span class="line-empty" title="No Anys on this line!">See --rebind-robin for an interesting use-case.</span>
+<span class="line-empty" title="No Anys on this line!">(default: fail after first unsuccessful try).</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
@@ -6671,12 +6725,14 @@ Explicit (x3)">    advanced.add_argument(</span>
 Explicit (x3)">    advanced.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "--reconn",</span>
 <span class="line-precise" title="No Anys on this line!">        metavar="x",</span>
+<span class="line-precise" title="No Anys on this line!">        nargs="?",</span>
 <span class="line-precise" title="No Anys on this line!">        default=0,</span>
-<span class="line-precise" title="No Anys on this line!">        type=int,</span>
 <span class="line-precise" title="No Anys on this line!">        help="""Connect mode / Zero-I/O mode (TCP only):</span>
 <span class="line-empty" title="No Anys on this line!">If the remote server is not reachable or the connection</span>
 <span class="line-empty" title="No Anys on this line!">is interrupted, the client will connect again x many</span>
-<span class="line-empty" title="No Anys on this line!">times before giving up. Use -1 to retry endlessly.</span>
+<span class="line-empty" title="No Anys on this line!">times before giving up. Omit the quantifier to retry</span>
+<span class="line-empty" title="No Anys on this line!">endlessly or specify a positive integer for how many</span>
+<span class="line-empty" title="No Anys on this line!">times to retry before giving up.</span>
 <span class="line-empty" title="No Anys on this line!">(default: quit if the remote is not available or the</span>
 <span class="line-empty" title="No Anys on this line!">connection was interrupted)</span>
 <span class="line-empty" title="No Anys on this line!">This might be handy for stable TCP reverse shells ;-)</span>
@@ -6871,6 +6927,11 @@ Explicit (x2)">    host = args.hostname</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">    ports = [args.port]</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">    reconn = -1 if args.reconn is None else args.reconn</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">    rebind = -1 if args.rebind is None else args.rebind</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Set pwncat options</span>
 <span class="line-precise" title="No Anys on this line!">    sock_opts = DsIONetworkSock(</span>
 <span class="line-precise" title="No Anys on this line!">        RECV_BUFSIZE,</span>
@@ -6880,12 +6941,14 @@ Explicit (x2)">    ports = [args.port]</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        args.nodns,</span>
 <span class="line-any" title="Any Types on this line: 
+Explicit (x1)">        args.ipv6,</span>
+<span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        args.udp,</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">    srv_opts = DsIONetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)</span>
+Explicit (x4)">    srv_opts = DsIONetworkSrv(args.keep_open, rebind, args.rebind_wait, args.rebind_robin)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x3)">    cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)</span>
+Explicit (x3)">    cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)</span>
 <span class="line-empty" title="No Anys on this line!">    # TODO:</span>
 <span class="line-empty" title="No Anys on this line!">    # "wait": args.wait,</span>
 <span class="line-empty" title="No Anys on this line!">    # "ping_init": args.ping_init,</span>

