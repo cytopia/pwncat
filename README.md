@@ -253,7 +253,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Self-injecting      | ✔      | :x:     | :x: |
 | IP ToS              | :x:    | ✔       | :x: |
 | IPv4                | ✔      | ✔       | ✔   |
-| IPv6                | *      | ✔       | ✔   |
+| IPv6                | ✔      | ✔       | ✔   |
 | Unix domain sockets | :x:    | ✔       | ✔   |
 | TCP                 | ✔      | ✔       | ✔   |
 | UDP                 | ✔      | ✔       | ✔   |
@@ -398,6 +398,7 @@ mode arguments:
                         target machine via the positional arguments.
 
 optional arguments:
+  -6                    Use IPv6 instead of IPv4.
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
                         line endings for input and outout accordingly. Specify

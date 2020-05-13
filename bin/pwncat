@@ -273,6 +273,12 @@ class DsSock(object):
         return self.__nodns
 
     @property
+    def ipv6(self):
+        # type: () -> bool
+        """`bool`: Determines if we use IPv6 instead of IPv4."""
+        return self.__ipv6
+
+    @property
     def udp(self):
         # type: () -> bool
         """`bool`: Determines if we use TCP or UDP."""
@@ -281,17 +287,19 @@ class DsSock(object):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, udp):
-        # type: (int, int, Optional[float], bool, bool) -> None
+    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp):
+        # type: (int, int, Optional[float], bool, bool, bool) -> None
         assert type(bufsize) is int, type(bufsize)
         assert type(backlog) is int, type(backlog)
         assert type(recv_timeout) is float, type(recv_timeout)
         assert type(nodns) is bool, type(nodns)
+        assert type(ipv6) is bool, type(ipv6)
         assert type(udp) is bool, type(udp)
         self.__bufsize = bufsize
         self.__backlog = backlog
         self.__recv_timeout = recv_timeout
         self.__nodns = nodns
+        self.__ipv6 = ipv6
         self.__udp = udp
 
 
@@ -313,11 +321,11 @@ class DsIONetworkSock(DsSock):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, udp):
-        # type: (int, int, Optional[float], int, bool, bool) -> None
+    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp):
+        # type: (int, int, Optional[float], int, bool, bool, bool) -> None
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
-        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)
+        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, ipv6, udp)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -880,7 +888,8 @@ class Sock(object):
         # we can firstly/finally set its addr/port in order
         # to send data back to it (see send() function)
         if self.__options.udp:
-            self.__remote_addr, self.__remote_port = addr
+            self.__remote_addr = addr[0]
+            self.__remote_port = addr[1]
             self.__log.debug("Client connected: %s:%d", self.__remote_addr, self.__remote_port)
 
         # [4/5] Upstream (server or client) is gone.
@@ -916,7 +925,7 @@ class Sock(object):
         Raises:
             socket.gaierror: If hostname cannot be resolved.
         """
-        family = socket.AF_INET
+        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
         socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
         proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
         flags = 0
@@ -924,8 +933,10 @@ class Sock(object):
         # Quickly do wildcards for listening addresses
         if host is None:
             if family == socket.AF_INET:
+                self.__log.debug("Resolving hostname not required, using wildcard: 0.0.0.0")
                 return "0.0.0.0"
             if family == socket.AF_INET6:
+                self.__log.debug("Resolving hostname not required, using wildcard: ::")
                 return "::"
 
         if self.__options.nodns:
@@ -1005,10 +1016,12 @@ class Sock(object):
             self.__close("sock", sock)
             return False
 
+        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
+
         # [UDP 3/4] There is no listen or accept for UDP
         if self.__options.udp:
             self.__conn = sock
-            self.__log.info("Listening on %s (family %d/UDP, port %d)", addr, socket.AF_INET, port)
+            self.__log.info("Listening on %s (family %d/UDP, port %d)", addr, family, port)
 
         # [TCP 3/4] Requires listen and accept
         else:
@@ -1016,7 +1029,7 @@ class Sock(object):
             if not self.__listen(sock):
                 self.__close("sock", sock)
                 return False
-            self.__log.info("Listening on %s (family %d/TCP, port %d)", addr, socket.AF_INET, port)
+            self.__log.info("Listening on %s (family %d/TCP, port %d)", addr, family, port)
             # Accept
             try:
                 conn = self.__accept(sock)
@@ -1081,15 +1094,17 @@ class Sock(object):
         Raises:
             socket.error: If socket cannot be created.
         """
+        family_sock = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
+        family_name = "IPv6" if self.__options.ipv6 else "IPv4"
         try:
             if self.__options.udp:
-                self.__log.debug("Creating UDP socket")
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.__log.debug("Creating %s UDP socket", family_name)
+                sock = socket.socket(family_sock, socket.SOCK_DGRAM)
             else:
-                self.__log.debug("Creating TCP socket")
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.__log.debug("Creating %s TCP socket", family_name)
+                sock = socket.socket(family_sock, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = "Failed to create the socket: {}".format(error)
+            msg = "Failed to create {} socket: {}".format(family_name, error)
             self.__log.error(msg)
             raise socket.error(msg)
         # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
@@ -2835,6 +2850,9 @@ target machine via the positional arguments.
 """,
     )
     optional.add_argument(
+        "-6", dest="ipv6", action="store_true", default=False, help="Use IPv6 instead of IPv4.",
+    )
+    optional.add_argument(
         "-e",
         "--exec",
         metavar="cmd",
@@ -3219,10 +3237,11 @@ def main():
         TIMEOUT_RECV_SOCKET,
         TIMEOUT_RECV_SOCKET_RETRY,
         args.nodns,
+        args.ipv6,
         args.udp,
     )
-    srv_opts = DsIONetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)
-    cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)
+    srv_opts = DsIONetworkSrv(args.keep_open, rebind, args.rebind_wait, args.rebind_robin)
+    cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # "wait": args.wait,
     # "ping_init": args.ping_init,
