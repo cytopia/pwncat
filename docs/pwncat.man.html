@@ -131,8 +131,27 @@ addr:port and the connection to the target machine via the
 positional arguments.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>optional
-arguments: <br>
-&minus;e</b> cmd, <b>&minus;&minus;exec</b> cmd</p>
+arguments:</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;6</b></p></td>
+<td width="8%"></td>
+<td width="38%">
+
+
+<p>Use IPv6 instead of IPv4.</p></td>
+<td width="40%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>&minus;e</b> cmd,
+<b>&minus;&minus;exec</b> cmd</p>
 
 <p style="margin-left:22%;">Execute shell command. Only for
 connect or listen mode.</p>
@@ -279,13 +298,16 @@ has disconnected or the connection is unterrupted otherwise.
 (default: server will quit after connection is gone)</p>
 
 <p style="margin-left:11%;"><b>&minus;&minus;rebind</b>
-x</p>
+[x]</p>
 
 <p style="margin-left:22%;">Listen mode (TCP and UDP): If
 the server is unable to bind, it will re&minus;initialize
-itself x many times before giving up. Use <b>&minus;1</b> to
-re&minus;init endlessly. (default: fail after first
-unsuccessful try).</p>
+itself x many times before giving up. Omit the quantifier to
+rebind endlessly or specify a positive integer for how many
+times to rebind before giving up. See
+<b>&minus;&minus;rebind&minus;robin</b> for an interesting
+use&minus;case. (default: fail after first unsuccessful
+try).</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;rebind&minus;wait</b>
@@ -309,15 +331,16 @@ to probe +1 This option requires <b>&minus;&minus;rebind</b>
 to be specified.</p>
 
 <p style="margin-left:11%;"><b>&minus;&minus;reconn</b>
-x</p>
+[x]</p>
 
 <p style="margin-left:22%;">Connect mode / Zero&minus;I/O
 mode (TCP only): If the remote server is not reachable or
 the connection is interrupted, the client will connect again
-x many times before giving up. Use <b>&minus;1</b> to retry
-endlessly. (default: quit if the remote is not available or
-the connection was interrupted) This might be handy for
-stable TCP reverse shells ;&minus;)</p>
+x many times before giving up. Omit the quantifier to retry
+endlessly or specify a positive integer for how many times
+to retry before giving up. (default: quit if the remote is
+not available or the connection was interrupted) This might
+be handy for stable TCP reverse shells ;&minus;)</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;reconn&minus;wait</b>

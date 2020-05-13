@@ -118,7 +118,7 @@ if os.name != &#34;nt&#34;:
 
 APPNAME = &#34;pwncat&#34;
 APPREPO = &#34;https://github.com/cytopia/pwncat&#34;
-VERSION = &#34;0.0.16-alpha&#34;
+VERSION = &#34;0.0.17-alpha&#34;
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -300,6 +300,12 @@ class DsSock(object):
         return self.__nodns
 
     @property
+    def ipv6(self):
+        # type: () -&gt; bool
+        &#34;&#34;&#34;`bool`: Determines if we use IPv6 instead of IPv4.&#34;&#34;&#34;
+        return self.__ipv6
+
+    @property
     def udp(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;`bool`: Determines if we use TCP or UDP.&#34;&#34;&#34;
@@ -308,17 +314,19 @@ class DsSock(object):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, udp):
-        # type: (int, int, Optional[float], bool, bool) -&gt; None
+    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp):
+        # type: (int, int, Optional[float], bool, bool, bool) -&gt; None
         assert type(bufsize) is int, type(bufsize)
         assert type(backlog) is int, type(backlog)
         assert type(recv_timeout) is float, type(recv_timeout)
         assert type(nodns) is bool, type(nodns)
+        assert type(ipv6) is bool, type(ipv6)
         assert type(udp) is bool, type(udp)
         self.__bufsize = bufsize
         self.__backlog = backlog
         self.__recv_timeout = recv_timeout
         self.__nodns = nodns
+        self.__ipv6 = ipv6
         self.__udp = udp
 
 
@@ -340,11 +348,11 @@ class DsIONetworkSock(DsSock):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, udp):
-        # type: (int, int, Optional[float], int, bool, bool) -&gt; None
+    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp):
+        # type: (int, int, Optional[float], int, bool, bool, bool) -&gt; None
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
-        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)
+        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, ipv6, udp)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -907,7 +915,8 @@ class Sock(object):
         # we can firstly/finally set its addr/port in order
         # to send data back to it (see send() function)
         if self.__options.udp:
-            self.__remote_addr, self.__remote_port = addr
+            self.__remote_addr = addr[0]
+            self.__remote_port = addr[1]
             self.__log.debug(&#34;Client connected: %s:%d&#34;, self.__remote_addr, self.__remote_port)
 
         # [4/5] Upstream (server or client) is gone.
@@ -943,7 +952,7 @@ class Sock(object):
         Raises:
             socket.gaierror: If hostname cannot be resolved.
         &#34;&#34;&#34;
-        family = socket.AF_INET
+        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
         socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
         proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
         flags = 0
@@ -951,8 +960,10 @@ class Sock(object):
         # Quickly do wildcards for listening addresses
         if host is None:
             if family == socket.AF_INET:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
                 return &#34;0.0.0.0&#34;
             if family == socket.AF_INET6:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
                 return &#34;::&#34;
 
         if self.__options.nodns:
@@ -1032,10 +1043,12 @@ class Sock(object):
             self.__close(&#34;sock&#34;, sock)
             return False
 
+        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
+
         # [UDP 3/4] There is no listen or accept for UDP
         if self.__options.udp:
             self.__conn = sock
-            self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, socket.AF_INET, port)
+            self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, family, port)
 
         # [TCP 3/4] Requires listen and accept
         else:
@@ -1043,7 +1056,7 @@ class Sock(object):
             if not self.__listen(sock):
                 self.__close(&#34;sock&#34;, sock)
                 return False
-            self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, socket.AF_INET, port)
+            self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, family, port)
             # Accept
             try:
                 conn = self.__accept(sock)
@@ -1108,15 +1121,17 @@ class Sock(object):
         Raises:
             socket.error: If socket cannot be created.
         &#34;&#34;&#34;
+        family_sock = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
+        family_name = &#34;IPv6&#34; if self.__options.ipv6 else &#34;IPv4&#34;
         try:
             if self.__options.udp:
-                self.__log.debug(&#34;Creating UDP socket&#34;)
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.__log.debug(&#34;Creating %s UDP socket&#34;, family_name)
+                sock = socket.socket(family_sock, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating TCP socket&#34;)
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.__log.debug(&#34;Creating %s TCP socket&#34;, family_name)
+                sock = socket.socket(family_sock, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Failed to create the socket: {}&#34;.format(error)
+            msg = &#34;Failed to create {} socket: {}&#34;.format(family_name, error)
             self.__log.error(msg)
             raise socket.error(msg)
         # Get around the &#34;[Errno 98] Address already in use&#34; error, if the socket is still in wait
@@ -2518,7 +2533,7 @@ class CNCAutoDeploy(CNC):
         command.append(self.python)
         command.append(remote_path)
         command.append(&#34;--exec {}&#34;.format(binary))
-        command.append(&#34;--reconn -1&#34;)
+        command.append(&#34;--reconn&#34;)
         command.append(&#34;--reconn-wait 1&#34;)
         command.append(host)
         command.append(port)
@@ -2862,6 +2877,9 @@ target machine via the positional arguments.
 &#34;&#34;&#34;,
     )
     optional.add_argument(
+        &#34;-6&#34;, dest=&#34;ipv6&#34;, action=&#34;store_true&#34;, default=False, help=&#34;Use IPv6 instead of IPv4.&#34;,
+    )
+    optional.add_argument(
         &#34;-e&#34;,
         &#34;--exec&#34;,
         metavar=&#34;cmd&#34;,
@@ -2921,8 +2939,8 @@ color on Windows by default. (default: auto)
     cnc.add_argument(
         &#34;--self-inject&#34;,
         metavar=&#34;cmd:host:port&#34;,
-        type=_args_check_upload_myself,
         default=None,
+        type=_args_check_upload_myself,
         help=&#34;&#34;&#34;Listen mode (TCP only):
 If you are about to inject a reverse shell onto the
 victim machine (via php, bash, nc, ncat or similar),
@@ -3017,12 +3035,16 @@ disconnected or the connection is unterrupted otherwise.
     advanced.add_argument(
         &#34;--rebind&#34;,
         metavar=&#34;x&#34;,
+        nargs=&#34;?&#34;,
         default=0,
         type=int,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to bind, it will re-initialize
-itself x many times before giving up. Use -1 to re-init
-endlessly. (default: fail after first unsuccessful try).
+itself x many times before giving up. Omit the
+quantifier to rebind endlessly or specify a positive
+integer for how many times to rebind before giving up.
+See --rebind-robin for an interesting use-case.
+(default: fail after first unsuccessful try).
 
 &#34;&#34;&#34;,
     )
@@ -3054,12 +3076,14 @@ This option requires --rebind to be specified.
     advanced.add_argument(
         &#34;--reconn&#34;,
         metavar=&#34;x&#34;,
+        nargs=&#34;?&#34;,
         default=0,
-        type=int,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 If the remote server is not reachable or the connection
 is interrupted, the client will connect again x many
-times before giving up. Use -1 to retry endlessly.
+times before giving up. Omit the quantifier to retry
+endlessly or specify a positive integer for how many
+times to retry before giving up.
 (default: quit if the remote is not available or the
 connection was interrupted)
 This might be handy for stable TCP reverse shells ;-)
@@ -3239,6 +3263,9 @@ def main():
     host = args.hostname
     ports = [args.port]
 
+    reconn = -1 if args.reconn is None else args.reconn
+    rebind = -1 if args.rebind is None else args.rebind
+
     # Set pwncat options
     sock_opts = DsIONetworkSock(
         RECV_BUFSIZE,
@@ -3246,10 +3273,11 @@ def main():
         TIMEOUT_RECV_SOCKET,
         TIMEOUT_RECV_SOCKET_RETRY,
         args.nodns,
+        args.ipv6,
         args.udp,
     )
-    srv_opts = DsIONetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)
-    cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)
+    srv_opts = DsIONetworkSrv(args.keep_open, rebind, args.rebind_wait, args.rebind_robin)
+    cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # &#34;wait&#34;: args.wait,
     # &#34;ping_init&#34;: args.ping_init,
@@ -3566,6 +3594,9 @@ target machine via the positional arguments.
 &#34;&#34;&#34;,
     )
     optional.add_argument(
+        &#34;-6&#34;, dest=&#34;ipv6&#34;, action=&#34;store_true&#34;, default=False, help=&#34;Use IPv6 instead of IPv4.&#34;,
+    )
+    optional.add_argument(
         &#34;-e&#34;,
         &#34;--exec&#34;,
         metavar=&#34;cmd&#34;,
@@ -3625,8 +3656,8 @@ color on Windows by default. (default: auto)
     cnc.add_argument(
         &#34;--self-inject&#34;,
         metavar=&#34;cmd:host:port&#34;,
-        type=_args_check_upload_myself,
         default=None,
+        type=_args_check_upload_myself,
         help=&#34;&#34;&#34;Listen mode (TCP only):
 If you are about to inject a reverse shell onto the
 victim machine (via php, bash, nc, ncat or similar),
@@ -3721,12 +3752,16 @@ disconnected or the connection is unterrupted otherwise.
     advanced.add_argument(
         &#34;--rebind&#34;,
         metavar=&#34;x&#34;,
+        nargs=&#34;?&#34;,
         default=0,
         type=int,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to bind, it will re-initialize
-itself x many times before giving up. Use -1 to re-init
-endlessly. (default: fail after first unsuccessful try).
+itself x many times before giving up. Omit the
+quantifier to rebind endlessly or specify a positive
+integer for how many times to rebind before giving up.
+See --rebind-robin for an interesting use-case.
+(default: fail after first unsuccessful try).
 
 &#34;&#34;&#34;,
     )
@@ -3758,12 +3793,14 @@ This option requires --rebind to be specified.
     advanced.add_argument(
         &#34;--reconn&#34;,
         metavar=&#34;x&#34;,
+        nargs=&#34;?&#34;,
         default=0,
-        type=int,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 If the remote server is not reachable or the connection
 is interrupted, the client will connect again x many
-times before giving up. Use -1 to retry endlessly.
+times before giving up. Omit the quantifier to retry
+endlessly or specify a positive integer for how many
+times to retry before giving up.
 (default: quit if the remote is not available or the
 connection was interrupted)
 This might be handy for stable TCP reverse shells ;-)
@@ -3958,6 +3995,9 @@ accidentally by other input.
     host = args.hostname
     ports = [args.port]
 
+    reconn = -1 if args.reconn is None else args.reconn
+    rebind = -1 if args.rebind is None else args.rebind
+
     # Set pwncat options
     sock_opts = DsIONetworkSock(
         RECV_BUFSIZE,
@@ -3965,10 +4005,11 @@ accidentally by other input.
         TIMEOUT_RECV_SOCKET,
         TIMEOUT_RECV_SOCKET_RETRY,
         args.nodns,
+        args.ipv6,
         args.udp,
     )
-    srv_opts = DsIONetworkSrv(args.keep_open, args.rebind, args.rebind_wait, args.rebind_robin)
-    cli_opts = DsIONetworkCli(args.reconn, args.reconn_wait, args.reconn_robin)
+    srv_opts = DsIONetworkSrv(args.keep_open, rebind, args.rebind_wait, args.rebind_robin)
+    cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # &#34;wait&#34;: args.wait,
     # &#34;ping_init&#34;: args.ping_init,
@@ -4706,7 +4747,7 @@ def python(self):
         command.append(self.python)
         command.append(remote_path)
         command.append(&#34;--exec {}&#34;.format(binary))
-        command.append(&#34;--reconn -1&#34;)
+        command.append(&#34;--reconn&#34;)
         command.append(&#34;--reconn-wait 1&#34;)
         command.append(host)
         command.append(port)
@@ -5077,7 +5118,7 @@ def reconn_wait(self):
 </dd>
 <dt id="pwncat.DsIONetworkSock"><code class="flex name class">
 <span>class <span class="ident">DsIONetworkSock</span></span>
-<span>(</span><span>bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, udp)</span>
+<span>(</span><span>bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for IONetwork socket options.</p></div>
@@ -5100,11 +5141,11 @@ def reconn_wait(self):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, udp):
-        # type: (int, int, Optional[float], int, bool, bool) -&gt; None
+    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp):
+        # type: (int, int, Optional[float], int, bool, bool, bool) -&gt; None
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
-        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, udp)</code></pre>
+        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, ipv6, udp)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -5133,6 +5174,7 @@ def recv_timeout_retry(self):
 <ul class="hlist">
 <li><code><a title="pwncat.DsSock.backlog" href="#pwncat.DsSock.backlog">backlog</a></code></li>
 <li><code><a title="pwncat.DsSock.bufsize" href="#pwncat.DsSock.bufsize">bufsize</a></code></li>
+<li><code><a title="pwncat.DsSock.ipv6" href="#pwncat.DsSock.ipv6">ipv6</a></code></li>
 <li><code><a title="pwncat.DsSock.nodns" href="#pwncat.DsSock.nodns">nodns</a></code></li>
 <li><code><a title="pwncat.DsSock.recv_timeout" href="#pwncat.DsSock.recv_timeout">recv_timeout</a></code></li>
 <li><code><a title="pwncat.DsSock.udp" href="#pwncat.DsSock.udp">udp</a></code></li>
@@ -5612,7 +5654,7 @@ def signal(self):
 </dd>
 <dt id="pwncat.DsSock"><code class="flex name class">
 <span>class <span class="ident">DsSock</span></span>
-<span>(</span><span>bufsize, backlog, recv_timeout, nodns, udp)</span>
+<span>(</span><span>bufsize, backlog, recv_timeout, nodns, ipv6, udp)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for DsSock options.</p></div>
@@ -5651,6 +5693,12 @@ def signal(self):
         return self.__nodns
 
     @property
+    def ipv6(self):
+        # type: () -&gt; bool
+        &#34;&#34;&#34;`bool`: Determines if we use IPv6 instead of IPv4.&#34;&#34;&#34;
+        return self.__ipv6
+
+    @property
     def udp(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;`bool`: Determines if we use TCP or UDP.&#34;&#34;&#34;
@@ -5659,17 +5707,19 @@ def signal(self):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, udp):
-        # type: (int, int, Optional[float], bool, bool) -&gt; None
+    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp):
+        # type: (int, int, Optional[float], bool, bool, bool) -&gt; None
         assert type(bufsize) is int, type(bufsize)
         assert type(backlog) is int, type(backlog)
         assert type(recv_timeout) is float, type(recv_timeout)
         assert type(nodns) is bool, type(nodns)
+        assert type(ipv6) is bool, type(ipv6)
         assert type(udp) is bool, type(udp)
         self.__bufsize = bufsize
         self.__backlog = backlog
         self.__recv_timeout = recv_timeout
         self.__nodns = nodns
+        self.__ipv6 = ipv6
         self.__udp = udp</code></pre>
 </details>
 <h3>Subclasses</h3>
@@ -5704,6 +5754,20 @@ def bufsize(self):
     # type: () -&gt; int
     &#34;&#34;&#34;`int`: Receive buffer size.&#34;&#34;&#34;
     return self.__bufsize</code></pre>
+</details>
+</dd>
+<dt id="pwncat.DsSock.ipv6"><code class="name">var <span class="ident">ipv6</span></code></dt>
+<dd>
+<div class="desc"><p><code>bool</code>: Determines if we use IPv6 instead of IPv4.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ipv6(self):
+    # type: () -&gt; bool
+    &#34;&#34;&#34;`bool`: Determines if we use IPv6 instead of IPv4.&#34;&#34;&#34;
+    return self.__ipv6</code></pre>
 </details>
 </dd>
 <dt id="pwncat.DsSock.nodns"><code class="name">var <span class="ident">nodns</span></code></dt>
@@ -7635,7 +7699,8 @@ def store(self):
         # we can firstly/finally set its addr/port in order
         # to send data back to it (see send() function)
         if self.__options.udp:
-            self.__remote_addr, self.__remote_port = addr
+            self.__remote_addr = addr[0]
+            self.__remote_port = addr[1]
             self.__log.debug(&#34;Client connected: %s:%d&#34;, self.__remote_addr, self.__remote_port)
 
         # [4/5] Upstream (server or client) is gone.
@@ -7671,7 +7736,7 @@ def store(self):
         Raises:
             socket.gaierror: If hostname cannot be resolved.
         &#34;&#34;&#34;
-        family = socket.AF_INET
+        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
         socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
         proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
         flags = 0
@@ -7679,8 +7744,10 @@ def store(self):
         # Quickly do wildcards for listening addresses
         if host is None:
             if family == socket.AF_INET:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
                 return &#34;0.0.0.0&#34;
             if family == socket.AF_INET6:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
                 return &#34;::&#34;
 
         if self.__options.nodns:
@@ -7760,10 +7827,12 @@ def store(self):
             self.__close(&#34;sock&#34;, sock)
             return False
 
+        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
+
         # [UDP 3/4] There is no listen or accept for UDP
         if self.__options.udp:
             self.__conn = sock
-            self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, socket.AF_INET, port)
+            self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, family, port)
 
         # [TCP 3/4] Requires listen and accept
         else:
@@ -7771,7 +7840,7 @@ def store(self):
             if not self.__listen(sock):
                 self.__close(&#34;sock&#34;, sock)
                 return False
-            self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, socket.AF_INET, port)
+            self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, family, port)
             # Accept
             try:
                 conn = self.__accept(sock)
@@ -7836,15 +7905,17 @@ def store(self):
         Raises:
             socket.error: If socket cannot be created.
         &#34;&#34;&#34;
+        family_sock = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
+        family_name = &#34;IPv6&#34; if self.__options.ipv6 else &#34;IPv4&#34;
         try:
             if self.__options.udp:
-                self.__log.debug(&#34;Creating UDP socket&#34;)
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.__log.debug(&#34;Creating %s UDP socket&#34;, family_name)
+                sock = socket.socket(family_sock, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating TCP socket&#34;)
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.__log.debug(&#34;Creating %s TCP socket&#34;, family_name)
+                sock = socket.socket(family_sock, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Failed to create the socket: {}&#34;.format(error)
+            msg = &#34;Failed to create {} socket: {}&#34;.format(family_name, error)
             self.__log.error(msg)
             raise socket.error(msg)
         # Get around the &#34;[Errno 98] Address already in use&#34; error, if the socket is still in wait
@@ -8060,7 +8131,7 @@ def store(self):
     Raises:
         socket.gaierror: If hostname cannot be resolved.
     &#34;&#34;&#34;
-    family = socket.AF_INET
+    family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
     socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
     proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
     flags = 0
@@ -8068,8 +8139,10 @@ def store(self):
     # Quickly do wildcards for listening addresses
     if host is None:
         if family == socket.AF_INET:
+            self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
             return &#34;0.0.0.0&#34;
         if family == socket.AF_INET6:
+            self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
             return &#34;::&#34;
 
     if self.__options.nodns:
@@ -8189,7 +8262,8 @@ def store(self):
     # we can firstly/finally set its addr/port in order
     # to send data back to it (see send() function)
     if self.__options.udp:
-        self.__remote_addr, self.__remote_port = addr
+        self.__remote_addr = addr[0]
+        self.__remote_port = addr[1]
         self.__log.debug(&#34;Client connected: %s:%d&#34;, self.__remote_addr, self.__remote_port)
 
     # [4/5] Upstream (server or client) is gone.
@@ -8317,10 +8391,12 @@ def store(self):
         self.__close(&#34;sock&#34;, sock)
         return False
 
+    family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
+
     # [UDP 3/4] There is no listen or accept for UDP
     if self.__options.udp:
         self.__conn = sock
-        self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, socket.AF_INET, port)
+        self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, family, port)
 
     # [TCP 3/4] Requires listen and accept
     else:
@@ -8328,7 +8404,7 @@ def store(self):
         if not self.__listen(sock):
             self.__close(&#34;sock&#34;, sock)
             return False
-        self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, socket.AF_INET, port)
+        self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, family, port)
         # Accept
         try:
             conn = self.__accept(sock)
@@ -9089,9 +9165,10 @@ def transform(self, data):
 </li>
 <li>
 <h4><code><a title="pwncat.DsSock" href="#pwncat.DsSock">DsSock</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="pwncat.DsSock.backlog" href="#pwncat.DsSock.backlog">backlog</a></code></li>
 <li><code><a title="pwncat.DsSock.bufsize" href="#pwncat.DsSock.bufsize">bufsize</a></code></li>
+<li><code><a title="pwncat.DsSock.ipv6" href="#pwncat.DsSock.ipv6">ipv6</a></code></li>
 <li><code><a title="pwncat.DsSock.nodns" href="#pwncat.DsSock.nodns">nodns</a></code></li>
 <li><code><a title="pwncat.DsSock.recv_timeout" href="#pwncat.DsSock.recv_timeout">recv_timeout</a></code></li>
 <li><code><a title="pwncat.DsSock.udp" href="#pwncat.DsSock.udp">udp</a></code></li>
