@@ -7,6 +7,8 @@ set -o pipefail
 # shellcheck disable=SC2034
 SOURCEDIR="$( dirname "${SOURCEPATH}" )"
 
+# TODO: output everything to stderr
+# TODO: put 'kill' commands into background to unblock, blocking windows runs
 
 # -------------------------------------------------------------------------------------------------
 # GLOBALS
@@ -46,7 +48,6 @@ print_test_case() {
 	local dirnum=
 	local dirmode=
 	local dirtype=
-	echo "${filename}"
 
 	dirname="$( cd "$(dirname "${0}")" >/dev/null || true; basename "$(pwd -P)" || true )"
 	dirnum="$( echo "${dirname}" | grep -Eo '^[0-9]+' || true )"
@@ -126,6 +127,13 @@ print_info() {
 	#local clr_info="\\033[0;34m" # Blue
 	#local clr_rst="\\033[m"      # Reset to normal
 	printf "[INFO] %s\\n" "${message}"
+}
+
+print_ok() {
+	local message="${1}"
+	local clr_ok="\\033[0;32m"   # Green
+	local clr_rst="\\033[m"      # Reset to normal
+	printf "${clr_ok}[SUCC] %s${clr_rst}\\n" "${message}"
 }
 
 print_warn() {
@@ -281,13 +289,13 @@ print_run_datetime() {
 # -------------------------------------------------------------------------------------------------
 
 ###
-### Check file for errors
+### Ensure the file contains errors
+###
+### Returns success (0) if errors are detected
 ###
 has_errors() {
 	local stderr="${1}"
 	local reg_ignore_err="${2:-}"
-
-	local errors=0
 
 	if [ ! -f "${stderr}" ]; then
 		>&2 echo "[Assert Error] 'has_errors()' did not receive a valid file: ${stderr}"
@@ -296,11 +304,11 @@ has_errors() {
 
 	# Stuff the Python logging.Logger is producing
 	if [ -n "${reg_ignore_err}" ]; then
-		if ! run_fail "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -E 'FATAL|ERROR' >/dev/null"; then
+		if run "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -E 'FATAL|ERROR' >/dev/null"; then
 			return 0  # Successful return means it has errors
 		fi
 	else
-		if ! run_fail "grep -E 'FATAL|ERROR' ${stderr} >/dev/null"; then
+		if run "grep -E 'FATAL|ERROR' '${stderr}' >/dev/null"; then
 			return 0  # Successful return means it has errors
 		fi
 	fi
@@ -309,39 +317,53 @@ has_errors() {
 	# might yield false positives due to all the caught exception messages that may
 	# contain the word 'Error' or a combination of it.
 	if [ -n "${reg_ignore_err}" ]; then
-		if ! run_fail "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
+		if run "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' >/dev/null"; then
 			return 0  # Successful return means it has errors
 		fi
 	else
-		if ! run_fail "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
+		if run "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' '${stderr}' >/dev/null"; then
 			return 0  # Successful return means it has errors
 		fi
 	fi
+	# Return failure (1) no errors are detected
 	return 1
 }
 
 ###
-### Check file has no errors
+### Ensure the file does NOT contain errors
 ###
 has_no_errors() {
 	local stderr="${1}"
+	local reg_ignore_err="${2:-}"
 	local errors=0
 
 	if [ ! -f "${stderr}" ]; then
-		>&2 echo "[Assert Error] 'has_errors()' did not receive a valid file: ${stderr}"
+		>&2 echo "[Assert Error] 'has_no_errors()' did not receive a valid file: ${stderr}"
 		exit 1
 	fi
 
 	# Stuff the Python logger is producing
-	if ! run_fail "grep -E 'FATAL|ERROR' ${stderr} >/dev/null"; then
-		errors=$(( errors + 1 ))
+	if [ -n "${reg_ignore_err}" ]; then
+		if ! run_fail "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -E 'FATAL|ERROR' >/dev/null"; then
+			errors=$(( errors + 1 ))
+		fi
+	else
+		if ! run_fail "grep -E 'FATAL|ERROR' '${stderr}' >/dev/null"; then
+			errors=$(( errors + 1 ))
+		fi
 	fi
 
 	# Other stuff that might pop up. Note that greping for 'Error' case-insensitive
 	# might yield false positives due to all the caught exception messages that may
 	# contain the word 'Error' or a combination of it.
-	if ! run_fail "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' ${stderr} >/dev/null"; then
-		errors=$(( errors + 1 ))
+	if [ -n "${reg_ignore_err}" ]; then
+		if ! run_fail "grep -Eiv '${reg_ignore_err}' '${stderr}' | grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' >/dev/null"; then
+			errors=$(( errors + 1 ))
+		fi
+	else
+		if ! run_fail "grep -Ei 'Traceback|Exception|Segfaul|Fatal|Syntax' '${stderr}' >/dev/null"; then
+			errors=$(( errors + 1 ))
+		fi
 	fi
 	return ${errors}
 }
@@ -375,7 +397,7 @@ pid_is_not_running() {
 	local running=0
 
 	if [ -z "${pid}" ]; then
-		>&2 echo "[Assert Error] 'pid_is_running()' function did not receive a pid value"
+		>&2 echo "[Assert Error] 'pid_is_not_running()' function did not receive a pid value"
 		exit 1
 	fi
 
@@ -413,17 +435,12 @@ stop_pid() {
 		return 1
 	fi
 
-	# Ensure it was really stopped
-	if pid_is_not_running "${pid}"; then
-		return 0
-	fi
-
 	# Give it some time to shutdown gracefully
 	for i in {1..10}; do
+		sleep 1  # Sleep first to give it a second to come done before testing
 		if pid_is_not_running "${pid}"; then
 			return 0
 		fi
-		sleep 1
 	done
 
 	# Nope, still running
@@ -445,19 +462,14 @@ kill_pid() {
 		return 1
 	fi
 
-	# Ensure it was really stopped
-	if ! pid_is_running "${pid}"; then
-		return 0
-	fi
-
 	# Give it some time to shutdown gracefully
 	# shellcheck disable=SC2034
 	for i in {1..10}; do
-		if ! pid_is_running "${pid}"; then
+		sleep 1  # Sleep first to give it a second to come done before testing
+		if pid_is_not_running "${pid}"; then
 			return 0
 		fi
 		run "kill -9 ${pid} || true"
-		sleep 1
 	done
 
 	# Nope, still running
@@ -776,6 +788,7 @@ wait_for_data_transferred() {
 	print_data_raw "RECVER] [${recv_name}] received - [HEX" "$( od -c "${recv_file_stdout}" )"
 	# shellcheck disable=SC2002
 	print_data_raw "RECVER] [${recv_name}] received - [HEX" "$( cat "${recv_file_stdout}" | od -c )"
+	print_ok "Data transferred successfully"
 	print_test_datetime
 }
 
@@ -808,6 +821,7 @@ action_stop_instance() {
 	# (1/3) Normal stop
 	print_info "Stopping ${name} gracefully (pid: ${pid})..."
 	if stop_pid "${pid}"; then
+		print_ok "${name} was stopped gracefully and successfully"
 		print_test_datetime
 		return 0
 	fi
@@ -863,7 +877,7 @@ test_case_instance_is_running() {
 	print_info "Check ${name} is running (pid: ${pid}) ..."
 
 	if pid_is_running "${pid}"; then
-		print_info "${name} is running with pid: ${pid}"
+		print_ok "${name} is running with pid: ${pid}"
 		print_test_datetime
 		return 0
 	fi
@@ -914,11 +928,12 @@ test_case_instance_is_stopped() {
 	# Give it some time to shutdown gracefully
 	# shellcheck disable=SC2034
 	for i in {1..10}; do
+		sleep 1  # Sleep first to give it a second to come down
 		if pid_is_not_running "${pid}"; then
+			print_ok "${name} has stopped"
 			print_test_datetime
 			return 0
 		fi
-		sleep 1
 	done
 
 	# Show logs
@@ -988,7 +1003,9 @@ test_case_instance_has_no_errors() {
 		print_info "Check ${name} for errors"
 	fi
 
-	if ! has_errors "${file_stderr}" "${reg_ignore_err}"; then
+	# All good, we do not have any errors :-)
+	if has_no_errors "${file_stderr}" "${reg_ignore_err}"; then
+		print_ok "${name} has no errors"
 		print_test_datetime
 		return 0
 	fi
@@ -1034,9 +1051,11 @@ test_case_instance_has_errors() {
 		fi
 	fi
 
-	print_info "Check ${name} for errors"
+	print_info "Ensure ${name} has errors"
 
-	if ! has_no_errors "${file_stderr}"; then
+	# All good, we DO HAVE errors :-)
+	if has_errors "${file_stderr}"; then
+		print_ok "${name} has errors (as expected)"
 		print_test_datetime
 		return 0
 	fi
@@ -1047,7 +1066,7 @@ test_case_instance_has_errors() {
 	fi
 	print_file "${name} STDERR" "${file_stderr}"
 	print_file "${name} STDOUT" "${file_stdout}"
-	print_error "[${name} Error] Errors found in stderr"
+	print_error "[${name} Error] No errors found in stderr, but expected"
 
 	# cleanup
 	kill_pid "${pid}" || true
