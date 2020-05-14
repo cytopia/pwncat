@@ -1770,12 +1770,6 @@ class IONetwork(IO):
                     continue
                 return
 
-    def ping(self, data):
-        # type: (str) -&gt; None
-        &#34;&#34;&#34;Send data to the socket and increment the port afterwards.&#34;&#34;&#34;
-        self.__net.send(data)
-        self.__increment_port_pointer()
-
     def consumer(self, data):
         # type: (str) -&gt; None
         &#34;&#34;&#34;Send data to a socket.&#34;&#34;&#34;
@@ -1795,13 +1789,6 @@ class IONetwork(IO):
     # --------------------------------------------------------------------------
     # Private Functions
     # --------------------------------------------------------------------------
-    def __increment_port_pointer(self):
-        # type: () -&gt; None
-        &#34;&#34;&#34;Increments the pointer pointing to the list of ports we have available.&#34;&#34;&#34;
-        self.__pport += 1
-        if self.__pport == len(self.__ports):
-            self.__pport = 0
-
     def __client_reconnect_to_server(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;Ensure the client re-connects to the remote server, if the remote server hang up.
@@ -1833,7 +1820,9 @@ class IONetwork(IO):
                 return False
 
             # [4/6] Increment the port numer (if --reconn-robin has multiple)
-            self.__increment_port_pointer()
+            self.__pport += 1
+            if self.__pport == len(self.__ports):
+                self.__pport = 0
 
             if self.__cli_opts.reconn &gt; 0:
                 self.log.info(
@@ -3680,7 +3669,7 @@ def main():
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
                 &#34;PING&#34;,
-                DsRunnerTimer(net.ping, ssig, args.ping_intvl, (args.ping_word)),  # send data
+                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
             )
         run.run()
 
@@ -4436,7 +4425,7 @@ accidentally by other input.
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
                 &#34;PING&#34;,
-                DsRunnerTimer(net.ping, ssig, args.ping_intvl, (args.ping_word)),  # send data
+                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
             )
         run.run()</code></pre>
 </details>
@@ -6760,12 +6749,6 @@ def producer(self):
                     continue
                 return
 
-    def ping(self, data):
-        # type: (str) -&gt; None
-        &#34;&#34;&#34;Send data to the socket and increment the port afterwards.&#34;&#34;&#34;
-        self.__net.send(data)
-        self.__increment_port_pointer()
-
     def consumer(self, data):
         # type: (str) -&gt; None
         &#34;&#34;&#34;Send data to a socket.&#34;&#34;&#34;
@@ -6785,13 +6768,6 @@ def producer(self):
     # --------------------------------------------------------------------------
     # Private Functions
     # --------------------------------------------------------------------------
-    def __increment_port_pointer(self):
-        # type: () -&gt; None
-        &#34;&#34;&#34;Increments the pointer pointing to the list of ports we have available.&#34;&#34;&#34;
-        self.__pport += 1
-        if self.__pport == len(self.__ports):
-            self.__pport = 0
-
     def __client_reconnect_to_server(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;Ensure the client re-connects to the remote server, if the remote server hang up.
@@ -6823,7 +6799,9 @@ def producer(self):
                 return False
 
             # [4/6] Increment the port numer (if --reconn-robin has multiple)
-            self.__increment_port_pointer()
+            self.__pport += 1
+            if self.__pport == len(self.__ports):
+                self.__pport = 0
 
             if self.__cli_opts.reconn &gt; 0:
                 self.log.info(
@@ -6921,22 +6899,6 @@ def producer(self):
     self.__net.close_bind_sock()
     # Raise stop signal
     self.ssig.raise_stop()</code></pre>
-</details>
-</dd>
-<dt id="pwncat.IONetwork.ping"><code class="name flex">
-<span>def <span class="ident">ping</span></span>(<span>self, data)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Send data to the socket and increment the port afterwards.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def ping(self, data):
-    # type: (str) -&gt; None
-    &#34;&#34;&#34;Send data to the socket and increment the port afterwards.&#34;&#34;&#34;
-    self.__net.send(data)
-    self.__increment_port_pointer()</code></pre>
 </details>
 </dd>
 <dt id="pwncat.IONetwork.producer"><code class="name flex">
@@ -9688,7 +9650,6 @@ def transform(self, data):
 <ul class="">
 <li><code><a title="pwncat.IONetwork.consumer" href="#pwncat.IONetwork.consumer">consumer</a></code></li>
 <li><code><a title="pwncat.IONetwork.interrupt" href="#pwncat.IONetwork.interrupt">interrupt</a></code></li>
-<li><code><a title="pwncat.IONetwork.ping" href="#pwncat.IONetwork.ping">ping</a></code></li>
 <li><code><a title="pwncat.IONetwork.producer" href="#pwncat.IONetwork.producer">producer</a></code></li>
 </ul>
 </li>

@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">5.89% imprecise</th>
-<th class="summary summary-lines">3670 LOC</th>
+<th class="summary summary-precision">5.90% imprecise</th>
+<th class="summary summary-lines">3659 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">5.89% imprecise</td>
-<td class="summary summary-lines">3670 LOC</td>
+<td class="summary summary-precision">5.90% imprecise</td>
+<td class="summary summary-lines">3659 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -3694,17 +3694,6 @@
 <span id="L3657" class="lineno"><a class="lineno" href="#L3657">3657</a></span>
 <span id="L3658" class="lineno"><a class="lineno" href="#L3658">3658</a></span>
 <span id="L3659" class="lineno"><a class="lineno" href="#L3659">3659</a></span>
-<span id="L3660" class="lineno"><a class="lineno" href="#L3660">3660</a></span>
-<span id="L3661" class="lineno"><a class="lineno" href="#L3661">3661</a></span>
-<span id="L3662" class="lineno"><a class="lineno" href="#L3662">3662</a></span>
-<span id="L3663" class="lineno"><a class="lineno" href="#L3663">3663</a></span>
-<span id="L3664" class="lineno"><a class="lineno" href="#L3664">3664</a></span>
-<span id="L3665" class="lineno"><a class="lineno" href="#L3665">3665</a></span>
-<span id="L3666" class="lineno"><a class="lineno" href="#L3666">3666</a></span>
-<span id="L3667" class="lineno"><a class="lineno" href="#L3667">3667</a></span>
-<span id="L3668" class="lineno"><a class="lineno" href="#L3668">3668</a></span>
-<span id="L3669" class="lineno"><a class="lineno" href="#L3669">3669</a></span>
-<span id="L3670" class="lineno"><a class="lineno" href="#L3670">3670</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5542,12 +5531,6 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                    continue</span>
 <span class="line-empty" title="No Anys on this line!">                return</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">    def ping(self, data):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; None</span>
-<span class="line-empty" title="No Anys on this line!">        """Send data to the socket and increment the port afterwards."""</span>
-<span class="line-precise" title="No Anys on this line!">        self.__net.send(data)</span>
-<span class="line-precise" title="No Anys on this line!">        self.__increment_port_pointer()</span>
-<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def consumer(self, data):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Send data to a socket."""</span>
@@ -5568,13 +5551,6 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Private Functions</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __increment_port_pointer(self):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
-<span class="line-empty" title="No Anys on this line!">        """Increments the pointer pointing to the list of ports we have available."""</span>
-<span class="line-precise" title="No Anys on this line!">        self.__pport += 1</span>
-<span class="line-precise" title="No Anys on this line!">        if self.__pport == len(self.__ports):</span>
-<span class="line-precise" title="No Anys on this line!">            self.__pport = 0</span>
-<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def __client_reconnect_to_server(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; bool</span>
 <span class="line-empty" title="No Anys on this line!">        """Ensure the client re-connects to the remote server, if the remote server hang up.</span>
@@ -5606,7 +5582,9 @@ Error (x2)">        self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # [4/6] Increment the port numer (if --reconn-robin has multiple)</span>
-<span class="line-precise" title="No Anys on this line!">            self.__increment_port_pointer()</span>
+<span class="line-precise" title="No Anys on this line!">            self.__pport += 1</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__pport == len(self.__ports):</span>
+<span class="line-precise" title="No Anys on this line!">                self.__pport = 0</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">            if self.__cli_opts.reconn &gt; 0:</span>
 <span class="line-any" title="Any Types on this line: 
@@ -7611,7 +7589,7 @@ Explicit (x5)">        if type(args.ping_intvl) is int and args.ping_intvl &gt; 
 <span class="line-precise" title="No Anys on this line!">            run.add_timer(</span>
 <span class="line-precise" title="No Anys on this line!">                "PING",</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x6)">                DsRunnerTimer(net.ping, ssig, args.ping_intvl, (args.ping_word)),  # send data</span>
+Explicit (x6)">                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
