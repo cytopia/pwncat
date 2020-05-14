@@ -4,6 +4,13 @@
 ## Unreleased
 
 
+## Release 0.0.18-alpha
+
+### Added
+- Feature: IP ToS selection (`-T`/`--tos`)
+- Feature: Print socket options (`--info`) for socket, IPv4, IPv6 and/or TCP
+
+
 ## Release 0.0.17-alpha
 
 ### Fixed

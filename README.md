@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.94%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.11%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -251,7 +251,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 |---------------------|--------|---------|-----|
 | Scripting engine    | Python | :x:     | Lua |
 | Self-injecting      | ✔      | :x:     | :x: |
-| IP ToS              | :x:    | ✔       | :x: |
+| IP ToS              | ✔      | ✔       | :x: |
 | IPv4                | ✔      | ✔       | ✔   |
 | IPv6                | ✔      | ✔       | ✔   |
 | Unix domain sockets | :x:    | ✔       | ✔   |
@@ -408,9 +408,17 @@ optional arguments:
                         CR on MacOS).
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
+  -T str, --tos str     Specifies IP Type of Service (ToS) for the connection.
+                        Valid values are the tokens 'mincost', 'lowcost',
+                        'reliability', 'throughput' or 'lowdelay'.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
                         or -vvvv for more verbosity. The server performance will
                         decrease drastically if you use more than three times.
+  --info type           Show additional info about sockets, ip4/6 or tcp opts
+                        applied to the current socket connection. Valid
+                        parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
+                        Note, you must at least be in INFO verbose mode in order
+                        to see them (-vv).
   -c str, --color str   Colored log output. Specify 'always', 'never' or 'auto'.
                         In 'auto' mode, color is displayed as long as the output
                         goes to a terminal. If it is piped into a file, color
