@@ -84,10 +84,22 @@ Do not resolve DNS.
 \fB\-u\fR, \fB\-\-udp\fR
 Use UDP for the connection instead of TCP.
 .TP
+\fB\-T\fR str, \fB\-\-tos\fR str
+Specifies IP Type of Service (ToS) for the connection.
+Valid values are the tokens 'mincost', 'lowcost',
+\&'reliability', 'throughput' or 'lowdelay'.
+.TP
 \fB\-v\fR, \fB\-\-verbose\fR
 Be verbose and print info to stderr. Use \fB\-v\fR, \fB\-vv\fR, \fB\-vvv\fR
 or \fB\-vvvv\fR for more verbosity. The server performance will
 decrease drastically if you use more than three times.
+.TP
+\fB\-\-info\fR type
+Show additional info about sockets, ip4/6 or tcp opts
+applied to the current socket connection. Valid
+parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
+Note, you must at least be in INFO verbose mode in order
+to see them (\fB\-vv\fR).
 .TP
 \fB\-c\fR str, \fB\-\-color\fR str
 Colored log output. Specify 'always', 'never' or 'auto'.

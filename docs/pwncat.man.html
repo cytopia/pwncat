@@ -178,6 +178,15 @@ some times CR on MacOS).</p>
 <p style="margin-left:22%;">Use UDP for the connection
 instead of TCP.</p>
 
+<p style="margin-left:11%;"><b>&minus;T</b> str,
+<b>&minus;&minus;tos</b> str</p>
+
+<p style="margin-left:22%;">Specifies IP Type of Service
+(ToS) for the connection. Valid values are the tokens
+&rsquo;mincost&rsquo;, &rsquo;lowcost&rsquo;,
+&rsquo;reliability&rsquo;, &rsquo;throughput&rsquo; or
+&rsquo;lowdelay&rsquo;.</p>
+
 <p style="margin-left:11%;"><b>&minus;v</b>,
 <b>&minus;&minus;verbose</b></p>
 
@@ -186,6 +195,16 @@ stderr. Use <b>&minus;v</b>, <b>&minus;vv</b>,
 <b>&minus;vvv</b> or <b>&minus;vvvv</b> for more verbosity.
 The server performance will decrease drastically if you use
 more than three times.</p>
+
+<p style="margin-left:11%;"><b>&minus;&minus;info</b>
+type</p>
+
+<p style="margin-left:22%;">Show additional info about
+sockets, ip4/6 or tcp opts applied to the current socket
+connection. Valid parameter are &rsquo;sock&rsquo;,
+&rsquo;ipv4&rsquo;, &rsquo;ipv6&rsquo;, &rsquo;tcp&rsquo; or
+&rsquo;all&rsquo;. Note, you must at least be in INFO
+verbose mode in order to see them (<b>&minus;vv</b>).</p>
 
 <p style="margin-left:11%;"><b>&minus;c</b> str,
 <b>&minus;&minus;color</b> str</p>
