@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.06% imprecise</th>
-<th class="summary summary-lines">3450 LOC</th>
+<th class="summary summary-precision">5.90% imprecise</th>
+<th class="summary summary-lines">3659 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.06% imprecise</td>
-<td class="summary summary-lines">3450 LOC</td>
+<td class="summary summary-precision">5.90% imprecise</td>
+<td class="summary summary-lines">3659 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -3485,6 +3485,215 @@
 <span id="L3448" class="lineno"><a class="lineno" href="#L3448">3448</a></span>
 <span id="L3449" class="lineno"><a class="lineno" href="#L3449">3449</a></span>
 <span id="L3450" class="lineno"><a class="lineno" href="#L3450">3450</a></span>
+<span id="L3451" class="lineno"><a class="lineno" href="#L3451">3451</a></span>
+<span id="L3452" class="lineno"><a class="lineno" href="#L3452">3452</a></span>
+<span id="L3453" class="lineno"><a class="lineno" href="#L3453">3453</a></span>
+<span id="L3454" class="lineno"><a class="lineno" href="#L3454">3454</a></span>
+<span id="L3455" class="lineno"><a class="lineno" href="#L3455">3455</a></span>
+<span id="L3456" class="lineno"><a class="lineno" href="#L3456">3456</a></span>
+<span id="L3457" class="lineno"><a class="lineno" href="#L3457">3457</a></span>
+<span id="L3458" class="lineno"><a class="lineno" href="#L3458">3458</a></span>
+<span id="L3459" class="lineno"><a class="lineno" href="#L3459">3459</a></span>
+<span id="L3460" class="lineno"><a class="lineno" href="#L3460">3460</a></span>
+<span id="L3461" class="lineno"><a class="lineno" href="#L3461">3461</a></span>
+<span id="L3462" class="lineno"><a class="lineno" href="#L3462">3462</a></span>
+<span id="L3463" class="lineno"><a class="lineno" href="#L3463">3463</a></span>
+<span id="L3464" class="lineno"><a class="lineno" href="#L3464">3464</a></span>
+<span id="L3465" class="lineno"><a class="lineno" href="#L3465">3465</a></span>
+<span id="L3466" class="lineno"><a class="lineno" href="#L3466">3466</a></span>
+<span id="L3467" class="lineno"><a class="lineno" href="#L3467">3467</a></span>
+<span id="L3468" class="lineno"><a class="lineno" href="#L3468">3468</a></span>
+<span id="L3469" class="lineno"><a class="lineno" href="#L3469">3469</a></span>
+<span id="L3470" class="lineno"><a class="lineno" href="#L3470">3470</a></span>
+<span id="L3471" class="lineno"><a class="lineno" href="#L3471">3471</a></span>
+<span id="L3472" class="lineno"><a class="lineno" href="#L3472">3472</a></span>
+<span id="L3473" class="lineno"><a class="lineno" href="#L3473">3473</a></span>
+<span id="L3474" class="lineno"><a class="lineno" href="#L3474">3474</a></span>
+<span id="L3475" class="lineno"><a class="lineno" href="#L3475">3475</a></span>
+<span id="L3476" class="lineno"><a class="lineno" href="#L3476">3476</a></span>
+<span id="L3477" class="lineno"><a class="lineno" href="#L3477">3477</a></span>
+<span id="L3478" class="lineno"><a class="lineno" href="#L3478">3478</a></span>
+<span id="L3479" class="lineno"><a class="lineno" href="#L3479">3479</a></span>
+<span id="L3480" class="lineno"><a class="lineno" href="#L3480">3480</a></span>
+<span id="L3481" class="lineno"><a class="lineno" href="#L3481">3481</a></span>
+<span id="L3482" class="lineno"><a class="lineno" href="#L3482">3482</a></span>
+<span id="L3483" class="lineno"><a class="lineno" href="#L3483">3483</a></span>
+<span id="L3484" class="lineno"><a class="lineno" href="#L3484">3484</a></span>
+<span id="L3485" class="lineno"><a class="lineno" href="#L3485">3485</a></span>
+<span id="L3486" class="lineno"><a class="lineno" href="#L3486">3486</a></span>
+<span id="L3487" class="lineno"><a class="lineno" href="#L3487">3487</a></span>
+<span id="L3488" class="lineno"><a class="lineno" href="#L3488">3488</a></span>
+<span id="L3489" class="lineno"><a class="lineno" href="#L3489">3489</a></span>
+<span id="L3490" class="lineno"><a class="lineno" href="#L3490">3490</a></span>
+<span id="L3491" class="lineno"><a class="lineno" href="#L3491">3491</a></span>
+<span id="L3492" class="lineno"><a class="lineno" href="#L3492">3492</a></span>
+<span id="L3493" class="lineno"><a class="lineno" href="#L3493">3493</a></span>
+<span id="L3494" class="lineno"><a class="lineno" href="#L3494">3494</a></span>
+<span id="L3495" class="lineno"><a class="lineno" href="#L3495">3495</a></span>
+<span id="L3496" class="lineno"><a class="lineno" href="#L3496">3496</a></span>
+<span id="L3497" class="lineno"><a class="lineno" href="#L3497">3497</a></span>
+<span id="L3498" class="lineno"><a class="lineno" href="#L3498">3498</a></span>
+<span id="L3499" class="lineno"><a class="lineno" href="#L3499">3499</a></span>
+<span id="L3500" class="lineno"><a class="lineno" href="#L3500">3500</a></span>
+<span id="L3501" class="lineno"><a class="lineno" href="#L3501">3501</a></span>
+<span id="L3502" class="lineno"><a class="lineno" href="#L3502">3502</a></span>
+<span id="L3503" class="lineno"><a class="lineno" href="#L3503">3503</a></span>
+<span id="L3504" class="lineno"><a class="lineno" href="#L3504">3504</a></span>
+<span id="L3505" class="lineno"><a class="lineno" href="#L3505">3505</a></span>
+<span id="L3506" class="lineno"><a class="lineno" href="#L3506">3506</a></span>
+<span id="L3507" class="lineno"><a class="lineno" href="#L3507">3507</a></span>
+<span id="L3508" class="lineno"><a class="lineno" href="#L3508">3508</a></span>
+<span id="L3509" class="lineno"><a class="lineno" href="#L3509">3509</a></span>
+<span id="L3510" class="lineno"><a class="lineno" href="#L3510">3510</a></span>
+<span id="L3511" class="lineno"><a class="lineno" href="#L3511">3511</a></span>
+<span id="L3512" class="lineno"><a class="lineno" href="#L3512">3512</a></span>
+<span id="L3513" class="lineno"><a class="lineno" href="#L3513">3513</a></span>
+<span id="L3514" class="lineno"><a class="lineno" href="#L3514">3514</a></span>
+<span id="L3515" class="lineno"><a class="lineno" href="#L3515">3515</a></span>
+<span id="L3516" class="lineno"><a class="lineno" href="#L3516">3516</a></span>
+<span id="L3517" class="lineno"><a class="lineno" href="#L3517">3517</a></span>
+<span id="L3518" class="lineno"><a class="lineno" href="#L3518">3518</a></span>
+<span id="L3519" class="lineno"><a class="lineno" href="#L3519">3519</a></span>
+<span id="L3520" class="lineno"><a class="lineno" href="#L3520">3520</a></span>
+<span id="L3521" class="lineno"><a class="lineno" href="#L3521">3521</a></span>
+<span id="L3522" class="lineno"><a class="lineno" href="#L3522">3522</a></span>
+<span id="L3523" class="lineno"><a class="lineno" href="#L3523">3523</a></span>
+<span id="L3524" class="lineno"><a class="lineno" href="#L3524">3524</a></span>
+<span id="L3525" class="lineno"><a class="lineno" href="#L3525">3525</a></span>
+<span id="L3526" class="lineno"><a class="lineno" href="#L3526">3526</a></span>
+<span id="L3527" class="lineno"><a class="lineno" href="#L3527">3527</a></span>
+<span id="L3528" class="lineno"><a class="lineno" href="#L3528">3528</a></span>
+<span id="L3529" class="lineno"><a class="lineno" href="#L3529">3529</a></span>
+<span id="L3530" class="lineno"><a class="lineno" href="#L3530">3530</a></span>
+<span id="L3531" class="lineno"><a class="lineno" href="#L3531">3531</a></span>
+<span id="L3532" class="lineno"><a class="lineno" href="#L3532">3532</a></span>
+<span id="L3533" class="lineno"><a class="lineno" href="#L3533">3533</a></span>
+<span id="L3534" class="lineno"><a class="lineno" href="#L3534">3534</a></span>
+<span id="L3535" class="lineno"><a class="lineno" href="#L3535">3535</a></span>
+<span id="L3536" class="lineno"><a class="lineno" href="#L3536">3536</a></span>
+<span id="L3537" class="lineno"><a class="lineno" href="#L3537">3537</a></span>
+<span id="L3538" class="lineno"><a class="lineno" href="#L3538">3538</a></span>
+<span id="L3539" class="lineno"><a class="lineno" href="#L3539">3539</a></span>
+<span id="L3540" class="lineno"><a class="lineno" href="#L3540">3540</a></span>
+<span id="L3541" class="lineno"><a class="lineno" href="#L3541">3541</a></span>
+<span id="L3542" class="lineno"><a class="lineno" href="#L3542">3542</a></span>
+<span id="L3543" class="lineno"><a class="lineno" href="#L3543">3543</a></span>
+<span id="L3544" class="lineno"><a class="lineno" href="#L3544">3544</a></span>
+<span id="L3545" class="lineno"><a class="lineno" href="#L3545">3545</a></span>
+<span id="L3546" class="lineno"><a class="lineno" href="#L3546">3546</a></span>
+<span id="L3547" class="lineno"><a class="lineno" href="#L3547">3547</a></span>
+<span id="L3548" class="lineno"><a class="lineno" href="#L3548">3548</a></span>
+<span id="L3549" class="lineno"><a class="lineno" href="#L3549">3549</a></span>
+<span id="L3550" class="lineno"><a class="lineno" href="#L3550">3550</a></span>
+<span id="L3551" class="lineno"><a class="lineno" href="#L3551">3551</a></span>
+<span id="L3552" class="lineno"><a class="lineno" href="#L3552">3552</a></span>
+<span id="L3553" class="lineno"><a class="lineno" href="#L3553">3553</a></span>
+<span id="L3554" class="lineno"><a class="lineno" href="#L3554">3554</a></span>
+<span id="L3555" class="lineno"><a class="lineno" href="#L3555">3555</a></span>
+<span id="L3556" class="lineno"><a class="lineno" href="#L3556">3556</a></span>
+<span id="L3557" class="lineno"><a class="lineno" href="#L3557">3557</a></span>
+<span id="L3558" class="lineno"><a class="lineno" href="#L3558">3558</a></span>
+<span id="L3559" class="lineno"><a class="lineno" href="#L3559">3559</a></span>
+<span id="L3560" class="lineno"><a class="lineno" href="#L3560">3560</a></span>
+<span id="L3561" class="lineno"><a class="lineno" href="#L3561">3561</a></span>
+<span id="L3562" class="lineno"><a class="lineno" href="#L3562">3562</a></span>
+<span id="L3563" class="lineno"><a class="lineno" href="#L3563">3563</a></span>
+<span id="L3564" class="lineno"><a class="lineno" href="#L3564">3564</a></span>
+<span id="L3565" class="lineno"><a class="lineno" href="#L3565">3565</a></span>
+<span id="L3566" class="lineno"><a class="lineno" href="#L3566">3566</a></span>
+<span id="L3567" class="lineno"><a class="lineno" href="#L3567">3567</a></span>
+<span id="L3568" class="lineno"><a class="lineno" href="#L3568">3568</a></span>
+<span id="L3569" class="lineno"><a class="lineno" href="#L3569">3569</a></span>
+<span id="L3570" class="lineno"><a class="lineno" href="#L3570">3570</a></span>
+<span id="L3571" class="lineno"><a class="lineno" href="#L3571">3571</a></span>
+<span id="L3572" class="lineno"><a class="lineno" href="#L3572">3572</a></span>
+<span id="L3573" class="lineno"><a class="lineno" href="#L3573">3573</a></span>
+<span id="L3574" class="lineno"><a class="lineno" href="#L3574">3574</a></span>
+<span id="L3575" class="lineno"><a class="lineno" href="#L3575">3575</a></span>
+<span id="L3576" class="lineno"><a class="lineno" href="#L3576">3576</a></span>
+<span id="L3577" class="lineno"><a class="lineno" href="#L3577">3577</a></span>
+<span id="L3578" class="lineno"><a class="lineno" href="#L3578">3578</a></span>
+<span id="L3579" class="lineno"><a class="lineno" href="#L3579">3579</a></span>
+<span id="L3580" class="lineno"><a class="lineno" href="#L3580">3580</a></span>
+<span id="L3581" class="lineno"><a class="lineno" href="#L3581">3581</a></span>
+<span id="L3582" class="lineno"><a class="lineno" href="#L3582">3582</a></span>
+<span id="L3583" class="lineno"><a class="lineno" href="#L3583">3583</a></span>
+<span id="L3584" class="lineno"><a class="lineno" href="#L3584">3584</a></span>
+<span id="L3585" class="lineno"><a class="lineno" href="#L3585">3585</a></span>
+<span id="L3586" class="lineno"><a class="lineno" href="#L3586">3586</a></span>
+<span id="L3587" class="lineno"><a class="lineno" href="#L3587">3587</a></span>
+<span id="L3588" class="lineno"><a class="lineno" href="#L3588">3588</a></span>
+<span id="L3589" class="lineno"><a class="lineno" href="#L3589">3589</a></span>
+<span id="L3590" class="lineno"><a class="lineno" href="#L3590">3590</a></span>
+<span id="L3591" class="lineno"><a class="lineno" href="#L3591">3591</a></span>
+<span id="L3592" class="lineno"><a class="lineno" href="#L3592">3592</a></span>
+<span id="L3593" class="lineno"><a class="lineno" href="#L3593">3593</a></span>
+<span id="L3594" class="lineno"><a class="lineno" href="#L3594">3594</a></span>
+<span id="L3595" class="lineno"><a class="lineno" href="#L3595">3595</a></span>
+<span id="L3596" class="lineno"><a class="lineno" href="#L3596">3596</a></span>
+<span id="L3597" class="lineno"><a class="lineno" href="#L3597">3597</a></span>
+<span id="L3598" class="lineno"><a class="lineno" href="#L3598">3598</a></span>
+<span id="L3599" class="lineno"><a class="lineno" href="#L3599">3599</a></span>
+<span id="L3600" class="lineno"><a class="lineno" href="#L3600">3600</a></span>
+<span id="L3601" class="lineno"><a class="lineno" href="#L3601">3601</a></span>
+<span id="L3602" class="lineno"><a class="lineno" href="#L3602">3602</a></span>
+<span id="L3603" class="lineno"><a class="lineno" href="#L3603">3603</a></span>
+<span id="L3604" class="lineno"><a class="lineno" href="#L3604">3604</a></span>
+<span id="L3605" class="lineno"><a class="lineno" href="#L3605">3605</a></span>
+<span id="L3606" class="lineno"><a class="lineno" href="#L3606">3606</a></span>
+<span id="L3607" class="lineno"><a class="lineno" href="#L3607">3607</a></span>
+<span id="L3608" class="lineno"><a class="lineno" href="#L3608">3608</a></span>
+<span id="L3609" class="lineno"><a class="lineno" href="#L3609">3609</a></span>
+<span id="L3610" class="lineno"><a class="lineno" href="#L3610">3610</a></span>
+<span id="L3611" class="lineno"><a class="lineno" href="#L3611">3611</a></span>
+<span id="L3612" class="lineno"><a class="lineno" href="#L3612">3612</a></span>
+<span id="L3613" class="lineno"><a class="lineno" href="#L3613">3613</a></span>
+<span id="L3614" class="lineno"><a class="lineno" href="#L3614">3614</a></span>
+<span id="L3615" class="lineno"><a class="lineno" href="#L3615">3615</a></span>
+<span id="L3616" class="lineno"><a class="lineno" href="#L3616">3616</a></span>
+<span id="L3617" class="lineno"><a class="lineno" href="#L3617">3617</a></span>
+<span id="L3618" class="lineno"><a class="lineno" href="#L3618">3618</a></span>
+<span id="L3619" class="lineno"><a class="lineno" href="#L3619">3619</a></span>
+<span id="L3620" class="lineno"><a class="lineno" href="#L3620">3620</a></span>
+<span id="L3621" class="lineno"><a class="lineno" href="#L3621">3621</a></span>
+<span id="L3622" class="lineno"><a class="lineno" href="#L3622">3622</a></span>
+<span id="L3623" class="lineno"><a class="lineno" href="#L3623">3623</a></span>
+<span id="L3624" class="lineno"><a class="lineno" href="#L3624">3624</a></span>
+<span id="L3625" class="lineno"><a class="lineno" href="#L3625">3625</a></span>
+<span id="L3626" class="lineno"><a class="lineno" href="#L3626">3626</a></span>
+<span id="L3627" class="lineno"><a class="lineno" href="#L3627">3627</a></span>
+<span id="L3628" class="lineno"><a class="lineno" href="#L3628">3628</a></span>
+<span id="L3629" class="lineno"><a class="lineno" href="#L3629">3629</a></span>
+<span id="L3630" class="lineno"><a class="lineno" href="#L3630">3630</a></span>
+<span id="L3631" class="lineno"><a class="lineno" href="#L3631">3631</a></span>
+<span id="L3632" class="lineno"><a class="lineno" href="#L3632">3632</a></span>
+<span id="L3633" class="lineno"><a class="lineno" href="#L3633">3633</a></span>
+<span id="L3634" class="lineno"><a class="lineno" href="#L3634">3634</a></span>
+<span id="L3635" class="lineno"><a class="lineno" href="#L3635">3635</a></span>
+<span id="L3636" class="lineno"><a class="lineno" href="#L3636">3636</a></span>
+<span id="L3637" class="lineno"><a class="lineno" href="#L3637">3637</a></span>
+<span id="L3638" class="lineno"><a class="lineno" href="#L3638">3638</a></span>
+<span id="L3639" class="lineno"><a class="lineno" href="#L3639">3639</a></span>
+<span id="L3640" class="lineno"><a class="lineno" href="#L3640">3640</a></span>
+<span id="L3641" class="lineno"><a class="lineno" href="#L3641">3641</a></span>
+<span id="L3642" class="lineno"><a class="lineno" href="#L3642">3642</a></span>
+<span id="L3643" class="lineno"><a class="lineno" href="#L3643">3643</a></span>
+<span id="L3644" class="lineno"><a class="lineno" href="#L3644">3644</a></span>
+<span id="L3645" class="lineno"><a class="lineno" href="#L3645">3645</a></span>
+<span id="L3646" class="lineno"><a class="lineno" href="#L3646">3646</a></span>
+<span id="L3647" class="lineno"><a class="lineno" href="#L3647">3647</a></span>
+<span id="L3648" class="lineno"><a class="lineno" href="#L3648">3648</a></span>
+<span id="L3649" class="lineno"><a class="lineno" href="#L3649">3649</a></span>
+<span id="L3650" class="lineno"><a class="lineno" href="#L3650">3650</a></span>
+<span id="L3651" class="lineno"><a class="lineno" href="#L3651">3651</a></span>
+<span id="L3652" class="lineno"><a class="lineno" href="#L3652">3652</a></span>
+<span id="L3653" class="lineno"><a class="lineno" href="#L3653">3653</a></span>
+<span id="L3654" class="lineno"><a class="lineno" href="#L3654">3654</a></span>
+<span id="L3655" class="lineno"><a class="lineno" href="#L3655">3655</a></span>
+<span id="L3656" class="lineno"><a class="lineno" href="#L3656">3656</a></span>
+<span id="L3657" class="lineno"><a class="lineno" href="#L3657">3657</a></span>
+<span id="L3658" class="lineno"><a class="lineno" href="#L3658">3658</a></span>
+<span id="L3659" class="lineno"><a class="lineno" href="#L3659">3659</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -3580,7 +3789,7 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.17-alpha"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.18-alpha"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.1</span>
@@ -3785,11 +3994,23 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-empty" title="No Anys on this line!">        """`bool`: Determines if we use TCP or UDP."""</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__udp</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def ip_tos(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Optional[str]</span>
+<span class="line-empty" title="No Anys on this line!">        """`str`: Determines what IP_TOS (Type of Service) value to set for the socket."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__ip_tos</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def info(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; str</span>
+<span class="line-empty" title="No Anys on this line!">        """`str`: Determines what info to display about the socket connection."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__info</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (int, int, Optional[float], bool, bool, bool) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (int, int, Optional[float], bool, bool, bool, Optional[str], str) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(bufsize) is int, type(bufsize)</span>
 <span class="line-precise" title="Any Types on this line: 
@@ -3802,12 +4023,16 @@ Explicit (x2)">        assert type(nodns) is bool, type(nodns)</span>
 Explicit (x2)">        assert type(ipv6) is bool, type(ipv6)</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
+<span class="line-precise" title="Any Types on this line: 
+Explicit (x2)">        assert type(info) is str, type(info)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__bufsize = bufsize</span>
 <span class="line-precise" title="No Anys on this line!">        self.__backlog = backlog</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout = recv_timeout</span>
 <span class="line-precise" title="No Anys on this line!">        self.__nodns = nodns</span>
 <span class="line-precise" title="No Anys on this line!">        self.__ipv6 = ipv6</span>
 <span class="line-precise" title="No Anys on this line!">        self.__udp = udp</span>
+<span class="line-precise" title="No Anys on this line!">        self.__ip_tos = ip_tos</span>
+<span class="line-precise" title="No Anys on this line!">        self.__info = info</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
@@ -3828,12 +4053,25 @@ Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (int, int, Optional[float], int, bool, bool, bool) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(</span>
+<span class="line-empty" title="No Anys on this line!">        self,</span>
+<span class="line-empty" title="No Anys on this line!">        bufsize,  # type: int</span>
+<span class="line-empty" title="No Anys on this line!">        backlog,  # type: int</span>
+<span class="line-empty" title="No Anys on this line!">        recv_timeout,  # type: Optional[float]</span>
+<span class="line-empty" title="No Anys on this line!">        recv_timeout_retry,  # type: int</span>
+<span class="line-empty" title="No Anys on this line!">        nodns,  # type: bool</span>
+<span class="line-empty" title="No Anys on this line!">        ipv6,  # type: bool</span>
+<span class="line-empty" title="No Anys on this line!">        udp,  # type: bool</span>
+<span class="line-empty" title="No Anys on this line!">        ip_tos,  # type: Optional[str]</span>
+<span class="line-empty" title="No Anys on this line!">        info,  # type: str</span>
+<span class="line-empty" title="No Anys on this line!">    ):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">        assert type(recv_timeout_retry) is int, type(recv_timeout_retry)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout_retry = recv_timeout_retry</span>
-<span class="line-precise" title="No Anys on this line!">        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, ipv6, udp)</span>
+<span class="line-precise" title="No Anys on this line!">        super(DsIONetworkSock, self).__init__(</span>
+<span class="line-precise" title="No Anys on this line!">            bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info</span>
+<span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
@@ -4275,6 +4513,17 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-precise" title="No Anys on this line!">    __sock = None  # type: socket.socket</span>
 <span class="line-precise" title="No Anys on this line!">    __conn = None  # type: socket.socket</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    # For Internet Protocol v4 the value consists of an integer, the least significant 8 bits of</span>
+<span class="line-empty" title="No Anys on this line!">    # which represent the value of the TOS octet in IP packets sent by the socket.</span>
+<span class="line-empty" title="No Anys on this line!">    # RFC 1349 defines the TOS values as follows:</span>
+<span class="line-precise" title="No Anys on this line!">    IP_TOS = {</span>
+<span class="line-precise" title="No Anys on this line!">        "mincost": 0x02,</span>
+<span class="line-precise" title="No Anys on this line!">        "lowcost": 0x02,</span>
+<span class="line-precise" title="No Anys on this line!">        "reliability": 0x04,</span>
+<span class="line-precise" title="No Anys on this line!">        "throughput": 0x08,</span>
+<span class="line-precise" title="No Anys on this line!">        "lowdelay": 0x10,</span>
+<span class="line-empty" title="No Anys on this line!">    }</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor / Destructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
@@ -4525,6 +4774,7 @@ Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>
 <span class="line-empty" title="No Anys on this line!">            # (For TCP, this is done in __connect()</span>
 <span class="line-precise" title="No Anys on this line!">            self.__remote_addr = addr</span>
 <span class="line-precise" title="No Anys on this line!">            self.__remote_port = port</span>
+<span class="line-precise" title="No Anys on this line!">            self.__print_socket_opts(self.__conn, "conn-sock")</span>
 <span class="line-precise" title="No Anys on this line!">            return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [TCP 4/4] connect</span>
@@ -4534,6 +4784,7 @@ Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close("conn", self.__conn)</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        self.__print_socket_opts(self.__conn, "conn-sock")</span>
 <span class="line-precise" title="No Anys on this line!">        return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def run_server(self, addr, port):</span>
@@ -4575,6 +4826,7 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/UDP, port
 <span class="line-precise" title="No Anys on this line!">                return False</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port %d)", addr, family, port)</span>
+<span class="line-precise" title="No Anys on this line!">            self.__print_socket_opts(sock, "bind-sock")</span>
 <span class="line-empty" title="No Anys on this line!">            # Accept</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
 <span class="line-precise" title="No Anys on this line!">                conn = self.__accept(sock)</span>
@@ -4586,6 +4838,7 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [4/4] Set current receive timeout for socket to make it non-blocking</span>
 <span class="line-precise" title="No Anys on this line!">        self.__settimeout(self.__conn)</span>
+<span class="line-precise" title="No Anys on this line!">        self.__print_socket_opts(self.__conn, "conn-sock")</span>
 <span class="line-precise" title="No Anys on this line!">        return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def re_accept_client(self):</span>
@@ -4629,6 +4882,131 @@ Explicit (x4)">            self.__log.info("Listening on %s (family %d/TCP, port
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Private Functions (general)</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
+<span class="line-precise" title="No Anys on this line!">    def __print_socket_opts(self, sock, log_prefix="Socket"):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (socket.socket, str) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        """Debug logs configured socket options."""</span>
+<span class="line-empty" title="No Anys on this line!">        # https://hg.python.org/cpython/file/3.5/Modules/socketmodule.c</span>
+<span class="line-precise" title="No Anys on this line!">        options = {</span>
+<span class="line-precise" title="No Anys on this line!">            "Sock": [</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_DEBUG",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_ACCEPTCONN",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_REUSEADDR",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_EXCLUSIVEADDRUSE",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_KEEPALIVE",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_DONTROUTE",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_BROADCAST",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_USELOOPBACK",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_LINGER",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_OOBINLINE",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_REUSEPORT",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_SNDBUF",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_RCVBUF",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_SNDLOWAT",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_RCVLOWAT",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_SNDTIMEO",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_RCVTIMEO",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_ERROR",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_TYPE",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_SETFIB",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_PASSCRED",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_PEERCRED",</span>
+<span class="line-precise" title="No Anys on this line!">                "LOCAL_PEERCRED",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_BINDTODEVICE",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_PRIORITY",</span>
+<span class="line-precise" title="No Anys on this line!">                "SO_MARK",</span>
+<span class="line-empty" title="No Anys on this line!">            ],</span>
+<span class="line-precise" title="No Anys on this line!">            "IPv4": [</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_OPTIONS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_HDRINCL",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_TOS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_TTL",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_RECVOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_RECVRETOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_RECVDSTADDR",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_RETOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_MULTICAST_IF",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_MULTICAST_TTL",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_MULTICAST_LOOP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_ADD_MEMBERSHIP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_DROP_MEMBERSHIP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_DEFAULT_MULTICAST_TTL",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_DEFAULT_MULTICAST_LOOP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_MAX_MEMBERSHIPS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IP_TRANSPARENT",</span>
+<span class="line-empty" title="No Anys on this line!">            ],</span>
+<span class="line-precise" title="No Anys on this line!">            "IPv6": [</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_JOIN_GROUP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_LEAVE_GROUP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_MULTICAST_HOPS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_MULTICAST_IF",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_MULTICAST_LOOP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_UNICAST_HOPS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_V6ONLY",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_CHECKSUM",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_DONTFRAG",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_DSTOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_HOPLIMIT",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_HOPOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_NEXTHOP",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_PATHMTU",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_PKTINFO",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RECVDSTOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RECVHOPLIMIT",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RECVHOPOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RECVPKTINFO",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RECVRTHDR",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RECVTCLASS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RTHDR",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RTHDRDSTOPTS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RTHDR_TYPE_0",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_RECVPATHMTU",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_TCLASS",</span>
+<span class="line-precise" title="No Anys on this line!">                "IPV6_USE_MIN_MTU",</span>
+<span class="line-empty" title="No Anys on this line!">            ],</span>
+<span class="line-precise" title="No Anys on this line!">            "TCP": [</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_NODELAY",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_MAXSEG",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_CORK",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_KEEPIDLE",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_KEEPINTVL",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_KEEPCNT",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_SYNCNT",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_LINGER2",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_DEFER_ACCEPT",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_WINDOW_CLAMP",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_INFO",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_QUICKACK",</span>
+<span class="line-precise" title="No Anys on this line!">                "TCP_FASTOPEN",</span>
+<span class="line-empty" title="No Anys on this line!">            ],</span>
+<span class="line-empty" title="No Anys on this line!">        }</span>
+<span class="line-precise" title="No Anys on this line!">        for proto, optnames in options.items():</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__options.info == "all" or proto.lower() == self.__options.info:</span>
+<span class="line-precise" title="No Anys on this line!">                for optname in optnames:</span>
+<span class="line-precise" title="No Anys on this line!">                    if proto.lower() == "sock":</span>
+<span class="line-precise" title="No Anys on this line!">                        level = socket.SOL_SOCKET</span>
+<span class="line-precise" title="No Anys on this line!">                    elif proto.lower() == "ipv4":</span>
+<span class="line-precise" title="No Anys on this line!">                        level = socket.IPPROTO_IP</span>
+<span class="line-precise" title="No Anys on this line!">                    elif proto.lower() == "ipv6":</span>
+<span class="line-precise" title="No Anys on this line!">                        level = socket.IPPROTO_IPV6</span>
+<span class="line-precise" title="No Anys on this line!">                    elif proto.lower() == "tcp":</span>
+<span class="line-precise" title="No Anys on this line!">                        level = socket.IPPROTO_TCP</span>
+<span class="line-empty" title="No Anys on this line!">                    try:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                        self.__log.info(</span>
+<span class="line-precise" title="No Anys on this line!">                            "[%s] %s: %s: %s",</span>
+<span class="line-precise" title="No Anys on this line!">                            log_prefix,</span>
+<span class="line-precise" title="No Anys on this line!">                            proto,</span>
+<span class="line-precise" title="No Anys on this line!">                            optname,</span>
+<span class="line-precise" title="No Anys on this line!">                            sock.getsockopt(</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                                level, eval("socket." + optname)  # pylint: disable=eval-used</span>
+<span class="line-empty" title="No Anys on this line!">                            ),</span>
+<span class="line-empty" title="No Anys on this line!">                        )</span>
+<span class="line-precise" title="No Anys on this line!">                    except AttributeError:</span>
+<span class="line-precise" title="No Anys on this line!">                        pass</span>
+<span class="line-precise" title="No Anys on this line!">                    except (OSError, socket.error):</span>
+<span class="line-precise" title="No Anys on this line!">                        pass</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def __create_socket(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; socket.socket</span>
 <span class="line-empty" title="No Anys on this line!">        """Create TCP or UDP socket.</span>
@@ -4658,6 +5036,12 @@ Explicit (x4)">            self.__log.error(msg)</span>
 <span class="line-empty" title="No Anys on this line!">        # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait</span>
 <span class="line-empty" title="No Anys on this line!">        # we instruct it to reuse the address anyway.</span>
 <span class="line-precise" title="No Anys on this line!">        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        if self.__options.ip_tos is not None:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">            self.__log.info("Setting IP_TOS to: %d", self.IP_TOS[self.__options.ip_tos])</span>
+<span class="line-precise" title="No Anys on this line!">            sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, self.IP_TOS[self.__options.ip_tos])</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        return sock</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def __settimeout(self, sock):</span>
@@ -6175,6 +6559,20 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">    raise argparse.ArgumentTypeError("'%s' is an invalid choice" % value)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">def _args_check_tos(value):</span>
+<span class="line-empty" title="No Anys on this line!">    # type: (str) -&gt; str</span>
+<span class="line-precise" title="No Anys on this line!">    if value not in ["mincost", "lowcost", "reliability", "throughput", "lowdelay"]:</span>
+<span class="line-precise" title="No Anys on this line!">        raise argparse.ArgumentTypeError("%s is an invalid tos definition" % value)</span>
+<span class="line-precise" title="No Anys on this line!">    return value</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">def _args_check_info(value):</span>
+<span class="line-empty" title="No Anys on this line!">    # type: (str) -&gt; str</span>
+<span class="line-precise" title="No Anys on this line!">    if value not in ["sock", "ipv4", "ipv6", "tcp", "all", ""]:</span>
+<span class="line-precise" title="No Anys on this line!">        raise argparse.ArgumentTypeError("%s is an invalid info definition" % value)</span>
+<span class="line-precise" title="No Anys on this line!">    return value</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">def _args_check_color(value):</span>
 <span class="line-empty" title="No Anys on this line!">    # type: (str) -&gt; str</span>
 <span class="line-precise" title="No Anys on this line!">    if value not in ["auto", "always", "never"]:</span>
@@ -6552,6 +6950,18 @@ Explicit (x3)">    optional.add_argument(</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    optional.add_argument(</span>
+<span class="line-precise" title="No Anys on this line!">        "-T",</span>
+<span class="line-precise" title="No Anys on this line!">        "--tos",</span>
+<span class="line-precise" title="No Anys on this line!">        metavar="str",</span>
+<span class="line-precise" title="No Anys on this line!">        default=None,</span>
+<span class="line-precise" title="No Anys on this line!">        type=_args_check_tos,</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Specifies IP Type of Service (ToS) for the connection.</span>
+<span class="line-empty" title="No Anys on this line!">Valid values are the tokens 'mincost', 'lowcost',</span>
+<span class="line-empty" title="No Anys on this line!">'reliability', 'throughput' or 'lowdelay'.</span>
+<span class="line-empty" title="No Anys on this line!">""",</span>
+<span class="line-empty" title="No Anys on this line!">    )</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">    optional.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "-v",</span>
 <span class="line-precise" title="No Anys on this line!">        "--verbose",</span>
 <span class="line-precise" title="No Anys on this line!">        action="count",</span>
@@ -6559,6 +6969,18 @@ Explicit (x3)">    optional.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        help="""Be verbose and print info to stderr. Use -v, -vv, -vvv</span>
 <span class="line-empty" title="No Anys on this line!">or -vvvv for more verbosity. The server performance will</span>
 <span class="line-empty" title="No Anys on this line!">decrease drastically if you use more than three times.""",</span>
+<span class="line-empty" title="No Anys on this line!">    )</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">    optional.add_argument(</span>
+<span class="line-precise" title="No Anys on this line!">        "--info",</span>
+<span class="line-precise" title="No Anys on this line!">        metavar="type",</span>
+<span class="line-precise" title="No Anys on this line!">        default="",</span>
+<span class="line-precise" title="No Anys on this line!">        type=_args_check_info,</span>
+<span class="line-precise" title="No Anys on this line!">        help="""Show additional info about sockets, ip4/6 or tcp opts</span>
+<span class="line-empty" title="No Anys on this line!">applied to the current socket connection. Valid</span>
+<span class="line-empty" title="No Anys on this line!">parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.</span>
+<span class="line-empty" title="No Anys on this line!">Note, you must at least be in INFO verbose mode in order</span>
+<span class="line-empty" title="No Anys on this line!">to see them (-vv).""",</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    optional.add_argument(</span>
@@ -6944,6 +7366,10 @@ Explicit (x1)">        args.nodns,</span>
 Explicit (x1)">        args.ipv6,</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        args.udp,</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">        args.tos,</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">        args.info,</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">    srv_opts = DsIONetworkSrv(args.keep_open, rebind, args.rebind_wait, args.rebind_robin)</span>

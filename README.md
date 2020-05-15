@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.94%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.10%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -251,7 +251,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 |---------------------|--------|---------|-----|
 | Scripting engine    | Python | :x:     | Lua |
 | Self-injecting      | ✔      | :x:     | :x: |
-| IP ToS              | :x:    | ✔       | :x: |
+| IP ToS              | ✔      | ✔       | :x: |
 | IPv4                | ✔      | ✔       | ✔   |
 | IPv6                | ✔      | ✔       | ✔   |
 | Unix domain sockets | :x:    | ✔       | ✔   |
@@ -408,9 +408,17 @@ optional arguments:
                         CR on MacOS).
   -n, --nodns           Do not resolve DNS.
   -u, --udp             Use UDP for the connection instead of TCP.
+  -T str, --tos str     Specifies IP Type of Service (ToS) for the connection.
+                        Valid values are the tokens 'mincost', 'lowcost',
+                        'reliability', 'throughput' or 'lowdelay'.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
                         or -vvvv for more verbosity. The server performance will
                         decrease drastically if you use more than three times.
+  --info type           Show additional info about sockets, ip4/6 or tcp opts
+                        applied to the current socket connection. Valid
+                        parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
+                        Note, you must at least be in INFO verbose mode in order
+                        to see them (-vv).
   -c str, --color str   Colored log output. Specify 'always', 'never' or 'auto'.
                         In 'auto' mode, color is displayed as long as the output
                         goes to a terminal. If it is piped into a file, color
@@ -726,6 +734,8 @@ pwncat -l 4445
 
 > **Note:** Ensure you have a reverse shell that keeps coming back to you. This way you can always change your logging settings without loosing the shell.
 
+#### Log level and redirection
+
 If you feel like, you can start a listener in full TRACE logging mode to figure out what's going on or simply to troubleshoot.
 Log message are colored depending on their severity. Colors are automatically turned off, if stderr is not a pty, e.g.: if piping those to a file.
 You can also manually disable colored logging for terminal outputs via the `--color` switch.
@@ -772,6 +782,69 @@ tail -fn50 comm.txt
 2020-05-11 08:40:57,927 DEBUG [STDIN] 834:send(): Sent 15 bytes to 127.0.0.1:46744 (0 bytes remaining)
 2020-05-11 08:40:57,928 TRACE [STDIN] 1852:producer(): Reading command output
 ```
+
+#### Socket information
+
+Another useful feature is to display currently configured socket and network settings.
+Use the `--info` switch with either `socket`, `ipv4`, `ipv6`, `tcp` or `all` to display all
+available settings.
+
+**Note:** In order to view those settings, you must at least be at `INFO` log level (`-vv`).
+
+An example output in IPv4/TCP mode without any custom settings is shown below:
+```
+INFO: [bind-sock] Sock: SO_DEBUG: 0
+INFO: [bind-sock] Sock: SO_ACCEPTCONN: 1
+INFO: [bind-sock] Sock: SO_REUSEADDR: 1
+INFO: [bind-sock] Sock: SO_KEEPALIVE: 0
+INFO: [bind-sock] Sock: SO_DONTROUTE: 0
+INFO: [bind-sock] Sock: SO_BROADCAST: 0
+INFO: [bind-sock] Sock: SO_LINGER: 0
+INFO: [bind-sock] Sock: SO_OOBINLINE: 0
+INFO: [bind-sock] Sock: SO_REUSEPORT: 0
+INFO: [bind-sock] Sock: SO_SNDBUF: 16384
+INFO: [bind-sock] Sock: SO_RCVBUF: 131072
+INFO: [bind-sock] Sock: SO_SNDLOWAT: 1
+INFO: [bind-sock] Sock: SO_RCVLOWAT: 1
+INFO: [bind-sock] Sock: SO_SNDTIMEO: 0
+INFO: [bind-sock] Sock: SO_RCVTIMEO: 0
+INFO: [bind-sock] Sock: SO_ERROR: 0
+INFO: [bind-sock] Sock: SO_TYPE: 1
+INFO: [bind-sock] Sock: SO_PASSCRED: 0
+INFO: [bind-sock] Sock: SO_PEERCRED: 0
+INFO: [bind-sock] Sock: SO_BINDTODEVICE: 0
+INFO: [bind-sock] Sock: SO_PRIORITY: 0
+INFO: [bind-sock] Sock: SO_MARK: 0
+INFO: [bind-sock] IPv4: IP_OPTIONS: 0
+INFO: [bind-sock] IPv4: IP_HDRINCL: 0
+INFO: [bind-sock] IPv4: IP_TOS: 0
+INFO: [bind-sock] IPv4: IP_TTL: 64
+INFO: [bind-sock] IPv4: IP_RECVOPTS: 0
+INFO: [bind-sock] IPv4: IP_RECVRETOPTS: 0
+INFO: [bind-sock] IPv4: IP_RETOPTS: 0
+INFO: [bind-sock] IPv4: IP_MULTICAST_IF: 0
+INFO: [bind-sock] IPv4: IP_MULTICAST_TTL: 1
+INFO: [bind-sock] IPv4: IP_MULTICAST_LOOP: 1
+INFO: [bind-sock] IPv4: IP_DEFAULT_MULTICAST_TTL: 0
+INFO: [bind-sock] IPv4: IP_DEFAULT_MULTICAST_LOOP: 0
+INFO: [bind-sock] IPv4: IP_MAX_MEMBERSHIPS: 0
+INFO: [bind-sock] IPv4: IP_TRANSPARENT: 0
+INFO: [bind-sock] TCP: TCP_NODELAY: 0
+INFO: [bind-sock] TCP: TCP_MAXSEG: 536
+INFO: [bind-sock] TCP: TCP_CORK: 0
+INFO: [bind-sock] TCP: TCP_KEEPIDLE: 7200
+INFO: [bind-sock] TCP: TCP_KEEPINTVL: 75
+INFO: [bind-sock] TCP: TCP_KEEPCNT: 9
+INFO: [bind-sock] TCP: TCP_SYNCNT: 6
+INFO: [bind-sock] TCP: TCP_LINGER2: 60
+INFO: [bind-sock] TCP: TCP_DEFER_ACCEPT: 0
+INFO: [bind-sock] TCP: TCP_WINDOW_CLAMP: 0
+INFO: [bind-sock] TCP: TCP_INFO: 10
+INFO: [bind-sock] TCP: TCP_QUICKACK: 1
+INFO: [bind-sock] TCP: TCP_FASTOPEN: 0
+```
+
+
 <!--
 </details>
 -->

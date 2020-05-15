@@ -91,7 +91,7 @@ if os.name != "nt":
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.17-alpha"
+VERSION = "0.0.18-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -284,23 +284,38 @@ class DsSock(object):
         """`bool`: Determines if we use TCP or UDP."""
         return self.__udp
 
+    @property
+    def ip_tos(self):
+        # type: () -> Optional[str]
+        """`str`: Determines what IP_TOS (Type of Service) value to set for the socket."""
+        return self.__ip_tos
+
+    @property
+    def info(self):
+        # type: () -> str
+        """`str`: Determines what info to display about the socket connection."""
+        return self.__info
+
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp):
-        # type: (int, int, Optional[float], bool, bool, bool) -> None
+    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info):
+        # type: (int, int, Optional[float], bool, bool, bool, Optional[str], str) -> None
         assert type(bufsize) is int, type(bufsize)
         assert type(backlog) is int, type(backlog)
         assert type(recv_timeout) is float, type(recv_timeout)
         assert type(nodns) is bool, type(nodns)
         assert type(ipv6) is bool, type(ipv6)
         assert type(udp) is bool, type(udp)
+        assert type(info) is str, type(info)
         self.__bufsize = bufsize
         self.__backlog = backlog
         self.__recv_timeout = recv_timeout
         self.__nodns = nodns
         self.__ipv6 = ipv6
         self.__udp = udp
+        self.__ip_tos = ip_tos
+        self.__info = info
 
 
 # -------------------------------------------------------------------------------------------------
@@ -321,11 +336,24 @@ class DsIONetworkSock(DsSock):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp):
-        # type: (int, int, Optional[float], int, bool, bool, bool) -> None
+    def __init__(
+        self,
+        bufsize,  # type: int
+        backlog,  # type: int
+        recv_timeout,  # type: Optional[float]
+        recv_timeout_retry,  # type: int
+        nodns,  # type: bool
+        ipv6,  # type: bool
+        udp,  # type: bool
+        ip_tos,  # type: Optional[str]
+        info,  # type: str
+    ):
+        # type: (...) -> None
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
-        super(DsIONetworkSock, self).__init__(bufsize, backlog, recv_timeout, nodns, ipv6, udp)
+        super(DsIONetworkSock, self).__init__(
+            bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info
+        )
 
 
 # -------------------------------------------------------------------------------------------------
@@ -753,6 +781,17 @@ class Sock(object):
     __sock = None  # type: socket.socket
     __conn = None  # type: socket.socket
 
+    # For Internet Protocol v4 the value consists of an integer, the least significant 8 bits of
+    # which represent the value of the TOS octet in IP packets sent by the socket.
+    # RFC 1349 defines the TOS values as follows:
+    IP_TOS = {
+        "mincost": 0x02,
+        "lowcost": 0x02,
+        "reliability": 0x04,
+        "throughput": 0x08,
+        "lowdelay": 0x10,
+    }
+
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
@@ -982,6 +1021,7 @@ class Sock(object):
             # (For TCP, this is done in __connect()
             self.__remote_addr = addr
             self.__remote_port = port
+            self.__print_socket_opts(self.__conn, "conn-sock")
             return True
 
         # [TCP 4/4] connect
@@ -991,6 +1031,7 @@ class Sock(object):
             self.__close("conn", self.__conn)
             return False
 
+        self.__print_socket_opts(self.__conn, "conn-sock")
         return True
 
     def run_server(self, addr, port):
@@ -1030,6 +1071,7 @@ class Sock(object):
                 self.__close("sock", sock)
                 return False
             self.__log.info("Listening on %s (family %d/TCP, port %d)", addr, family, port)
+            self.__print_socket_opts(sock, "bind-sock")
             # Accept
             try:
                 conn = self.__accept(sock)
@@ -1041,6 +1083,7 @@ class Sock(object):
 
         # [4/4] Set current receive timeout for socket to make it non-blocking
         self.__settimeout(self.__conn)
+        self.__print_socket_opts(self.__conn, "conn-sock")
         return True
 
     def re_accept_client(self):
@@ -1084,6 +1127,129 @@ class Sock(object):
     # --------------------------------------------------------------------------
     # Private Functions (general)
     # --------------------------------------------------------------------------
+    def __print_socket_opts(self, sock, log_prefix="Socket"):
+        # type: (socket.socket, str) -> None
+        """Debug logs configured socket options."""
+        # https://hg.python.org/cpython/file/3.5/Modules/socketmodule.c
+        options = {
+            "Sock": [
+                "SO_DEBUG",
+                "SO_ACCEPTCONN",
+                "SO_REUSEADDR",
+                "SO_EXCLUSIVEADDRUSE",
+                "SO_KEEPALIVE",
+                "SO_DONTROUTE",
+                "SO_BROADCAST",
+                "SO_USELOOPBACK",
+                "SO_LINGER",
+                "SO_OOBINLINE",
+                "SO_REUSEPORT",
+                "SO_SNDBUF",
+                "SO_RCVBUF",
+                "SO_SNDLOWAT",
+                "SO_RCVLOWAT",
+                "SO_SNDTIMEO",
+                "SO_RCVTIMEO",
+                "SO_ERROR",
+                "SO_TYPE",
+                "SO_SETFIB",
+                "SO_PASSCRED",
+                "SO_PEERCRED",
+                "LOCAL_PEERCRED",
+                "SO_BINDTODEVICE",
+                "SO_PRIORITY",
+                "SO_MARK",
+            ],
+            "IPv4": [
+                "IP_OPTIONS",
+                "IP_HDRINCL",
+                "IP_TOS",
+                "IP_TTL",
+                "IP_RECVOPTS",
+                "IP_RECVRETOPTS",
+                "IP_RECVDSTADDR",
+                "IP_RETOPTS",
+                "IP_MULTICAST_IF",
+                "IP_MULTICAST_TTL",
+                "IP_MULTICAST_LOOP",
+                "IP_ADD_MEMBERSHIP",
+                "IP_DROP_MEMBERSHIP",
+                "IP_DEFAULT_MULTICAST_TTL",
+                "IP_DEFAULT_MULTICAST_LOOP",
+                "IP_MAX_MEMBERSHIPS",
+                "IP_TRANSPARENT",
+            ],
+            "IPv6": [
+                "IPV6_JOIN_GROUP",
+                "IPV6_LEAVE_GROUP",
+                "IPV6_MULTICAST_HOPS",
+                "IPV6_MULTICAST_IF",
+                "IPV6_MULTICAST_LOOP",
+                "IPV6_UNICAST_HOPS",
+                "IPV6_V6ONLY",
+                "IPV6_CHECKSUM",
+                "IPV6_DONTFRAG",
+                "IPV6_DSTOPTS",
+                "IPV6_HOPLIMIT",
+                "IPV6_HOPOPTS",
+                "IPV6_NEXTHOP",
+                "IPV6_PATHMTU",
+                "IPV6_PKTINFO",
+                "IPV6_RECVDSTOPTS",
+                "IPV6_RECVHOPLIMIT",
+                "IPV6_RECVHOPOPTS",
+                "IPV6_RECVPKTINFO",
+                "IPV6_RECVRTHDR",
+                "IPV6_RECVTCLASS",
+                "IPV6_RTHDR",
+                "IPV6_RTHDRDSTOPTS",
+                "IPV6_RTHDR_TYPE_0",
+                "IPV6_RECVPATHMTU",
+                "IPV6_TCLASS",
+                "IPV6_USE_MIN_MTU",
+            ],
+            "TCP": [
+                "TCP_NODELAY",
+                "TCP_MAXSEG",
+                "TCP_CORK",
+                "TCP_KEEPIDLE",
+                "TCP_KEEPINTVL",
+                "TCP_KEEPCNT",
+                "TCP_SYNCNT",
+                "TCP_LINGER2",
+                "TCP_DEFER_ACCEPT",
+                "TCP_WINDOW_CLAMP",
+                "TCP_INFO",
+                "TCP_QUICKACK",
+                "TCP_FASTOPEN",
+            ],
+        }
+        for proto, optnames in options.items():
+            if self.__options.info == "all" or proto.lower() == self.__options.info:
+                for optname in optnames:
+                    if proto.lower() == "sock":
+                        level = socket.SOL_SOCKET
+                    elif proto.lower() == "ipv4":
+                        level = socket.IPPROTO_IP
+                    elif proto.lower() == "ipv6":
+                        level = socket.IPPROTO_IPV6
+                    elif proto.lower() == "tcp":
+                        level = socket.IPPROTO_TCP
+                    try:
+                        self.__log.info(
+                            "[%s] %s: %s: %s",
+                            log_prefix,
+                            proto,
+                            optname,
+                            sock.getsockopt(
+                                level, eval("socket." + optname)  # pylint: disable=eval-used
+                            ),
+                        )
+                    except AttributeError:
+                        pass
+                    except (OSError, socket.error):
+                        pass
+
     def __create_socket(self):
         # type: () -> socket.socket
         """Create TCP or UDP socket.
@@ -1110,6 +1276,11 @@ class Sock(object):
         # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        if self.__options.ip_tos is not None:
+            self.__log.info("Setting IP_TOS to: %d", self.IP_TOS[self.__options.ip_tos])
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, self.IP_TOS[self.__options.ip_tos])
+
         return sock
 
     def __settimeout(self, sock):
@@ -2545,6 +2716,20 @@ def _args_check_lf(value):
     raise argparse.ArgumentTypeError("'%s' is an invalid choice" % value)
 
 
+def _args_check_tos(value):
+    # type: (str) -> str
+    if value not in ["mincost", "lowcost", "reliability", "throughput", "lowdelay"]:
+        raise argparse.ArgumentTypeError("%s is an invalid tos definition" % value)
+    return value
+
+
+def _args_check_info(value):
+    # type: (str) -> str
+    if value not in ["sock", "ipv4", "ipv6", "tcp", "all", ""]:
+        raise argparse.ArgumentTypeError("%s is an invalid info definition" % value)
+    return value
+
+
 def _args_check_color(value):
     # type: (str) -> str
     if value not in ["auto", "always", "never"]:
@@ -2887,6 +3072,17 @@ CR on MacOS).""",
         help="Use UDP for the connection instead of TCP.",
     )
     optional.add_argument(
+        "-T",
+        "--tos",
+        metavar="str",
+        default=None,
+        type=_args_check_tos,
+        help="""Specifies IP Type of Service (ToS) for the connection.
+Valid values are the tokens 'mincost', 'lowcost',
+'reliability', 'throughput' or 'lowdelay'.
+""",
+    )
+    optional.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -2894,6 +3090,17 @@ CR on MacOS).""",
         help="""Be verbose and print info to stderr. Use -v, -vv, -vvv
 or -vvvv for more verbosity. The server performance will
 decrease drastically if you use more than three times.""",
+    )
+    optional.add_argument(
+        "--info",
+        metavar="type",
+        default="",
+        type=_args_check_info,
+        help="""Show additional info about sockets, ip4/6 or tcp opts
+applied to the current socket connection. Valid
+parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
+Note, you must at least be in INFO verbose mode in order
+to see them (-vv).""",
     )
     optional.add_argument(
         "-c",
@@ -3248,6 +3455,8 @@ def main():
         args.nodns,
         args.ipv6,
         args.udp,
+        args.tos,
+        args.info,
     )
     srv_opts = DsIONetworkSrv(args.keep_open, rebind, args.rebind_wait, args.rebind_robin)
     cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
