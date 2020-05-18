@@ -143,21 +143,26 @@ run_test() {
 # -------------------------------------------------------------------------------------------------
 
 for curr_round in $(seq "${RUNS}"); do
-	echo
-	#         server opts         client opts
-	run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} -e /bin/sh -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -vvv " "${RHOST} ${RPORT} -e /bin/sh -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -vv  " "${RHOST} ${RPORT} -e /bin/sh -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -v   " "${RHOST} ${RPORT} -e /bin/sh -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT}      " "${RHOST} ${RPORT} -e /bin/sh -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	#         server opts            client opts
+	# BIND ON ANY
+	run_test "-l ${RPORT}    -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -vvvv"  "1" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT}    -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -vvvv"  "2" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT}    -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -vvvv"  "3" "14" "${curr_round}" "${RUNS}"
 
-	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} -e /bin/sh -vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} -e /bin/sh -vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} -e /bin/sh -v   "  "8" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -vvvv" "${RHOST} ${RPORT} -e /bin/sh      "  "9" "13" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} -4 -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -vvvv"  "4" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -vvvv"  "5" "14" "${curr_round}" "${RUNS}"
 
-	#run_test "-l ${RPORT} -vvv " "${RHOST} ${RPORT} -e /bin/sh -vvv " "10" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -vv  " "${RHOST} ${RPORT} -e /bin/sh -vv  " "11" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} -v   " "${RHOST} ${RPORT} -e /bin/sh -v   " "12" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT}      " "${RHOST} ${RPORT} -e /bin/sh      " "13" "13" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} -6 -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -vvvv"  "6" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -vvvv"  "7" "14" "${curr_round}" "${RUNS}"
+
+	# BIND ON SPECIFIC
+	run_test "-l ${RHOST} ${RPORT}    -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -vvvv"   "8" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT}    -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -vvvv"   "9" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT}    -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -vvvv"  "10" "14" "${curr_round}" "${RUNS}"
+
+	run_test "-l ${RHOST} ${RPORT} -4 -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -vvvv"  "11" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -vvvv"  "12" "14" "${curr_round}" "${RUNS}"
+
+	run_test "-l ${RHOST} ${RPORT} -6 -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -vvvv"  "13" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -vvvv"  "14" "14" "${curr_round}" "${RUNS}"
 done
