@@ -3032,6 +3032,18 @@ def _args_check_forwards(value):
     return value
 
 
+def _args_check_local_forward(value):
+    # type: (str) -> str
+    """Check forward argument (-L/-R) for correct pattern."""
+    match = re.search(r"^(.+:)?([0-9]+)$", value)
+    if match is None or len(match.groups()) != 2:
+        raise argparse.ArgumentTypeError("%s is not a valid '[addr:]port' format." % value)
+    _args_check_port(match.group(2))
+    if match.group(1) is None:
+        return ":" + match.group(2)
+    return value
+
+
 def _args_check_robin_ports(value):
     # type: (str) -> List[int]
     """Check round-robin argument for comma separated string or range."""
@@ -3204,7 +3216,7 @@ def get_args():
         usage="""%(prog)s [-Cnuv] [-e cmd] hostname port
        %(prog)s [-Cnuv] [-e cmd] -l [hostname] port
        %(prog)s [-Cnuv] -z hostname port
-       %(prog)s [-Cnuv] -L addr:port hostname port
+       %(prog)s [-Cnuv] -L [addr:]port hostname port
        %(prog)s [-Cnuv] -R addr:port hostname port
        %(prog)s -V, --version
        %(prog)s -h, --help
@@ -3262,16 +3274,16 @@ Used for port scanning.
     mode.add_argument(
         "-L",
         "--local",
-        metavar="addr:port",
+        metavar="[addr:]port",
         default=False,
-        type=_args_check_forwards,
+        type=_args_check_local_forward,
         help="""[Local forward mode]:
 This mode will start a server and a client internally.
 The internal server will listen locally on specified
-hostname/port (positional arguments). Same as with -l.
+addr/port (given by --local [addr:]port).
 The server will then forward traffic to the internal
 client which connects to another server specified by
-address given via -L/--local addr:port.
+hostname/port given via positional arguments.
 (I.e.: proxies a remote service to a local address)
 
 """,
@@ -3681,7 +3693,7 @@ accidentally by other input.
 
     # Connect mode and Zero-I/O mode require hostname and port to be set
     connect_mode = not (args.listen or args.zero or args.local or args.remote)
-    if (connect_mode or args.zero) and not args.hostname:
+    if (connect_mode or args.zero or args.local) and not args.hostname:
         parser.print_usage()
         print(
             "%s: error: the following arguments are required: hostname" % (APPNAME),
@@ -3791,10 +3803,12 @@ def main():
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
     if args.local:
-        # TODO: Make the listen address optional!
         srv_opts.keep_open = True
+        match = re.search(r"(.+:)?([0-9]+)", args.local)
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
+        if not lhost:
+            lhost = None
         # Create listen and client instances
         net_srv = IONetwork(ssig, enc, lhost, [lport], "server", srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)

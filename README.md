@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.29%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.32%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -344,7 +344,7 @@ Type `pwncat -h` or click below to see all available options.
 usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
        pwncat [-Cnuv] -z hostname port
-       pwncat [-Cnuv] -L addr:port hostname port
+       pwncat [-Cnuv] -L [addr:]port hostname port
        pwncat [-Cnuv] -R addr:port hostname port
        pwncat -V, --version
        pwncat -h, --help
@@ -374,14 +374,14 @@ mode arguments:
                         Connect to a remote endpoint and report status only.
                         Used for port scanning.
 
-  -L addr:port, --local addr:port
+  -L [addr:]port, --local [addr:]port
                         [Local forward mode]:
                         This mode will start a server and a client internally.
                         The internal server will listen locally on specified
-                        hostname/port (positional arguments). Same as with -l.
+                        addr/port (given by --local [addr:]port).
                         The server will then forward traffic to the internal
                         client which connects to another server specified by
-                        address given via -L/--local addr:port.
+                        hostname/port given via positional arguments.
                         (I.e.: proxies a remote service to a local address)
 
   -R addr:port, --remote addr:port
