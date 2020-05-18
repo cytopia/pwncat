@@ -107,6 +107,25 @@ ABC = ABCMeta(&#34;ABC&#34;, (object,), {&#34;__slots__&#34;: ()})
 if os.environ.get(&#34;MYPY_CHECK&#34;, False):
     from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union
     from types import CodeType
+    from typing_extensions import TypedDict
+    # The following is only to create virtual types for mypy in order to find
+    # issues via static type linting.
+    SockConn = TypedDict(&#39;SockConn&#39;, {
+        &#39;sock&#39;: socket.socket,
+        &#39;conn&#39;: socket.socket,
+        &#39;local_host&#39;: Optional[str],
+        &#39;local_addr&#39;: str,
+        &#39;local_port&#39;: int,
+        &#39;remote_host&#39;: str,
+        &#39;remote_addr&#39;: str,
+        &#39;remote_port&#39;: int,
+    }, total=False)
+    SockActive = TypedDict(&#39;SockActive&#39;, {
+        &#39;af&#39;: int,
+        &#39;conn&#39;: socket.socket,
+        &#39;remote_addr&#39;: str,
+        &#39;remote_port&#39;: int,
+    }, total=False)
 
 # TODO: Find windows import
 if os.name != &#34;nt&#34;:
@@ -118,7 +137,7 @@ if os.name != &#34;nt&#34;:
 
 APPNAME = &#34;pwncat&#34;
 APPREPO = &#34;https://github.com/cytopia/pwncat&#34;
-VERSION = &#34;0.0.18-alpha&#34;
+VERSION = &#34;0.0.19-alpha&#34;
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -300,9 +319,15 @@ class DsSock(object):
         return self.__nodns
 
     @property
+    def ipv4(self):
+        # type: () -&gt; bool
+        &#34;&#34;&#34;`bool`: Only use IPv4 instead of both, IPv4 and IPv6.&#34;&#34;&#34;
+        return self.__ipv4
+
+    @property
     def ipv6(self):
         # type: () -&gt; bool
-        &#34;&#34;&#34;`bool`: Determines if we use IPv6 instead of IPv4.&#34;&#34;&#34;
+        &#34;&#34;&#34;`bool`: Only use IPv6 instead of both, IPv4 and IPv6.&#34;&#34;&#34;
         return self.__ipv6
 
     @property
@@ -326,12 +351,13 @@ class DsSock(object):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info):
-        # type: (int, int, Optional[float], bool, bool, bool, Optional[str], str) -&gt; None
+    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, udp, ip_tos, info):
+        # type: (int, int, Optional[float], bool, bool, bool, bool, Optional[str], str) -&gt; None
         assert type(bufsize) is int, type(bufsize)
         assert type(backlog) is int, type(backlog)
         assert type(recv_timeout) is float, type(recv_timeout)
         assert type(nodns) is bool, type(nodns)
+        assert type(ipv4) is bool, type(ipv4)
         assert type(ipv6) is bool, type(ipv6)
         assert type(udp) is bool, type(udp)
         assert type(info) is str, type(info)
@@ -339,6 +365,7 @@ class DsSock(object):
         self.__backlog = backlog
         self.__recv_timeout = recv_timeout
         self.__nodns = nodns
+        self.__ipv4 = ipv4
         self.__ipv6 = ipv6
         self.__udp = udp
         self.__ip_tos = ip_tos
@@ -370,6 +397,7 @@ class DsIONetworkSock(DsSock):
         recv_timeout,  # type: Optional[float]
         recv_timeout_retry,  # type: int
         nodns,  # type: bool
+        ipv4,  # type: bool
         ipv6,  # type: bool
         udp,  # type: bool
         ip_tos,  # type: Optional[str]
@@ -379,7 +407,7 @@ class DsIONetworkSock(DsSock):
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
         super(DsIONetworkSock, self).__init__(
-            bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info
+            bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, udp, ip_tos, info
         )
 
 
@@ -805,9 +833,6 @@ class StopSignal(object):
 class Sock(object):
     &#34;&#34;&#34;Provides an abstracted server client socket for TCP and UDP.&#34;&#34;&#34;
 
-    __sock = None  # type: socket.socket
-    __conn = None  # type: socket.socket
-
     # For Internet Protocol v4 the value consists of an integer, the least significant 8 bits of
     # which represent the value of the TOS octet in IP packets sent by the socket.
     # RFC 1349 defines the TOS values as follows:
@@ -817,6 +842,18 @@ class Sock(object):
         &#34;reliability&#34;: 0x04,
         &#34;throughput&#34;: 0x08,
         &#34;lowdelay&#34;: 0x10,
+    }
+
+    # Human readable address families
+    AF_HUMAN = {
+        1: &#34;Unix&#34;,
+        2: &#34;IPv4&#34;,
+        10: &#34;IPv6&#34;,
+    }
+    # Human readable socket types
+    ST_HUMAN = {
+        1: &#34;TCP&#34;,
+        2: &#34;UDP&#34;,
     }
 
     # --------------------------------------------------------------------------
@@ -831,24 +868,70 @@ class Sock(object):
             ssig (StopSignal): Used to stop blocking loops.
             options (DsSock): Instance of DsSock.
         &#34;&#34;&#34;
-        self.__log = logging.getLogger(__name__)
+        self.__log = logging.getLogger(__name__)  # type: logging.Logger
         self.__enc = encoder
         self.__ssig = ssig
         self.__options = options
 
-        # Store the address of the remote end.
-        # If we are in server role and running in UDP mode,
-        # it must wait for the client to connect first in order
-        # to retrieve its addr and port be able to send data back to it.
-        self.__remote_addr = None  # type: Optional[str]
-        self.__remote_port = None  # type: Optional[int]
+        # Set families to listen on or connect to
+        if self.__options.ipv6:
+            self.__families = [int(socket.AF_INET6)]
+        elif self.__options.ipv4:
+            self.__families = [int(socket.AF_INET)]
+        else:
+            self.__families = [int(socket.AF_INET6), int(socket.AF_INET)]
+
+        # The connection dictionary.
+        # A dictionary is necessary, as we can have multiple entries for
+        # IPv4 and IPv6 when using UDP in server mode.
+        #
+        # 1.) If the UDP server wants to send data to an UDP client,
+        # it must first wait for the client to send data to get to know
+        # it&#39;s IP address (we&#39;re not using connect() for UDP here).
+        # 2.) As we allow IPv4 and IPv6 listening at the same time,
+        # we must maintain both entries in that list, until the
+        # UDP client has connected.
+        # Once the UDP client has connected, all unconnected entries
+        # will be removed and the protocol has been determined.
+        # {
+        #   &lt;socket.family&gt;:
+        #     {
+        #       &#34;sock&#34;: socket.socket,      # &lt;-- bind socket if server
+        #       &#34;conn&#34;: socket.socket,      # &lt;-- send/recv socket
+        #       &#34;local_host&#34;: &lt;hostname&gt;,   # &lt;-- (server only) hostname or ip address for binding
+        #       &#34;local_addr&#34;: &lt;ip-addr&gt;,    # &lt;-- (server only) ip address for binding
+        #       &#34;local_port&#34;: &lt;port&gt;,       # &lt;-- (server only) port for binding
+        #       &#34;remote_host&#34;: &lt;hostname&gt;,  # &lt;-- hostname or ip address of remote end
+        #       &#34;remote_addr&#34;: &lt;ip-addr&gt;,   # &lt;-- numerical ip address of remote end
+        #       &#34;remote_port&#34;: &lt;port&gt;,      # &lt;-- port of remote end
+        #     },
+        # }
+        self.__conn = {}  # type: Dict[int, SockConn]
+
+        # The self.__conn dictionary can hold two entries: IPv4 and IPv6.
+        # In client mode after successful connect, the unused entry is dropped.
+        # In server mode we keep entries for TCP/re-accept() or UDP/connect.
+        #
+        # That would mean for send/recv functions in server mode, we would
+        # always have to loop around entries in self.__conn. To avoid this
+        # we keep track of the currently active connection in self.__active
+        # and only use this,
+        # {
+        #    &#34;af&#34;: socket.family,        # &lt;-- the used socket family
+        #    &#34;conn&#34;: socket.socket,      # &lt;-- send/recv socket
+        #    &#34;remote_addr&#34;: &lt;ip-addr&gt;,   # &lt;-- numerical ip address of remote end
+        #    &#34;remote_port&#34;: &lt;port&gt;,      # &lt;-- port of remote end
+        # }
+        self.__active = {}  # type: SockActive
+
+        self.__udp_mode_server = False  # type: bool
 
     # --------------------------------------------------------------------------
     # Public Send / Receive Functions
     # --------------------------------------------------------------------------
     def send(self, data):
         # type: (str) -&gt; int
-        &#34;&#34;&#34;Send data through a connected socket.
+        &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket.
 
         Args:
             data (str): The data to send.
@@ -856,22 +939,17 @@ class Sock(object):
         Returns:
             int: Returns total bytes sent.
         &#34;&#34;&#34;
-        # In case of sending data back to an udp client we need to wait
+        # UDP has some specialities as its socket is unconnected.
+        # See also recv() for specialities on that side.
+
+        # In case of sending data to an UDP client, we need to initially wait
         # until the client has first connected and told us its addr/port.
-        if self.__options.udp:
-            if self.__remote_addr is None or self.__remote_port is None:
+        if self.__udp_mode_server:
+            # self.__active will be set in recv() by another thread
+            if not self.__active:
                 self.__log.warning(&#34;UDP client has not yet connected. Queueing message&#34;)
-                while self.__remote_addr is None or self.__remote_port is None:
-                    # In case the user pressed Ctrl+c on the server while trying
-                    # to send data to the client, we need to quit here, otherwise
-                    # it blocks the shutdown routine.
-                    if self.__ssig.has_stop():
-                        return 0
-                    time.sleep(0.1)  # Less wastefull than using &#39;pass&#39;
-                # First time a UDP client connects to the server (display it on the server)
-                self.__log.info(
-                    &#34;Client connected from %s:%d&#34;, self.__remote_addr, self.__remote_port
-                )
+                while not self.__active:
+                    time.sleep(0.01)
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
@@ -881,19 +959,21 @@ class Sock(object):
 
         # Loop until all bytes have been send
         while send &lt; size:
+            self.__log.debug(
+                &#34;Trying to send %d bytes to %s:%d&#34;,
+                size - send,
+                self.__active[&#34;remote_addr&#34;],
+                self.__active[&#34;remote_port&#34;],
+            )
+            self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
             try:
-                self.__log.debug(
-                    &#34;Trying to send %d bytes to %s:%d&#34;,
-                    size - send,
-                    self.__remote_addr,
-                    self.__remote_port,
-                )
-                self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
                 if self.__options.udp:
-                    curr = self.__conn.sendto(byte, (self.__remote_addr, self.__remote_port))
+                    curr = self.__active[&#34;conn&#34;].sendto(
+                        byte, (self.__active[&#34;remote_addr&#34;], self.__active[&#34;remote_port&#34;])
+                    )
                     send += curr
                 else:
-                    curr = self.__conn.send(byte)
+                    curr = self.__active[&#34;conn&#34;].send(byte)
                     send += curr
                 if curr == 0:
                     self.__log.error(&#34;No bytes send during loop round.&#34;)
@@ -903,8 +983,8 @@ class Sock(object):
                 self.__log.debug(
                     &#34;Sent %d bytes to %s:%d (%d bytes remaining)&#34;,
                     curr,
-                    self.__remote_addr,
-                    self.__remote_port,
+                    self.__active[&#34;remote_addr&#34;],
+                    self.__active[&#34;remote_port&#34;],
                     size - send,
                 )
             except (OSError, socket.error) as error:
@@ -914,10 +994,10 @@ class Sock(object):
 
     def receive(self):
         # type: () -&gt; str
-        &#34;&#34;&#34;Receive and return data from the connected socket.
+        &#34;&#34;&#34;Receive and return data from the connected (TCP) or unconnected (UDP) socket.
 
         Returns:
-            str: Returns received data from connected socket.
+            str: Returns received data from connected (TCP) or unconnected (UDP) socket.
 
         Raises:
             socket.timeout: Except here to do an action when the socket is not busy.
@@ -925,24 +1005,41 @@ class Sock(object):
             socket.error:   Except here when unconnected or connection was forcibly closed.
             EOFError:       Except here when upstream has closed the connection.
         &#34;&#34;&#34;
+        # This is required for a UDP server that has no connected clients yet
+        # and is waiting for data receival for the first time on either IPv4 or IPv6
+        # to finally determine which of those two we&#39;re going to use and which
+        # of them we will remove after succesfull connect.
+        try:
+            conns = select.select(
+                [self.__conn[af][&#34;conn&#34;] for af in self.__conn if &#34;conn&#34; in self.__conn[af]],
+                [],
+                [],
+                self.__options.recv_timeout
+            )
+        # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
+        except (ValueError, AttributeError):
+            msg = &#34;Connection was closed by self.&#34;
+            self.__log.warning(msg)
+            raise AttributeError(msg)
+        if not conns[0]:
+            # This is raised for the calling function to determine what to do
+            # between timeouts (e.g.: check signals, etc)
+            raise socket.timeout(&#34;timed out&#34;)  # type: ignore
+
+        # We should always only have one active socket on which we receive data.
+        assert len(conns[0]) == 1
+        conn = conns[0][0]  # type: socket.socket
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
-            (byte, addr) = self.__conn.recvfrom(self.__options.bufsize)
+            (byte, addr) = conn.recvfrom(self.__options.bufsize)
 
-        # [1/5] Non-blocking socket if socket.settimeout() is set
-        # NOTE: This is the place where we can do any checks in between reads as the
-        # socket has been changed from blocking to time-out based.
-        # NOTE: This is also the place, where we quit in case we want to.
-        except socket.timeout as error:
-            raise socket.timeout(error)  # type: ignore
-
-        # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
+        # [1/4] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = &#34;Connection was closed by self.&#34;
             self.__log.warning(msg)
             raise AttributeError(msg)
 
-        # [3/5] Connection was forcibly closed
+        # [2/4] Connection was forcibly closed
         # [Errno 107] Transport endpoint is not connected
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
@@ -950,15 +1047,40 @@ class Sock(object):
             self.__log.warning(&#34;Connection error: %s&#34;, error)
             raise socket.error(error)
 
-        # If we&#39;re receiving data from a UDP client
-        # we can firstly/finally set its addr/port in order
-        # to send data back to it (see send() function)
-        if self.__options.udp:
-            self.__remote_addr = addr[0]
-            self.__remote_port = addr[1]
-            self.__log.debug(&#34;Client connected: %s:%d&#34;, self.__remote_addr, self.__remote_port)
+        # [UDP] Server mode
+        # 1.) The UDP server is only able to send data, if a client has sent data first,
+        # as we do not do a connect() phase for UDP and therefore do not know its remote
+        # addr/port before. See send() function for a blocking loop.
+        # 2.) Additionally, we will always update its IP/port values to distinguish
+        # the same connected client between a new/different connected client.
+        if self.__udp_mode_server:
+            # UDP client connects for the first time
+            if not self.__active:
+                self.__log.info(
+                    &#34;Client connected: %s:%d (family %d/%s, UDP)&#34;,
+                    addr[0],
+                    addr[1],
+                    conn.family,
+                    self.AF_HUMAN[conn.family],
+                )
+            # A different UDP client connects
+            elif self.__active[&#34;remote_addr&#34;] != addr[0] or self.__active[&#34;remote_port&#34;] != addr[1]:
+                self.__log.info(
+                    &#34;New client connected: %s:%d (family %d/%s, UDP)&#34;,
+                    addr[0],
+                    addr[1],
+                    conn.family,
+                    self.AF_HUMAN[conn.family],
+                )
+            # Set currently active UDP connection socket
+            self.__active = {
+                &#34;af&#34;: conn.family,
+                &#34;conn&#34;: conn,
+                &#34;remote_addr&#34;: addr[0],
+                &#34;remote_port&#34;: addr[1],
+            }
 
-        # [4/5] Upstream (server or client) is gone.
+        # [3/4] Upstream (server or client) is gone.
         # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.
         # In UDP, there is no such thing as a peer disconnect, so zero means an empty datagram.
         if not byte:
@@ -966,10 +1088,13 @@ class Sock(object):
             self.__log.info(msg)
             raise EOFError(msg)
 
-        # [5/5] We have data to process
+        # [4/4] We have data to process
         data = self.__enc.decode(byte)
         self.__log.debug(
-            &#34;Received %d bytes from %s:%d&#34;, len(data), self.__remote_addr, self.__remote_port
+            &#34;Received %d bytes from %s:%d&#34;,
+            len(data),
+            self.__active[&#34;remote_addr&#34;],
+            self.__active[&#34;remote_port&#34;],
         )
         self.__log.trace(&#34;Received: %s&#34;, repr(data))  # type: ignore
         return data
@@ -977,47 +1102,7 @@ class Sock(object):
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
-    def gethostbyname(self, host, port):
-        # type: (Optional[str], int) -&gt; str
-        &#34;&#34;&#34;Translate hostname into IP address.
-
-        Args:
-            host (str): The hostname to resolvea.
-            port (int): The port of the hostname to resolve.
-
-        Returns:
-            str: Numeric IP address.
-
-        Raises:
-            socket.gaierror: If hostname cannot be resolved.
-        &#34;&#34;&#34;
-        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-        socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
-        flags = 0
-
-        # Quickly do wildcards for listening addresses
-        if host is None:
-            if family == socket.AF_INET:
-                self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
-                return &#34;0.0.0.0&#34;
-            if family == socket.AF_INET6:
-                self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
-                return &#34;::&#34;
-
-        if self.__options.nodns:
-            flags = socket.AI_NUMERICHOST
-        try:
-            self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
-            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-            addr = str(infos[0][4][0])
-        except (AttributeError, socket.gaierror) as error:
-            self.__log.error(&#34;Resolve Error: %s&#34;, error)
-            raise socket.gaierror(error)  # type: ignore
-        self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
-        return addr
-
-    def run_client(self, addr, port):
+    def run_client(self, host, port):
         # type: (str, int) -&gt; bool
         &#34;&#34;&#34;Run and create a TCP or UDP client and connect to a remote peer.
 
@@ -1028,41 +1113,68 @@ class Sock(object):
         Returns:
             bool: Returns `True` on success and `False` on failure.
         &#34;&#34;&#34;
+        # The connection dictionary.
+        conn = {}  # type: Dict[int, SockConn]
+
         # [1/4] Create socket
-        try:
-            conn = self.__create_socket()
-        except socket.error:
+        succ = 0
+        for af in self.__families:
+            try:
+                conn[af] = {&#34;conn&#34;: self.__create_socket(af)}
+                succ += 1
+            except socket.error:
+                pass
+        if succ == 0:
             return False
 
-        # [2/4] Store socket in instance
+        # [2/4] Resolve address
+        remove = []
+        for af in conn:
+            try:
+                conn[af][&#34;remote_host&#34;] = host
+                conn[af][&#34;remote_addr&#34;] = self.__gethostbyname(host, af)
+                conn[af][&#34;remote_port&#34;] = port
+            except socket.gaierror:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;conn&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [3/4] Connect
+        remove = []
+        for af in conn:
+            try:
+                self.__connect(conn[af][&#34;conn&#34;], conn[af][&#34;remote_addr&#34;], conn[af][&#34;remote_port&#34;])
+                # On successful connect, we can abandon/remove all other sockets
+                remove = [key for key in conn if key != af]
+                break
+            except socket.error:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;conn&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [4/4] Store connections and set active connection
+        assert len(conn) == 1
+        for af in conn:
+            self.__active = {
+                &#34;af&#34;: af,
+                &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+            }
+        # Store sockets as a list
         self.__conn = conn
-
-        # [3/4] Set current receive timeout for socket to make it non-blocking
-        self.__settimeout(self.__conn)
-
-        # [UDP 4/4]
-        if self.__options.udp:
-            # UDP does not have a &#34;connect&#34; feature as it is a stateless protocol.
-            # So in order for the send() function to ne the remote address,
-            # we must explicitly set it here.
-            # (For TCP, this is done in __connect()
-            self.__remote_addr = addr
-            self.__remote_port = port
-            self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
-            return True
-
-        # [TCP 4/4] connect
-        try:
-            self.__connect(self.__conn, addr, port)
-        except socket.error:
-            self.__close(&#34;conn&#34;, self.__conn)
-            return False
-
-        self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
+        # Print socket info
+        self.__print_socket_opts(self.__active[&#34;conn&#34;], self.AF_HUMAN[self.__active[&#34;af&#34;]])
         return True
 
-    def run_server(self, addr, port):
-        # type: (str, int) -&gt; bool
+    def run_server(self, host, port):
+        # type: (Optional[str], int) -&gt; bool
         # TODO: Integrate: --rebind(-wait|-robin)
         &#34;&#34;&#34;Run and create a TCP or UDP listening server and wait for a client to connect.
 
@@ -1073,45 +1185,113 @@ class Sock(object):
         Returns:
             bool: Returns `True` on success and `False` on failure.
         &#34;&#34;&#34;
+        # The connection dictionary.
+        conn = {}  # type: Dict[int, SockConn]
+
         # [1/4] Create socket
-        try:
-            sock = self.__create_socket()
-        except socket.error:
-            return False
-
-        # [2/4] Bind socket
-        if not self.__bind(sock, addr, port):
-            self.__close(&#34;sock&#34;, sock)
-            return False
-
-        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-
-        # [UDP 3/4] There is no listen or accept for UDP
-        if self.__options.udp:
-            self.__conn = sock
-            self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, family, port)
-
-        # [TCP 3/4] Requires listen and accept
-        else:
-            # Listen
-            if not self.__listen(sock):
-                self.__close(&#34;sock&#34;, sock)
-                return False
-            self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, family, port)
-            self.__print_socket_opts(sock, &#34;bind-sock&#34;)
-            # Accept
+        succ = 0
+        for af in self.__families:
             try:
-                conn = self.__accept(sock)
+                conn[af] = {&#34;sock&#34;: self.__create_socket(af)}
+                succ += 1
             except socket.error:
-                self.__close(&#34;sock&#34;, sock)
-                return False
-            self.__sock = sock
-            self.__conn = conn
+                pass
+        if succ == 0:
+            return False
 
-        # [4/4] Set current receive timeout for socket to make it non-blocking
-        self.__settimeout(self.__conn)
-        self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
-        return True
+        # [2/4] Resolve local address
+        remove = []
+        for af in conn:
+            try:
+                conn[af][&#34;local_addr&#34;] = self.__gethostbyname(host, af)
+                conn[af][&#34;local_host&#34;] = host
+                conn[af][&#34;local_port&#34;] = port
+            except socket.gaierror:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [3/4] Bind socket
+        remove = []
+        for af in conn:
+            if not self.__bind(conn[af][&#34;sock&#34;], conn[af][&#34;local_addr&#34;], port):
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [UDP 4/4] There is no listen or accept for UDP
+        if self.__options.udp:
+            for af in conn:
+                conn[af][&#34;conn&#34;] = conn[af][&#34;sock&#34;]
+                self.__log.info(
+                    &#34;Listening on %s:%d (family %d/%s, UDP)&#34;,
+                    conn[af][&#34;local_addr&#34;],
+                    conn[af][&#34;local_port&#34;],
+                    af,
+                    self.AF_HUMAN[af],
+                )
+            self.__conn = conn
+            self.__udp_mode_server = True
+            return True
+
+        # [TCP 4/4] Requires listen and accept
+        else:
+            # (1/4) Listen
+            remove = []
+            for af in conn:
+                if self.__listen(conn[af][&#34;sock&#34;]):
+                    self.__log.info(
+                        &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
+                        conn[af][&#34;local_addr&#34;],
+                        conn[af][&#34;local_port&#34;],
+                        af,
+                        self.AF_HUMAN[af],
+                    )
+                else:
+                    remove.append(af)
+            for af in remove:
+                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+                del conn[af]
+            if not conn:
+                return False
+
+            # (2/4) Accept
+            remove = []
+            try:
+                c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
+                conn[c.family][&#34;conn&#34;] = c
+                conn[c.family][&#34;remote_addr&#34;] = client[0]
+                conn[c.family][&#34;remote_port&#34;] = client[1]
+            except socket.error:
+                remove = [af for af in conn]
+                for af in remove:
+                    self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+                    del conn[af]
+                return False
+
+            # (3/4) Remove all un-accepted items
+            for af in remove:
+                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+                del conn[af]
+
+            # (4/4) Store connections
+            for af in conn:
+                if &#34;conn&#34; in conn[af]:
+                    self.__active = {
+                        &#34;af&#34;: af,
+                        &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                        &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                        &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+                    }
+                    self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
+            self.__conn = conn
+            return True
 
     def re_accept_client(self):
         # type: () -&gt; bool
@@ -1120,36 +1300,44 @@ class Sock(object):
         Returns:
             bool: Returns `True` on success and `False` and error.
         &#34;&#34;&#34;
-        # [1/3] Close conn socket
+        # [1/3] Close and remove all previous conn sockets
         self.close_conn_sock()
+        for af in self.__conn:
+            if &#34;conn&#34; in self.__conn[af]:
+                del self.__conn[af][&#34;conn&#34;]
 
         # [2/3] Accept
         try:
-            conn = self.__accept(self.__sock)
+            c, client = self.__accept([self.__conn[af][&#34;sock&#34;] for af in self.__conn])
         except socket.error:
             return False
-        self.__conn = conn
-        # [3/3] Set current receive timeout for socket to make it non-blocking
-        self.__settimeout(self.__conn)
+        self.__conn[c.family][&#34;conn&#34;] = c
+        self.__conn[c.family][&#34;remote_addr&#34;] = client[0]
+        self.__conn[c.family][&#34;remote_port&#34;] = client[1]
+
+        # Update active connection socket
+        self.__active = {
+            &#34;af&#34;: c.family,
+            &#34;conn&#34;: c,
+            &#34;remote_addr&#34;: client[0],
+            &#34;remote_port&#34;: client[1],
+        }
+
         return True
 
     def close_bind_sock(self):
         # type: () -&gt; None
         &#34;&#34;&#34;Close the bind socket used by the server to accept clients.&#34;&#34;&#34;
-        try:
-            self.__close(&#34;sock&#34;, self.__sock)
-        except AttributeError:
-            # Socket does not exist (anymore)
-            pass
+        for af in self.__conn:
+            if &#34;sock&#34; in self.__conn[af]:
+                self.__close(&#34;sock&#34;, self.__conn[af][&#34;sock&#34;])
 
     def close_conn_sock(self):
         # type: () -&gt; None
         &#34;&#34;&#34;Close the communication socket used for send and receive.&#34;&#34;&#34;
-        try:
-            self.__close(&#34;conn&#34;, self.__conn)
-        except AttributeError:
-            # Socket does not exist (anymore)
-            pass
+        for af in self.__conn:
+            if &#34;conn&#34; in self.__conn[af]:
+                self.__close(&#34;conn&#34;, self.__conn[af][&#34;conn&#34;])
 
     # --------------------------------------------------------------------------
     # Private Functions (general)
@@ -1277,48 +1465,92 @@ class Sock(object):
                     except (OSError, socket.error):
                         pass
 
-    def __create_socket(self):
-        # type: () -&gt; socket.socket
-        &#34;&#34;&#34;Create TCP or UDP socket.
+    def __gethostbyname(self, host, family):
+        # type: (Optional[str], int) -&gt; str
+        &#34;&#34;&#34;Translate hostname into IP address.
+
+        Args:
+            host (str): The hostname to resolvea.
+            family (socket.family): IPv4 or IPv6 family
 
         Returns:
-            socket.socket: Returns TCP or UDP socket.
+            str: Numeric IP address.
+
+        Raises:
+            socket.gaierror: If hostname cannot be resolved.
+        &#34;&#34;&#34;
+        socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
+        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
+        flags = 0
+        port = None
+
+        # Quickly do wildcards for listening addresses
+        if host is None:
+            if family == socket.AF_INET:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
+                return &#34;0.0.0.0&#34;
+            if family == socket.AF_INET6:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
+                return &#34;::&#34;
+
+        if self.__options.nodns:
+            flags = socket.AI_NUMERICHOST
+        try:
+            self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
+            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
+            addr = str(infos[0][4][0])
+        except (AttributeError, socket.gaierror) as error:
+            self.__log.error(&#34;Resolve Error: %s&#34;, error)
+            raise socket.gaierror(error)  # type: ignore
+        self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
+        return addr
+
+    def __create_socket(self, family):
+        # type: (int) -&gt; socket.socket
+        &#34;&#34;&#34;Create TCP or UDP socket.
+
+        Args:
+            family (socket.family): The address family for which to create the socket for.
+
+        Returns:
+            socket.socket: Returns TCP or UDP socket for the given address family.
 
         Raises:
             socket.error: If socket cannot be created.
         &#34;&#34;&#34;
-        family_sock = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-        family_name = &#34;IPv6&#34; if self.__options.ipv6 else &#34;IPv4&#34;
         try:
             if self.__options.udp:
-                self.__log.debug(&#34;Creating %s UDP socket&#34;, family_name)
-                sock = socket.socket(family_sock, socket.SOCK_DGRAM)
+                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.AF_HUMAN[family])
+                sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating %s TCP socket&#34;, family_name)
-                sock = socket.socket(family_sock, socket.SOCK_STREAM)
+                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.AF_HUMAN[family])
+                sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Failed to create {} socket: {}&#34;.format(family_name, error)
+            msg = &#34;Failed to create {} socket: {}&#34;.format(self.AF_HUMAN[family], error)
             self.__log.error(msg)
             raise socket.error(msg)
+
+        if family == socket.AF_INET6:
+            # On linux, ipv6 sockets accept ipv4 too by default,
+            # but this makes it impossible to bind to both
+            # 0.0.0.0 in ipv4 and :: in ipv6.  On other systems,
+            # separate sockets *must* be used to listen for both ipv4
+            # and ipv6.  For consistency, always disable ipv4 on our
+            # ipv6 sockets and use a separate ipv4 socket when needed.
+            #
+            # Python 2.x on windows doesn&#39;t have IPPROTO_IPV6.
+            if hasattr(socket, &#34;IPPROTO_IPV6&#34;):
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+
         # Get around the &#34;[Errno 98] Address already in use&#34; error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
+        # If requested, set IP Type of Service value for current socket
         if self.__options.ip_tos is not None:
             self.__log.info(&#34;Setting IP_TOS to: %d&#34;, self.IP_TOS[self.__options.ip_tos])
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, self.IP_TOS[self.__options.ip_tos])
-
+        # All done, return it to the requestor
         return sock
-
-    def __settimeout(self, sock):
-        # type: (socket.socket) -&gt; None
-        &#34;&#34;&#34;Set the receive timeout on a socket.
-
-        Args:
-            sock (socket.socket): The socket to set the receive timeout for.
-        &#34;&#34;&#34;
-        self.__log.debug(&#34;Setting sock recv timeout to %f sec&#34;, self.__options.recv_timeout)
-        sock.settimeout(self.__options.recv_timeout)
 
     def __close(self, name, sock):
         # type: (str, socket.socket) -&gt; None
@@ -1328,7 +1560,7 @@ class Sock(object):
             name (str): Name of the socket used for logging purposes.
             sock (str): Socket to shutdown and close.
         &#34;&#34;&#34;
-        assert name in [&#34;sock&#34;, &#34;conn&#34;]
+        assert name in [&#34;sock&#34;, &#34;conn&#34;, &#34;IPv4&#34;, &#34;IPv6&#34;]
         try:
             # (SHUT_RD)   0 = Done receiving (disallows receiving)
             # (SHUT_WR)   1 = Done sending (disallows sending)
@@ -1385,31 +1617,39 @@ class Sock(object):
             self.__log.error(&#34;Listening failed: %s&#34;, error)
             return False
 
-    def __accept(self, sock):
-        # type: (socket.socket) -&gt; socket.socket
+    def __accept(self, sockets):
+        # type: (List[socket.socket]) -&gt; Tuple[socket.socket, Tuple[str, int]]
         &#34;&#34;&#34;Accept a connection. The socket must be bound to an addr and listening for connections.
 
         Args:
-            sock (socket.socket): The socket to accept on.
+            sock ([socket.socket]): List of sockets IPv4 and/or IPv6 to accept on.
 
         Returns:
-            socket.socket: Returns the connection socket.
+            socket.socket: Returns the connection socket (whatever protocol was faster).
 
         Raises:
             socket.error: If the server cannot accept connections on its socket.
         &#34;&#34;&#34;
-        try:
-            self.__log.debug(&#34;Waiting for TCP client&#34;)
-            conn, client = sock.accept()
-        except (socket.gaierror, socket.error) as error:
-            msg = &#34;Accept failed: {}&#34;.format(error)
-            self.__log.error(msg)
-            raise socket.error(msg)
-        # Store connected remote peer address and port
-        self.__remote_addr = client[0]
-        self.__remote_port = client[1]
-        self.__log.info(&#34;Client connected from %s:%d&#34;, self.__remote_addr, self.__remote_port)
-        return conn
+        self.__log.debug(&#34;Waiting for TCP client&#34;)
+        while True:
+            readable, writable, errored = select.select(sockets, [], [], 0.01)
+            if self.__ssig.has_stop():
+                raise socket.error(&#34;StopSignal requested&#34;)
+            for sock in readable:
+                try:
+                    conn, addr = sock.accept()
+                except (socket.gaierror, socket.error) as error:
+                    msg = &#34;Accept failed: {}&#34;.format(error)
+                    self.__log.error(msg)
+                    raise socket.error(msg)
+                self.__log.info(
+                    &#34;Client connected from %s:%d (family %d/%s, TCP)&#34;,
+                    addr[0],
+                    addr[1],
+                    conn.family,
+                    self.AF_HUMAN[conn.family],
+                )
+                return conn, (addr[0], addr[1])
 
     # --------------------------------------------------------------------------
     # Private Functions (client)
@@ -1419,7 +1659,7 @@ class Sock(object):
         &#34;&#34;&#34;Connect to a remote socket at given address and port (TCP-only).
 
         Args:
-            sock (socket.socket): The socket to use for connecting.
+            sock (socket.socket): The socket to use for connecting/communication.
             addr (str): Numerical IP address of server to connect to.
             port (int): Port of server to connect to.
 
@@ -1427,16 +1667,29 @@ class Sock(object):
             socker.error: If client cannot connect to remote peer.
         &#34;&#34;&#34;
         try:
-            self.__log.debug(&#34;Connecting to %s:%d&#34;, addr, port)
+            self.__log.debug(
+                &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
+                addr,
+                port,
+                sock.family,
+                self.AF_HUMAN[sock.family],
+                self.ST_HUMAN[sock.type],
+            )
             sock.connect((addr, port))
         except socket.error as error:
-            msg = &#34;Connecting to {}:{} failed: {}&#34;.format(addr, port, error)
-            self.__log.error(msg)
+            msg = &#34;Connecting to {}:{} (family {}/{}, {}) failed: {}&#34;.format(
+                addr, port, sock.family, self.AF_HUMAN[sock.family], self.ST_HUMAN[sock.type], error
+            )
             raise socket.error(msg)
-        self.__log.info(&#34;Connected to %s:%d&#34;, addr, port)
-        # Store connected remote peer address and port
-        self.__remote_addr = addr
-        self.__remote_port = port
+
+        self.__log.info(
+            &#34;Connected to %s:%d (family %d/%s, %s)&#34;,
+            addr,
+            port,
+            sock.family,
+            self.AF_HUMAN[sock.family],
+            self.ST_HUMAN[sock.type],
+        )
 
 
 # #################################################################################################
@@ -1698,21 +1951,16 @@ class IONetwork(IO):
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
 
-        try:
-            addr = self.__net.gethostbyname(host, ports[0])
-        except socket.gaierror:
-            sys.exit(1)
-
         # Internally store addresses for reconn or rebind functions
-        self.__addr = addr
+        self.__host = host
         self.__ports = ports
         self.__pport = 0  # pointer to the current port
 
         if role == &#34;server&#34;:
-            if not self.__net.run_server(self.__addr, self.__ports[self.__pport]):
+            if not self.__net.run_server(self.__host, self.__ports[self.__pport]):
                 sys.exit(1)
         if role == &#34;client&#34;:
-            if not self.__net.run_client(self.__addr, self.__ports[self.__pport]):
+            if not self.__net.run_client(self.__host, self.__ports[self.__pport]):
                 if not self.__client_reconnect_to_server():
                     sys.exit(1)
 
@@ -1756,7 +2004,7 @@ class IONetwork(IO):
                 self.ssig.raise_stop()
                 return
             # [3/3] Upstream is gone
-            except (EOFError, socket.error):
+            except (EOFError, AttributeError, socket.error) as e:
                 # Do we have a stop signal?
                 if self.ssig.has_stop():
                     return
@@ -1827,7 +2075,7 @@ class IONetwork(IO):
             if self.__cli_opts.reconn &gt; 0:
                 self.log.info(
                     &#34;Reconnecting to %s:%d in %.1f sec (%d more times left)&#34;,
-                    self.__addr,
+                    self.__host,
                     self.__ports[self.__pport],
                     self.__cli_opts.reconn_wait,
                     self.__cli_opts.reconn,
@@ -1835,7 +2083,7 @@ class IONetwork(IO):
             else:
                 self.log.info(
                     &#34;Reconnecting to %s:%d in %.1f sec (indefinitely)&#34;,
-                    self.__addr,
+                    self.__host,
                     self.__ports[self.__pport],
                     self.__cli_opts.reconn_wait,
                 )
@@ -1845,7 +2093,7 @@ class IONetwork(IO):
                 self.__cli_opts.reconn -= 1
 
             # [6/6] Recurse until True or reconnect count is used up
-            if self.__net.run_client(self.__addr, self.__ports[self.__pport]):
+            if self.__net.run_client(self.__host, self.__ports[self.__pport]):
                 return True
 
         # [5/5] Signal failure
@@ -2888,6 +3136,14 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
+    # [OPTIONS] -4 and -6
+    if args.ipv4 and args.ipv6:
+        parser.print_usage()
+        print(
+            &#34;%s: error: -4 and -6 are mutually exclusive&#34; % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+
     # [OPTIONS] --udp
     if args.udp and args.zero:
         parser.print_usage()
@@ -3062,7 +3318,18 @@ target machine via the positional arguments.
 &#34;&#34;&#34;,
     )
     optional.add_argument(
-        &#34;-6&#34;, dest=&#34;ipv6&#34;, action=&#34;store_true&#34;, default=False, help=&#34;Use IPv6 instead of IPv4.&#34;,
+        &#34;-4&#34;,
+        dest=&#34;ipv4&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Only Use IPv4 instead of both, IPv4 and IPv6.&#34;,
+    )
+    optional.add_argument(
+        &#34;-6&#34;,
+        dest=&#34;ipv6&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Only Use IPv6 instead of both, IPv4 and IPv6.&#34;,
     )
     optional.add_argument(
         &#34;-e&#34;,
@@ -3480,6 +3747,7 @@ def main():
         TIMEOUT_RECV_SOCKET,
         TIMEOUT_RECV_SOCKET_RETRY,
         args.nodns,
+        args.ipv4,
         args.ipv6,
         args.udp,
         args.tos,
@@ -3803,7 +4071,18 @@ target machine via the positional arguments.
 &#34;&#34;&#34;,
     )
     optional.add_argument(
-        &#34;-6&#34;, dest=&#34;ipv6&#34;, action=&#34;store_true&#34;, default=False, help=&#34;Use IPv6 instead of IPv4.&#34;,
+        &#34;-4&#34;,
+        dest=&#34;ipv4&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Only Use IPv4 instead of both, IPv4 and IPv6.&#34;,
+    )
+    optional.add_argument(
+        &#34;-6&#34;,
+        dest=&#34;ipv6&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Only Use IPv6 instead of both, IPv4 and IPv6.&#34;,
     )
     optional.add_argument(
         &#34;-e&#34;,
@@ -4236,6 +4515,7 @@ accidentally by other input.
         TIMEOUT_RECV_SOCKET,
         TIMEOUT_RECV_SOCKET_RETRY,
         args.nodns,
+        args.ipv4,
         args.ipv6,
         args.udp,
         args.tos,
@@ -5351,7 +5631,7 @@ def reconn_wait(self):
 </dd>
 <dt id="pwncat.DsIONetworkSock"><code class="flex name class">
 <span>class <span class="ident">DsIONetworkSock</span></span>
-<span>(</span><span>bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv6, udp, ip_tos, info)</span>
+<span>(</span><span>bufsize, backlog, recv_timeout, recv_timeout_retry, nodns, ipv4, ipv6, udp, ip_tos, info)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for IONetwork socket options.</p></div>
@@ -5381,6 +5661,7 @@ def reconn_wait(self):
         recv_timeout,  # type: Optional[float]
         recv_timeout_retry,  # type: int
         nodns,  # type: bool
+        ipv4,  # type: bool
         ipv6,  # type: bool
         udp,  # type: bool
         ip_tos,  # type: Optional[str]
@@ -5390,7 +5671,7 @@ def reconn_wait(self):
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
         super(DsIONetworkSock, self).__init__(
-            bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info
+            bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, udp, ip_tos, info
         )</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -5422,6 +5703,7 @@ def recv_timeout_retry(self):
 <li><code><a title="pwncat.DsSock.bufsize" href="#pwncat.DsSock.bufsize">bufsize</a></code></li>
 <li><code><a title="pwncat.DsSock.info" href="#pwncat.DsSock.info">info</a></code></li>
 <li><code><a title="pwncat.DsSock.ip_tos" href="#pwncat.DsSock.ip_tos">ip_tos</a></code></li>
+<li><code><a title="pwncat.DsSock.ipv4" href="#pwncat.DsSock.ipv4">ipv4</a></code></li>
 <li><code><a title="pwncat.DsSock.ipv6" href="#pwncat.DsSock.ipv6">ipv6</a></code></li>
 <li><code><a title="pwncat.DsSock.nodns" href="#pwncat.DsSock.nodns">nodns</a></code></li>
 <li><code><a title="pwncat.DsSock.recv_timeout" href="#pwncat.DsSock.recv_timeout">recv_timeout</a></code></li>
@@ -5902,7 +6184,7 @@ def signal(self):
 </dd>
 <dt id="pwncat.DsSock"><code class="flex name class">
 <span>class <span class="ident">DsSock</span></span>
-<span>(</span><span>bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info)</span>
+<span>(</span><span>bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, udp, ip_tos, info)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for DsSock options.</p></div>
@@ -5941,9 +6223,15 @@ def signal(self):
         return self.__nodns
 
     @property
+    def ipv4(self):
+        # type: () -&gt; bool
+        &#34;&#34;&#34;`bool`: Only use IPv4 instead of both, IPv4 and IPv6.&#34;&#34;&#34;
+        return self.__ipv4
+
+    @property
     def ipv6(self):
         # type: () -&gt; bool
-        &#34;&#34;&#34;`bool`: Determines if we use IPv6 instead of IPv4.&#34;&#34;&#34;
+        &#34;&#34;&#34;`bool`: Only use IPv6 instead of both, IPv4 and IPv6.&#34;&#34;&#34;
         return self.__ipv6
 
     @property
@@ -5967,12 +6255,13 @@ def signal(self):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv6, udp, ip_tos, info):
-        # type: (int, int, Optional[float], bool, bool, bool, Optional[str], str) -&gt; None
+    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, udp, ip_tos, info):
+        # type: (int, int, Optional[float], bool, bool, bool, bool, Optional[str], str) -&gt; None
         assert type(bufsize) is int, type(bufsize)
         assert type(backlog) is int, type(backlog)
         assert type(recv_timeout) is float, type(recv_timeout)
         assert type(nodns) is bool, type(nodns)
+        assert type(ipv4) is bool, type(ipv4)
         assert type(ipv6) is bool, type(ipv6)
         assert type(udp) is bool, type(udp)
         assert type(info) is str, type(info)
@@ -5980,6 +6269,7 @@ def signal(self):
         self.__backlog = backlog
         self.__recv_timeout = recv_timeout
         self.__nodns = nodns
+        self.__ipv4 = ipv4
         self.__ipv6 = ipv6
         self.__udp = udp
         self.__ip_tos = ip_tos
@@ -6047,9 +6337,23 @@ def ip_tos(self):
     return self.__ip_tos</code></pre>
 </details>
 </dd>
+<dt id="pwncat.DsSock.ipv4"><code class="name">var <span class="ident">ipv4</span></code></dt>
+<dd>
+<div class="desc"><p><code>bool</code>: Only use IPv4 instead of both, IPv4 and IPv6.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def ipv4(self):
+    # type: () -&gt; bool
+    &#34;&#34;&#34;`bool`: Only use IPv4 instead of both, IPv4 and IPv6.&#34;&#34;&#34;
+    return self.__ipv4</code></pre>
+</details>
+</dd>
 <dt id="pwncat.DsSock.ipv6"><code class="name">var <span class="ident">ipv6</span></code></dt>
 <dd>
-<div class="desc"><p><code>bool</code>: Determines if we use IPv6 instead of IPv4.</p></div>
+<div class="desc"><p><code>bool</code>: Only use IPv6 instead of both, IPv4 and IPv6.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6057,7 +6361,7 @@ def ip_tos(self):
 <pre><code class="python">@property
 def ipv6(self):
     # type: () -&gt; bool
-    &#34;&#34;&#34;`bool`: Determines if we use IPv6 instead of IPv4.&#34;&#34;&#34;
+    &#34;&#34;&#34;`bool`: Only use IPv6 instead of both, IPv4 and IPv6.&#34;&#34;&#34;
     return self.__ipv6</code></pre>
 </details>
 </dd>
@@ -6677,21 +6981,16 @@ def producer(self):
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
 
-        try:
-            addr = self.__net.gethostbyname(host, ports[0])
-        except socket.gaierror:
-            sys.exit(1)
-
         # Internally store addresses for reconn or rebind functions
-        self.__addr = addr
+        self.__host = host
         self.__ports = ports
         self.__pport = 0  # pointer to the current port
 
         if role == &#34;server&#34;:
-            if not self.__net.run_server(self.__addr, self.__ports[self.__pport]):
+            if not self.__net.run_server(self.__host, self.__ports[self.__pport]):
                 sys.exit(1)
         if role == &#34;client&#34;:
-            if not self.__net.run_client(self.__addr, self.__ports[self.__pport]):
+            if not self.__net.run_client(self.__host, self.__ports[self.__pport]):
                 if not self.__client_reconnect_to_server():
                     sys.exit(1)
 
@@ -6735,7 +7034,7 @@ def producer(self):
                 self.ssig.raise_stop()
                 return
             # [3/3] Upstream is gone
-            except (EOFError, socket.error):
+            except (EOFError, AttributeError, socket.error) as e:
                 # Do we have a stop signal?
                 if self.ssig.has_stop():
                     return
@@ -6806,7 +7105,7 @@ def producer(self):
             if self.__cli_opts.reconn &gt; 0:
                 self.log.info(
                     &#34;Reconnecting to %s:%d in %.1f sec (%d more times left)&#34;,
-                    self.__addr,
+                    self.__host,
                     self.__ports[self.__pport],
                     self.__cli_opts.reconn_wait,
                     self.__cli_opts.reconn,
@@ -6814,7 +7113,7 @@ def producer(self):
             else:
                 self.log.info(
                     &#34;Reconnecting to %s:%d in %.1f sec (indefinitely)&#34;,
-                    self.__addr,
+                    self.__host,
                     self.__ports[self.__pport],
                     self.__cli_opts.reconn_wait,
                 )
@@ -6824,7 +7123,7 @@ def producer(self):
                 self.__cli_opts.reconn -= 1
 
             # [6/6] Recurse until True or reconnect count is used up
-            if self.__net.run_client(self.__addr, self.__ports[self.__pport]):
+            if self.__net.run_client(self.__host, self.__ports[self.__pport]):
                 return True
 
         # [5/5] Signal failure
@@ -6952,7 +7251,7 @@ def producer(self):
             self.ssig.raise_stop()
             return
         # [3/3] Upstream is gone
-        except (EOFError, socket.error):
+        except (EOFError, AttributeError, socket.error) as e:
             # Do we have a stop signal?
             if self.ssig.has_stop():
                 return
@@ -7852,9 +8151,6 @@ def store(self):
 <pre><code class="python">class Sock(object):
     &#34;&#34;&#34;Provides an abstracted server client socket for TCP and UDP.&#34;&#34;&#34;
 
-    __sock = None  # type: socket.socket
-    __conn = None  # type: socket.socket
-
     # For Internet Protocol v4 the value consists of an integer, the least significant 8 bits of
     # which represent the value of the TOS octet in IP packets sent by the socket.
     # RFC 1349 defines the TOS values as follows:
@@ -7864,6 +8160,18 @@ def store(self):
         &#34;reliability&#34;: 0x04,
         &#34;throughput&#34;: 0x08,
         &#34;lowdelay&#34;: 0x10,
+    }
+
+    # Human readable address families
+    AF_HUMAN = {
+        1: &#34;Unix&#34;,
+        2: &#34;IPv4&#34;,
+        10: &#34;IPv6&#34;,
+    }
+    # Human readable socket types
+    ST_HUMAN = {
+        1: &#34;TCP&#34;,
+        2: &#34;UDP&#34;,
     }
 
     # --------------------------------------------------------------------------
@@ -7878,24 +8186,70 @@ def store(self):
             ssig (StopSignal): Used to stop blocking loops.
             options (DsSock): Instance of DsSock.
         &#34;&#34;&#34;
-        self.__log = logging.getLogger(__name__)
+        self.__log = logging.getLogger(__name__)  # type: logging.Logger
         self.__enc = encoder
         self.__ssig = ssig
         self.__options = options
 
-        # Store the address of the remote end.
-        # If we are in server role and running in UDP mode,
-        # it must wait for the client to connect first in order
-        # to retrieve its addr and port be able to send data back to it.
-        self.__remote_addr = None  # type: Optional[str]
-        self.__remote_port = None  # type: Optional[int]
+        # Set families to listen on or connect to
+        if self.__options.ipv6:
+            self.__families = [int(socket.AF_INET6)]
+        elif self.__options.ipv4:
+            self.__families = [int(socket.AF_INET)]
+        else:
+            self.__families = [int(socket.AF_INET6), int(socket.AF_INET)]
+
+        # The connection dictionary.
+        # A dictionary is necessary, as we can have multiple entries for
+        # IPv4 and IPv6 when using UDP in server mode.
+        #
+        # 1.) If the UDP server wants to send data to an UDP client,
+        # it must first wait for the client to send data to get to know
+        # it&#39;s IP address (we&#39;re not using connect() for UDP here).
+        # 2.) As we allow IPv4 and IPv6 listening at the same time,
+        # we must maintain both entries in that list, until the
+        # UDP client has connected.
+        # Once the UDP client has connected, all unconnected entries
+        # will be removed and the protocol has been determined.
+        # {
+        #   &lt;socket.family&gt;:
+        #     {
+        #       &#34;sock&#34;: socket.socket,      # &lt;-- bind socket if server
+        #       &#34;conn&#34;: socket.socket,      # &lt;-- send/recv socket
+        #       &#34;local_host&#34;: &lt;hostname&gt;,   # &lt;-- (server only) hostname or ip address for binding
+        #       &#34;local_addr&#34;: &lt;ip-addr&gt;,    # &lt;-- (server only) ip address for binding
+        #       &#34;local_port&#34;: &lt;port&gt;,       # &lt;-- (server only) port for binding
+        #       &#34;remote_host&#34;: &lt;hostname&gt;,  # &lt;-- hostname or ip address of remote end
+        #       &#34;remote_addr&#34;: &lt;ip-addr&gt;,   # &lt;-- numerical ip address of remote end
+        #       &#34;remote_port&#34;: &lt;port&gt;,      # &lt;-- port of remote end
+        #     },
+        # }
+        self.__conn = {}  # type: Dict[int, SockConn]
+
+        # The self.__conn dictionary can hold two entries: IPv4 and IPv6.
+        # In client mode after successful connect, the unused entry is dropped.
+        # In server mode we keep entries for TCP/re-accept() or UDP/connect.
+        #
+        # That would mean for send/recv functions in server mode, we would
+        # always have to loop around entries in self.__conn. To avoid this
+        # we keep track of the currently active connection in self.__active
+        # and only use this,
+        # {
+        #    &#34;af&#34;: socket.family,        # &lt;-- the used socket family
+        #    &#34;conn&#34;: socket.socket,      # &lt;-- send/recv socket
+        #    &#34;remote_addr&#34;: &lt;ip-addr&gt;,   # &lt;-- numerical ip address of remote end
+        #    &#34;remote_port&#34;: &lt;port&gt;,      # &lt;-- port of remote end
+        # }
+        self.__active = {}  # type: SockActive
+
+        self.__udp_mode_server = False  # type: bool
 
     # --------------------------------------------------------------------------
     # Public Send / Receive Functions
     # --------------------------------------------------------------------------
     def send(self, data):
         # type: (str) -&gt; int
-        &#34;&#34;&#34;Send data through a connected socket.
+        &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket.
 
         Args:
             data (str): The data to send.
@@ -7903,22 +8257,17 @@ def store(self):
         Returns:
             int: Returns total bytes sent.
         &#34;&#34;&#34;
-        # In case of sending data back to an udp client we need to wait
+        # UDP has some specialities as its socket is unconnected.
+        # See also recv() for specialities on that side.
+
+        # In case of sending data to an UDP client, we need to initially wait
         # until the client has first connected and told us its addr/port.
-        if self.__options.udp:
-            if self.__remote_addr is None or self.__remote_port is None:
+        if self.__udp_mode_server:
+            # self.__active will be set in recv() by another thread
+            if not self.__active:
                 self.__log.warning(&#34;UDP client has not yet connected. Queueing message&#34;)
-                while self.__remote_addr is None or self.__remote_port is None:
-                    # In case the user pressed Ctrl+c on the server while trying
-                    # to send data to the client, we need to quit here, otherwise
-                    # it blocks the shutdown routine.
-                    if self.__ssig.has_stop():
-                        return 0
-                    time.sleep(0.1)  # Less wastefull than using &#39;pass&#39;
-                # First time a UDP client connects to the server (display it on the server)
-                self.__log.info(
-                    &#34;Client connected from %s:%d&#34;, self.__remote_addr, self.__remote_port
-                )
+                while not self.__active:
+                    time.sleep(0.01)
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
@@ -7928,19 +8277,21 @@ def store(self):
 
         # Loop until all bytes have been send
         while send &lt; size:
+            self.__log.debug(
+                &#34;Trying to send %d bytes to %s:%d&#34;,
+                size - send,
+                self.__active[&#34;remote_addr&#34;],
+                self.__active[&#34;remote_port&#34;],
+            )
+            self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
             try:
-                self.__log.debug(
-                    &#34;Trying to send %d bytes to %s:%d&#34;,
-                    size - send,
-                    self.__remote_addr,
-                    self.__remote_port,
-                )
-                self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
                 if self.__options.udp:
-                    curr = self.__conn.sendto(byte, (self.__remote_addr, self.__remote_port))
+                    curr = self.__active[&#34;conn&#34;].sendto(
+                        byte, (self.__active[&#34;remote_addr&#34;], self.__active[&#34;remote_port&#34;])
+                    )
                     send += curr
                 else:
-                    curr = self.__conn.send(byte)
+                    curr = self.__active[&#34;conn&#34;].send(byte)
                     send += curr
                 if curr == 0:
                     self.__log.error(&#34;No bytes send during loop round.&#34;)
@@ -7950,8 +8301,8 @@ def store(self):
                 self.__log.debug(
                     &#34;Sent %d bytes to %s:%d (%d bytes remaining)&#34;,
                     curr,
-                    self.__remote_addr,
-                    self.__remote_port,
+                    self.__active[&#34;remote_addr&#34;],
+                    self.__active[&#34;remote_port&#34;],
                     size - send,
                 )
             except (OSError, socket.error) as error:
@@ -7961,10 +8312,10 @@ def store(self):
 
     def receive(self):
         # type: () -&gt; str
-        &#34;&#34;&#34;Receive and return data from the connected socket.
+        &#34;&#34;&#34;Receive and return data from the connected (TCP) or unconnected (UDP) socket.
 
         Returns:
-            str: Returns received data from connected socket.
+            str: Returns received data from connected (TCP) or unconnected (UDP) socket.
 
         Raises:
             socket.timeout: Except here to do an action when the socket is not busy.
@@ -7972,24 +8323,41 @@ def store(self):
             socket.error:   Except here when unconnected or connection was forcibly closed.
             EOFError:       Except here when upstream has closed the connection.
         &#34;&#34;&#34;
+        # This is required for a UDP server that has no connected clients yet
+        # and is waiting for data receival for the first time on either IPv4 or IPv6
+        # to finally determine which of those two we&#39;re going to use and which
+        # of them we will remove after succesfull connect.
+        try:
+            conns = select.select(
+                [self.__conn[af][&#34;conn&#34;] for af in self.__conn if &#34;conn&#34; in self.__conn[af]],
+                [],
+                [],
+                self.__options.recv_timeout
+            )
+        # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
+        except (ValueError, AttributeError):
+            msg = &#34;Connection was closed by self.&#34;
+            self.__log.warning(msg)
+            raise AttributeError(msg)
+        if not conns[0]:
+            # This is raised for the calling function to determine what to do
+            # between timeouts (e.g.: check signals, etc)
+            raise socket.timeout(&#34;timed out&#34;)  # type: ignore
+
+        # We should always only have one active socket on which we receive data.
+        assert len(conns[0]) == 1
+        conn = conns[0][0]  # type: socket.socket
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
-            (byte, addr) = self.__conn.recvfrom(self.__options.bufsize)
+            (byte, addr) = conn.recvfrom(self.__options.bufsize)
 
-        # [1/5] Non-blocking socket if socket.settimeout() is set
-        # NOTE: This is the place where we can do any checks in between reads as the
-        # socket has been changed from blocking to time-out based.
-        # NOTE: This is also the place, where we quit in case we want to.
-        except socket.timeout as error:
-            raise socket.timeout(error)  # type: ignore
-
-        # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
+        # [1/4] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
         except AttributeError:
             msg = &#34;Connection was closed by self.&#34;
             self.__log.warning(msg)
             raise AttributeError(msg)
 
-        # [3/5] Connection was forcibly closed
+        # [2/4] Connection was forcibly closed
         # [Errno 107] Transport endpoint is not connected
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
@@ -7997,15 +8365,40 @@ def store(self):
             self.__log.warning(&#34;Connection error: %s&#34;, error)
             raise socket.error(error)
 
-        # If we&#39;re receiving data from a UDP client
-        # we can firstly/finally set its addr/port in order
-        # to send data back to it (see send() function)
-        if self.__options.udp:
-            self.__remote_addr = addr[0]
-            self.__remote_port = addr[1]
-            self.__log.debug(&#34;Client connected: %s:%d&#34;, self.__remote_addr, self.__remote_port)
+        # [UDP] Server mode
+        # 1.) The UDP server is only able to send data, if a client has sent data first,
+        # as we do not do a connect() phase for UDP and therefore do not know its remote
+        # addr/port before. See send() function for a blocking loop.
+        # 2.) Additionally, we will always update its IP/port values to distinguish
+        # the same connected client between a new/different connected client.
+        if self.__udp_mode_server:
+            # UDP client connects for the first time
+            if not self.__active:
+                self.__log.info(
+                    &#34;Client connected: %s:%d (family %d/%s, UDP)&#34;,
+                    addr[0],
+                    addr[1],
+                    conn.family,
+                    self.AF_HUMAN[conn.family],
+                )
+            # A different UDP client connects
+            elif self.__active[&#34;remote_addr&#34;] != addr[0] or self.__active[&#34;remote_port&#34;] != addr[1]:
+                self.__log.info(
+                    &#34;New client connected: %s:%d (family %d/%s, UDP)&#34;,
+                    addr[0],
+                    addr[1],
+                    conn.family,
+                    self.AF_HUMAN[conn.family],
+                )
+            # Set currently active UDP connection socket
+            self.__active = {
+                &#34;af&#34;: conn.family,
+                &#34;conn&#34;: conn,
+                &#34;remote_addr&#34;: addr[0],
+                &#34;remote_port&#34;: addr[1],
+            }
 
-        # [4/5] Upstream (server or client) is gone.
+        # [3/4] Upstream (server or client) is gone.
         # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.
         # In UDP, there is no such thing as a peer disconnect, so zero means an empty datagram.
         if not byte:
@@ -8013,10 +8406,13 @@ def store(self):
             self.__log.info(msg)
             raise EOFError(msg)
 
-        # [5/5] We have data to process
+        # [4/4] We have data to process
         data = self.__enc.decode(byte)
         self.__log.debug(
-            &#34;Received %d bytes from %s:%d&#34;, len(data), self.__remote_addr, self.__remote_port
+            &#34;Received %d bytes from %s:%d&#34;,
+            len(data),
+            self.__active[&#34;remote_addr&#34;],
+            self.__active[&#34;remote_port&#34;],
         )
         self.__log.trace(&#34;Received: %s&#34;, repr(data))  # type: ignore
         return data
@@ -8024,47 +8420,7 @@ def store(self):
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
-    def gethostbyname(self, host, port):
-        # type: (Optional[str], int) -&gt; str
-        &#34;&#34;&#34;Translate hostname into IP address.
-
-        Args:
-            host (str): The hostname to resolvea.
-            port (int): The port of the hostname to resolve.
-
-        Returns:
-            str: Numeric IP address.
-
-        Raises:
-            socket.gaierror: If hostname cannot be resolved.
-        &#34;&#34;&#34;
-        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-        socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
-        flags = 0
-
-        # Quickly do wildcards for listening addresses
-        if host is None:
-            if family == socket.AF_INET:
-                self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
-                return &#34;0.0.0.0&#34;
-            if family == socket.AF_INET6:
-                self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
-                return &#34;::&#34;
-
-        if self.__options.nodns:
-            flags = socket.AI_NUMERICHOST
-        try:
-            self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
-            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-            addr = str(infos[0][4][0])
-        except (AttributeError, socket.gaierror) as error:
-            self.__log.error(&#34;Resolve Error: %s&#34;, error)
-            raise socket.gaierror(error)  # type: ignore
-        self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
-        return addr
-
-    def run_client(self, addr, port):
+    def run_client(self, host, port):
         # type: (str, int) -&gt; bool
         &#34;&#34;&#34;Run and create a TCP or UDP client and connect to a remote peer.
 
@@ -8075,41 +8431,68 @@ def store(self):
         Returns:
             bool: Returns `True` on success and `False` on failure.
         &#34;&#34;&#34;
+        # The connection dictionary.
+        conn = {}  # type: Dict[int, SockConn]
+
         # [1/4] Create socket
-        try:
-            conn = self.__create_socket()
-        except socket.error:
+        succ = 0
+        for af in self.__families:
+            try:
+                conn[af] = {&#34;conn&#34;: self.__create_socket(af)}
+                succ += 1
+            except socket.error:
+                pass
+        if succ == 0:
             return False
 
-        # [2/4] Store socket in instance
+        # [2/4] Resolve address
+        remove = []
+        for af in conn:
+            try:
+                conn[af][&#34;remote_host&#34;] = host
+                conn[af][&#34;remote_addr&#34;] = self.__gethostbyname(host, af)
+                conn[af][&#34;remote_port&#34;] = port
+            except socket.gaierror:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;conn&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [3/4] Connect
+        remove = []
+        for af in conn:
+            try:
+                self.__connect(conn[af][&#34;conn&#34;], conn[af][&#34;remote_addr&#34;], conn[af][&#34;remote_port&#34;])
+                # On successful connect, we can abandon/remove all other sockets
+                remove = [key for key in conn if key != af]
+                break
+            except socket.error:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;conn&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [4/4] Store connections and set active connection
+        assert len(conn) == 1
+        for af in conn:
+            self.__active = {
+                &#34;af&#34;: af,
+                &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+            }
+        # Store sockets as a list
         self.__conn = conn
-
-        # [3/4] Set current receive timeout for socket to make it non-blocking
-        self.__settimeout(self.__conn)
-
-        # [UDP 4/4]
-        if self.__options.udp:
-            # UDP does not have a &#34;connect&#34; feature as it is a stateless protocol.
-            # So in order for the send() function to ne the remote address,
-            # we must explicitly set it here.
-            # (For TCP, this is done in __connect()
-            self.__remote_addr = addr
-            self.__remote_port = port
-            self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
-            return True
-
-        # [TCP 4/4] connect
-        try:
-            self.__connect(self.__conn, addr, port)
-        except socket.error:
-            self.__close(&#34;conn&#34;, self.__conn)
-            return False
-
-        self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
+        # Print socket info
+        self.__print_socket_opts(self.__active[&#34;conn&#34;], self.AF_HUMAN[self.__active[&#34;af&#34;]])
         return True
 
-    def run_server(self, addr, port):
-        # type: (str, int) -&gt; bool
+    def run_server(self, host, port):
+        # type: (Optional[str], int) -&gt; bool
         # TODO: Integrate: --rebind(-wait|-robin)
         &#34;&#34;&#34;Run and create a TCP or UDP listening server and wait for a client to connect.
 
@@ -8120,45 +8503,113 @@ def store(self):
         Returns:
             bool: Returns `True` on success and `False` on failure.
         &#34;&#34;&#34;
+        # The connection dictionary.
+        conn = {}  # type: Dict[int, SockConn]
+
         # [1/4] Create socket
-        try:
-            sock = self.__create_socket()
-        except socket.error:
-            return False
-
-        # [2/4] Bind socket
-        if not self.__bind(sock, addr, port):
-            self.__close(&#34;sock&#34;, sock)
-            return False
-
-        family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-
-        # [UDP 3/4] There is no listen or accept for UDP
-        if self.__options.udp:
-            self.__conn = sock
-            self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, family, port)
-
-        # [TCP 3/4] Requires listen and accept
-        else:
-            # Listen
-            if not self.__listen(sock):
-                self.__close(&#34;sock&#34;, sock)
-                return False
-            self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, family, port)
-            self.__print_socket_opts(sock, &#34;bind-sock&#34;)
-            # Accept
+        succ = 0
+        for af in self.__families:
             try:
-                conn = self.__accept(sock)
+                conn[af] = {&#34;sock&#34;: self.__create_socket(af)}
+                succ += 1
             except socket.error:
-                self.__close(&#34;sock&#34;, sock)
-                return False
-            self.__sock = sock
-            self.__conn = conn
+                pass
+        if succ == 0:
+            return False
 
-        # [4/4] Set current receive timeout for socket to make it non-blocking
-        self.__settimeout(self.__conn)
-        self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
-        return True
+        # [2/4] Resolve local address
+        remove = []
+        for af in conn:
+            try:
+                conn[af][&#34;local_addr&#34;] = self.__gethostbyname(host, af)
+                conn[af][&#34;local_host&#34;] = host
+                conn[af][&#34;local_port&#34;] = port
+            except socket.gaierror:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [3/4] Bind socket
+        remove = []
+        for af in conn:
+            if not self.__bind(conn[af][&#34;sock&#34;], conn[af][&#34;local_addr&#34;], port):
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # [UDP 4/4] There is no listen or accept for UDP
+        if self.__options.udp:
+            for af in conn:
+                conn[af][&#34;conn&#34;] = conn[af][&#34;sock&#34;]
+                self.__log.info(
+                    &#34;Listening on %s:%d (family %d/%s, UDP)&#34;,
+                    conn[af][&#34;local_addr&#34;],
+                    conn[af][&#34;local_port&#34;],
+                    af,
+                    self.AF_HUMAN[af],
+                )
+            self.__conn = conn
+            self.__udp_mode_server = True
+            return True
+
+        # [TCP 4/4] Requires listen and accept
+        else:
+            # (1/4) Listen
+            remove = []
+            for af in conn:
+                if self.__listen(conn[af][&#34;sock&#34;]):
+                    self.__log.info(
+                        &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
+                        conn[af][&#34;local_addr&#34;],
+                        conn[af][&#34;local_port&#34;],
+                        af,
+                        self.AF_HUMAN[af],
+                    )
+                else:
+                    remove.append(af)
+            for af in remove:
+                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+                del conn[af]
+            if not conn:
+                return False
+
+            # (2/4) Accept
+            remove = []
+            try:
+                c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
+                conn[c.family][&#34;conn&#34;] = c
+                conn[c.family][&#34;remote_addr&#34;] = client[0]
+                conn[c.family][&#34;remote_port&#34;] = client[1]
+            except socket.error:
+                remove = [af for af in conn]
+                for af in remove:
+                    self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+                    del conn[af]
+                return False
+
+            # (3/4) Remove all un-accepted items
+            for af in remove:
+                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+                del conn[af]
+
+            # (4/4) Store connections
+            for af in conn:
+                if &#34;conn&#34; in conn[af]:
+                    self.__active = {
+                        &#34;af&#34;: af,
+                        &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                        &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                        &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+                    }
+                    self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
+            self.__conn = conn
+            return True
 
     def re_accept_client(self):
         # type: () -&gt; bool
@@ -8167,36 +8618,44 @@ def store(self):
         Returns:
             bool: Returns `True` on success and `False` and error.
         &#34;&#34;&#34;
-        # [1/3] Close conn socket
+        # [1/3] Close and remove all previous conn sockets
         self.close_conn_sock()
+        for af in self.__conn:
+            if &#34;conn&#34; in self.__conn[af]:
+                del self.__conn[af][&#34;conn&#34;]
 
         # [2/3] Accept
         try:
-            conn = self.__accept(self.__sock)
+            c, client = self.__accept([self.__conn[af][&#34;sock&#34;] for af in self.__conn])
         except socket.error:
             return False
-        self.__conn = conn
-        # [3/3] Set current receive timeout for socket to make it non-blocking
-        self.__settimeout(self.__conn)
+        self.__conn[c.family][&#34;conn&#34;] = c
+        self.__conn[c.family][&#34;remote_addr&#34;] = client[0]
+        self.__conn[c.family][&#34;remote_port&#34;] = client[1]
+
+        # Update active connection socket
+        self.__active = {
+            &#34;af&#34;: c.family,
+            &#34;conn&#34;: c,
+            &#34;remote_addr&#34;: client[0],
+            &#34;remote_port&#34;: client[1],
+        }
+
         return True
 
     def close_bind_sock(self):
         # type: () -&gt; None
         &#34;&#34;&#34;Close the bind socket used by the server to accept clients.&#34;&#34;&#34;
-        try:
-            self.__close(&#34;sock&#34;, self.__sock)
-        except AttributeError:
-            # Socket does not exist (anymore)
-            pass
+        for af in self.__conn:
+            if &#34;sock&#34; in self.__conn[af]:
+                self.__close(&#34;sock&#34;, self.__conn[af][&#34;sock&#34;])
 
     def close_conn_sock(self):
         # type: () -&gt; None
         &#34;&#34;&#34;Close the communication socket used for send and receive.&#34;&#34;&#34;
-        try:
-            self.__close(&#34;conn&#34;, self.__conn)
-        except AttributeError:
-            # Socket does not exist (anymore)
-            pass
+        for af in self.__conn:
+            if &#34;conn&#34; in self.__conn[af]:
+                self.__close(&#34;conn&#34;, self.__conn[af][&#34;conn&#34;])
 
     # --------------------------------------------------------------------------
     # Private Functions (general)
@@ -8324,48 +8783,92 @@ def store(self):
                     except (OSError, socket.error):
                         pass
 
-    def __create_socket(self):
-        # type: () -&gt; socket.socket
-        &#34;&#34;&#34;Create TCP or UDP socket.
+    def __gethostbyname(self, host, family):
+        # type: (Optional[str], int) -&gt; str
+        &#34;&#34;&#34;Translate hostname into IP address.
+
+        Args:
+            host (str): The hostname to resolvea.
+            family (socket.family): IPv4 or IPv6 family
 
         Returns:
-            socket.socket: Returns TCP or UDP socket.
+            str: Numeric IP address.
+
+        Raises:
+            socket.gaierror: If hostname cannot be resolved.
+        &#34;&#34;&#34;
+        socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
+        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
+        flags = 0
+        port = None
+
+        # Quickly do wildcards for listening addresses
+        if host is None:
+            if family == socket.AF_INET:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
+                return &#34;0.0.0.0&#34;
+            if family == socket.AF_INET6:
+                self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
+                return &#34;::&#34;
+
+        if self.__options.nodns:
+            flags = socket.AI_NUMERICHOST
+        try:
+            self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
+            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
+            addr = str(infos[0][4][0])
+        except (AttributeError, socket.gaierror) as error:
+            self.__log.error(&#34;Resolve Error: %s&#34;, error)
+            raise socket.gaierror(error)  # type: ignore
+        self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
+        return addr
+
+    def __create_socket(self, family):
+        # type: (int) -&gt; socket.socket
+        &#34;&#34;&#34;Create TCP or UDP socket.
+
+        Args:
+            family (socket.family): The address family for which to create the socket for.
+
+        Returns:
+            socket.socket: Returns TCP or UDP socket for the given address family.
 
         Raises:
             socket.error: If socket cannot be created.
         &#34;&#34;&#34;
-        family_sock = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-        family_name = &#34;IPv6&#34; if self.__options.ipv6 else &#34;IPv4&#34;
         try:
             if self.__options.udp:
-                self.__log.debug(&#34;Creating %s UDP socket&#34;, family_name)
-                sock = socket.socket(family_sock, socket.SOCK_DGRAM)
+                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.AF_HUMAN[family])
+                sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating %s TCP socket&#34;, family_name)
-                sock = socket.socket(family_sock, socket.SOCK_STREAM)
+                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.AF_HUMAN[family])
+                sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Failed to create {} socket: {}&#34;.format(family_name, error)
+            msg = &#34;Failed to create {} socket: {}&#34;.format(self.AF_HUMAN[family], error)
             self.__log.error(msg)
             raise socket.error(msg)
+
+        if family == socket.AF_INET6:
+            # On linux, ipv6 sockets accept ipv4 too by default,
+            # but this makes it impossible to bind to both
+            # 0.0.0.0 in ipv4 and :: in ipv6.  On other systems,
+            # separate sockets *must* be used to listen for both ipv4
+            # and ipv6.  For consistency, always disable ipv4 on our
+            # ipv6 sockets and use a separate ipv4 socket when needed.
+            #
+            # Python 2.x on windows doesn&#39;t have IPPROTO_IPV6.
+            if hasattr(socket, &#34;IPPROTO_IPV6&#34;):
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+
         # Get around the &#34;[Errno 98] Address already in use&#34; error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
+        # If requested, set IP Type of Service value for current socket
         if self.__options.ip_tos is not None:
             self.__log.info(&#34;Setting IP_TOS to: %d&#34;, self.IP_TOS[self.__options.ip_tos])
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, self.IP_TOS[self.__options.ip_tos])
-
+        # All done, return it to the requestor
         return sock
-
-    def __settimeout(self, sock):
-        # type: (socket.socket) -&gt; None
-        &#34;&#34;&#34;Set the receive timeout on a socket.
-
-        Args:
-            sock (socket.socket): The socket to set the receive timeout for.
-        &#34;&#34;&#34;
-        self.__log.debug(&#34;Setting sock recv timeout to %f sec&#34;, self.__options.recv_timeout)
-        sock.settimeout(self.__options.recv_timeout)
 
     def __close(self, name, sock):
         # type: (str, socket.socket) -&gt; None
@@ -8375,7 +8878,7 @@ def store(self):
             name (str): Name of the socket used for logging purposes.
             sock (str): Socket to shutdown and close.
         &#34;&#34;&#34;
-        assert name in [&#34;sock&#34;, &#34;conn&#34;]
+        assert name in [&#34;sock&#34;, &#34;conn&#34;, &#34;IPv4&#34;, &#34;IPv6&#34;]
         try:
             # (SHUT_RD)   0 = Done receiving (disallows receiving)
             # (SHUT_WR)   1 = Done sending (disallows sending)
@@ -8432,31 +8935,39 @@ def store(self):
             self.__log.error(&#34;Listening failed: %s&#34;, error)
             return False
 
-    def __accept(self, sock):
-        # type: (socket.socket) -&gt; socket.socket
+    def __accept(self, sockets):
+        # type: (List[socket.socket]) -&gt; Tuple[socket.socket, Tuple[str, int]]
         &#34;&#34;&#34;Accept a connection. The socket must be bound to an addr and listening for connections.
 
         Args:
-            sock (socket.socket): The socket to accept on.
+            sock ([socket.socket]): List of sockets IPv4 and/or IPv6 to accept on.
 
         Returns:
-            socket.socket: Returns the connection socket.
+            socket.socket: Returns the connection socket (whatever protocol was faster).
 
         Raises:
             socket.error: If the server cannot accept connections on its socket.
         &#34;&#34;&#34;
-        try:
-            self.__log.debug(&#34;Waiting for TCP client&#34;)
-            conn, client = sock.accept()
-        except (socket.gaierror, socket.error) as error:
-            msg = &#34;Accept failed: {}&#34;.format(error)
-            self.__log.error(msg)
-            raise socket.error(msg)
-        # Store connected remote peer address and port
-        self.__remote_addr = client[0]
-        self.__remote_port = client[1]
-        self.__log.info(&#34;Client connected from %s:%d&#34;, self.__remote_addr, self.__remote_port)
-        return conn
+        self.__log.debug(&#34;Waiting for TCP client&#34;)
+        while True:
+            readable, writable, errored = select.select(sockets, [], [], 0.01)
+            if self.__ssig.has_stop():
+                raise socket.error(&#34;StopSignal requested&#34;)
+            for sock in readable:
+                try:
+                    conn, addr = sock.accept()
+                except (socket.gaierror, socket.error) as error:
+                    msg = &#34;Accept failed: {}&#34;.format(error)
+                    self.__log.error(msg)
+                    raise socket.error(msg)
+                self.__log.info(
+                    &#34;Client connected from %s:%d (family %d/%s, TCP)&#34;,
+                    addr[0],
+                    addr[1],
+                    conn.family,
+                    self.AF_HUMAN[conn.family],
+                )
+                return conn, (addr[0], addr[1])
 
     # --------------------------------------------------------------------------
     # Private Functions (client)
@@ -8466,7 +8977,7 @@ def store(self):
         &#34;&#34;&#34;Connect to a remote socket at given address and port (TCP-only).
 
         Args:
-            sock (socket.socket): The socket to use for connecting.
+            sock (socket.socket): The socket to use for connecting/communication.
             addr (str): Numerical IP address of server to connect to.
             port (int): Port of server to connect to.
 
@@ -8474,20 +8985,41 @@ def store(self):
             socker.error: If client cannot connect to remote peer.
         &#34;&#34;&#34;
         try:
-            self.__log.debug(&#34;Connecting to %s:%d&#34;, addr, port)
+            self.__log.debug(
+                &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
+                addr,
+                port,
+                sock.family,
+                self.AF_HUMAN[sock.family],
+                self.ST_HUMAN[sock.type],
+            )
             sock.connect((addr, port))
         except socket.error as error:
-            msg = &#34;Connecting to {}:{} failed: {}&#34;.format(addr, port, error)
-            self.__log.error(msg)
+            msg = &#34;Connecting to {}:{} (family {}/{}, {}) failed: {}&#34;.format(
+                addr, port, sock.family, self.AF_HUMAN[sock.family], self.ST_HUMAN[sock.type], error
+            )
             raise socket.error(msg)
-        self.__log.info(&#34;Connected to %s:%d&#34;, addr, port)
-        # Store connected remote peer address and port
-        self.__remote_addr = addr
-        self.__remote_port = port</code></pre>
+
+        self.__log.info(
+            &#34;Connected to %s:%d (family %d/%s, %s)&#34;,
+            addr,
+            port,
+            sock.family,
+            self.AF_HUMAN[sock.family],
+            self.ST_HUMAN[sock.type],
+        )</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
+<dt id="pwncat.Sock.AF_HUMAN"><code class="name">var <span class="ident">AF_HUMAN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="pwncat.Sock.IP_TOS"><code class="name">var <span class="ident">IP_TOS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="pwncat.Sock.ST_HUMAN"><code class="name">var <span class="ident">ST_HUMAN</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -8506,11 +9038,9 @@ def store(self):
 <pre><code class="python">def close_bind_sock(self):
     # type: () -&gt; None
     &#34;&#34;&#34;Close the bind socket used by the server to accept clients.&#34;&#34;&#34;
-    try:
-        self.__close(&#34;sock&#34;, self.__sock)
-    except AttributeError:
-        # Socket does not exist (anymore)
-        pass</code></pre>
+    for af in self.__conn:
+        if &#34;sock&#34; in self.__conn[af]:
+            self.__close(&#34;sock&#34;, self.__conn[af][&#34;sock&#34;])</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Sock.close_conn_sock"><code class="name flex">
@@ -8525,78 +9055,9 @@ def store(self):
 <pre><code class="python">def close_conn_sock(self):
     # type: () -&gt; None
     &#34;&#34;&#34;Close the communication socket used for send and receive.&#34;&#34;&#34;
-    try:
-        self.__close(&#34;conn&#34;, self.__conn)
-    except AttributeError:
-        # Socket does not exist (anymore)
-        pass</code></pre>
-</details>
-</dd>
-<dt id="pwncat.Sock.gethostbyname"><code class="name flex">
-<span>def <span class="ident">gethostbyname</span></span>(<span>self, host, port)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Translate hostname into IP address.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>host</code></strong> :&ensp;<code>str</code></dt>
-<dd>The hostname to resolvea.</dd>
-<dt><strong><code>port</code></strong> :&ensp;<code>int</code></dt>
-<dd>The port of the hostname to resolve.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>str</code></dt>
-<dd>Numeric IP address.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>socket.gaierror</code></dt>
-<dd>If hostname cannot be resolved.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def gethostbyname(self, host, port):
-    # type: (Optional[str], int) -&gt; str
-    &#34;&#34;&#34;Translate hostname into IP address.
-
-    Args:
-        host (str): The hostname to resolvea.
-        port (int): The port of the hostname to resolve.
-
-    Returns:
-        str: Numeric IP address.
-
-    Raises:
-        socket.gaierror: If hostname cannot be resolved.
-    &#34;&#34;&#34;
-    family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-    socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-    proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
-    flags = 0
-
-    # Quickly do wildcards for listening addresses
-    if host is None:
-        if family == socket.AF_INET:
-            self.__log.debug(&#34;Resolving hostname not required, using wildcard: 0.0.0.0&#34;)
-            return &#34;0.0.0.0&#34;
-        if family == socket.AF_INET6:
-            self.__log.debug(&#34;Resolving hostname not required, using wildcard: ::&#34;)
-            return &#34;::&#34;
-
-    if self.__options.nodns:
-        flags = socket.AI_NUMERICHOST
-    try:
-        self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
-        infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-        addr = str(infos[0][4][0])
-    except (AttributeError, socket.gaierror) as error:
-        self.__log.error(&#34;Resolve Error: %s&#34;, error)
-        raise socket.gaierror(error)  # type: ignore
-    self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
-    return addr</code></pre>
+    for af in self.__conn:
+        if &#34;conn&#34; in self.__conn[af]:
+            self.__close(&#34;conn&#34;, self.__conn[af][&#34;conn&#34;])</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Sock.re_accept_client"><code class="name flex">
@@ -8620,17 +9081,29 @@ def store(self):
     Returns:
         bool: Returns `True` on success and `False` and error.
     &#34;&#34;&#34;
-    # [1/3] Close conn socket
+    # [1/3] Close and remove all previous conn sockets
     self.close_conn_sock()
+    for af in self.__conn:
+        if &#34;conn&#34; in self.__conn[af]:
+            del self.__conn[af][&#34;conn&#34;]
 
     # [2/3] Accept
     try:
-        conn = self.__accept(self.__sock)
+        c, client = self.__accept([self.__conn[af][&#34;sock&#34;] for af in self.__conn])
     except socket.error:
         return False
-    self.__conn = conn
-    # [3/3] Set current receive timeout for socket to make it non-blocking
-    self.__settimeout(self.__conn)
+    self.__conn[c.family][&#34;conn&#34;] = c
+    self.__conn[c.family][&#34;remote_addr&#34;] = client[0]
+    self.__conn[c.family][&#34;remote_port&#34;] = client[1]
+
+    # Update active connection socket
+    self.__active = {
+        &#34;af&#34;: c.family,
+        &#34;conn&#34;: c,
+        &#34;remote_addr&#34;: client[0],
+        &#34;remote_port&#34;: client[1],
+    }
+
     return True</code></pre>
 </details>
 </dd>
@@ -8638,11 +9111,11 @@ def store(self):
 <span>def <span class="ident">receive</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Receive and return data from the connected socket.</p>
+<div class="desc"><p>Receive and return data from the connected (TCP) or unconnected (UDP) socket.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>str</code></dt>
-<dd>Returns received data from connected socket.</dd>
+<dd>Returns received data from connected (TCP) or unconnected (UDP) socket.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -8663,10 +9136,10 @@ def store(self):
 </summary>
 <pre><code class="python">def receive(self):
     # type: () -&gt; str
-    &#34;&#34;&#34;Receive and return data from the connected socket.
+    &#34;&#34;&#34;Receive and return data from the connected (TCP) or unconnected (UDP) socket.
 
     Returns:
-        str: Returns received data from connected socket.
+        str: Returns received data from connected (TCP) or unconnected (UDP) socket.
 
     Raises:
         socket.timeout: Except here to do an action when the socket is not busy.
@@ -8674,24 +9147,41 @@ def store(self):
         socket.error:   Except here when unconnected or connection was forcibly closed.
         EOFError:       Except here when upstream has closed the connection.
     &#34;&#34;&#34;
+    # This is required for a UDP server that has no connected clients yet
+    # and is waiting for data receival for the first time on either IPv4 or IPv6
+    # to finally determine which of those two we&#39;re going to use and which
+    # of them we will remove after succesfull connect.
+    try:
+        conns = select.select(
+            [self.__conn[af][&#34;conn&#34;] for af in self.__conn if &#34;conn&#34; in self.__conn[af]],
+            [],
+            [],
+            self.__options.recv_timeout
+        )
+    # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
+    except (ValueError, AttributeError):
+        msg = &#34;Connection was closed by self.&#34;
+        self.__log.warning(msg)
+        raise AttributeError(msg)
+    if not conns[0]:
+        # This is raised for the calling function to determine what to do
+        # between timeouts (e.g.: check signals, etc)
+        raise socket.timeout(&#34;timed out&#34;)  # type: ignore
+
+    # We should always only have one active socket on which we receive data.
+    assert len(conns[0]) == 1
+    conn = conns[0][0]  # type: socket.socket
     try:
         # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
-        (byte, addr) = self.__conn.recvfrom(self.__options.bufsize)
+        (byte, addr) = conn.recvfrom(self.__options.bufsize)
 
-    # [1/5] Non-blocking socket if socket.settimeout() is set
-    # NOTE: This is the place where we can do any checks in between reads as the
-    # socket has been changed from blocking to time-out based.
-    # NOTE: This is also the place, where we quit in case we want to.
-    except socket.timeout as error:
-        raise socket.timeout(error)  # type: ignore
-
-    # [2/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
+    # [1/4] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
     except AttributeError:
         msg = &#34;Connection was closed by self.&#34;
         self.__log.warning(msg)
         raise AttributeError(msg)
 
-    # [3/5] Connection was forcibly closed
+    # [2/4] Connection was forcibly closed
     # [Errno 107] Transport endpoint is not connected
     # [Errno 10054] An existing connection was forcibly closed by the remote host
     # [WinError 10054] An existing connection was forcibly closed by the remote host
@@ -8699,15 +9189,40 @@ def store(self):
         self.__log.warning(&#34;Connection error: %s&#34;, error)
         raise socket.error(error)
 
-    # If we&#39;re receiving data from a UDP client
-    # we can firstly/finally set its addr/port in order
-    # to send data back to it (see send() function)
-    if self.__options.udp:
-        self.__remote_addr = addr[0]
-        self.__remote_port = addr[1]
-        self.__log.debug(&#34;Client connected: %s:%d&#34;, self.__remote_addr, self.__remote_port)
+    # [UDP] Server mode
+    # 1.) The UDP server is only able to send data, if a client has sent data first,
+    # as we do not do a connect() phase for UDP and therefore do not know its remote
+    # addr/port before. See send() function for a blocking loop.
+    # 2.) Additionally, we will always update its IP/port values to distinguish
+    # the same connected client between a new/different connected client.
+    if self.__udp_mode_server:
+        # UDP client connects for the first time
+        if not self.__active:
+            self.__log.info(
+                &#34;Client connected: %s:%d (family %d/%s, UDP)&#34;,
+                addr[0],
+                addr[1],
+                conn.family,
+                self.AF_HUMAN[conn.family],
+            )
+        # A different UDP client connects
+        elif self.__active[&#34;remote_addr&#34;] != addr[0] or self.__active[&#34;remote_port&#34;] != addr[1]:
+            self.__log.info(
+                &#34;New client connected: %s:%d (family %d/%s, UDP)&#34;,
+                addr[0],
+                addr[1],
+                conn.family,
+                self.AF_HUMAN[conn.family],
+            )
+        # Set currently active UDP connection socket
+        self.__active = {
+            &#34;af&#34;: conn.family,
+            &#34;conn&#34;: conn,
+            &#34;remote_addr&#34;: addr[0],
+            &#34;remote_port&#34;: addr[1],
+        }
 
-    # [4/5] Upstream (server or client) is gone.
+    # [3/4] Upstream (server or client) is gone.
     # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.
     # In UDP, there is no such thing as a peer disconnect, so zero means an empty datagram.
     if not byte:
@@ -8715,17 +9230,20 @@ def store(self):
         self.__log.info(msg)
         raise EOFError(msg)
 
-    # [5/5] We have data to process
+    # [4/4] We have data to process
     data = self.__enc.decode(byte)
     self.__log.debug(
-        &#34;Received %d bytes from %s:%d&#34;, len(data), self.__remote_addr, self.__remote_port
+        &#34;Received %d bytes from %s:%d&#34;,
+        len(data),
+        self.__active[&#34;remote_addr&#34;],
+        self.__active[&#34;remote_port&#34;],
     )
     self.__log.trace(&#34;Received: %s&#34;, repr(data))  # type: ignore
     return data</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Sock.run_client"><code class="name flex">
-<span>def <span class="ident">run_client</span></span>(<span>self, addr, port)</span>
+<span>def <span class="ident">run_client</span></span>(<span>self, host, port)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Run and create a TCP or UDP client and connect to a remote peer.</p>
@@ -8745,7 +9263,7 @@ def store(self):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def run_client(self, addr, port):
+<pre><code class="python">def run_client(self, host, port):
     # type: (str, int) -&gt; bool
     &#34;&#34;&#34;Run and create a TCP or UDP client and connect to a remote peer.
 
@@ -8756,42 +9274,69 @@ def store(self):
     Returns:
         bool: Returns `True` on success and `False` on failure.
     &#34;&#34;&#34;
+    # The connection dictionary.
+    conn = {}  # type: Dict[int, SockConn]
+
     # [1/4] Create socket
-    try:
-        conn = self.__create_socket()
-    except socket.error:
+    succ = 0
+    for af in self.__families:
+        try:
+            conn[af] = {&#34;conn&#34;: self.__create_socket(af)}
+            succ += 1
+        except socket.error:
+            pass
+    if succ == 0:
         return False
 
-    # [2/4] Store socket in instance
+    # [2/4] Resolve address
+    remove = []
+    for af in conn:
+        try:
+            conn[af][&#34;remote_host&#34;] = host
+            conn[af][&#34;remote_addr&#34;] = self.__gethostbyname(host, af)
+            conn[af][&#34;remote_port&#34;] = port
+        except socket.gaierror:
+            remove.append(af)
+    for af in remove:
+        self.__close(self.AF_HUMAN[af], conn[af][&#34;conn&#34;])
+        del conn[af]
+    if not conn:
+        return False
+
+    # [3/4] Connect
+    remove = []
+    for af in conn:
+        try:
+            self.__connect(conn[af][&#34;conn&#34;], conn[af][&#34;remote_addr&#34;], conn[af][&#34;remote_port&#34;])
+            # On successful connect, we can abandon/remove all other sockets
+            remove = [key for key in conn if key != af]
+            break
+        except socket.error:
+            remove.append(af)
+    for af in remove:
+        self.__close(self.AF_HUMAN[af], conn[af][&#34;conn&#34;])
+        del conn[af]
+    if not conn:
+        return False
+
+    # [4/4] Store connections and set active connection
+    assert len(conn) == 1
+    for af in conn:
+        self.__active = {
+            &#34;af&#34;: af,
+            &#34;conn&#34;: conn[af][&#34;conn&#34;],
+            &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+            &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+        }
+    # Store sockets as a list
     self.__conn = conn
-
-    # [3/4] Set current receive timeout for socket to make it non-blocking
-    self.__settimeout(self.__conn)
-
-    # [UDP 4/4]
-    if self.__options.udp:
-        # UDP does not have a &#34;connect&#34; feature as it is a stateless protocol.
-        # So in order for the send() function to ne the remote address,
-        # we must explicitly set it here.
-        # (For TCP, this is done in __connect()
-        self.__remote_addr = addr
-        self.__remote_port = port
-        self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
-        return True
-
-    # [TCP 4/4] connect
-    try:
-        self.__connect(self.__conn, addr, port)
-    except socket.error:
-        self.__close(&#34;conn&#34;, self.__conn)
-        return False
-
-    self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
+    # Print socket info
+    self.__print_socket_opts(self.__active[&#34;conn&#34;], self.AF_HUMAN[self.__active[&#34;af&#34;]])
     return True</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Sock.run_server"><code class="name flex">
-<span>def <span class="ident">run_server</span></span>(<span>self, addr, port)</span>
+<span>def <span class="ident">run_server</span></span>(<span>self, host, port)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Run and create a TCP or UDP listening server and wait for a client to connect.</p>
@@ -8811,8 +9356,8 @@ def store(self):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def run_server(self, addr, port):
-    # type: (str, int) -&gt; bool
+<pre><code class="python">def run_server(self, host, port):
+    # type: (Optional[str], int) -&gt; bool
     # TODO: Integrate: --rebind(-wait|-robin)
     &#34;&#34;&#34;Run and create a TCP or UDP listening server and wait for a client to connect.
 
@@ -8823,52 +9368,120 @@ def store(self):
     Returns:
         bool: Returns `True` on success and `False` on failure.
     &#34;&#34;&#34;
+    # The connection dictionary.
+    conn = {}  # type: Dict[int, SockConn]
+
     # [1/4] Create socket
-    try:
-        sock = self.__create_socket()
-    except socket.error:
-        return False
-
-    # [2/4] Bind socket
-    if not self.__bind(sock, addr, port):
-        self.__close(&#34;sock&#34;, sock)
-        return False
-
-    family = socket.AF_INET6 if self.__options.ipv6 else socket.AF_INET
-
-    # [UDP 3/4] There is no listen or accept for UDP
-    if self.__options.udp:
-        self.__conn = sock
-        self.__log.info(&#34;Listening on %s (family %d/UDP, port %d)&#34;, addr, family, port)
-
-    # [TCP 3/4] Requires listen and accept
-    else:
-        # Listen
-        if not self.__listen(sock):
-            self.__close(&#34;sock&#34;, sock)
-            return False
-        self.__log.info(&#34;Listening on %s (family %d/TCP, port %d)&#34;, addr, family, port)
-        self.__print_socket_opts(sock, &#34;bind-sock&#34;)
-        # Accept
+    succ = 0
+    for af in self.__families:
         try:
-            conn = self.__accept(sock)
+            conn[af] = {&#34;sock&#34;: self.__create_socket(af)}
+            succ += 1
         except socket.error:
-            self.__close(&#34;sock&#34;, sock)
-            return False
-        self.__sock = sock
-        self.__conn = conn
+            pass
+    if succ == 0:
+        return False
 
-    # [4/4] Set current receive timeout for socket to make it non-blocking
-    self.__settimeout(self.__conn)
-    self.__print_socket_opts(self.__conn, &#34;conn-sock&#34;)
-    return True</code></pre>
+    # [2/4] Resolve local address
+    remove = []
+    for af in conn:
+        try:
+            conn[af][&#34;local_addr&#34;] = self.__gethostbyname(host, af)
+            conn[af][&#34;local_host&#34;] = host
+            conn[af][&#34;local_port&#34;] = port
+        except socket.gaierror:
+            remove.append(af)
+    for af in remove:
+        self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+        del conn[af]
+    if not conn:
+        return False
+
+    # [3/4] Bind socket
+    remove = []
+    for af in conn:
+        if not self.__bind(conn[af][&#34;sock&#34;], conn[af][&#34;local_addr&#34;], port):
+            remove.append(af)
+    for af in remove:
+        self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+        del conn[af]
+    if not conn:
+        return False
+
+    # [UDP 4/4] There is no listen or accept for UDP
+    if self.__options.udp:
+        for af in conn:
+            conn[af][&#34;conn&#34;] = conn[af][&#34;sock&#34;]
+            self.__log.info(
+                &#34;Listening on %s:%d (family %d/%s, UDP)&#34;,
+                conn[af][&#34;local_addr&#34;],
+                conn[af][&#34;local_port&#34;],
+                af,
+                self.AF_HUMAN[af],
+            )
+        self.__conn = conn
+        self.__udp_mode_server = True
+        return True
+
+    # [TCP 4/4] Requires listen and accept
+    else:
+        # (1/4) Listen
+        remove = []
+        for af in conn:
+            if self.__listen(conn[af][&#34;sock&#34;]):
+                self.__log.info(
+                    &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
+                    conn[af][&#34;local_addr&#34;],
+                    conn[af][&#34;local_port&#34;],
+                    af,
+                    self.AF_HUMAN[af],
+                )
+            else:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # (2/4) Accept
+        remove = []
+        try:
+            c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
+            conn[c.family][&#34;conn&#34;] = c
+            conn[c.family][&#34;remote_addr&#34;] = client[0]
+            conn[c.family][&#34;remote_port&#34;] = client[1]
+        except socket.error:
+            remove = [af for af in conn]
+            for af in remove:
+                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+                del conn[af]
+            return False
+
+        # (3/4) Remove all un-accepted items
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+
+        # (4/4) Store connections
+        for af in conn:
+            if &#34;conn&#34; in conn[af]:
+                self.__active = {
+                    &#34;af&#34;: af,
+                    &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                    &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                    &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+                }
+                self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
+        self.__conn = conn
+        return True</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Sock.send"><code class="name flex">
 <span>def <span class="ident">send</span></span>(<span>self, data)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Send data through a connected socket.</p>
+<div class="desc"><p>Send data through a connected (TCP) or unconnected (UDP) socket.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>data</code></strong> :&ensp;<code>str</code></dt>
@@ -8885,7 +9498,7 @@ def store(self):
 </summary>
 <pre><code class="python">def send(self, data):
     # type: (str) -&gt; int
-    &#34;&#34;&#34;Send data through a connected socket.
+    &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket.
 
     Args:
         data (str): The data to send.
@@ -8893,22 +9506,17 @@ def store(self):
     Returns:
         int: Returns total bytes sent.
     &#34;&#34;&#34;
-    # In case of sending data back to an udp client we need to wait
+    # UDP has some specialities as its socket is unconnected.
+    # See also recv() for specialities on that side.
+
+    # In case of sending data to an UDP client, we need to initially wait
     # until the client has first connected and told us its addr/port.
-    if self.__options.udp:
-        if self.__remote_addr is None or self.__remote_port is None:
+    if self.__udp_mode_server:
+        # self.__active will be set in recv() by another thread
+        if not self.__active:
             self.__log.warning(&#34;UDP client has not yet connected. Queueing message&#34;)
-            while self.__remote_addr is None or self.__remote_port is None:
-                # In case the user pressed Ctrl+c on the server while trying
-                # to send data to the client, we need to quit here, otherwise
-                # it blocks the shutdown routine.
-                if self.__ssig.has_stop():
-                    return 0
-                time.sleep(0.1)  # Less wastefull than using &#39;pass&#39;
-            # First time a UDP client connects to the server (display it on the server)
-            self.__log.info(
-                &#34;Client connected from %s:%d&#34;, self.__remote_addr, self.__remote_port
-            )
+            while not self.__active:
+                time.sleep(0.01)
 
     curr = 0  # bytes send during one loop iteration
     send = 0  # total bytes send
@@ -8918,19 +9526,21 @@ def store(self):
 
     # Loop until all bytes have been send
     while send &lt; size:
+        self.__log.debug(
+            &#34;Trying to send %d bytes to %s:%d&#34;,
+            size - send,
+            self.__active[&#34;remote_addr&#34;],
+            self.__active[&#34;remote_port&#34;],
+        )
+        self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
         try:
-            self.__log.debug(
-                &#34;Trying to send %d bytes to %s:%d&#34;,
-                size - send,
-                self.__remote_addr,
-                self.__remote_port,
-            )
-            self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
             if self.__options.udp:
-                curr = self.__conn.sendto(byte, (self.__remote_addr, self.__remote_port))
+                curr = self.__active[&#34;conn&#34;].sendto(
+                    byte, (self.__active[&#34;remote_addr&#34;], self.__active[&#34;remote_port&#34;])
+                )
                 send += curr
             else:
-                curr = self.__conn.send(byte)
+                curr = self.__active[&#34;conn&#34;].send(byte)
                 send += curr
             if curr == 0:
                 self.__log.error(&#34;No bytes send during loop round.&#34;)
@@ -8940,8 +9550,8 @@ def store(self):
             self.__log.debug(
                 &#34;Sent %d bytes to %s:%d (%d bytes remaining)&#34;,
                 curr,
-                self.__remote_addr,
-                self.__remote_port,
+                self.__active[&#34;remote_addr&#34;],
+                self.__active[&#34;remote_port&#34;],
                 size - send,
             )
         except (OSError, socket.error) as error:
@@ -9615,6 +10225,7 @@ def transform(self, data):
 <li><code><a title="pwncat.DsSock.bufsize" href="#pwncat.DsSock.bufsize">bufsize</a></code></li>
 <li><code><a title="pwncat.DsSock.info" href="#pwncat.DsSock.info">info</a></code></li>
 <li><code><a title="pwncat.DsSock.ip_tos" href="#pwncat.DsSock.ip_tos">ip_tos</a></code></li>
+<li><code><a title="pwncat.DsSock.ipv4" href="#pwncat.DsSock.ipv4">ipv4</a></code></li>
 <li><code><a title="pwncat.DsSock.ipv6" href="#pwncat.DsSock.ipv6">ipv6</a></code></li>
 <li><code><a title="pwncat.DsSock.nodns" href="#pwncat.DsSock.nodns">nodns</a></code></li>
 <li><code><a title="pwncat.DsSock.recv_timeout" href="#pwncat.DsSock.recv_timeout">recv_timeout</a></code></li>
@@ -9682,10 +10293,11 @@ def transform(self, data):
 <li>
 <h4><code><a title="pwncat.Sock" href="#pwncat.Sock">Sock</a></code></h4>
 <ul class="two-column">
+<li><code><a title="pwncat.Sock.AF_HUMAN" href="#pwncat.Sock.AF_HUMAN">AF_HUMAN</a></code></li>
 <li><code><a title="pwncat.Sock.IP_TOS" href="#pwncat.Sock.IP_TOS">IP_TOS</a></code></li>
+<li><code><a title="pwncat.Sock.ST_HUMAN" href="#pwncat.Sock.ST_HUMAN">ST_HUMAN</a></code></li>
 <li><code><a title="pwncat.Sock.close_bind_sock" href="#pwncat.Sock.close_bind_sock">close_bind_sock</a></code></li>
 <li><code><a title="pwncat.Sock.close_conn_sock" href="#pwncat.Sock.close_conn_sock">close_conn_sock</a></code></li>
-<li><code><a title="pwncat.Sock.gethostbyname" href="#pwncat.Sock.gethostbyname">gethostbyname</a></code></li>
 <li><code><a title="pwncat.Sock.re_accept_client" href="#pwncat.Sock.re_accept_client">re_accept_client</a></code></li>
 <li><code><a title="pwncat.Sock.receive" href="#pwncat.Sock.receive">receive</a></code></li>
 <li><code><a title="pwncat.Sock.run_client" href="#pwncat.Sock.run_client">run_client</a></code></li>
