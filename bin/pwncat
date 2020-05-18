@@ -889,14 +889,14 @@ class Sock(object):
         #       "remote_port": <port>,      # <-- port of remote end
         #     },
         # }
-        self.__conn = {}  # type: Dict[int, SockConn]
+        self.__conns = {}  # type: Dict[int, SockConn]
 
-        # The self.__conn dictionary can hold two entries: IPv4 and IPv6.
+        # The self.__conns dictionary can hold two entries: IPv4 and IPv6.
         # In client mode after successful connect, the unused entry is dropped.
         # In server mode we keep entries for TCP/re-accept() or UDP/connect.
         #
         # That would mean for send/recv functions in server mode, we would
-        # always have to loop around entries in self.__conn. To avoid this
+        # always have to loop around entries in self.__conns. To avoid this
         # we keep track of the currently active connection in self.__active
         # and only use this,
         # {
@@ -994,7 +994,7 @@ class Sock(object):
         # of them we will remove after succesfull connect.
         try:
             conns = select.select(
-                [self.__conn[af]["conn"] for af in self.__conn if "conn" in self.__conn[af]],
+                [self.__conns[af]["conn"] for af in self.__conns if "conn" in self.__conns[af]],
                 [],
                 [],
                 self.__options.recv_timeout,
@@ -1099,13 +1099,13 @@ class Sock(object):
             bool: Returns `True` on success and `False` on failure.
         """
         # The connection dictionary.
-        conn = {}  # type: Dict[int, SockConn]
+        conns = {}  # type: Dict[int, SockConn]
 
         # [1/4] Create socket
         succ = 0
         for key in self.__families:
             try:
-                conn[key] = {"conn": self.__create_socket(self.__families[key])}
+                conns[key] = {"conn": self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -1114,46 +1114,50 @@ class Sock(object):
 
         # [2/4] Resolve address
         remove = []
-        for af in conn:
+        for family in conns:
             try:
-                conn[af]["remote_host"] = host
-                conn[af]["remote_addr"] = self.__gethostbyname(host, af)
-                conn[af]["remote_port"] = port
+                conns[family]["remote_host"] = host
+                conns[family]["remote_addr"] = self.__gethostbyname(host, family)
+                conns[family]["remote_port"] = port
             except socket.gaierror:
-                remove.append(af)
-        for af in remove:
-            self.__close(self.AF_HUMAN[af], conn[af]["conn"])
-            del conn[af]
-        if not conn:
+                remove.append(family)
+        for family in remove:
+            self.__close(self.AF_HUMAN[family], conns[family]["conn"])
+            del conns[family]
+        if not conns:
             return False
 
         # [3/4] Connect
         remove = []
-        for af in conn:
+        for family in conns:
             try:
-                self.__connect(conn[af]["conn"], conn[af]["remote_addr"], conn[af]["remote_port"])
+                self.__connect(
+                    conns[family]["conn"],
+                    conns[family]["remote_addr"],
+                    conns[family]["remote_port"],
+                )
                 # On successful connect, we can abandon/remove all other sockets
-                remove = [key for key in conn if key != af]
+                remove = [key for key in conns if key != family]
                 break
             except socket.error:
-                remove.append(af)
-        for af in remove:
-            self.__close(self.AF_HUMAN[af], conn[af]["conn"])
-            del conn[af]
-        if not conn:
+                remove.append(family)
+        for family in remove:
+            self.__close(self.AF_HUMAN[family], conns[family]["conn"])
+            del conns[family]
+        if not conns:
             return False
 
         # [4/4] Store connections and set active connection
-        assert len(conn) == 1
-        for af in conn:
+        assert len(conns) == 1
+        for family in conns:
             self.__active = {
-                "af": af,
-                "conn": conn[af]["conn"],
-                "remote_addr": conn[af]["remote_addr"],
-                "remote_port": conn[af]["remote_port"],
+                "af": family,
+                "conn": conns[family]["conn"],
+                "remote_addr": conns[family]["remote_addr"],
+                "remote_port": conns[family]["remote_port"],
             }
         # Store sockets as a list
-        self.__conn = conn
+        self.__conns = conns
         # Print socket info
         self.__print_socket_opts(self.__active["conn"], self.AF_HUMAN[self.__active["af"]])
         return True
@@ -1171,13 +1175,13 @@ class Sock(object):
             bool: Returns `True` on success and `False` on failure.
         """
         # The connection dictionary.
-        conn = {}  # type: Dict[int, SockConn]
+        conns = {}  # type: Dict[int, SockConn]
 
         # [1/4] Create socket
         succ = 0
         for key in self.__families:
             try:
-                conn[key] = {"sock": self.__create_socket(self.__families[key])}
+                conns[key] = {"sock": self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -1186,89 +1190,89 @@ class Sock(object):
 
         # [2/4] Resolve local address
         remove = []
-        for af in conn:
+        for family in conns:
             try:
-                conn[af]["local_addr"] = self.__gethostbyname(host, af)
-                conn[af]["local_host"] = host
-                conn[af]["local_port"] = port
+                conns[family]["local_addr"] = self.__gethostbyname(host, family)
+                conns[family]["local_host"] = host
+                conns[family]["local_port"] = port
             except socket.gaierror:
-                remove.append(af)
-        for af in remove:
-            self.__close(self.AF_HUMAN[af], conn[af]["sock"])
-            del conn[af]
-        if not conn:
+                remove.append(family)
+        for family in remove:
+            self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+            del conns[family]
+        if not conns:
             return False
 
         # [3/4] Bind socket
         remove = []
-        for af in conn:
-            if not self.__bind(conn[af]["sock"], conn[af]["local_addr"], port):
-                remove.append(af)
-        for af in remove:
-            self.__close(self.AF_HUMAN[af], conn[af]["sock"])
-            del conn[af]
-        if not conn:
+        for family in conns:
+            if not self.__bind(conns[family]["sock"], conns[family]["local_addr"], port):
+                remove.append(family)
+        for family in remove:
+            self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+            del conns[family]
+        if not conns:
             return False
 
         # [UDP 4/4] There is no listen or accept for UDP
         if self.__options.udp:
-            for af in conn:
-                conn[af]["conn"] = conn[af]["sock"]
+            for family in conns:
+                conns[family]["conn"] = conns[family]["sock"]
                 self.__log.info(
                     "Listening on %s:%d (family %d/%s, UDP)",
-                    conn[af]["local_addr"],
-                    conn[af]["local_port"],
-                    af,
-                    self.AF_HUMAN[af],
+                    conns[family]["local_addr"],
+                    conns[family]["local_port"],
+                    family,
+                    self.AF_HUMAN[family],
                 )
-            self.__conn = conn
+            self.__conns = conns
             self.__udp_mode_server = True
             return True
 
         # [TCP 4/4] Requires listen and accept
         # (1/3) Listen
         remove = []
-        for af in conn:
-            if self.__listen(conn[af]["sock"]):
+        for family in conns:
+            if self.__listen(conns[family]["sock"]):
                 self.__log.info(
                     "Listening on %s:%d (family %d/%s, TCP)",
-                    conn[af]["local_addr"],
-                    conn[af]["local_port"],
-                    af,
-                    self.AF_HUMAN[af],
+                    conns[family]["local_addr"],
+                    conns[family]["local_port"],
+                    family,
+                    self.AF_HUMAN[family],
                 )
             else:
-                remove.append(af)
-        for af in remove:
-            self.__close(self.AF_HUMAN[af], conn[af]["sock"])
-            del conn[af]
-        if not conn:
+                remove.append(family)
+        for family in remove:
+            self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+            del conns[family]
+        if not conns:
             return False
 
         # (2/3) Accept
         try:
-            c, client = self.__accept([conn[af]["sock"] for af in conn])
-            conn[c.family]["conn"] = c
-            conn[c.family]["remote_addr"] = client[0]
-            conn[c.family]["remote_port"] = client[1]
+            conn, client = self.__accept([conns[family]["sock"] for family in conns])
+            conns[conn.family]["conn"] = conn
+            conns[conn.family]["remote_addr"] = client[0]
+            conns[conn.family]["remote_port"] = client[1]
         except socket.error:
             # On error, remove all bind sockets
-            for af in conn:
-                self.__close(self.AF_HUMAN[af], conn[af]["sock"])
-                del conn[af]
+            for family in conns:
+                self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+                del conns[family]
             return False
 
         # (3/3) Store connections
-        for af in conn:
-            if "conn" in conn[af]:
+        for family in conns:
+            if "conn" in conns[family]:
                 self.__active = {
-                    "af": af,
-                    "conn": conn[af]["conn"],
-                    "remote_addr": conn[af]["remote_addr"],
-                    "remote_port": conn[af]["remote_port"],
+                    "af": family,
+                    "conn": conns[family]["conn"],
+                    "remote_addr": conns[family]["remote_addr"],
+                    "remote_port": conns[family]["remote_port"],
                 }
-                self.__print_socket_opts(conn[af]["conn"], "conn-sock")
-        self.__conn = conn
+                self.__print_socket_opts(conns[family]["conn"], "conn-sock")
+        self.__conns = conns
         return True
 
     def re_accept_client(self):
@@ -1280,23 +1284,23 @@ class Sock(object):
         """
         # [1/3] Close and remove all previous conn sockets
         self.close_conn_sock()
-        for af in self.__conn:
-            if "conn" in self.__conn[af]:
-                del self.__conn[af]["conn"]
+        for family in self.__conns:
+            if "conn" in self.__conns[family]:
+                del self.__conns[family]["conn"]
 
         # [2/3] Accept
         try:
-            c, client = self.__accept([self.__conn[af]["sock"] for af in self.__conn])
+            conn, client = self.__accept([self.__conns[family]["sock"] for family in self.__conns])
         except socket.error:
             return False
-        self.__conn[c.family]["conn"] = c
-        self.__conn[c.family]["remote_addr"] = client[0]
-        self.__conn[c.family]["remote_port"] = client[1]
+        self.__conns[conn.family]["conn"] = conn
+        self.__conns[conn.family]["remote_addr"] = client[0]
+        self.__conns[conn.family]["remote_port"] = client[1]
 
         # Update active connection socket
         self.__active = {
-            "af": c.family,
-            "conn": c,
+            "af": conn.family,
+            "conn": conn,
             "remote_addr": client[0],
             "remote_port": client[1],
         }
@@ -1306,16 +1310,16 @@ class Sock(object):
     def close_bind_sock(self):
         # type: () -> None
         """Close the bind socket used by the server to accept clients."""
-        for af in self.__conn:
-            if "sock" in self.__conn[af]:
-                self.__close("sock", self.__conn[af]["sock"])
+        for family in self.__conns:
+            if "sock" in self.__conns[family]:
+                self.__close("sock", self.__conns[family]["sock"])
 
     def close_conn_sock(self):
         # type: () -> None
         """Close the communication socket used for send and receive."""
-        for af in self.__conn:
-            if "conn" in self.__conn[af]:
-                self.__close("conn", self.__conn[af]["conn"])
+        for family in self.__conns:
+            if "conn" in self.__conns[family]:
+                self.__close("conn", self.__conns[family]["conn"])
 
     # --------------------------------------------------------------------------
     # Private Functions (general)
@@ -3804,7 +3808,6 @@ def main():
     # -> listen locally and forward traffic to remote (connect)
     if args.local:
         srv_opts.keep_open = True
-        match = re.search(r"(.+:)?([0-9]+)", args.local)
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
         if not lhost:
