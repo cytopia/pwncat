@@ -127,7 +127,7 @@ if os.environ.get(&#34;MYPY_CHECK&#34;, False):
     )
     SockActive = TypedDict(
         &#34;SockActive&#34;,
-        {&#34;af&#34;: int, &#34;conn&#34;: socket.socket, &#34;remote_addr&#34;: str, &#34;remote_port&#34;: int,},
+        {&#34;af&#34;: int, &#34;conn&#34;: socket.socket, &#34;remote_addr&#34;: str, &#34;remote_port&#34;: int},
         total=False,
     )
 
@@ -850,9 +850,8 @@ class Sock(object):
 
     # Human readable address families
     AF_HUMAN = {
-        1: &#34;Unix&#34;,
-        2: &#34;IPv4&#34;,
-        10: &#34;IPv6&#34;,
+        int(socket.AF_INET): &#34;IPv4&#34;,
+        int(socket.AF_INET6): &#34;IPv6&#34;,
     }
     # Human readable socket types
     ST_HUMAN = {
@@ -879,11 +878,18 @@ class Sock(object):
 
         # Set families to listen on or connect to
         if self.__options.ipv6:
-            self.__families = [int(socket.AF_INET6)]
+            self.__families = {
+                int(socket.AF_INET6): socket.AF_INET6,
+            }
         elif self.__options.ipv4:
-            self.__families = [int(socket.AF_INET)]
+            self.__families = {
+                int(socket.AF_INET): socket.AF_INET,
+            }
         else:
-            self.__families = [int(socket.AF_INET6), int(socket.AF_INET)]
+            self.__families = {
+                int(socket.AF_INET6): socket.AF_INET6,
+                int(socket.AF_INET): socket.AF_INET,
+            }
 
         # The connection dictionary.
         # A dictionary is necessary, as we can have multiple entries for
@@ -1019,20 +1025,22 @@ class Sock(object):
                 [],
                 [],
                 self.__options.recv_timeout,
-            )
+            )[
+                0
+            ]  # type: List[socket.socket]
         # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
         except (ValueError, AttributeError):
             msg = &#34;Connection was closed by self.&#34;
             self.__log.warning(msg)
             raise AttributeError(msg)
-        if not conns[0]:
+        if not conns:
             # This is raised for the calling function to determine what to do
             # between timeouts (e.g.: check signals, etc)
             raise socket.timeout(&#34;timed out&#34;)  # type: ignore
 
         # We should always only have one active socket on which we receive data.
-        assert len(conns[0]) == 1
-        conn = conns[0][0]  # type: socket.socket
+        assert len(conns) == 1
+        conn = conns[0]  # type: socket.socket
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
             (byte, addr) = conn.recvfrom(self.__options.bufsize)
@@ -1122,9 +1130,9 @@ class Sock(object):
 
         # [1/4] Create socket
         succ = 0
-        for af in self.__families:
+        for key in self.__families:
             try:
-                conn[af] = {&#34;conn&#34;: self.__create_socket(af)}
+                conn[key] = {&#34;conn&#34;: self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -1194,9 +1202,9 @@ class Sock(object):
 
         # [1/4] Create socket
         succ = 0
-        for af in self.__families:
+        for key in self.__families:
             try:
-                conn[af] = {&#34;sock&#34;: self.__create_socket(af)}
+                conn[key] = {&#34;sock&#34;: self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -1503,7 +1511,7 @@ class Sock(object):
         return addr
 
     def __create_socket(self, family):
-        # type: (int) -&gt; socket.socket
+        # type: (socket.AddressFamily) -&gt; socket.socket
         &#34;&#34;&#34;Create TCP or UDP socket.
 
         Args:
@@ -1517,13 +1525,13 @@ class Sock(object):
         &#34;&#34;&#34;
         try:
             if self.__options.udp:
-                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.AF_HUMAN[family])
+                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.AF_HUMAN[int(family)])
                 sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.AF_HUMAN[family])
+                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.AF_HUMAN[int(family)])
                 sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Failed to create {} socket: {}&#34;.format(self.AF_HUMAN[family], error)
+            msg = &#34;Failed to create {} socket: {}&#34;.format(self.AF_HUMAN[int(family)], error)
             self.__log.error(msg)
             raise socket.error(msg)
 
@@ -3051,6 +3059,18 @@ def _args_check_forwards(value):
     return value
 
 
+def _args_check_local_forward(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check forward argument (-L/-R) for correct pattern.&#34;&#34;&#34;
+    match = re.search(r&#34;^(.+:)?([0-9]+)$&#34;, value)
+    if match is None or len(match.groups()) != 2:
+        raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;[addr:]port&#39; format.&#34; % value)
+    _args_check_port(match.group(2))
+    if match.group(1) is None:
+        return &#34;:&#34; + match.group(2)
+    return value
+
+
 def _args_check_robin_ports(value):
     # type: (str) -&gt; List[int]
     &#34;&#34;&#34;Check round-robin argument for comma separated string or range.&#34;&#34;&#34;
@@ -3223,7 +3243,7 @@ def get_args():
         usage=&#34;&#34;&#34;%(prog)s [-Cnuv] [-e cmd] hostname port
        %(prog)s [-Cnuv] [-e cmd] -l [hostname] port
        %(prog)s [-Cnuv] -z hostname port
-       %(prog)s [-Cnuv] -L addr:port hostname port
+       %(prog)s [-Cnuv] -L [addr:]port hostname port
        %(prog)s [-Cnuv] -R addr:port hostname port
        %(prog)s -V, --version
        %(prog)s -h, --help
@@ -3281,16 +3301,16 @@ Used for port scanning.
     mode.add_argument(
         &#34;-L&#34;,
         &#34;--local&#34;,
-        metavar=&#34;addr:port&#34;,
+        metavar=&#34;[addr:]port&#34;,
         default=False,
-        type=_args_check_forwards,
+        type=_args_check_local_forward,
         help=&#34;&#34;&#34;[Local forward mode]:
 This mode will start a server and a client internally.
 The internal server will listen locally on specified
-hostname/port (positional arguments). Same as with -l.
+addr/port (given by --local [addr:]port).
 The server will then forward traffic to the internal
 client which connects to another server specified by
-address given via -L/--local addr:port.
+hostname/port given via positional arguments.
 (I.e.: proxies a remote service to a local address)
 
 &#34;&#34;&#34;,
@@ -3700,7 +3720,7 @@ accidentally by other input.
 
     # Connect mode and Zero-I/O mode require hostname and port to be set
     connect_mode = not (args.listen or args.zero or args.local or args.remote)
-    if (connect_mode or args.zero) and not args.hostname:
+    if (connect_mode or args.zero or args.local) and not args.hostname:
         parser.print_usage()
         print(
             &#34;%s: error: the following arguments are required: hostname&#34; % (APPNAME),
@@ -3810,10 +3830,12 @@ def main():
     # Run local port-forward
     # -&gt; listen locally and forward traffic to remote (connect)
     if args.local:
-        # TODO: Make the listen address optional!
         srv_opts.keep_open = True
+        match = re.search(r&#34;(.+:)?([0-9]+)&#34;, args.local)
         lhost = args.local.split(&#34;:&#34;)[0]
         lport = int(args.local.split(&#34;:&#34;)[1])
+        if not lhost:
+            lhost = None
         # Create listen and client instances
         net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
@@ -3976,7 +3998,7 @@ if __name__ == &#34;__main__&#34;:
         usage=&#34;&#34;&#34;%(prog)s [-Cnuv] [-e cmd] hostname port
        %(prog)s [-Cnuv] [-e cmd] -l [hostname] port
        %(prog)s [-Cnuv] -z hostname port
-       %(prog)s [-Cnuv] -L addr:port hostname port
+       %(prog)s [-Cnuv] -L [addr:]port hostname port
        %(prog)s [-Cnuv] -R addr:port hostname port
        %(prog)s -V, --version
        %(prog)s -h, --help
@@ -4034,16 +4056,16 @@ Used for port scanning.
     mode.add_argument(
         &#34;-L&#34;,
         &#34;--local&#34;,
-        metavar=&#34;addr:port&#34;,
+        metavar=&#34;[addr:]port&#34;,
         default=False,
-        type=_args_check_forwards,
+        type=_args_check_local_forward,
         help=&#34;&#34;&#34;[Local forward mode]:
 This mode will start a server and a client internally.
 The internal server will listen locally on specified
-hostname/port (positional arguments). Same as with -l.
+addr/port (given by --local [addr:]port).
 The server will then forward traffic to the internal
 client which connects to another server specified by
-address given via -L/--local addr:port.
+hostname/port given via positional arguments.
 (I.e.: proxies a remote service to a local address)
 
 &#34;&#34;&#34;,
@@ -4453,7 +4475,7 @@ accidentally by other input.
 
     # Connect mode and Zero-I/O mode require hostname and port to be set
     connect_mode = not (args.listen or args.zero or args.local or args.remote)
-    if (connect_mode or args.zero) and not args.hostname:
+    if (connect_mode or args.zero or args.local) and not args.hostname:
         parser.print_usage()
         print(
             &#34;%s: error: the following arguments are required: hostname&#34; % (APPNAME),
@@ -4578,10 +4600,12 @@ accidentally by other input.
     # Run local port-forward
     # -&gt; listen locally and forward traffic to remote (connect)
     if args.local:
-        # TODO: Make the listen address optional!
         srv_opts.keep_open = True
+        match = re.search(r&#34;(.+:)?([0-9]+)&#34;, args.local)
         lhost = args.local.split(&#34;:&#34;)[0]
         lport = int(args.local.split(&#34;:&#34;)[1])
+        if not lhost:
+            lhost = None
         # Create listen and client instances
         net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
@@ -8161,9 +8185,8 @@ def store(self):
 
     # Human readable address families
     AF_HUMAN = {
-        1: &#34;Unix&#34;,
-        2: &#34;IPv4&#34;,
-        10: &#34;IPv6&#34;,
+        int(socket.AF_INET): &#34;IPv4&#34;,
+        int(socket.AF_INET6): &#34;IPv6&#34;,
     }
     # Human readable socket types
     ST_HUMAN = {
@@ -8190,11 +8213,18 @@ def store(self):
 
         # Set families to listen on or connect to
         if self.__options.ipv6:
-            self.__families = [int(socket.AF_INET6)]
+            self.__families = {
+                int(socket.AF_INET6): socket.AF_INET6,
+            }
         elif self.__options.ipv4:
-            self.__families = [int(socket.AF_INET)]
+            self.__families = {
+                int(socket.AF_INET): socket.AF_INET,
+            }
         else:
-            self.__families = [int(socket.AF_INET6), int(socket.AF_INET)]
+            self.__families = {
+                int(socket.AF_INET6): socket.AF_INET6,
+                int(socket.AF_INET): socket.AF_INET,
+            }
 
         # The connection dictionary.
         # A dictionary is necessary, as we can have multiple entries for
@@ -8330,20 +8360,22 @@ def store(self):
                 [],
                 [],
                 self.__options.recv_timeout,
-            )
+            )[
+                0
+            ]  # type: List[socket.socket]
         # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
         except (ValueError, AttributeError):
             msg = &#34;Connection was closed by self.&#34;
             self.__log.warning(msg)
             raise AttributeError(msg)
-        if not conns[0]:
+        if not conns:
             # This is raised for the calling function to determine what to do
             # between timeouts (e.g.: check signals, etc)
             raise socket.timeout(&#34;timed out&#34;)  # type: ignore
 
         # We should always only have one active socket on which we receive data.
-        assert len(conns[0]) == 1
-        conn = conns[0][0]  # type: socket.socket
+        assert len(conns) == 1
+        conn = conns[0]  # type: socket.socket
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
             (byte, addr) = conn.recvfrom(self.__options.bufsize)
@@ -8433,9 +8465,9 @@ def store(self):
 
         # [1/4] Create socket
         succ = 0
-        for af in self.__families:
+        for key in self.__families:
             try:
-                conn[af] = {&#34;conn&#34;: self.__create_socket(af)}
+                conn[key] = {&#34;conn&#34;: self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -8505,9 +8537,9 @@ def store(self):
 
         # [1/4] Create socket
         succ = 0
-        for af in self.__families:
+        for key in self.__families:
             try:
-                conn[af] = {&#34;sock&#34;: self.__create_socket(af)}
+                conn[key] = {&#34;sock&#34;: self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -8814,7 +8846,7 @@ def store(self):
         return addr
 
     def __create_socket(self, family):
-        # type: (int) -&gt; socket.socket
+        # type: (socket.AddressFamily) -&gt; socket.socket
         &#34;&#34;&#34;Create TCP or UDP socket.
 
         Args:
@@ -8828,13 +8860,13 @@ def store(self):
         &#34;&#34;&#34;
         try:
             if self.__options.udp:
-                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.AF_HUMAN[family])
+                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.AF_HUMAN[int(family)])
                 sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.AF_HUMAN[family])
+                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.AF_HUMAN[int(family)])
                 sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Failed to create {} socket: {}&#34;.format(self.AF_HUMAN[family], error)
+            msg = &#34;Failed to create {} socket: {}&#34;.format(self.AF_HUMAN[int(family)], error)
             self.__log.error(msg)
             raise socket.error(msg)
 
@@ -9147,20 +9179,22 @@ def store(self):
             [],
             [],
             self.__options.recv_timeout,
-        )
+        )[
+            0
+        ]  # type: List[socket.socket]
     # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
     except (ValueError, AttributeError):
         msg = &#34;Connection was closed by self.&#34;
         self.__log.warning(msg)
         raise AttributeError(msg)
-    if not conns[0]:
+    if not conns:
         # This is raised for the calling function to determine what to do
         # between timeouts (e.g.: check signals, etc)
         raise socket.timeout(&#34;timed out&#34;)  # type: ignore
 
     # We should always only have one active socket on which we receive data.
-    assert len(conns[0]) == 1
-    conn = conns[0][0]  # type: socket.socket
+    assert len(conns) == 1
+    conn = conns[0]  # type: socket.socket
     try:
         # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
         (byte, addr) = conn.recvfrom(self.__options.bufsize)
@@ -9269,9 +9303,9 @@ def store(self):
 
     # [1/4] Create socket
     succ = 0
-    for af in self.__families:
+    for key in self.__families:
         try:
-            conn[af] = {&#34;conn&#34;: self.__create_socket(af)}
+            conn[key] = {&#34;conn&#34;: self.__create_socket(self.__families[key])}
             succ += 1
         except socket.error:
             pass
@@ -9363,9 +9397,9 @@ def store(self):
 
     # [1/4] Create socket
     succ = 0
-    for af in self.__families:
+    for key in self.__families:
         try:
-            conn[af] = {&#34;sock&#34;: self.__create_socket(af)}
+            conn[key] = {&#34;sock&#34;: self.__create_socket(self.__families[key])}
             succ += 1
         except socket.error:
             pass

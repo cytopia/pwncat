@@ -7,7 +7,7 @@ usage: pwncat [\-Cnuv] [\-e cmd] hostname port
 .IP
 pwncat [\-Cnuv] [\-e cmd] \fB\-l\fR [hostname] port
 pwncat [\-Cnuv] \fB\-z\fR hostname port
-pwncat [\-Cnuv] \fB\-L\fR addr:port hostname port
+pwncat [\-Cnuv] \fB\-L\fR [addr:]port hostname port
 pwncat [\-Cnuv] \fB\-R\fR addr:port hostname port
 pwncat \fB\-V\fR, \fB\-\-version\fR
 pwncat \fB\-h\fR, \fB\-\-help\fR
@@ -41,14 +41,14 @@ quit. See \fB\-k\fR/\-\-keep\-open to change this behaviour.
 Connect to a remote endpoint and report status only.
 Used for port scanning.
 .TP
-\fB\-L\fR addr:port, \fB\-\-local\fR addr:port
+\fB\-L\fR [addr:]port, \fB\-\-local\fR [addr:]port
 [Local forward mode]:
 This mode will start a server and a client internally.
 The internal server will listen locally on specified
-hostname/port (positional arguments). Same as with \fB\-l\fR.
+addr/port (given by \fB\-\-local\fR [addr:]port).
 The server will then forward traffic to the internal
 client which connects to another server specified by
-address given via \fB\-L\fR/\-\-local addr:port.
+hostname/port given via positional arguments.
 (I.e.: proxies a remote service to a local address)
 .TP
 \fB\-R\fR addr:port, \fB\-\-remote\fR addr:port

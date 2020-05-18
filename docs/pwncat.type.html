@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">5.71% imprecise</th>
-<th class="summary summary-lines">3924 LOC</th>
+<th class="summary summary-precision">5.68% imprecise</th>
+<th class="summary summary-lines">3946 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">5.71% imprecise</td>
-<td class="summary summary-lines">3924 LOC</td>
+<td class="summary summary-precision">5.68% imprecise</td>
+<td class="summary summary-lines">3946 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -3959,6 +3959,28 @@
 <span id="L3922" class="lineno"><a class="lineno" href="#L3922">3922</a></span>
 <span id="L3923" class="lineno"><a class="lineno" href="#L3923">3923</a></span>
 <span id="L3924" class="lineno"><a class="lineno" href="#L3924">3924</a></span>
+<span id="L3925" class="lineno"><a class="lineno" href="#L3925">3925</a></span>
+<span id="L3926" class="lineno"><a class="lineno" href="#L3926">3926</a></span>
+<span id="L3927" class="lineno"><a class="lineno" href="#L3927">3927</a></span>
+<span id="L3928" class="lineno"><a class="lineno" href="#L3928">3928</a></span>
+<span id="L3929" class="lineno"><a class="lineno" href="#L3929">3929</a></span>
+<span id="L3930" class="lineno"><a class="lineno" href="#L3930">3930</a></span>
+<span id="L3931" class="lineno"><a class="lineno" href="#L3931">3931</a></span>
+<span id="L3932" class="lineno"><a class="lineno" href="#L3932">3932</a></span>
+<span id="L3933" class="lineno"><a class="lineno" href="#L3933">3933</a></span>
+<span id="L3934" class="lineno"><a class="lineno" href="#L3934">3934</a></span>
+<span id="L3935" class="lineno"><a class="lineno" href="#L3935">3935</a></span>
+<span id="L3936" class="lineno"><a class="lineno" href="#L3936">3936</a></span>
+<span id="L3937" class="lineno"><a class="lineno" href="#L3937">3937</a></span>
+<span id="L3938" class="lineno"><a class="lineno" href="#L3938">3938</a></span>
+<span id="L3939" class="lineno"><a class="lineno" href="#L3939">3939</a></span>
+<span id="L3940" class="lineno"><a class="lineno" href="#L3940">3940</a></span>
+<span id="L3941" class="lineno"><a class="lineno" href="#L3941">3941</a></span>
+<span id="L3942" class="lineno"><a class="lineno" href="#L3942">3942</a></span>
+<span id="L3943" class="lineno"><a class="lineno" href="#L3943">3943</a></span>
+<span id="L3944" class="lineno"><a class="lineno" href="#L3944">3944</a></span>
+<span id="L3945" class="lineno"><a class="lineno" href="#L3945">3945</a></span>
+<span id="L3946" class="lineno"><a class="lineno" href="#L3946">3946</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -4063,7 +4085,7 @@ Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-precise" title="No Anys on this line!">    SockActive = TypedDict(</span>
 <span class="line-empty" title="No Anys on this line!">        "SockActive",</span>
-<span class="line-empty" title="No Anys on this line!">        {"af": int, "conn": socket.socket, "remote_addr": str, "remote_port": int,},</span>
+<span class="line-empty" title="No Anys on this line!">        {"af": int, "conn": socket.socket, "remote_addr": str, "remote_port": int},</span>
 <span class="line-empty" title="No Anys on this line!">        total=False,</span>
 <span class="line-empty" title="No Anys on this line!">    )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -4821,9 +4843,8 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # Human readable address families</span>
 <span class="line-precise" title="No Anys on this line!">    AF_HUMAN = {</span>
-<span class="line-precise" title="No Anys on this line!">        1: "Unix",</span>
-<span class="line-precise" title="No Anys on this line!">        2: "IPv4",</span>
-<span class="line-precise" title="No Anys on this line!">        10: "IPv6",</span>
+<span class="line-precise" title="No Anys on this line!">        int(socket.AF_INET): "IPv4",</span>
+<span class="line-precise" title="No Anys on this line!">        int(socket.AF_INET6): "IPv6",</span>
 <span class="line-empty" title="No Anys on this line!">    }</span>
 <span class="line-empty" title="No Anys on this line!">    # Human readable socket types</span>
 <span class="line-precise" title="No Anys on this line!">    ST_HUMAN = {</span>
@@ -4850,11 +4871,18 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Set families to listen on or connect to</span>
 <span class="line-precise" title="No Anys on this line!">        if self.__options.ipv6:</span>
-<span class="line-precise" title="No Anys on this line!">            self.__families = [int(socket.AF_INET6)]</span>
+<span class="line-precise" title="No Anys on this line!">            self.__families = {</span>
+<span class="line-precise" title="No Anys on this line!">                int(socket.AF_INET6): socket.AF_INET6,</span>
+<span class="line-empty" title="No Anys on this line!">            }</span>
 <span class="line-precise" title="No Anys on this line!">        elif self.__options.ipv4:</span>
-<span class="line-precise" title="No Anys on this line!">            self.__families = [int(socket.AF_INET)]</span>
+<span class="line-precise" title="No Anys on this line!">            self.__families = {</span>
+<span class="line-precise" title="No Anys on this line!">                int(socket.AF_INET): socket.AF_INET,</span>
+<span class="line-empty" title="No Anys on this line!">            }</span>
 <span class="line-empty" title="No Anys on this line!">        else:</span>
-<span class="line-precise" title="No Anys on this line!">            self.__families = [int(socket.AF_INET6), int(socket.AF_INET)]</span>
+<span class="line-precise" title="No Anys on this line!">            self.__families = {</span>
+<span class="line-precise" title="No Anys on this line!">                int(socket.AF_INET6): socket.AF_INET6,</span>
+<span class="line-precise" title="No Anys on this line!">                int(socket.AF_INET): socket.AF_INET,</span>
+<span class="line-empty" title="No Anys on this line!">            }</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # The connection dictionary.</span>
 <span class="line-empty" title="No Anys on this line!">        # A dictionary is necessary, as we can have multiple entries for</span>
@@ -4993,29 +5021,28 @@ Explicit (x4)">                self.__log.error("Socket OS Error: %s", error)</s
 <span class="line-empty" title="No Anys on this line!">        # of them we will remove after succesfull connect.</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x12)">            conns = select.select(</span>
+Explicit (x10)">            conns = select.select(</span>
 <span class="line-precise" title="No Anys on this line!">                [self.__conn[af]["conn"] for af in self.__conn if "conn" in self.__conn[af]],</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
 <span class="line-precise" title="No Anys on this line!">                self.__options.recv_timeout,</span>
-<span class="line-empty" title="No Anys on this line!">            )</span>
+<span class="line-empty" title="No Anys on this line!">            )[</span>
+<span class="line-precise" title="No Anys on this line!">                0</span>
+<span class="line-empty" title="No Anys on this line!">            ]  # type: List[socket.socket]</span>
 <span class="line-empty" title="No Anys on this line!">        # E.g.: ValueError: file descriptor cannot be a negative integer (-1)</span>
 <span class="line-precise" title="No Anys on this line!">        except (ValueError, AttributeError):</span>
 <span class="line-precise" title="No Anys on this line!">            msg = "Connection was closed by self."</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.warning(msg)</span>
 <span class="line-precise" title="No Anys on this line!">            raise AttributeError(msg)</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x4)">        if not conns[0]:</span>
+<span class="line-precise" title="No Anys on this line!">        if not conns:</span>
 <span class="line-empty" title="No Anys on this line!">            # This is raised for the calling function to determine what to do</span>
 <span class="line-empty" title="No Anys on this line!">            # between timeouts (e.g.: check signals, etc)</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.timeout("timed out")  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # We should always only have one active socket on which we receive data.</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x4)">        assert len(conns[0]) == 1</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x5)">        conn = conns[0][0]  # type: socket.socket</span>
+<span class="line-precise" title="No Anys on this line!">        assert len(conns) == 1</span>
+<span class="line-precise" title="No Anys on this line!">        conn = conns[0]  # type: socket.socket</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-empty" title="No Anys on this line!">            # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html</span>
 <span class="line-precise" title="No Anys on this line!">            (byte, addr) = conn.recvfrom(self.__options.bufsize)</span>
@@ -5112,9 +5139,9 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [1/4] Create socket</span>
 <span class="line-precise" title="No Anys on this line!">        succ = 0</span>
-<span class="line-precise" title="No Anys on this line!">        for af in self.__families:</span>
+<span class="line-precise" title="No Anys on this line!">        for key in self.__families:</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
-<span class="line-precise" title="No Anys on this line!">                conn[af] = {"conn": self.__create_socket(af)}</span>
+<span class="line-precise" title="No Anys on this line!">                conn[key] = {"conn": self.__create_socket(self.__families[key])}</span>
 <span class="line-precise" title="No Anys on this line!">                succ += 1</span>
 <span class="line-precise" title="No Anys on this line!">            except socket.error:</span>
 <span class="line-precise" title="No Anys on this line!">                pass</span>
@@ -5184,9 +5211,9 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [1/4] Create socket</span>
 <span class="line-precise" title="No Anys on this line!">        succ = 0</span>
-<span class="line-precise" title="No Anys on this line!">        for af in self.__families:</span>
+<span class="line-precise" title="No Anys on this line!">        for key in self.__families:</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
-<span class="line-precise" title="No Anys on this line!">                conn[af] = {"sock": self.__create_socket(af)}</span>
+<span class="line-precise" title="No Anys on this line!">                conn[key] = {"sock": self.__create_socket(self.__families[key])}</span>
 <span class="line-precise" title="No Anys on this line!">                succ += 1</span>
 <span class="line-precise" title="No Anys on this line!">            except socket.error:</span>
 <span class="line-precise" title="No Anys on this line!">                pass</span>
@@ -5504,7 +5531,7 @@ Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>
 <span class="line-precise" title="No Anys on this line!">        return addr</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def __create_socket(self, family):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (int) -&gt; socket.socket</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (socket.AddressFamily) -&gt; socket.socket</span>
 <span class="line-empty" title="No Anys on this line!">        """Create TCP or UDP socket.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
@@ -5519,14 +5546,14 @@ Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__options.udp:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                self.__log.debug("Creating %s UDP socket", self.AF_HUMAN[family])</span>
+Explicit (x4)">                self.__log.debug("Creating %s UDP socket", self.AF_HUMAN[int(family)])</span>
 <span class="line-precise" title="No Anys on this line!">                sock = socket.socket(family, socket.SOCK_DGRAM)</span>
 <span class="line-empty" title="No Anys on this line!">            else:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                self.__log.debug("Creating %s TCP socket", self.AF_HUMAN[family])</span>
+Explicit (x4)">                self.__log.debug("Creating %s TCP socket", self.AF_HUMAN[int(family)])</span>
 <span class="line-precise" title="No Anys on this line!">                sock = socket.socket(family, socket.SOCK_STREAM)</span>
 <span class="line-precise" title="No Anys on this line!">        except socket.error as error:</span>
-<span class="line-precise" title="No Anys on this line!">            msg = "Failed to create {} socket: {}".format(self.AF_HUMAN[family], error)</span>
+<span class="line-precise" title="No Anys on this line!">            msg = "Failed to create {} socket: {}".format(self.AF_HUMAN[int(family)], error)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.error(msg)</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.error(msg)</span>
@@ -7140,6 +7167,18 @@ Explicit (x2)">    fhandle = open(value, mode="r")</span>
 <span class="line-precise" title="No Anys on this line!">    return value</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">def _args_check_local_forward(value):</span>
+<span class="line-empty" title="No Anys on this line!">    # type: (str) -&gt; str</span>
+<span class="line-empty" title="No Anys on this line!">    """Check forward argument (-L/-R) for correct pattern."""</span>
+<span class="line-precise" title="No Anys on this line!">    match = re.search(r"^(.+:)?([0-9]+)$", value)</span>
+<span class="line-precise" title="No Anys on this line!">    if match is None or len(match.groups()) != 2:</span>
+<span class="line-precise" title="No Anys on this line!">        raise argparse.ArgumentTypeError("%s is not a valid '[addr:]port' format." % value)</span>
+<span class="line-precise" title="No Anys on this line!">    _args_check_port(match.group(2))</span>
+<span class="line-precise" title="No Anys on this line!">    if match.group(1) is None:</span>
+<span class="line-precise" title="No Anys on this line!">        return ":" + match.group(2)</span>
+<span class="line-precise" title="No Anys on this line!">    return value</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">def _args_check_robin_ports(value):</span>
 <span class="line-empty" title="No Anys on this line!">    # type: (str) -&gt; List[int]</span>
 <span class="line-empty" title="No Anys on this line!">    """Check round-robin argument for comma separated string or range."""</span>
@@ -7328,7 +7367,7 @@ Explicit (x2)">    if args.ping_init is not False and not args.udp:</span>
 <span class="line-precise" title="No Anys on this line!">        usage="""%(prog)s [-Cnuv] [-e cmd] hostname port</span>
 <span class="line-empty" title="No Anys on this line!">       %(prog)s [-Cnuv] [-e cmd] -l [hostname] port</span>
 <span class="line-empty" title="No Anys on this line!">       %(prog)s [-Cnuv] -z hostname port</span>
-<span class="line-empty" title="No Anys on this line!">       %(prog)s [-Cnuv] -L addr:port hostname port</span>
+<span class="line-empty" title="No Anys on this line!">       %(prog)s [-Cnuv] -L [addr:]port hostname port</span>
 <span class="line-empty" title="No Anys on this line!">       %(prog)s [-Cnuv] -R addr:port hostname port</span>
 <span class="line-empty" title="No Anys on this line!">       %(prog)s -V, --version</span>
 <span class="line-empty" title="No Anys on this line!">       %(prog)s -h, --help</span>
@@ -7397,16 +7436,16 @@ Explicit (x3)">    mode.add_argument(</span>
 Explicit (x3)">    mode.add_argument(</span>
 <span class="line-precise" title="No Anys on this line!">        "-L",</span>
 <span class="line-precise" title="No Anys on this line!">        "--local",</span>
-<span class="line-precise" title="No Anys on this line!">        metavar="addr:port",</span>
+<span class="line-precise" title="No Anys on this line!">        metavar="[addr:]port",</span>
 <span class="line-precise" title="No Anys on this line!">        default=False,</span>
-<span class="line-precise" title="No Anys on this line!">        type=_args_check_forwards,</span>
+<span class="line-precise" title="No Anys on this line!">        type=_args_check_local_forward,</span>
 <span class="line-precise" title="No Anys on this line!">        help="""[Local forward mode]:</span>
 <span class="line-empty" title="No Anys on this line!">This mode will start a server and a client internally.</span>
 <span class="line-empty" title="No Anys on this line!">The internal server will listen locally on specified</span>
-<span class="line-empty" title="No Anys on this line!">hostname/port (positional arguments). Same as with -l.</span>
+<span class="line-empty" title="No Anys on this line!">addr/port (given by --local [addr:]port).</span>
 <span class="line-empty" title="No Anys on this line!">The server will then forward traffic to the internal</span>
 <span class="line-empty" title="No Anys on this line!">client which connects to another server specified by</span>
-<span class="line-empty" title="No Anys on this line!">address given via -L/--local addr:port.</span>
+<span class="line-empty" title="No Anys on this line!">hostname/port given via positional arguments.</span>
 <span class="line-empty" title="No Anys on this line!">(I.e.: proxies a remote service to a local address)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">""",</span>
@@ -7849,7 +7888,7 @@ Explicit (x3)">    misc.add_argument(</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x7)">    connect_mode = not (args.listen or args.zero or args.local or args.remote)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">    if (connect_mode or args.zero) and not args.hostname:</span>
+Explicit (x6)">    if (connect_mode or args.zero or args.local) and not args.hostname:</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
 <span class="line-precise" title="No Anys on this line!">            "%s: error: the following arguments are required: hostname" % (APPNAME),</span>
@@ -7983,12 +8022,17 @@ Explicit (x1)">        mod = IOCommand(ssig, DsIOCommand(enc, args.cmd, POPEN_BU
 <span class="line-empty" title="No Anys on this line!">    # -&gt; listen locally and forward traffic to remote (connect)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">    if args.local:</span>
-<span class="line-empty" title="No Anys on this line!">        # TODO: Make the listen address optional!</span>
 <span class="line-precise" title="No Anys on this line!">        srv_opts.keep_open = True</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x3)">        match = re.search(r"(.+:)?([0-9]+)", args.local)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x5)">        lhost = args.local.split(":")[0]</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        lport = int(args.local.split(":")[1])</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">        if not lhost:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">            lhost = None</span>
 <span class="line-empty" title="No Anys on this line!">        # Create listen and client instances</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        net_srv = IONetwork(ssig, enc, lhost, [lport], "server", srv_opts, cli_opts, sock_opts)</span>
