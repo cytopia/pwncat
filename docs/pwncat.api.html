@@ -107,25 +107,29 @@ ABC = ABCMeta(&#34;ABC&#34;, (object,), {&#34;__slots__&#34;: ()})
 if os.environ.get(&#34;MYPY_CHECK&#34;, False):
     from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union
     from types import CodeType
-    from typing_extensions import TypedDict
+    from typing_extensions import TypedDict  # pylint: disable=import-error
+
     # The following is only to create virtual types for mypy in order to find
     # issues via static type linting.
-    SockConn = TypedDict(&#39;SockConn&#39;, {
-        &#39;sock&#39;: socket.socket,
-        &#39;conn&#39;: socket.socket,
-        &#39;local_host&#39;: Optional[str],
-        &#39;local_addr&#39;: str,
-        &#39;local_port&#39;: int,
-        &#39;remote_host&#39;: str,
-        &#39;remote_addr&#39;: str,
-        &#39;remote_port&#39;: int,
-    }, total=False)
-    SockActive = TypedDict(&#39;SockActive&#39;, {
-        &#39;af&#39;: int,
-        &#39;conn&#39;: socket.socket,
-        &#39;remote_addr&#39;: str,
-        &#39;remote_port&#39;: int,
-    }, total=False)
+    SockConn = TypedDict(
+        &#34;SockConn&#34;,
+        {
+            &#34;sock&#34;: socket.socket,
+            &#34;conn&#34;: socket.socket,
+            &#34;local_host&#34;: Optional[str],
+            &#34;local_addr&#34;: str,
+            &#34;local_port&#34;: int,
+            &#34;remote_host&#34;: str,
+            &#34;remote_addr&#34;: str,
+            &#34;remote_port&#34;: int,
+        },
+        total=False,
+    )
+    SockActive = TypedDict(
+        &#34;SockActive&#34;,
+        {&#34;af&#34;: int, &#34;conn&#34;: socket.socket, &#34;remote_addr&#34;: str, &#34;remote_port&#34;: int,},
+        total=False,
+    )
 
 # TODO: Find windows import
 if os.name != &#34;nt&#34;:
@@ -1014,7 +1018,7 @@ class Sock(object):
                 [self.__conn[af][&#34;conn&#34;] for af in self.__conn if &#34;conn&#34; in self.__conn[af]],
                 [],
                 [],
-                self.__options.recv_timeout
+                self.__options.recv_timeout,
             )
         # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
         except (ValueError, AttributeError):
@@ -1241,57 +1245,50 @@ class Sock(object):
             return True
 
         # [TCP 4/4] Requires listen and accept
-        else:
-            # (1/4) Listen
-            remove = []
+        # (1/3) Listen
+        remove = []
+        for af in conn:
+            if self.__listen(conn[af][&#34;sock&#34;]):
+                self.__log.info(
+                    &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
+                    conn[af][&#34;local_addr&#34;],
+                    conn[af][&#34;local_port&#34;],
+                    af,
+                    self.AF_HUMAN[af],
+                )
+            else:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # (2/3) Accept
+        try:
+            c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
+            conn[c.family][&#34;conn&#34;] = c
+            conn[c.family][&#34;remote_addr&#34;] = client[0]
+            conn[c.family][&#34;remote_port&#34;] = client[1]
+        except socket.error:
+            # On error, remove all bind sockets
             for af in conn:
-                if self.__listen(conn[af][&#34;sock&#34;]):
-                    self.__log.info(
-                        &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
-                        conn[af][&#34;local_addr&#34;],
-                        conn[af][&#34;local_port&#34;],
-                        af,
-                        self.AF_HUMAN[af],
-                    )
-                else:
-                    remove.append(af)
-            for af in remove:
                 self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
                 del conn[af]
-            if not conn:
-                return False
+            return False
 
-            # (2/4) Accept
-            remove = []
-            try:
-                c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
-                conn[c.family][&#34;conn&#34;] = c
-                conn[c.family][&#34;remote_addr&#34;] = client[0]
-                conn[c.family][&#34;remote_port&#34;] = client[1]
-            except socket.error:
-                remove = [af for af in conn]
-                for af in remove:
-                    self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
-                    del conn[af]
-                return False
-
-            # (3/4) Remove all un-accepted items
-            for af in remove:
-                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
-                del conn[af]
-
-            # (4/4) Store connections
-            for af in conn:
-                if &#34;conn&#34; in conn[af]:
-                    self.__active = {
-                        &#34;af&#34;: af,
-                        &#34;conn&#34;: conn[af][&#34;conn&#34;],
-                        &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
-                        &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
-                    }
-                    self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
-            self.__conn = conn
-            return True
+        # (3/3) Store connections
+        for af in conn:
+            if &#34;conn&#34; in conn[af]:
+                self.__active = {
+                    &#34;af&#34;: af,
+                    &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                    &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                    &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+                }
+                self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
+        self.__conn = conn
+        return True
 
     def re_accept_client(self):
         # type: () -&gt; bool
@@ -1632,10 +1629,10 @@ class Sock(object):
         &#34;&#34;&#34;
         self.__log.debug(&#34;Waiting for TCP client&#34;)
         while True:
-            readable, writable, errored = select.select(sockets, [], [], 0.01)
+            ssockets = select.select(sockets, [], [], 0.01)[0]  # type: List[socket.socket]
             if self.__ssig.has_stop():
                 raise socket.error(&#34;StopSignal requested&#34;)
-            for sock in readable:
+            for sock in ssockets:
                 try:
                     conn, addr = sock.accept()
                 except (socket.gaierror, socket.error) as error:
@@ -2004,7 +2001,7 @@ class IONetwork(IO):
                 self.ssig.raise_stop()
                 return
             # [3/3] Upstream is gone
-            except (EOFError, AttributeError, socket.error) as e:
+            except (EOFError, AttributeError, socket.error):
                 # Do we have a stop signal?
                 if self.ssig.has_stop():
                     return
@@ -7034,7 +7031,7 @@ def producer(self):
                 self.ssig.raise_stop()
                 return
             # [3/3] Upstream is gone
-            except (EOFError, AttributeError, socket.error) as e:
+            except (EOFError, AttributeError, socket.error):
                 # Do we have a stop signal?
                 if self.ssig.has_stop():
                     return
@@ -7251,7 +7248,7 @@ def producer(self):
             self.ssig.raise_stop()
             return
         # [3/3] Upstream is gone
-        except (EOFError, AttributeError, socket.error) as e:
+        except (EOFError, AttributeError, socket.error):
             # Do we have a stop signal?
             if self.ssig.has_stop():
                 return
@@ -8332,7 +8329,7 @@ def store(self):
                 [self.__conn[af][&#34;conn&#34;] for af in self.__conn if &#34;conn&#34; in self.__conn[af]],
                 [],
                 [],
-                self.__options.recv_timeout
+                self.__options.recv_timeout,
             )
         # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
         except (ValueError, AttributeError):
@@ -8559,57 +8556,50 @@ def store(self):
             return True
 
         # [TCP 4/4] Requires listen and accept
-        else:
-            # (1/4) Listen
-            remove = []
+        # (1/3) Listen
+        remove = []
+        for af in conn:
+            if self.__listen(conn[af][&#34;sock&#34;]):
+                self.__log.info(
+                    &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
+                    conn[af][&#34;local_addr&#34;],
+                    conn[af][&#34;local_port&#34;],
+                    af,
+                    self.AF_HUMAN[af],
+                )
+            else:
+                remove.append(af)
+        for af in remove:
+            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+            del conn[af]
+        if not conn:
+            return False
+
+        # (2/3) Accept
+        try:
+            c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
+            conn[c.family][&#34;conn&#34;] = c
+            conn[c.family][&#34;remote_addr&#34;] = client[0]
+            conn[c.family][&#34;remote_port&#34;] = client[1]
+        except socket.error:
+            # On error, remove all bind sockets
             for af in conn:
-                if self.__listen(conn[af][&#34;sock&#34;]):
-                    self.__log.info(
-                        &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
-                        conn[af][&#34;local_addr&#34;],
-                        conn[af][&#34;local_port&#34;],
-                        af,
-                        self.AF_HUMAN[af],
-                    )
-                else:
-                    remove.append(af)
-            for af in remove:
                 self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
                 del conn[af]
-            if not conn:
-                return False
+            return False
 
-            # (2/4) Accept
-            remove = []
-            try:
-                c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
-                conn[c.family][&#34;conn&#34;] = c
-                conn[c.family][&#34;remote_addr&#34;] = client[0]
-                conn[c.family][&#34;remote_port&#34;] = client[1]
-            except socket.error:
-                remove = [af for af in conn]
-                for af in remove:
-                    self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
-                    del conn[af]
-                return False
-
-            # (3/4) Remove all un-accepted items
-            for af in remove:
-                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
-                del conn[af]
-
-            # (4/4) Store connections
-            for af in conn:
-                if &#34;conn&#34; in conn[af]:
-                    self.__active = {
-                        &#34;af&#34;: af,
-                        &#34;conn&#34;: conn[af][&#34;conn&#34;],
-                        &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
-                        &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
-                    }
-                    self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
-            self.__conn = conn
-            return True
+        # (3/3) Store connections
+        for af in conn:
+            if &#34;conn&#34; in conn[af]:
+                self.__active = {
+                    &#34;af&#34;: af,
+                    &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                    &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                    &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+                }
+                self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
+        self.__conn = conn
+        return True
 
     def re_accept_client(self):
         # type: () -&gt; bool
@@ -8950,10 +8940,10 @@ def store(self):
         &#34;&#34;&#34;
         self.__log.debug(&#34;Waiting for TCP client&#34;)
         while True:
-            readable, writable, errored = select.select(sockets, [], [], 0.01)
+            ssockets = select.select(sockets, [], [], 0.01)[0]  # type: List[socket.socket]
             if self.__ssig.has_stop():
                 raise socket.error(&#34;StopSignal requested&#34;)
-            for sock in readable:
+            for sock in ssockets:
                 try:
                     conn, addr = sock.accept()
                 except (socket.gaierror, socket.error) as error:
@@ -9156,7 +9146,7 @@ def store(self):
             [self.__conn[af][&#34;conn&#34;] for af in self.__conn if &#34;conn&#34; in self.__conn[af]],
             [],
             [],
-            self.__options.recv_timeout
+            self.__options.recv_timeout,
         )
     # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
     except (ValueError, AttributeError):
@@ -9424,57 +9414,50 @@ def store(self):
         return True
 
     # [TCP 4/4] Requires listen and accept
-    else:
-        # (1/4) Listen
-        remove = []
+    # (1/3) Listen
+    remove = []
+    for af in conn:
+        if self.__listen(conn[af][&#34;sock&#34;]):
+            self.__log.info(
+                &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
+                conn[af][&#34;local_addr&#34;],
+                conn[af][&#34;local_port&#34;],
+                af,
+                self.AF_HUMAN[af],
+            )
+        else:
+            remove.append(af)
+    for af in remove:
+        self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
+        del conn[af]
+    if not conn:
+        return False
+
+    # (2/3) Accept
+    try:
+        c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
+        conn[c.family][&#34;conn&#34;] = c
+        conn[c.family][&#34;remote_addr&#34;] = client[0]
+        conn[c.family][&#34;remote_port&#34;] = client[1]
+    except socket.error:
+        # On error, remove all bind sockets
         for af in conn:
-            if self.__listen(conn[af][&#34;sock&#34;]):
-                self.__log.info(
-                    &#34;Listening on %s:%d (family %d/%s, TCP)&#34;,
-                    conn[af][&#34;local_addr&#34;],
-                    conn[af][&#34;local_port&#34;],
-                    af,
-                    self.AF_HUMAN[af],
-                )
-            else:
-                remove.append(af)
-        for af in remove:
             self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
             del conn[af]
-        if not conn:
-            return False
+        return False
 
-        # (2/4) Accept
-        remove = []
-        try:
-            c, client = self.__accept([conn[af][&#34;sock&#34;] for af in conn])
-            conn[c.family][&#34;conn&#34;] = c
-            conn[c.family][&#34;remote_addr&#34;] = client[0]
-            conn[c.family][&#34;remote_port&#34;] = client[1]
-        except socket.error:
-            remove = [af for af in conn]
-            for af in remove:
-                self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
-                del conn[af]
-            return False
-
-        # (3/4) Remove all un-accepted items
-        for af in remove:
-            self.__close(self.AF_HUMAN[af], conn[af][&#34;sock&#34;])
-            del conn[af]
-
-        # (4/4) Store connections
-        for af in conn:
-            if &#34;conn&#34; in conn[af]:
-                self.__active = {
-                    &#34;af&#34;: af,
-                    &#34;conn&#34;: conn[af][&#34;conn&#34;],
-                    &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
-                    &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
-                }
-                self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
-        self.__conn = conn
-        return True</code></pre>
+    # (3/3) Store connections
+    for af in conn:
+        if &#34;conn&#34; in conn[af]:
+            self.__active = {
+                &#34;af&#34;: af,
+                &#34;conn&#34;: conn[af][&#34;conn&#34;],
+                &#34;remote_addr&#34;: conn[af][&#34;remote_addr&#34;],
+                &#34;remote_port&#34;: conn[af][&#34;remote_port&#34;],
+            }
+            self.__print_socket_opts(conn[af][&#34;conn&#34;], &#34;conn-sock&#34;)
+    self.__conn = conn
+    return True</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Sock.send"><code class="name flex">
