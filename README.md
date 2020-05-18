@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.10%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.12%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -398,7 +398,8 @@ mode arguments:
                         target machine via the positional arguments.
 
 optional arguments:
-  -6                    Use IPv6 instead of IPv4.
+  -4                    Only Use IPv4 instead of both, IPv4 and IPv6.
+  -6                    Only Use IPv6 instead of both, IPv4 and IPv6.
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
                         line endings for input and outout accordingly. Specify

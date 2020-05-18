@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.19-alpha
+
+### Added
+- Feature: Dualstack IPv4 and IPv6 by default (use `-4` or `-6` to use either of them alone)
+
+
 ## Release 0.0.18-alpha
 
 ### Added
