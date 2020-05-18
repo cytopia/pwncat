@@ -975,7 +975,9 @@ class Sock(object):
             )
             self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
             try:
-                if self.__options.udp:
+                # Only UDP server has not made a connect() to the socket, all others
+                # are already connected and need to use send() instead of sendto()
+                if self.__udp_mode_server:
                     curr = self.__active[&#34;conn&#34;].sendto(
                         byte, (self.__active[&#34;remote_addr&#34;], self.__active[&#34;remote_port&#34;])
                     )
@@ -8332,7 +8334,9 @@ def store(self):
             )
             self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
             try:
-                if self.__options.udp:
+                # Only UDP server has not made a connect() to the socket, all others
+                # are already connected and need to use send() instead of sendto()
+                if self.__udp_mode_server:
                     curr = self.__active[&#34;conn&#34;].sendto(
                         byte, (self.__active[&#34;remote_addr&#34;], self.__active[&#34;remote_port&#34;])
                     )
@@ -9596,7 +9600,9 @@ def store(self):
         )
         self.__log.trace(&#34;Trying to send: %s&#34;, repr(byte))  # type: ignore
         try:
-            if self.__options.udp:
+            # Only UDP server has not made a connect() to the socket, all others
+            # are already connected and need to use send() instead of sendto()
+            if self.__udp_mode_server:
                 curr = self.__active[&#34;conn&#34;].sendto(
                     byte, (self.__active[&#34;remote_addr&#34;], self.__active[&#34;remote_port&#34;])
                 )

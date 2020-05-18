@@ -15,12 +15,12 @@
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
 <th class="summary summary-precision">5.62% imprecise</th>
-<th class="summary summary-lines">3965 LOC</th>
+<th class="summary summary-lines">3967 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
 <td class="summary summary-precision">5.62% imprecise</td>
-<td class="summary summary-lines">3965 LOC</td>
+<td class="summary summary-lines">3967 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -4000,6 +4000,8 @@
 <span id="L3963" class="lineno"><a class="lineno" href="#L3963">3963</a></span>
 <span id="L3964" class="lineno"><a class="lineno" href="#L3964">3964</a></span>
 <span id="L3965" class="lineno"><a class="lineno" href="#L3965">3965</a></span>
+<span id="L3966" class="lineno"><a class="lineno" href="#L3966">3966</a></span>
+<span id="L3967" class="lineno"><a class="lineno" href="#L3967">3967</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -4990,7 +4992,9 @@ Explicit (x4)">            self.__log.debug(</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.__log.trace("Trying to send: %s", repr(byte))  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
-<span class="line-precise" title="No Anys on this line!">                if self.__options.udp:</span>
+<span class="line-empty" title="No Anys on this line!">                # Only UDP server has not made a connect() to the socket, all others</span>
+<span class="line-empty" title="No Anys on this line!">                # are already connected and need to use send() instead of sendto()</span>
+<span class="line-precise" title="No Anys on this line!">                if self.__udp_mode_server:</span>
 <span class="line-precise" title="Any Types on this line: 
 Omitted Generics (x2)">                    curr = self.__active["conn"].sendto(</span>
 <span class="line-precise" title="No Anys on this line!">                        byte, (self.__active["remote_addr"], self.__active["remote_port"])</span>

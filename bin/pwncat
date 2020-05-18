@@ -948,7 +948,9 @@ class Sock(object):
             )
             self.__log.trace("Trying to send: %s", repr(byte))  # type: ignore
             try:
-                if self.__options.udp:
+                # Only UDP server has not made a connect() to the socket, all others
+                # are already connected and need to use send() instead of sendto()
+                if self.__udp_mode_server:
                     curr = self.__active["conn"].sendto(
                         byte, (self.__active["remote_addr"], self.__active["remote_port"])
                     )
