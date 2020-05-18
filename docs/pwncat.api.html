@@ -95,6 +95,7 @@ import base64
 import logging
 import os
 import re
+import select
 import socket
 import sys
 import threading
@@ -131,9 +132,6 @@ if os.environ.get(&#34;MYPY_CHECK&#34;, False):
         total=False,
     )
 
-# TODO: Find windows import
-if os.name != &#34;nt&#34;:
-    import select
 
 # -------------------------------------------------------------------------------------------------
 # GLOBALS
