@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">5.65% imprecise</th>
-<th class="summary summary-lines">3949 LOC</th>
+<th class="summary summary-precision">5.62% imprecise</th>
+<th class="summary summary-lines">3967 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">5.65% imprecise</td>
-<td class="summary summary-lines">3949 LOC</td>
+<td class="summary summary-precision">5.62% imprecise</td>
+<td class="summary summary-lines">3967 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -3984,6 +3984,24 @@
 <span id="L3947" class="lineno"><a class="lineno" href="#L3947">3947</a></span>
 <span id="L3948" class="lineno"><a class="lineno" href="#L3948">3948</a></span>
 <span id="L3949" class="lineno"><a class="lineno" href="#L3949">3949</a></span>
+<span id="L3950" class="lineno"><a class="lineno" href="#L3950">3950</a></span>
+<span id="L3951" class="lineno"><a class="lineno" href="#L3951">3951</a></span>
+<span id="L3952" class="lineno"><a class="lineno" href="#L3952">3952</a></span>
+<span id="L3953" class="lineno"><a class="lineno" href="#L3953">3953</a></span>
+<span id="L3954" class="lineno"><a class="lineno" href="#L3954">3954</a></span>
+<span id="L3955" class="lineno"><a class="lineno" href="#L3955">3955</a></span>
+<span id="L3956" class="lineno"><a class="lineno" href="#L3956">3956</a></span>
+<span id="L3957" class="lineno"><a class="lineno" href="#L3957">3957</a></span>
+<span id="L3958" class="lineno"><a class="lineno" href="#L3958">3958</a></span>
+<span id="L3959" class="lineno"><a class="lineno" href="#L3959">3959</a></span>
+<span id="L3960" class="lineno"><a class="lineno" href="#L3960">3960</a></span>
+<span id="L3961" class="lineno"><a class="lineno" href="#L3961">3961</a></span>
+<span id="L3962" class="lineno"><a class="lineno" href="#L3962">3962</a></span>
+<span id="L3963" class="lineno"><a class="lineno" href="#L3963">3963</a></span>
+<span id="L3964" class="lineno"><a class="lineno" href="#L3964">3964</a></span>
+<span id="L3965" class="lineno"><a class="lineno" href="#L3965">3965</a></span>
+<span id="L3966" class="lineno"><a class="lineno" href="#L3966">3966</a></span>
+<span id="L3967" class="lineno"><a class="lineno" href="#L3967">3967</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5050,14 +5068,14 @@ Explicit (x4)">            self.__log.warning(msg)</span>
 <span class="line-empty" title="No Anys on this line!">            # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html</span>
 <span class="line-precise" title="No Anys on this line!">            (byte, addr) = conn.recvfrom(self.__options.bufsize)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [1/4] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)</span>
+<span class="line-empty" title="No Anys on this line!">        # [1/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)</span>
 <span class="line-precise" title="No Anys on this line!">        except AttributeError:</span>
 <span class="line-precise" title="No Anys on this line!">            msg = "Connection was closed by self."</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.warning(msg)</span>
 <span class="line-precise" title="No Anys on this line!">            raise AttributeError(msg)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [2/4] Connection was forcibly closed</span>
+<span class="line-empty" title="No Anys on this line!">        # [2/5] Connection was forcibly closed</span>
 <span class="line-empty" title="No Anys on this line!">        # [Errno 107] Transport endpoint is not connected</span>
 <span class="line-empty" title="No Anys on this line!">        # [Errno 10054] An existing connection was forcibly closed by the remote host</span>
 <span class="line-empty" title="No Anys on this line!">        # [WinError 10054] An existing connection was forcibly closed by the remote host</span>
@@ -5066,7 +5084,16 @@ Explicit (x4)">            self.__log.warning(msg)</span>
 Explicit (x4)">            self.__log.warning("Connection error: %s", error)</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.error(error)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [UDP] Server mode</span>
+<span class="line-empty" title="No Anys on this line!">        # [3/5] Upstream (server or client) is gone.</span>
+<span class="line-empty" title="No Anys on this line!">        # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.</span>
+<span class="line-empty" title="No Anys on this line!">        # In UDP, there is no such thing as a peer disconnect, so zero means an empty datagram.</span>
+<span class="line-precise" title="No Anys on this line!">        if not byte:</span>
+<span class="line-precise" title="No Anys on this line!">            msg = "Upstream has closed the connection."</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">            self.__log.info(msg)</span>
+<span class="line-precise" title="No Anys on this line!">            raise EOFError(msg)</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # [4/5] (UDP Server mode only)</span>
 <span class="line-empty" title="No Anys on this line!">        # 1.) The UDP server is only able to send data, if a client has sent data first,</span>
 <span class="line-empty" title="No Anys on this line!">        # as we do not do a connect() phase for UDP and therefore do not know its remote</span>
 <span class="line-empty" title="No Anys on this line!">        # addr/port before. See send() function for a blocking loop.</span>
@@ -5101,16 +5128,7 @@ Explicit (x4)">                self.__log.info(</span>
 <span class="line-precise" title="No Anys on this line!">                "remote_port": addr[1],</span>
 <span class="line-empty" title="No Anys on this line!">            }</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [3/4] Upstream (server or client) is gone.</span>
-<span class="line-empty" title="No Anys on this line!">        # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.</span>
-<span class="line-empty" title="No Anys on this line!">        # In UDP, there is no such thing as a peer disconnect, so zero means an empty datagram.</span>
-<span class="line-precise" title="No Anys on this line!">        if not byte:</span>
-<span class="line-precise" title="No Anys on this line!">            msg = "Upstream has closed the connection."</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.info(msg)</span>
-<span class="line-precise" title="No Anys on this line!">            raise EOFError(msg)</span>
-<span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # [4/4] We have data to process</span>
+<span class="line-empty" title="No Anys on this line!">        # [5/5] We have data to process</span>
 <span class="line-precise" title="No Anys on this line!">        data = self.__enc.decode(byte)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.__log.debug(</span>
@@ -5178,7 +5196,8 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!">                # On successful connect, we can abandon/remove all other sockets</span>
 <span class="line-precise" title="No Anys on this line!">                remove = [key for key in conns if key != family]</span>
 <span class="line-precise" title="No Anys on this line!">                break</span>
-<span class="line-precise" title="No Anys on this line!">            except socket.error:</span>
+<span class="line-precise" title="No Anys on this line!">            except (OSError, socket.error):</span>
+<span class="line-empty" title="No Anys on this line!">                # self.__log.error(error)</span>
 <span class="line-precise" title="No Anys on this line!">                remove.append(family)</span>
 <span class="line-precise" title="No Anys on this line!">        for family in remove:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close(self.AF_HUMAN[family], conns[family]["conn"])</span>
@@ -5728,7 +5747,22 @@ Explicit (x4)">            self.__log.debug(</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Omitted Generics (x1)">            sock.connect((addr, port))</span>
-<span class="line-precise" title="No Anys on this line!">        except socket.error as error:</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">            # UDP stateful connect</span>
+<span class="line-empty" title="No Anys on this line!">            # A UDP client doesn't know if the connect() was successful, so the trick</span>
+<span class="line-empty" title="No Anys on this line!">            # is to send an empty packet and see if an exception is triggered during</span>
+<span class="line-empty" title="No Anys on this line!">            # receive or simply a timeout (which means success).</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__options.udp:</span>
+<span class="line-precise" title="No Anys on this line!">                sock.send(self.__enc.encode(""))</span>
+<span class="line-precise" title="No Anys on this line!">                sock.settimeout(0.1)</span>
+<span class="line-empty" title="No Anys on this line!">                try:</span>
+<span class="line-precise" title="No Anys on this line!">                    sock.recv(self.__options.bufsize)</span>
+<span class="line-precise" title="No Anys on this line!">                except socket.timeout:</span>
+<span class="line-precise" title="No Anys on this line!">                    pass</span>
+<span class="line-empty" title="No Anys on this line!">                finally:</span>
+<span class="line-precise" title="No Anys on this line!">                    sock.settimeout(0)</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
 <span class="line-precise" title="No Anys on this line!">            msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(</span>
 <span class="line-precise" title="No Anys on this line!">                addr, port, sock.family, self.AF_HUMAN[sock.family], self.ST_HUMAN[sock.type], error</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
@@ -6023,6 +6057,8 @@ Explicit (x4)">                self.log.debug("Replacing LF with CR")</span>
 <span class="line-precise" title="No Anys on this line!">                sys.exit(1)</span>
 <span class="line-precise" title="No Anys on this line!">        if role == "client":</span>
 <span class="line-precise" title="No Anys on this line!">            if not self.__net.run_client(self.__host, self.__ports[self.__pport]):</span>
+<span class="line-precise" title="No Anys on this line!">                if self.__sock_opts.udp:</span>
+<span class="line-precise" title="No Anys on this line!">                    sys.exit(1)</span>
 <span class="line-precise" title="No Anys on this line!">                if not self.__client_reconnect_to_server():</span>
 <span class="line-precise" title="No Anys on this line!">                    sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -6074,7 +6110,7 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">                # Do we re-accept new clients?</span>
 <span class="line-precise" title="No Anys on this line!">                if self.__sock_opts.udp:</span>
 <span class="line-empty" title="No Anys on this line!">                    # Always accept new clients or reconnect in UDP mode (its stateless)</span>
-<span class="line-empty" title="No Anys on this line!">                    return</span>
+<span class="line-precise" title="No Anys on this line!">                    continue</span>
 <span class="line-precise" title="No Anys on this line!">                if self.__role == "server" and self.__server_reaccept_from_client():</span>
 <span class="line-precise" title="No Anys on this line!">                    continue</span>
 <span class="line-precise" title="No Anys on this line!">                if self.__role == "client" and self.__client_reconnect_to_server():</span>

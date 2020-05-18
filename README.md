@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.35%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.38%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -238,7 +238,9 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Evade FW          | Evade egress firewalls by round-robin outgoing ports (port hopping) |
 | Evade IPS         | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping) |
 | UDP rev shell     | Try this with the traditional `netcat` |
+| Stateful UDP      | Stateful connect phase for UDP client mode |
 | TCP / UDP         | Full TCP and UDP support |
+| IPv4 / IPv6       | Dual or single stack IPv4 and IPv6 support |
 | Python 2+3        | Works with Python 2, Python 3, pypy2 and pypy3 |
 | Cross OS          | Work on Linux, MacOS and Windows as long as Python is available |
 | Compatability     | Use the traditional `netcat` as a client or server together with `pwncat` |

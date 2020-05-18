@@ -9,6 +9,7 @@
 ### Added
 - Feature: Dualstack IPv4 and IPv6 by default (use `-4` or `-6` to use either of them alone)
 - Feature: Allow `addr` part in `--local` to be optional for consistency: #54
+- Feature: Have a stateful connect phase for UDP
 
 ### Fixes
 - Ensure remote hostname is mandatory for `--local`/`-L` mode
