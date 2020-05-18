@@ -100,7 +100,7 @@ if os.environ.get("MYPY_CHECK", False):
     )
     SockActive = TypedDict(
         "SockActive",
-        {"af": int, "conn": socket.socket, "remote_addr": str, "remote_port": int,},
+        {"af": int, "conn": socket.socket, "remote_addr": str, "remote_port": int},
         total=False,
     )
 
@@ -823,9 +823,8 @@ class Sock(object):
 
     # Human readable address families
     AF_HUMAN = {
-        1: "Unix",
-        2: "IPv4",
-        10: "IPv6",
+        int(socket.AF_INET): "IPv4",
+        int(socket.AF_INET6): "IPv6",
     }
     # Human readable socket types
     ST_HUMAN = {
@@ -852,11 +851,18 @@ class Sock(object):
 
         # Set families to listen on or connect to
         if self.__options.ipv6:
-            self.__families = [int(socket.AF_INET6)]
+            self.__families = {
+                int(socket.AF_INET6): socket.AF_INET6,
+            }
         elif self.__options.ipv4:
-            self.__families = [int(socket.AF_INET)]
+            self.__families = {
+                int(socket.AF_INET): socket.AF_INET,
+            }
         else:
-            self.__families = [int(socket.AF_INET6), int(socket.AF_INET)]
+            self.__families = {
+                int(socket.AF_INET6): socket.AF_INET6,
+                int(socket.AF_INET): socket.AF_INET,
+            }
 
         # The connection dictionary.
         # A dictionary is necessary, as we can have multiple entries for
@@ -992,20 +998,22 @@ class Sock(object):
                 [],
                 [],
                 self.__options.recv_timeout,
-            )
+            )[
+                0
+            ]  # type: List[socket.socket]
         # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
         except (ValueError, AttributeError):
             msg = "Connection was closed by self."
             self.__log.warning(msg)
             raise AttributeError(msg)
-        if not conns[0]:
+        if not conns:
             # This is raised for the calling function to determine what to do
             # between timeouts (e.g.: check signals, etc)
             raise socket.timeout("timed out")  # type: ignore
 
         # We should always only have one active socket on which we receive data.
-        assert len(conns[0]) == 1
-        conn = conns[0][0]  # type: socket.socket
+        assert len(conns) == 1
+        conn = conns[0]  # type: socket.socket
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
             (byte, addr) = conn.recvfrom(self.__options.bufsize)
@@ -1095,9 +1103,9 @@ class Sock(object):
 
         # [1/4] Create socket
         succ = 0
-        for af in self.__families:
+        for key in self.__families:
             try:
-                conn[af] = {"conn": self.__create_socket(af)}
+                conn[key] = {"conn": self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -1167,9 +1175,9 @@ class Sock(object):
 
         # [1/4] Create socket
         succ = 0
-        for af in self.__families:
+        for key in self.__families:
             try:
-                conn[af] = {"sock": self.__create_socket(af)}
+                conn[key] = {"sock": self.__create_socket(self.__families[key])}
                 succ += 1
             except socket.error:
                 pass
@@ -1476,7 +1484,7 @@ class Sock(object):
         return addr
 
     def __create_socket(self, family):
-        # type: (int) -> socket.socket
+        # type: (socket.AddressFamily) -> socket.socket
         """Create TCP or UDP socket.
 
         Args:
@@ -1490,13 +1498,13 @@ class Sock(object):
         """
         try:
             if self.__options.udp:
-                self.__log.debug("Creating %s UDP socket", self.AF_HUMAN[family])
+                self.__log.debug("Creating %s UDP socket", self.AF_HUMAN[int(family)])
                 sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug("Creating %s TCP socket", self.AF_HUMAN[family])
+                self.__log.debug("Creating %s TCP socket", self.AF_HUMAN[int(family)])
                 sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = "Failed to create {} socket: {}".format(self.AF_HUMAN[family], error)
+            msg = "Failed to create {} socket: {}".format(self.AF_HUMAN[int(family)], error)
             self.__log.error(msg)
             raise socket.error(msg)
 
