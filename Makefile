@@ -212,7 +212,7 @@ _smoke-keep_open-after_client_send:
 # -------------------------------------------------------------------------------------------------
 TEST_PWNCAT_HOST=localhost
 TEST_PWNCAT_PORT=4444
-TEST_PWNCAT_WAIT=8
+TEST_PWNCAT_WAIT=2
 TEST_PWNCAT_RUNS=1
 test: _test-behaviour-quit--client
 test: _test-behaviour-quit--server
