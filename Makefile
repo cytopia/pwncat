@@ -17,6 +17,7 @@ PYTHON_VERSION = 2.7
 BINPATH = bin/
 MANPATH = man/
 DOCPATH = docs/
+INTPATH = tests/integration/
 BINNAME = pwncat
 
 FL_VERSION = 0.3
@@ -226,54 +227,187 @@ test: _test-options--ping_intvl
 test: _test-options--ping_word
 
 .PHONY: _test-behaviour-quit--client
-_test-behaviour-quit--client:
-	tests/integration/run.sh "01-behaviour-quit--client" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+#_test-behaviour-quit--client:
+#	tests/integration/run.sh "01-behaviour-quit--client" \
+#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+_test-behaviour-quit--client: __test-behaviour-quit--client-000
+_test-behaviour-quit--client: __test-behaviour-quit--client-001
+_test-behaviour-quit--client: __test-behaviour-quit--client-002
+_test-behaviour-quit--client: __test-behaviour-quit--client-003
+_test-behaviour-quit--client: __test-behaviour-quit--client-004
+_test-behaviour-quit--client: __test-behaviour-quit--client-100
+_test-behaviour-quit--client: __test-behaviour-quit--client-101
+_test-behaviour-quit--client: __test-behaviour-quit--client-102
+_test-behaviour-quit--client: __test-behaviour-quit--client-103
+_test-behaviour-quit--client: __test-behaviour-quit--client-200
+_test-behaviour-quit--client: __test-behaviour-quit--client-201
+__test-behaviour-quit--client-000:
+	$(INTPATH)01-behaviour-quit--client/000---tcp---client_quits---when_server_is_killed---client_default---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-001:
+	$(INTPATH)01-behaviour-quit--client/001---tcp---client_quits---when_server_is_killed---client_default---after_client_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-002:
+	$(INTPATH)01-behaviour-quit--client/002---tcp---client_quits---when_server_is_killed---client_default---after_server_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-003:
+	$(INTPATH)01-behaviour-quit--client/003---tcp---client_quits---when_server_is_killed---client_command---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-004:
+	$(INTPATH)01-behaviour-quit--client/004---tcp---client_quits---when_server_is_killed---client_command---after_server_sent_command.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-100:
+	$(INTPATH)01-behaviour-quit--client/100---udp---client_stays---when_server_is_killed---client_default---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-101:
+	$(INTPATH)01-behaviour-quit--client/101---udp---client_stays---when_server_is_killed---client_default---after_client_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-102:
+	$(INTPATH)01-behaviour-quit--client/102---udp---client_stays---when_server_is_killed---client_default---after_server_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-103:
+	$(INTPATH)01-behaviour-quit--client/103---udp---client_stays---when_server_is_killed---client_command---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-200:
+	$(INTPATH)01-behaviour-quit--client/200---tcp---client_stays---when_valid_http_request.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--client-201:
+	$(INTPATH)01-behaviour-quit--client/201---tcp---client_quites---when_invalid_http_request.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-behaviour-quit--server
-_test-behaviour-quit--server:
-	tests/integration/run.sh "02-behaviour-quit--server" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+#_test-behaviour-quit--server:
+#	tests/integration/run.sh "02-behaviour-quit--server" \
+#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+_test-behaviour-quit--server: __test-behaviour-quit--server-000
+_test-behaviour-quit--server: __test-behaviour-quit--server-001
+_test-behaviour-quit--server: __test-behaviour-quit--server-002
+_test-behaviour-quit--server: __test-behaviour-quit--server-003
+_test-behaviour-quit--server: __test-behaviour-quit--server-004
+_test-behaviour-quit--server: __test-behaviour-quit--server-100
+_test-behaviour-quit--server: __test-behaviour-quit--server-101
+_test-behaviour-quit--server: __test-behaviour-quit--server-103
+_test-behaviour-quit--server: __test-behaviour-quit--server-104
+_test-behaviour-quit--server: __test-behaviour-quit--server-200
+_test-behaviour-quit--server: __test-behaviour-quit--server-201
+__test-behaviour-quit--server-000:
+	$(INTPATH)02-behaviour-quit--server/000---tcp---server_quits---when_client_is_killed---server_default---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-001:
+	$(INTPATH)02-behaviour-quit--server/001---tcp---server_quits---when_client_is_killed---server_default---after_client_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-002:
+	$(INTPATH)02-behaviour-quit--server/002---tcp---server_quits---when_client_is_killed---server_default---after_server_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-003:
+	$(INTPATH)02-behaviour-quit--server/003---tcp---server_quits---when_client_is_killed---server_command---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-004:
+	$(INTPATH)02-behaviour-quit--server/004---tcp---server_quits---when_client_is_killed---server_command---after_client_sent_command.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-100:
+	$(INTPATH)02-behaviour-quit--server/100---udp---server_stays---when_client_is_killed---server_default---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-101:
+	$(INTPATH)02-behaviour-quit--server/101---udp---server_stays---when_client_is_killed---server_default---after_client_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-103:
+	$(INTPATH)02-behaviour-quit--server/103---udp---server_stays---when_client_is_killed---server_command---before_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-104:
+	$(INTPATH)02-behaviour-quit--server/104---udp---server_stays---when_client_is_killed---server_command---after_client_sends_command.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-200:
+	$(INTPATH)02-behaviour-quit--server/200---udp---server_reacc---when_client_is_killed---server_default---after_client_sent_data.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-quit--server-201:
+	$(INTPATH)02-behaviour-quit--server/201---udp---server_reacc---when_client_is_killed---server_command---after_client_sent_command.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-mode--local_forward
 _test-mode--local_forward:
 	tests/integration/run.sh "10-mode---local_forward" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-mode--remote_forward
 _test-mode--remote_forward:
 	tests/integration/run.sh "11-mode---remote_forward" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--nodns
 _test-options--nodns:
 	tests/integration/run.sh "20-options---nodns" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--crlf
 _test-options--crlf:
 	tests/integration/run.sh "21-options---crlf" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--keep_open
+#_test-options--keep_open:
+#	tests/integration/run.sh "22-options---keep_open" \
+#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 _test-options--keep_open:
-	tests/integration/run.sh "22-options---keep_open" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+_test-options--keep_open: __test-options--keep_open-000
+_test-options--keep_open: __test-options--keep_open-001
+_test-options--keep_open: __test-options--keep_open-002
+_test-options--keep_open: __test-options--keep_open-100
+_test-options--keep_open: __test-options--keep_open-101
+_test-options--keep_open: __test-options--keep_open-200
+_test-options--keep_open: __test-options--keep_open-201
+_test-options--keep_open: __test-options--keep_open-202
+__test-options--keep_open-000:
+	$(INTPATH)22-options---keep_open/000---tcp---server_reacc---three_clients---server_default---cli_nosend-cli_nosend-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--keep_open-001:
+	$(INTPATH)22-options---keep_open/001---tcp---server_reacc---three_clients---server_default---cli_nosend-cli_send-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--keep_open-002:
+	$(INTPATH)22-options---keep_open/002---tcp---server_reacc---three_clients---server_default---cli_send-cli_send-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--keep_open-100:
+	$(INTPATH)22-options---keep_open/100---tcp---server_reacc---three_clients---server_default---srv_send-cli_nosend-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--keep_open-101:
+	$(INTPATH)22-options---keep_open/101---tcp---server_reacc---three_clients---server_default---srv_send-cli_send-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--keep_open-200:
+	$(INTPATH)22-options---keep_open/200---tcp---server_reacc---three_clients---server_command---cli_nosend-cli_nosend-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--keep_open-201:
+	$(INTPATH)22-options---keep_open/201---tcp---server_reacc---three_clients---server_command---cli_nosend-cli_send-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--keep_open-202:
+	$(INTPATH)22-options---keep_open/202---tcp---server_reacc---three_clients---server_command---cli_send-cli_send-cli_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--reconn
-_test-options--reconn:
-	tests/integration/run.sh "23-options---reconn" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+#_test-options--reconn:
+#	tests/integration/run.sh "23-options---reconn" \
+#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+_test-options--reconn: __test-options--reconn-000
+_test-options--reconn: __test-options--reconn-001
+_test-options--reconn: __test-options--reconn-002
+__test-options--reconn-000:
+	$(INTPATH)23-options---reconn/000---tcp---client_reconn---three_servers---server_default---srv_down_cli_send-srv_nosend-srv_nosend-srv_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--reconn-001:
+	$(INTPATH)23-options---reconn/001---tcp---client_reconn---three_servers---server_default---srv_down_cli_send-srv_nosend-srv_send-srv_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-options--reconn-002:
+	$(INTPATH)23-options---reconn/002---tcp---client_reconn---three_servers---server_default---srv_down_cli_send-srv_send-srv_send-srv_send.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--ping_init
 _test-options--ping_intvl:
 	tests/integration/run.sh "25-options---ping_intvl" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--ping_word
 _test-options--ping_word:
 	tests/integration/run.sh "26-options---ping_word" \
-		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 
 # -------------------------------------------------------------------------------------------------
