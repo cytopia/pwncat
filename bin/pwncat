@@ -820,15 +820,45 @@ class Sock(object):
     }
 
     # Human readable address families
-    AF_HUMAN = {
+    __AF_HUMAN = {
         int(socket.AF_INET): "IPv4",
         int(socket.AF_INET6): "IPv6",
     }
     # Human readable socket types
-    ST_HUMAN = {
-        1: "TCP",
-        2: "UDP",
+    __ST_HUMAN = {
+        int(socket.SOCK_STREAM): "TCP",
+        int(socket.SOCK_DGRAM): "UDP",
     }
+
+    def get_af_name(self, address_family):
+        # type: (Union[socket.AddressFamily, int]) -> str
+        """Get an address family name by integer or AddressFamily enum."""
+        try:
+            name = self.__AF_HUMAN[int(address_family)]
+        except KeyError:
+            self.__log.error(
+                "Invalid key for address family: %s (type: %s) (valid: %s)",
+                repr(address_family),
+                repr(type(address_family)),
+                repr(self.__AF_HUMAN),
+            )
+            name = "unknown"
+        return name
+
+    def get_st_name(self, socket_type):
+        # type: (int) -> str
+        """Get socket type name by integer."""
+        try:
+            name = self.__ST_HUMAN[int(socket_type)]
+        except KeyError:
+            self.__log.error(
+                "Invalid key for socket type: %s (type: %s) (valid: %s)",
+                repr(socket_type),
+                repr(type(socket_type)),
+                repr(self.__ST_HUMAN),
+            )
+            name = "unknown"
+        return name
 
     # --------------------------------------------------------------------------
     # Constructor / Destructor
@@ -1054,7 +1084,7 @@ class Sock(object):
                     addr[0],
                     addr[1],
                     conn.family,
-                    self.AF_HUMAN[conn.family],
+                    self.get_af_name(conn.family),
                 )
             # A different UDP client connects
             elif self.__active["remote_addr"] != addr[0] or self.__active["remote_port"] != addr[1]:
@@ -1063,7 +1093,7 @@ class Sock(object):
                     addr[0],
                     addr[1],
                     conn.family,
-                    self.AF_HUMAN[conn.family],
+                    self.get_af_name(conn.family),
                 )
             # Set currently active UDP connection socket
             self.__active = {
@@ -1122,7 +1152,7 @@ class Sock(object):
             except socket.gaierror:
                 remove.append(family)
         for family in remove:
-            self.__close(self.AF_HUMAN[family], conns[family]["conn"])
+            self.__close(self.get_af_name(family), conns[family]["conn"])
             del conns[family]
         if not conns:
             return False
@@ -1143,7 +1173,7 @@ class Sock(object):
                 # self.__log.error(error)
                 remove.append(family)
         for family in remove:
-            self.__close(self.AF_HUMAN[family], conns[family]["conn"])
+            self.__close(self.get_af_name(family), conns[family]["conn"])
             del conns[family]
         if not conns:
             return False
@@ -1160,7 +1190,7 @@ class Sock(object):
         # Store sockets as a list
         self.__conns = conns
         # Print socket info
-        self.__print_socket_opts(self.__active["conn"], self.AF_HUMAN[self.__active["af"]])
+        self.__print_socket_opts(self.__active["conn"], self.get_af_name(self.__active["af"]))
         return True
 
     def run_server(self, host, port):
@@ -1199,7 +1229,7 @@ class Sock(object):
             except socket.gaierror:
                 remove.append(family)
         for family in remove:
-            self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+            self.__close(self.get_af_name(family), conns[family]["sock"])
             del conns[family]
         if not conns:
             return False
@@ -1210,7 +1240,7 @@ class Sock(object):
             if not self.__bind(conns[family]["sock"], conns[family]["local_addr"], port):
                 remove.append(family)
         for family in remove:
-            self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+            self.__close(self.get_af_name(family), conns[family]["sock"])
             del conns[family]
         if not conns:
             return False
@@ -1224,7 +1254,7 @@ class Sock(object):
                     conns[family]["local_addr"],
                     conns[family]["local_port"],
                     family,
-                    self.AF_HUMAN[family],
+                    self.get_af_name(family),
                 )
             self.__conns = conns
             self.__udp_mode_server = True
@@ -1240,12 +1270,12 @@ class Sock(object):
                     conns[family]["local_addr"],
                     conns[family]["local_port"],
                     family,
-                    self.AF_HUMAN[family],
+                    self.get_af_name(family),
                 )
             else:
                 remove.append(family)
         for family in remove:
-            self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+            self.__close(self.get_af_name(family), conns[family]["sock"])
             del conns[family]
         if not conns:
             return False
@@ -1259,7 +1289,7 @@ class Sock(object):
         except socket.error:
             # On error, remove all bind sockets
             for family in conns:
-                self.__close(self.AF_HUMAN[family], conns[family]["sock"])
+                self.__close(self.get_af_name(family), conns[family]["sock"])
                 del conns[family]
             return False
 
@@ -1503,13 +1533,13 @@ class Sock(object):
         """
         try:
             if self.__options.udp:
-                self.__log.debug("Creating %s UDP socket", self.AF_HUMAN[int(family)])
+                self.__log.debug("Creating %s UDP socket", self.get_af_name(family))
                 sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug("Creating %s TCP socket", self.AF_HUMAN[int(family)])
+                self.__log.debug("Creating %s TCP socket", self.get_af_name(family))
                 sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = "Failed to create {} socket: {}".format(self.AF_HUMAN[int(family)], error)
+            msg = "Failed to create {} socket: {}".format(self.get_af_name(family), error)
             self.__log.error(msg)
             raise socket.error(msg)
 
@@ -1630,7 +1660,7 @@ class Sock(object):
                     addr[0],
                     addr[1],
                     conn.family,
-                    self.AF_HUMAN[conn.family],
+                    self.get_af_name(conn.family),
                 )
                 return conn, (addr[0], addr[1])
 
@@ -1649,15 +1679,15 @@ class Sock(object):
         Raises:
             socker.error: If client cannot connect to remote peer.
         """
+        self.__log.debug(
+            "Connecting to %s:%d (family %d/%s, %s)",
+            addr,
+            port,
+            sock.family,
+            self.get_af_name(sock.family),
+            self.get_st_name(sock.type),
+        )
         try:
-            self.__log.debug(
-                "Connecting to %s:%d (family %d/%s, %s)",
-                addr,
-                port,
-                sock.family,
-                self.AF_HUMAN[sock.family],
-                self.ST_HUMAN[sock.type],
-            )
             sock.connect((addr, port))
 
             # UDP stateful connect
@@ -1676,7 +1706,12 @@ class Sock(object):
 
         except (OSError, socket.error) as error:
             msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(
-                addr, port, sock.family, self.AF_HUMAN[sock.family], self.ST_HUMAN[sock.type], error
+                addr,
+                port,
+                sock.family,
+                self.get_af_name(sock.family),
+                self.get_st_name(sock.type),
+                error,
             )
             raise socket.error(msg)
 
@@ -1685,8 +1720,8 @@ class Sock(object):
             addr,
             port,
             sock.family,
-            self.AF_HUMAN[sock.family],
-            self.ST_HUMAN[sock.type],
+            self.get_af_name(sock.family),
+            self.get_st_name(sock.type),
         )
 
 
