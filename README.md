@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.10%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.37%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -238,7 +238,9 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Evade FW          | Evade egress firewalls by round-robin outgoing ports (port hopping) |
 | Evade IPS         | Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping) |
 | UDP rev shell     | Try this with the traditional `netcat` |
+| Stateful UDP      | Stateful connect phase for UDP client mode |
 | TCP / UDP         | Full TCP and UDP support |
+| IPv4 / IPv6       | Dual or single stack IPv4 and IPv6 support |
 | Python 2+3        | Works with Python 2, Python 3, pypy2 and pypy3 |
 | Cross OS          | Work on Linux, MacOS and Windows as long as Python is available |
 | Compatability     | Use the traditional `netcat` as a client or server together with `pwncat` |
@@ -344,7 +346,7 @@ Type `pwncat -h` or click below to see all available options.
 usage: pwncat [-Cnuv] [-e cmd] hostname port
        pwncat [-Cnuv] [-e cmd] -l [hostname] port
        pwncat [-Cnuv] -z hostname port
-       pwncat [-Cnuv] -L addr:port hostname port
+       pwncat [-Cnuv] -L [addr:]port hostname port
        pwncat [-Cnuv] -R addr:port hostname port
        pwncat -V, --version
        pwncat -h, --help
@@ -374,14 +376,14 @@ mode arguments:
                         Connect to a remote endpoint and report status only.
                         Used for port scanning.
 
-  -L addr:port, --local addr:port
+  -L [addr:]port, --local [addr:]port
                         [Local forward mode]:
                         This mode will start a server and a client internally.
                         The internal server will listen locally on specified
-                        hostname/port (positional arguments). Same as with -l.
+                        addr/port (given by --local [addr:]port).
                         The server will then forward traffic to the internal
                         client which connects to another server specified by
-                        address given via -L/--local addr:port.
+                        hostname/port given via positional arguments.
                         (I.e.: proxies a remote service to a local address)
 
   -R addr:port, --remote addr:port
@@ -398,7 +400,8 @@ mode arguments:
                         target machine via the positional arguments.
 
 optional arguments:
-  -6                    Use IPv6 instead of IPv4.
+  -4                    Only Use IPv4 instead of both, IPv4 and IPv6.
+  -6                    Only Use IPv6 instead of both, IPv4 and IPv6.
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
                         line endings for input and outout accordingly. Specify

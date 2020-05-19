@@ -45,9 +45,9 @@ pwncat</p>
 <p style="margin-left:22%; margin-top: 1em">pwncat
 [&minus;Cnuv] [&minus;e cmd] <b>&minus;l</b> [hostname] port
 pwncat [&minus;Cnuv] <b>&minus;z</b> hostname port pwncat
-[&minus;Cnuv] <b>&minus;L</b> addr:port hostname port pwncat
-[&minus;Cnuv] <b>&minus;R</b> addr:port hostname port pwncat
-<b>&minus;V</b>, <b>&minus;&minus;version</b> pwncat
+[&minus;Cnuv] <b>&minus;L</b> [addr:]port hostname port
+pwncat [&minus;Cnuv] <b>&minus;R</b> addr:port hostname port
+pwncat <b>&minus;V</b>, <b>&minus;&minus;version</b> pwncat
 <b>&minus;h</b>, <b>&minus;&minus;help</b></p>
 
 <p style="margin-left:11%; margin-top: 1em">Enhanced and
@@ -104,17 +104,17 @@ behaviour.</p>
 to a remote endpoint and report status only. Used for port
 scanning.</p>
 
-<p style="margin-left:11%;"><b>&minus;L</b> addr:port,
-<b>&minus;&minus;local</b> addr:port</p>
+<p style="margin-left:11%;"><b>&minus;L</b> [addr:]port,
+<b>&minus;&minus;local</b> [addr:]port</p>
 
 <p style="margin-left:22%;">[Local forward mode]: This mode
 will start a server and a client internally. The internal
-server will listen locally on specified hostname/port
-(positional arguments). Same as with <b>&minus;l</b>. The
-server will then forward traffic to the internal client
-which connects to another server specified by address given
-via <b>&minus;L</b>/&minus;&minus;local addr:port. (I.e.:
-proxies a remote service to a local address)</p>
+server will listen locally on specified addr/port (given by
+<b>&minus;&minus;local</b> [addr:]port). The server will
+then forward traffic to the internal client which connects
+to another server specified by hostname/port given via
+positional arguments. (I.e.: proxies a remote service to a
+local address)</p>
 
 <p style="margin-left:11%;"><b>&minus;R</b> addr:port,
 <b>&minus;&minus;remote</b> addr:port</p>
@@ -140,13 +140,26 @@ arguments:</b></p>
 <td width="3%">
 
 
+<p><b>&minus;4</b></p></td>
+<td width="8%"></td>
+<td width="69%">
+
+
+<p>Only Use IPv4 instead of both, IPv4 and IPv6.</p></td>
+<td width="9%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
 <p><b>&minus;6</b></p></td>
 <td width="8%"></td>
-<td width="38%">
+<td width="69%">
 
 
-<p>Use IPv6 instead of IPv4.</p></td>
-<td width="40%">
+<p>Only Use IPv6 instead of both, IPv4 and IPv6.</p></td>
+<td width="9%">
 </td></tr>
 </table>
 

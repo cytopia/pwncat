@@ -34,10 +34,10 @@ jobs:
         run: python -c "import sys; print(sys.version)"
 
       # ------------------------------------------------------------
-      # Tests: Behaviour
+      # Tests: Behaviour (Client)
       # ------------------------------------------------------------
 
-      - name: "[BEHAVIOUR] Client quits correctly"
+      - name: "[BEHAVIOUR] Client quits correctly 000"
         shell: bash
         run: |
           retry() {
@@ -45,7 +45,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -58,11 +58,11 @@ jobs:
             return 1;
           }
 
-          retry make _test-behaviour-quit--client
+          retry make __test-behaviour-quit--client-000
         env:
           RETRIES: 5
 
-      - name: "[BEHAVIOUR] Server quits correctly"
+      - name: "[BEHAVIOUR] Client quits correctly 001"
         shell: bash
         run: |
           retry() {
@@ -70,7 +70,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -83,7 +83,511 @@ jobs:
             return 1;
           }
 
-          retry make _test-behaviour-quit--server
+          retry make __test-behaviour-quit--client-001
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 002"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-002
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 003"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-003
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 004"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-004
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 100"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-100
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 101"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-101
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 102"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-102
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 103"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-103
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 200"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-200
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Client quits correctly 201"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--client-201
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Behaviour (Server)
+      # ------------------------------------------------------------
+
+      - name: "[BEHAVIOUR] Server quits correctly 000"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-000
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 001"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-001
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 002"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-002
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 003"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-003
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 004"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-004
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 100"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-100
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 101"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-101
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 103"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-103
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 104"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-104
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 200"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-200
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] Server quits correctly 201"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-quit--server-201
         env:
           RETRIES: 5
 
@@ -99,7 +603,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -124,7 +628,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -153,7 +657,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -178,7 +682,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -195,7 +699,11 @@ jobs:
         env:
           RETRIES: 5
 
-      - name: "[OPTIONS] --keep-open"
+      # ------------------------------------------------------------
+      # Tests: Options (keep open)
+      # ------------------------------------------------------------
+
+      - name: "[OPTIONS] --keep-open 000"
         shell: bash
         run: |
           retry() {
@@ -203,7 +711,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -216,11 +724,11 @@ jobs:
             return 1;
           }
 
-          retry make _test-options--keep_open
+          retry make __test-options--keep_open-000
         env:
           RETRIES: 5
 
-      - name: "[OPTIONS] --reconn"
+      - name: "[OPTIONS] --keep-open 001"
         shell: bash
         run: |
           retry() {
@@ -228,7 +736,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -241,9 +749,242 @@ jobs:
             return 1;
           }
 
-          retry make _test-options--reconn
+          retry make __test-options--keep_open-001
         env:
           RETRIES: 5
+
+      - name: "[OPTIONS] --keep-open 002"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--keep_open-002
+        env:
+          RETRIES: 5
+
+      - name: "[OPTIONS] --keep-open 100"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--keep_open-100
+        env:
+          RETRIES: 5
+
+      - name: "[OPTIONS] --keep-open 101"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--keep_open-101
+        env:
+          RETRIES: 5
+
+      - name: "[OPTIONS] --keep-open 200"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--keep_open-200
+        env:
+          RETRIES: 5
+
+      - name: "[OPTIONS] --keep-open 201"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--keep_open-201
+        env:
+          RETRIES: 5
+
+      - name: "[OPTIONS] --keep-open 202"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--keep_open-202
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Options (reconn)
+      # ------------------------------------------------------------
+
+      - name: "[OPTIONS] --reconn 000"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--reconn-000
+        env:
+          RETRIES: 5
+
+      - name: "[OPTIONS] --reconn 001"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--reconn-001
+        env:
+          RETRIES: 5
+
+      - name: "[OPTIONS] --reconn 002"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-options--reconn-002
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Options
+      # ------------------------------------------------------------
 
       - name: "[OPTIONS] --ping-intvl"
         shell: bash
@@ -253,7 +994,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))
@@ -278,7 +1019,7 @@ jobs:
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))

@@ -63,7 +63,7 @@ RETRY_FUNCTION="$(cat <<-'END_HEREDOC'
             _target=${2}
             _host=${3:-localhost}
             _port=${4:-4444}
-            _wait=${5:-8}
+            _wait=${5:-5}
             _runs=${6:-1}
             for n in $(seq ${RETRIES}); do
               _port=$(( _port + n ))

@@ -4,6 +4,18 @@
 ## Unreleased
 
 
+## Release 0.0.19-alpha
+
+### Added
+- Feature: Dualstack IPv4 and IPv6 by default (use `-4` or `-6` to use either of them alone)
+- Feature: Allow `addr` part in `--local` to be optional for consistency: #54
+- Feature: Have a stateful connect phase for UDP
+- CI: Run integration tests for any combination of IPv4, IPv6, TCP, UDP, specific bind and wildcard bind
+
+### Fixes
+- Ensure remote hostname is mandatory for `--local`/`-L` mode
+
+
 ## Release 0.0.18-alpha
 
 ### Added
