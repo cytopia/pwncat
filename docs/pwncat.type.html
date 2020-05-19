@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">5.62% imprecise</th>
-<th class="summary summary-lines">4002 LOC</th>
+<th class="summary summary-precision">5.63% imprecise</th>
+<th class="summary summary-lines">3999 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">5.62% imprecise</td>
-<td class="summary summary-lines">4002 LOC</td>
+<td class="summary summary-precision">5.63% imprecise</td>
+<td class="summary summary-lines">3999 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -4034,9 +4034,6 @@
 <span id="L3997" class="lineno"><a class="lineno" href="#L3997">3997</a></span>
 <span id="L3998" class="lineno"><a class="lineno" href="#L3998">3998</a></span>
 <span id="L3999" class="lineno"><a class="lineno" href="#L3999">3999</a></span>
-<span id="L4000" class="lineno"><a class="lineno" href="#L4000">4000</a></span>
-<span id="L4001" class="lineno"><a class="lineno" href="#L4001">4001</a></span>
-<span id="L4002" class="lineno"><a class="lineno" href="#L4002">4002</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5804,14 +5801,16 @@ Explicit (x4)">                self.__log.info(</span>
 <span class="line-empty" title="No Anys on this line!">        Raises:</span>
 <span class="line-empty" title="No Anys on this line!">            socker.error: If client cannot connect to remote peer.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        sock_family_name = self.get_af_name(sock.family)</span>
+<span class="line-precise" title="No Anys on this line!">        sock_type_name = self.get_st_name(sock.type)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.__log.debug(</span>
 <span class="line-precise" title="No Anys on this line!">            "Connecting to %s:%d (family %d/%s, %s)",</span>
 <span class="line-precise" title="No Anys on this line!">            addr,</span>
 <span class="line-precise" title="No Anys on this line!">            port,</span>
 <span class="line-precise" title="No Anys on this line!">            sock.family,</span>
-<span class="line-precise" title="No Anys on this line!">            self.get_af_name(sock.family),</span>
-<span class="line-precise" title="No Anys on this line!">            self.get_st_name(sock.type),</span>
+<span class="line-precise" title="No Anys on this line!">            sock_family_name,</span>
+<span class="line-precise" title="No Anys on this line!">            sock_type_name,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-imprecise" title="Any Types on this line: 
@@ -5833,12 +5832,7 @@ Omitted Generics (x1)">            sock.connect((addr, port))</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
 <span class="line-precise" title="No Anys on this line!">            msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(</span>
-<span class="line-precise" title="No Anys on this line!">                addr,</span>
-<span class="line-precise" title="No Anys on this line!">                port,</span>
-<span class="line-precise" title="No Anys on this line!">                sock.family,</span>
-<span class="line-precise" title="No Anys on this line!">                self.get_af_name(sock.family),</span>
-<span class="line-precise" title="No Anys on this line!">                self.get_st_name(sock.type),</span>
-<span class="line-precise" title="No Anys on this line!">                error,</span>
+<span class="line-precise" title="No Anys on this line!">                addr, port, sock.family, sock_family_name, sock_type_name, error,</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.error(msg)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -5848,8 +5842,8 @@ Explicit (x4)">        self.__log.info(</span>
 <span class="line-precise" title="No Anys on this line!">            addr,</span>
 <span class="line-precise" title="No Anys on this line!">            port,</span>
 <span class="line-precise" title="No Anys on this line!">            sock.family,</span>
-<span class="line-precise" title="No Anys on this line!">            self.get_af_name(sock.family),</span>
-<span class="line-precise" title="No Anys on this line!">            self.get_st_name(sock.type),</span>
+<span class="line-precise" title="No Anys on this line!">            sock_family_name,</span>
+<span class="line-precise" title="No Anys on this line!">            sock_type_name,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>

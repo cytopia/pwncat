@@ -1706,13 +1706,15 @@ class Sock(object):
         Raises:
             socker.error: If client cannot connect to remote peer.
         &#34;&#34;&#34;
+        sock_family_name = self.get_af_name(sock.family)
+        sock_type_name = self.get_st_name(sock.type)
         self.__log.debug(
             &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
             addr,
             port,
             sock.family,
-            self.get_af_name(sock.family),
-            self.get_st_name(sock.type),
+            sock_family_name,
+            sock_type_name,
         )
         try:
             sock.connect((addr, port))
@@ -1733,12 +1735,7 @@ class Sock(object):
 
         except (OSError, socket.error) as error:
             msg = &#34;Connecting to {}:{} (family {}/{}, {}) failed: {}&#34;.format(
-                addr,
-                port,
-                sock.family,
-                self.get_af_name(sock.family),
-                self.get_st_name(sock.type),
-                error,
+                addr, port, sock.family, sock_family_name, sock_type_name, error,
             )
             raise socket.error(msg)
 
@@ -1747,8 +1744,8 @@ class Sock(object):
             addr,
             port,
             sock.family,
-            self.get_af_name(sock.family),
-            self.get_st_name(sock.type),
+            sock_family_name,
+            sock_type_name,
         )
 
 
@@ -9100,13 +9097,15 @@ def store(self):
         Raises:
             socker.error: If client cannot connect to remote peer.
         &#34;&#34;&#34;
+        sock_family_name = self.get_af_name(sock.family)
+        sock_type_name = self.get_st_name(sock.type)
         self.__log.debug(
             &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
             addr,
             port,
             sock.family,
-            self.get_af_name(sock.family),
-            self.get_st_name(sock.type),
+            sock_family_name,
+            sock_type_name,
         )
         try:
             sock.connect((addr, port))
@@ -9127,12 +9126,7 @@ def store(self):
 
         except (OSError, socket.error) as error:
             msg = &#34;Connecting to {}:{} (family {}/{}, {}) failed: {}&#34;.format(
-                addr,
-                port,
-                sock.family,
-                self.get_af_name(sock.family),
-                self.get_st_name(sock.type),
-                error,
+                addr, port, sock.family, sock_family_name, sock_type_name, error,
             )
             raise socket.error(msg)
 
@@ -9141,8 +9135,8 @@ def store(self):
             addr,
             port,
             sock.family,
-            self.get_af_name(sock.family),
-            self.get_st_name(sock.type),
+            sock_family_name,
+            sock_type_name,
         )</code></pre>
 </details>
 <h3>Class variables</h3>

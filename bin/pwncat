@@ -1679,13 +1679,15 @@ class Sock(object):
         Raises:
             socker.error: If client cannot connect to remote peer.
         """
+        sock_family_name = self.get_af_name(sock.family)
+        sock_type_name = self.get_st_name(sock.type)
         self.__log.debug(
             "Connecting to %s:%d (family %d/%s, %s)",
             addr,
             port,
             sock.family,
-            self.get_af_name(sock.family),
-            self.get_st_name(sock.type),
+            sock_family_name,
+            sock_type_name,
         )
         try:
             sock.connect((addr, port))
@@ -1706,12 +1708,7 @@ class Sock(object):
 
         except (OSError, socket.error) as error:
             msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(
-                addr,
-                port,
-                sock.family,
-                self.get_af_name(sock.family),
-                self.get_st_name(sock.type),
-                error,
+                addr, port, sock.family, sock_family_name, sock_type_name, error,
             )
             raise socket.error(msg)
 
@@ -1720,8 +1717,8 @@ class Sock(object):
             addr,
             port,
             sock.family,
-            self.get_af_name(sock.family),
-            self.get_st_name(sock.type),
+            sock_family_name,
+            sock_type_name,
         )
 
 
