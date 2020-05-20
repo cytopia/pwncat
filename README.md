@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.37%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.31%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -257,6 +257,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | IPv4                | ✔      | ✔       | ✔   |
 | IPv6                | ✔      | ✔       | ✔   |
 | Unix domain sockets | :x:    | ✔       | ✔   |
+| Socket source bind  | ✔      | ✔       | ✔   |
 | TCP                 | ✔      | ✔       | ✔   |
 | UDP                 | ✔      | ✔       | ✔   |
 | SCTP                | :x:    | :x:     | ✔   |
@@ -414,6 +415,8 @@ optional arguments:
   -T str, --tos str     Specifies IP Type of Service (ToS) for the connection.
                         Valid values are the tokens 'mincost', 'lowcost',
                         'reliability', 'throughput' or 'lowdelay'.
+  --source-addr addr    Specify the source IP address of the interface for connect mode.
+  --source-port port    Specify the source port for connect mode.
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
                         or -vvvv for more verbosity. The server performance will
                         decrease drastically if you use more than three times.

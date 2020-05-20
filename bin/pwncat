@@ -112,7 +112,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.19-alpha"
+VERSION = "0.0.20-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -306,6 +306,18 @@ class DsSock(object):
         return self.__ipv6
 
     @property
+    def src_addr(self):
+        # type: () -> Optional[str]
+        """`bool`: Custom source address for connect mode."""
+        return self.__src_addr
+
+    @property
+    def src_port(self):
+        # type: () -> Optional[int]
+        """`bool`: Custom source port for connect mode."""
+        return self.__src_port
+
+    @property
     def udp(self):
         # type: () -> bool
         """`bool`: Determines if we use TCP or UDP."""
@@ -326,14 +338,29 @@ class DsSock(object):
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, udp, ip_tos, info):
-        # type: (int, int, Optional[float], bool, bool, bool, bool, Optional[str], str) -> None
+    def __init__(
+        self,
+        bufsize,  # type: int
+        backlog,  # type: int
+        recv_timeout,  # type: Optional[float]
+        nodns,  # type: bool
+        ipv4,  # type: bool
+        ipv6,  # type: bool
+        src_addr,  # type: Optional[str]
+        src_port,  # type: Optional[int]
+        udp,  # type: bool
+        ip_tos,  # type: Optional[str]
+        info,  # type: str
+    ):
+        # type: (...) -> None
         assert type(bufsize) is int, type(bufsize)
         assert type(backlog) is int, type(backlog)
         assert type(recv_timeout) is float, type(recv_timeout)
         assert type(nodns) is bool, type(nodns)
         assert type(ipv4) is bool, type(ipv4)
         assert type(ipv6) is bool, type(ipv6)
+        assert type(src_addr) is str or src_addr is None, type(src_addr)
+        assert type(src_port) is int or src_port is None, type(src_port)
         assert type(udp) is bool, type(udp)
         assert type(info) is str, type(info)
         self.__bufsize = bufsize
@@ -342,6 +369,8 @@ class DsSock(object):
         self.__nodns = nodns
         self.__ipv4 = ipv4
         self.__ipv6 = ipv6
+        self.__src_addr = src_addr
+        self.__src_port = src_port
         self.__udp = udp
         self.__ip_tos = ip_tos
         self.__info = info
@@ -374,6 +403,8 @@ class DsIONetworkSock(DsSock):
         nodns,  # type: bool
         ipv4,  # type: bool
         ipv6,  # type: bool
+        src_addr,  # type: Optional[str]
+        src_port,  # type: Optional[bool]
         udp,  # type: bool
         ip_tos,  # type: Optional[str]
         info,  # type: str
@@ -382,7 +413,7 @@ class DsIONetworkSock(DsSock):
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
         super(DsIONetworkSock, self).__init__(
-            bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, udp, ip_tos, info
+            bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, src_addr, src_port, udp, ip_tos, info
         )
 
 
@@ -1083,7 +1114,7 @@ class Sock(object):
                     "Client connected: %s:%d (family %d/%s, UDP)",
                     addr[0],
                     addr[1],
-                    conn.family,
+                    int(conn.family),
                     self.get_af_name(conn.family),
                 )
             # A different UDP client connects
@@ -1092,7 +1123,7 @@ class Sock(object):
                     "New client connected: %s:%d (family %d/%s, UDP)",
                     addr[0],
                     addr[1],
-                    conn.family,
+                    int(conn.family),
                     self.get_af_name(conn.family),
                 )
             # Set currently active UDP connection socket
@@ -1159,6 +1190,7 @@ class Sock(object):
 
         # [3/4] Connect
         remove = []
+        errors = []
         for family in conns:
             try:
                 self.__connect(
@@ -1169,13 +1201,15 @@ class Sock(object):
                 # On successful connect, we can abandon/remove all other sockets
                 remove = [key for key in conns if key != family]
                 break
-            except (OSError, socket.error):
-                # self.__log.error(error)
+            except (OSError, socket.error) as err:
                 remove.append(family)
+                errors.append(err)
         for family in remove:
             self.__close(self.get_af_name(family), conns[family]["conn"])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error(error)
             return False
 
         # [4/4] Store connections and set active connection
@@ -1236,13 +1270,19 @@ class Sock(object):
 
         # [3/4] Bind socket
         remove = []
+        errors = []
         for family in conns:
-            if not self.__bind(conns[family]["sock"], conns[family]["local_addr"], port):
+            try:
+                self.__bind(conns[family]["sock"], conns[family]["local_addr"], port)
+            except socket.error as err:
                 remove.append(family)
+                errors.append(err)
         for family in remove:
             self.__close(self.get_af_name(family), conns[family]["sock"])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error(error)
             return False
 
         # [UDP 4/4] There is no listen or accept for UDP
@@ -1593,7 +1633,7 @@ class Sock(object):
     # Private Functions (server)
     # --------------------------------------------------------------------------
     def __bind(self, sock, addr, port):
-        # type: (socket.socket, str, int) -> bool
+        # type: (socket.socket, str, int) -> None
         """Bind the socket to an address.
 
         Args:
@@ -1601,16 +1641,26 @@ class Sock(object):
             addr (str): The numerical IP address to bind to.
             port (int): The port to bind to.
 
-        Returns:
-            bool: Returns `True` on success and `False` on Failure.
+        Raises:
+            socket.error if socket cannot be bound.
         """
+        sock_family_name = self.get_af_name(sock.family)
+        sock_type_name = self.get_st_name(sock.type)
+        self.__log.debug(
+            "Binding (family %d/%s, %s) socket to %s:%d",
+            int(sock.family),
+            sock_family_name,
+            sock_type_name,
+            addr,
+            port,
+        )
         try:
-            self.__log.debug("Binding socket to %s:%d", addr, port)
             sock.bind((addr, port))
-            return True
-        except (OverflowError, OSError, socket.error) as error:
-            self.__log.error("Binding socket to %s:%d failed: %s", addr, port, error)
-            return False
+        except (OverflowError, OSError, socket.gaierror, socket.error) as error:
+            msg = "Binding (family {}/{}, {}) socket to {}:{} failed: {}".format(
+                sock.family, sock_family_name, sock_type_name, addr, port, error
+            )
+            raise socket.error(msg)
 
     def __listen(self, sock):
         # type: (socket.socket) -> bool
@@ -1659,7 +1709,7 @@ class Sock(object):
                     "Client connected from %s:%d (family %d/%s, TCP)",
                     addr[0],
                     addr[1],
-                    conn.family,
+                    int(conn.family),
                     self.get_af_name(conn.family),
                 )
                 return conn, (addr[0], addr[1])
@@ -1677,15 +1727,22 @@ class Sock(object):
             port (int): Port of server to connect to.
 
         Raises:
-            socker.error: If client cannot connect to remote peer.
+            socker.error: If client cannot connect to remote peer or custom bind did not succeed.
         """
         sock_family_name = self.get_af_name(sock.family)
         sock_type_name = self.get_st_name(sock.type)
+        # Bind to a custom addr/port
+        if self.__options.src_addr is not None and self.__options.src_port is not None:
+            try:
+                self.__bind(sock, self.__options.src_addr, self.__options.src_port)
+            except socket.error as error:
+                raise socket.error(error)
+
         self.__log.debug(
             "Connecting to %s:%d (family %d/%s, %s)",
             addr,
             port,
-            sock.family,
+            int(sock.family),
             sock_family_name,
             sock_type_name,
         )
@@ -1712,11 +1769,15 @@ class Sock(object):
             )
             raise socket.error(msg)
 
+        local = sock.getsockname()
+        self.__log.debug(
+            "Connected from %s:%d", local[0], local[1],
+        )
         self.__log.info(
             "Connected to %s:%d (family %d/%s, %s)",
             addr,
             port,
-            sock.family,
+            int(sock.family),
             sock_family_name,
             sock_type_name,
         )
@@ -3196,6 +3257,23 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
+    # [OPTIONS] -s/-p
+    if not connect_mode and (args.source_port or args.source_addr):
+        print(
+            "%s: error: --source-addr and --source-port can only be used in connect mode."
+            % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [OPTIONS] -s/-p
+    if (args.source_port and not args.source_addr) or (not args.source_port and args.source_addr):
+        print(
+            "%s: error: --source-addr and --source-port are both required." % (APPNAME),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     # [ADVANCED] --http
     if args.http and (args.https or args.udp or args.zero):
         parser.print_usage()
@@ -3419,6 +3497,22 @@ CR on MacOS).""",
 Valid values are the tokens 'mincost', 'lowcost',
 'reliability', 'throughput' or 'lowdelay'.
 """,
+    )
+    optional.add_argument(
+        "--source-addr",
+        metavar="addr",
+        dest="source_addr",
+        type=str,
+        default=None,
+        help="Specify the source IP address of the interface for connect mode.",
+    )
+    optional.add_argument(
+        "--source-port",
+        metavar="port",
+        dest="source_port",
+        type=_args_check_port,
+        default=None,
+        help="Specify the source port for connect mode.",
     )
     optional.add_argument(
         "-v",
@@ -3793,6 +3887,8 @@ def main():
         args.nodns,
         args.ipv4,
         args.ipv6,
+        args.source_addr,
+        args.source_port,
         args.udp,
         args.tos,
         args.info,
