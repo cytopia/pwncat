@@ -1202,17 +1202,21 @@ class Sock(object):
 
         # [2/4] Resolve address
         remove = []
+        errors = []
         for family in conns:
             try:
                 conns[family][&#34;remote_host&#34;] = host
                 conns[family][&#34;remote_addr&#34;] = self.__gethostbyname(host, family)
                 conns[family][&#34;remote_port&#34;] = port
-            except socket.gaierror:
+            except socket.gaierror as err:
                 remove.append(family)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;conn&#34;])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error(&#34;Resolve Error: %s&#34;, error)
             return False
 
         # [3/4] Connect
@@ -1230,7 +1234,7 @@ class Sock(object):
                 break
             except (OSError, socket.error) as err:
                 remove.append(family)
-                errors.append(err)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;conn&#34;])
             del conns[family]
@@ -1282,17 +1286,21 @@ class Sock(object):
 
         # [2/4] Resolve local address
         remove = []
+        errors = []
         for family in conns:
             try:
                 conns[family][&#34;local_addr&#34;] = self.__gethostbyname(host, family)
                 conns[family][&#34;local_host&#34;] = host
                 conns[family][&#34;local_port&#34;] = port
-            except socket.gaierror:
+            except socket.gaierror as err:
                 remove.append(family)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;sock&#34;])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error(&#34;Resolve Error: %s&#34;, error)
             return False
 
         # [3/4] Bind socket
@@ -1303,7 +1311,7 @@ class Sock(object):
                 self.__bind(conns[family][&#34;sock&#34;], conns[family][&#34;local_addr&#34;], port)
             except socket.error as err:
                 remove.append(family)
-                errors.append(err)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;sock&#34;])
             del conns[family]
@@ -1575,12 +1583,12 @@ class Sock(object):
 
         if self.__options.nodns:
             flags = socket.AI_NUMERICHOST
+
+        self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
         try:
-            self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
-            self.__log.error(&#34;Resolve Error: %s&#34;, error)
             raise socket.gaierror(error)  # type: ignore
         self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
         return addr
@@ -8737,17 +8745,21 @@ def store(self):
 
         # [2/4] Resolve address
         remove = []
+        errors = []
         for family in conns:
             try:
                 conns[family][&#34;remote_host&#34;] = host
                 conns[family][&#34;remote_addr&#34;] = self.__gethostbyname(host, family)
                 conns[family][&#34;remote_port&#34;] = port
-            except socket.gaierror:
+            except socket.gaierror as err:
                 remove.append(family)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;conn&#34;])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error(&#34;Resolve Error: %s&#34;, error)
             return False
 
         # [3/4] Connect
@@ -8765,7 +8777,7 @@ def store(self):
                 break
             except (OSError, socket.error) as err:
                 remove.append(family)
-                errors.append(err)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;conn&#34;])
             del conns[family]
@@ -8817,17 +8829,21 @@ def store(self):
 
         # [2/4] Resolve local address
         remove = []
+        errors = []
         for family in conns:
             try:
                 conns[family][&#34;local_addr&#34;] = self.__gethostbyname(host, family)
                 conns[family][&#34;local_host&#34;] = host
                 conns[family][&#34;local_port&#34;] = port
-            except socket.gaierror:
+            except socket.gaierror as err:
                 remove.append(family)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;sock&#34;])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error(&#34;Resolve Error: %s&#34;, error)
             return False
 
         # [3/4] Bind socket
@@ -8838,7 +8854,7 @@ def store(self):
                 self.__bind(conns[family][&#34;sock&#34;], conns[family][&#34;local_addr&#34;], port)
             except socket.error as err:
                 remove.append(family)
-                errors.append(err)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family][&#34;sock&#34;])
             del conns[family]
@@ -9110,12 +9126,12 @@ def store(self):
 
         if self.__options.nodns:
             flags = socket.AI_NUMERICHOST
+
+        self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
         try:
-            self.__log.debug(&#34;Resolving hostname: %s&#34;, host)
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
-            self.__log.error(&#34;Resolve Error: %s&#34;, error)
             raise socket.gaierror(error)  # type: ignore
         self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
         return addr
@@ -9669,17 +9685,21 @@ def store(self):
 
     # [2/4] Resolve address
     remove = []
+    errors = []
     for family in conns:
         try:
             conns[family][&#34;remote_host&#34;] = host
             conns[family][&#34;remote_addr&#34;] = self.__gethostbyname(host, family)
             conns[family][&#34;remote_port&#34;] = port
-        except socket.gaierror:
+        except socket.gaierror as err:
             remove.append(family)
+            errors.append(str(err))
     for family in remove:
         self.__close(self.get_af_name(family), conns[family][&#34;conn&#34;])
         del conns[family]
     if not conns:
+        for error in errors:
+            self.__log.error(&#34;Resolve Error: %s&#34;, error)
         return False
 
     # [3/4] Connect
@@ -9697,7 +9717,7 @@ def store(self):
             break
         except (OSError, socket.error) as err:
             remove.append(family)
-            errors.append(err)
+            errors.append(str(err))
     for family in remove:
         self.__close(self.get_af_name(family), conns[family][&#34;conn&#34;])
         del conns[family]
@@ -9771,17 +9791,21 @@ def store(self):
 
     # [2/4] Resolve local address
     remove = []
+    errors = []
     for family in conns:
         try:
             conns[family][&#34;local_addr&#34;] = self.__gethostbyname(host, family)
             conns[family][&#34;local_host&#34;] = host
             conns[family][&#34;local_port&#34;] = port
-        except socket.gaierror:
+        except socket.gaierror as err:
             remove.append(family)
+            errors.append(str(err))
     for family in remove:
         self.__close(self.get_af_name(family), conns[family][&#34;sock&#34;])
         del conns[family]
     if not conns:
+        for error in errors:
+            self.__log.error(&#34;Resolve Error: %s&#34;, error)
         return False
 
     # [3/4] Bind socket
@@ -9792,7 +9816,7 @@ def store(self):
             self.__bind(conns[family][&#34;sock&#34;], conns[family][&#34;local_addr&#34;], port)
         except socket.error as err:
             remove.append(family)
-            errors.append(err)
+            errors.append(str(err))
     for family in remove:
         self.__close(self.get_af_name(family), conns[family][&#34;sock&#34;])
         del conns[family]

@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">5.69% imprecise</th>
-<th class="summary summary-lines">4095 LOC</th>
+<th class="summary summary-precision">5.70% imprecise</th>
+<th class="summary summary-lines">4103 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">5.69% imprecise</td>
-<td class="summary summary-lines">4095 LOC</td>
+<td class="summary summary-precision">5.70% imprecise</td>
+<td class="summary summary-lines">4103 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -4130,6 +4130,14 @@
 <span id="L4093" class="lineno"><a class="lineno" href="#L4093">4093</a></span>
 <span id="L4094" class="lineno"><a class="lineno" href="#L4094">4094</a></span>
 <span id="L4095" class="lineno"><a class="lineno" href="#L4095">4095</a></span>
+<span id="L4096" class="lineno"><a class="lineno" href="#L4096">4096</a></span>
+<span id="L4097" class="lineno"><a class="lineno" href="#L4097">4097</a></span>
+<span id="L4098" class="lineno"><a class="lineno" href="#L4098">4098</a></span>
+<span id="L4099" class="lineno"><a class="lineno" href="#L4099">4099</a></span>
+<span id="L4100" class="lineno"><a class="lineno" href="#L4100">4100</a></span>
+<span id="L4101" class="lineno"><a class="lineno" href="#L4101">4101</a></span>
+<span id="L4102" class="lineno"><a class="lineno" href="#L4102">4102</a></span>
+<span id="L4103" class="lineno"><a class="lineno" href="#L4103">4103</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5366,17 +5374,22 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [2/4] Resolve address</span>
 <span class="line-precise" title="No Anys on this line!">        remove = []</span>
+<span class="line-precise" title="No Anys on this line!">        errors = []</span>
 <span class="line-precise" title="No Anys on this line!">        for family in conns:</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
 <span class="line-precise" title="No Anys on this line!">                conns[family]["remote_host"] = host</span>
 <span class="line-precise" title="No Anys on this line!">                conns[family]["remote_addr"] = self.__gethostbyname(host, family)</span>
 <span class="line-precise" title="No Anys on this line!">                conns[family]["remote_port"] = port</span>
-<span class="line-precise" title="No Anys on this line!">            except socket.gaierror:</span>
+<span class="line-precise" title="No Anys on this line!">            except socket.gaierror as err:</span>
 <span class="line-precise" title="No Anys on this line!">                remove.append(family)</span>
+<span class="line-precise" title="No Anys on this line!">                errors.append(str(err))</span>
 <span class="line-precise" title="No Anys on this line!">        for family in remove:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close(self.get_af_name(family), conns[family]["conn"])</span>
 <span class="line-precise" title="No Anys on this line!">            del conns[family]</span>
 <span class="line-precise" title="No Anys on this line!">        if not conns:</span>
+<span class="line-precise" title="No Anys on this line!">            for error in errors:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.__log.error("Resolve Error: %s", error)</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [3/4] Connect</span>
@@ -5394,7 +5407,7 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-precise" title="No Anys on this line!">                break</span>
 <span class="line-precise" title="No Anys on this line!">            except (OSError, socket.error) as err:</span>
 <span class="line-precise" title="No Anys on this line!">                remove.append(family)</span>
-<span class="line-precise" title="No Anys on this line!">                errors.append(err)</span>
+<span class="line-precise" title="No Anys on this line!">                errors.append(str(err))</span>
 <span class="line-precise" title="No Anys on this line!">        for family in remove:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close(self.get_af_name(family), conns[family]["conn"])</span>
 <span class="line-precise" title="No Anys on this line!">            del conns[family]</span>
@@ -5447,17 +5460,22 @@ Explicit (x4)">                self.__log.error(error)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [2/4] Resolve local address</span>
 <span class="line-precise" title="No Anys on this line!">        remove = []</span>
+<span class="line-precise" title="No Anys on this line!">        errors = []</span>
 <span class="line-precise" title="No Anys on this line!">        for family in conns:</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
 <span class="line-precise" title="No Anys on this line!">                conns[family]["local_addr"] = self.__gethostbyname(host, family)</span>
 <span class="line-precise" title="No Anys on this line!">                conns[family]["local_host"] = host</span>
 <span class="line-precise" title="No Anys on this line!">                conns[family]["local_port"] = port</span>
-<span class="line-precise" title="No Anys on this line!">            except socket.gaierror:</span>
+<span class="line-precise" title="No Anys on this line!">            except socket.gaierror as err:</span>
 <span class="line-precise" title="No Anys on this line!">                remove.append(family)</span>
+<span class="line-precise" title="No Anys on this line!">                errors.append(str(err))</span>
 <span class="line-precise" title="No Anys on this line!">        for family in remove:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close(self.get_af_name(family), conns[family]["sock"])</span>
 <span class="line-precise" title="No Anys on this line!">            del conns[family]</span>
 <span class="line-precise" title="No Anys on this line!">        if not conns:</span>
+<span class="line-precise" title="No Anys on this line!">            for error in errors:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">                self.__log.error("Resolve Error: %s", error)</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [3/4] Bind socket</span>
@@ -5468,7 +5486,7 @@ Explicit (x4)">                self.__log.error(error)</span>
 <span class="line-precise" title="No Anys on this line!">                self.__bind(conns[family]["sock"], conns[family]["local_addr"], port)</span>
 <span class="line-precise" title="No Anys on this line!">            except socket.error as err:</span>
 <span class="line-precise" title="No Anys on this line!">                remove.append(family)</span>
-<span class="line-precise" title="No Anys on this line!">                errors.append(err)</span>
+<span class="line-precise" title="No Anys on this line!">                errors.append(str(err))</span>
 <span class="line-precise" title="No Anys on this line!">        for family in remove:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__close(self.get_af_name(family), conns[family]["sock"])</span>
 <span class="line-precise" title="No Anys on this line!">            del conns[family]</span>
@@ -5747,16 +5765,15 @@ Explicit (x4)">                self.__log.debug("Resolving hostname not required
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        if self.__options.nodns:</span>
 <span class="line-precise" title="No Anys on this line!">            flags = socket.AI_NUMERICHOST</span>
-<span class="line-empty" title="No Anys on this line!">        try:</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.debug("Resolving hostname: %s", host)</span>
+Explicit (x4)">        self.__log.debug("Resolving hostname: %s", host)</span>
+<span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x3)">            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            addr = str(infos[0][4][0])</span>
 <span class="line-precise" title="No Anys on this line!">        except (AttributeError, socket.gaierror) as error:</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            self.__log.error("Resolve Error: %s", error)</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.gaierror(error)  # type: ignore</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>

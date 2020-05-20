@@ -1175,17 +1175,21 @@ class Sock(object):
 
         # [2/4] Resolve address
         remove = []
+        errors = []
         for family in conns:
             try:
                 conns[family]["remote_host"] = host
                 conns[family]["remote_addr"] = self.__gethostbyname(host, family)
                 conns[family]["remote_port"] = port
-            except socket.gaierror:
+            except socket.gaierror as err:
                 remove.append(family)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family]["conn"])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error("Resolve Error: %s", error)
             return False
 
         # [3/4] Connect
@@ -1203,7 +1207,7 @@ class Sock(object):
                 break
             except (OSError, socket.error) as err:
                 remove.append(family)
-                errors.append(err)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family]["conn"])
             del conns[family]
@@ -1255,17 +1259,21 @@ class Sock(object):
 
         # [2/4] Resolve local address
         remove = []
+        errors = []
         for family in conns:
             try:
                 conns[family]["local_addr"] = self.__gethostbyname(host, family)
                 conns[family]["local_host"] = host
                 conns[family]["local_port"] = port
-            except socket.gaierror:
+            except socket.gaierror as err:
                 remove.append(family)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family]["sock"])
             del conns[family]
         if not conns:
+            for error in errors:
+                self.__log.error("Resolve Error: %s", error)
             return False
 
         # [3/4] Bind socket
@@ -1276,7 +1284,7 @@ class Sock(object):
                 self.__bind(conns[family]["sock"], conns[family]["local_addr"], port)
             except socket.error as err:
                 remove.append(family)
-                errors.append(err)
+                errors.append(str(err))
         for family in remove:
             self.__close(self.get_af_name(family), conns[family]["sock"])
             del conns[family]
@@ -1548,12 +1556,12 @@ class Sock(object):
 
         if self.__options.nodns:
             flags = socket.AI_NUMERICHOST
+
+        self.__log.debug("Resolving hostname: %s", host)
         try:
-            self.__log.debug("Resolving hostname: %s", host)
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
-            self.__log.error("Resolve Error: %s", error)
             raise socket.gaierror(error)  # type: ignore
         self.__log.debug("Resolved hostname: %s", addr)
         return addr
