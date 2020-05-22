@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">5.60% imprecise</th>
-<th class="summary summary-lines">4193 LOC</th>
+<th class="summary summary-precision">5.63% imprecise</th>
+<th class="summary summary-lines">4195 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">5.60% imprecise</td>
-<td class="summary summary-lines">4193 LOC</td>
+<td class="summary summary-precision">5.63% imprecise</td>
+<td class="summary summary-lines">4195 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -4228,6 +4228,8 @@
 <span id="L4191" class="lineno"><a class="lineno" href="#L4191">4191</a></span>
 <span id="L4192" class="lineno"><a class="lineno" href="#L4192">4192</a></span>
 <span id="L4193" class="lineno"><a class="lineno" href="#L4193">4193</a></span>
+<span id="L4194" class="lineno"><a class="lineno" href="#L4194">4194</a></span>
+<span id="L4195" class="lineno"><a class="lineno" href="#L4195">4195</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5864,7 +5866,10 @@ Explicit (x3)">            infos = socket.getaddrinfo(host, port, family, sockty
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            addr = str(infos[0][4][0])</span>
 <span class="line-precise" title="No Anys on this line!">        except (AttributeError, socket.gaierror) as error:</span>
-<span class="line-precise" title="No Anys on this line!">            raise socket.gaierror(error)  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">            msg = "Resolving hostname: {} failed: {}".format(str(host), str(error))</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">            self.__log.trace(msg)  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">            raise socket.gaierror(msg)  # type: ignore</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.__log.debug("Resolved hostname: %s", addr)</span>
 <span class="line-precise" title="No Anys on this line!">        return addr</span>

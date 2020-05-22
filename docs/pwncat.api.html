@@ -1589,7 +1589,9 @@ class Sock(object):
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
-            raise socket.gaierror(error)  # type: ignore
+            msg = &#34;Resolving hostname: {} failed: {}&#34;.format(str(host), str(error))
+            self.__log.trace(msg)  # type: ignore
+            raise socket.gaierror(msg)  # type: ignore
         self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
         return addr
 
@@ -9708,7 +9710,9 @@ def store(self):
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
-            raise socket.gaierror(error)  # type: ignore
+            msg = &#34;Resolving hostname: {} failed: {}&#34;.format(str(host), str(error))
+            self.__log.trace(msg)  # type: ignore
+            raise socket.gaierror(msg)  # type: ignore
         self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
         return addr
 
