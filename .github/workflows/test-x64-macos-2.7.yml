@@ -33,6 +33,20 @@ jobs:
         shell: bash
         run: python -c "import sys; print(sys.version)"
 
+      - name: Resolve localhost
+        shell: bash
+        run: |
+          echo
+          echo "\$ host localost"
+          host localhost || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.gethostbyname(\"localhost\"))'"
+          python -c 'import socket;print(socket.gethostbyname("localhost"))' || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.gethostbyname(\"localhost\"))'"
+          python -c 'import socket;print(socket.getaddrinfo("localhost", None))' || true
+
+
       # ------------------------------------------------------------
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
