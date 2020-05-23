@@ -110,6 +110,13 @@ for v in "${VERSION_MATRIX[@]}"; do
 	printf "Arch:      %s\\n" "${arch}"
 	printf "Python:    %s\\n" "${py}"
 
+
+	if [ "${os}" == "ubuntu" ]; then
+		os="${os}-16.04"
+	else
+		os="${os}-latest"
+	fi
+
 	retry_func_crlf="${RETRY_FUNCTION}"
 	# Disable comments for specific combinations
 	crlf_comment=""
@@ -125,7 +132,7 @@ for v in "${VERSION_MATRIX[@]}"; do
 		| sed "s|__RETRY_FUNCTION_CRLF__|${retry_func_crlf}|g" | sed "s/__NL__/\\n/g" \
 		| sed "s|__RETRY_FUNCTION__|${RETRY_FUNCTION}|g" | sed "s/__NL__/\\n/g" \
 		| sed "s/__WORKFLOW_NAME__/${flw_name}/g" \
-		| sed "s/__OS__/${os}-latest/g" \
+		| sed "s/__OS__/${os}/g" \
 		| sed "s/__PYTHON_VERSION__/${py}/g" \
 		| sed "s/__JOB_NAME__/${job_name}/g" \
 		| sed "s/__ARCHITECTURE__/${arch}/g" \

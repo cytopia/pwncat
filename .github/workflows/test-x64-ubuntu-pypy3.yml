@@ -11,7 +11,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04
     strategy:
       fail-fast: False
 
@@ -32,6 +32,42 @@ jobs:
       - name: Display Python version
         shell: bash
         run: python -c "import sys; print(sys.version)"
+
+      - name: "Setup /etc/hosts for Linux"
+        shell: bash
+        run: |
+          if [ `uname` = "Linux" ]; then
+            echo "\$ cat /etc/hosts"
+            cat /etc/hosts
+            echo
+            (
+              echo "127.0.0.1       localhost";
+              echo "::1     localhost ip6-localhost ip6-loopback";
+            ) | sudo tee /etc/hosts
+            echo
+            echo "\$ cat /etc/hosts"
+            cat /etc/hosts
+          fi
+
+      - name: Resolve localhost
+        shell: bash
+        run: |
+          echo
+          echo "\$ host localost"
+          host localhost || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.gethostbyname(\"localhost\"))'"
+          python -c 'import socket;print(socket.gethostbyname("localhost"))' || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.getaddrinfo(\"localhost\", None))'"
+          python -c 'import socket;print(socket.getaddrinfo("localhost", None))' || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.getaddrinfo(\"localhost\", None, socket.AF_INET))'"
+          python -c 'import socket;print(socket.getaddrinfo("localhost", None, socket.AF_INET))' || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.getaddrinfo(\"localhost\", None, socket.AF_INET6))'"
+          python -c 'import socket;print(socket.getaddrinfo("localhost", None, socket.AF_INET6))' || true
+
 
       # ------------------------------------------------------------
       # Tests: Behaviour (Client)

