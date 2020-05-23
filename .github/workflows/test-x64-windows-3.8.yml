@@ -33,6 +33,22 @@ jobs:
         shell: bash
         run: python -c "import sys; print(sys.version)"
 
+      - name: "Setup /etc/hosts for Linux"
+        shell: bash
+        run: |
+          if [ `uname` = "Linux" ]; then
+            echo "\$ cat /etc/hosts"
+            cat /etc/hosts
+            echo
+            (
+              echo "127.0.0.1       localhost";
+              echo "::1     localhost ip6-localhost ip6-loopback";
+            ) | sudo tee /etc/hosts
+            echo
+            echo "\$ cat /etc/hosts"
+            cat /etc/hosts
+          fi
+
       - name: Resolve localhost
         shell: bash
         run: |
