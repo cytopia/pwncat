@@ -170,7 +170,7 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction
+# [1/10 DATA STRUCTURE TYPES]: (1/10) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
 class DsRunnerAction(object):
     &#34;&#34;&#34;A type-safe data structure for Action functions for the Runner class.&#34;&#34;&#34;
@@ -228,7 +228,7 @@ class DsRunnerAction(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer
+# [1/10 DATA STRUCTURE TYPES]: (2/10) DsRunnerTimer
 # -------------------------------------------------------------------------------------------------
 class DsRunnerTimer(object):
     &#34;&#34;&#34;A type-safe data structure for Timer functions for the Runner class.&#34;&#34;&#34;
@@ -288,7 +288,76 @@ class DsRunnerTimer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (3/9) DsSock
+# [1/10 DATA STRUCTURE TYPES]: (3/10) DsRunnerRepeater
+# -------------------------------------------------------------------------------------------------
+class DsRunnerRepeater(object):
+    &#34;&#34;&#34;A type-safe data structure for repeated functions for the Runner class.&#34;&#34;&#34;
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def action(self):
+        # type: () -&gt; Callable[..., None]
+        &#34;&#34;&#34;`Callable[..., None]`: function to be run periodically.&#34;&#34;&#34;
+        return self.__action
+
+    @property
+    def repeat(self):
+        # type: () -&gt; int
+        &#34;&#34;&#34;`int`: how many times to repeat the action function.&#34;&#34;&#34;
+        return self.__repeat
+
+    @property
+    def pause(self):
+        # type: () -&gt; float
+        &#34;&#34;&#34;`int`: pause in seconds between repeated action calls.&#34;&#34;&#34;
+        return self.__pause
+
+    @property
+    def args(self):
+        # type: () -&gt; Tuple[Any, ...]
+        &#34;&#34;&#34;`*args`: optional *args for the action function.&#34;&#34;&#34;
+        return self.__args
+
+    @property
+    def kwargs(self):
+        # type: () -&gt; Dict[str, Any]
+        &#34;&#34;&#34;`**kargs`: optional *kwargs for the action function.&#34;&#34;&#34;
+        return self.__kwargs
+
+    @property
+    def signal(self):
+        # type: () -&gt; StopSignal
+        &#34;&#34;&#34;`StopSignal`: StopSignal instance.&#34;&#34;&#34;
+        return self.__signal
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(
+        self,
+        action,  # type: Callable[..., None]
+        signal,  # type: StopSignal
+        repeat,  # type: int
+        pause,  # type: float
+        *args,  # type: Tuple[Any, ...]
+        **kwargs  # type: Dict[str, Any]
+    ):
+        # type: (...) -&gt; None
+        assert type(repeat) is int, type(repeat)
+        assert type(pause) is float, type(pause)
+        assert type(kwargs) is dict, type(kwargs)
+        self.__action = action
+        self.__signal = signal
+        self.__repeat = repeat
+        self.__pause = pause
+        self.__args = args
+        self.__kwargs = kwargs
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/10 DATA STRUCTURE TYPES]: (4/10) DsSock
 # -------------------------------------------------------------------------------------------------
 class DsSock(object):
     &#34;&#34;&#34;A type-safe data structure for DsSock options.&#34;&#34;&#34;
@@ -404,7 +473,7 @@ class DsSock(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock
+# [1/10 DATA STRUCTURE TYPES]: (5/10) DsIONetworkSock
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSock(DsSock):
     &#34;&#34;&#34;A type-safe data structure for IONetwork socket options.&#34;&#34;&#34;
@@ -445,7 +514,7 @@ class DsIONetworkSock(DsSock):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli
+# [1/10 DATA STRUCTURE TYPES]: (6/10) DsIONetworkCli
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkCli(object):
     &#34;&#34;&#34;A type-safe data structure for IONetwork client options.&#34;&#34;&#34;
@@ -499,7 +568,7 @@ class DsIONetworkCli(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv
+# [1/10 DATA STRUCTURE TYPES]: (7/10) DsIONetworkSrv
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSrv(object):
     &#34;&#34;&#34;A type-safe data structure for IONetwork server options.&#34;&#34;&#34;
@@ -562,7 +631,7 @@ class DsIONetworkSrv(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed
+# [1/10 DATA STRUCTURE TYPES]: (8/10) DsTransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class DsTransformLinefeed(object):
     &#34;&#34;&#34;A type-safe data structure for DsTransformLinefeed options.&#34;&#34;&#34;
@@ -586,7 +655,7 @@ class DsTransformLinefeed(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout
+# [1/10 DATA STRUCTURE TYPES]: (9/10) DsIOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class DsIOStdinStdout(object):
     &#34;&#34;&#34;A type-safe data structure for IOStdinStdout options.&#34;&#34;&#34;
@@ -617,7 +686,7 @@ class DsIOStdinStdout(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (9/9) DsIOCommand
+# [1/10 DATA STRUCTURE TYPES]: (10/10) DsIOCommand
 # -------------------------------------------------------------------------------------------------
 class DsIOCommand(object):
     &#34;&#34;&#34;A type-safe data structure for IOCommand options.&#34;&#34;&#34;
@@ -2634,6 +2703,10 @@ class Runner(object):
         # Each list item will be run in its own thread.
         self.__timers = {}  # type: Dict[str, DsRunnerTimer]
 
+        # Dict of repeater function definition to run in a thread.
+        # Each list item will be run in its own thread.
+        self.__repeaters = {}  # type: Dict[str, DsRunnerRepeater]
+
         # A dict which holds the threads created from actions.
         # The name is based on the __actions name
         # {&#34;name&#34;: &#34;&lt;thread&gt;&#34;}
@@ -2663,6 +2736,16 @@ class Runner(object):
             timer (DsRunnerTimer): Instance of DsRunnerTimer.
         &#34;&#34;&#34;
         self.__timers[name] = timer
+
+    def add_repeater(self, name, repeater):
+        # type: (str, DsRunnerRepeater) -&gt; None
+        &#34;&#34;&#34;Add a function to the repeater thread pool runner.
+
+        Args:
+            name (str): The name for the added repeater (will be used for logging the thread name).
+            repeater (DsRunnerRepeater): Instance of DsRunnerRepeater.
+        &#34;&#34;&#34;
+        self.__repeaters[name] = repeater
 
     def run(self):
         # type: () -&gt; None
@@ -2745,6 +2828,30 @@ class Runner(object):
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
+        def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
+            # type: (str, Callable[..., None], int, float, StopSignal, Any, Any) -&gt; None
+            &#34;&#34;&#34;Repeater run function to be thrown into a thread (Execs periodic tasks).
+
+            Args:
+                name (str):        Name for logging output
+                action (function): Function to be called
+                repeat (int):      Repeat the function so many times before quitting
+                pause (float):     Pause between repeated calls
+                ssig (StopSignal): Providing has_stop() and raise_stop()
+                args (*args):      *args for action func
+                kwargs (**kwargs): **kwargs for action func
+            &#34;&#34;&#34;
+            cycles = 1
+            self.log.trace(&#34;Repeater Start (%d/%d)&#34;, cycles, repeat)  # type: ignore
+            while cycles &lt;= repeat:
+                if ssig.has_stop():
+                    self.log.trace(&#34;Stop signal acknowledged for timer %s&#34;, name)  # type: ignore
+                    return
+                self.log.debug(&#34;Executing repeated function (%d/%d)&#34;, cycles, repeat)
+                action(*args, **kwargs)
+                cycles += 1
+                time.sleep(pause)
+
         # Start available action in a thread
         for key in self.__actions:
             # Create Thread object
@@ -2776,6 +2883,24 @@ class Runner(object):
                     self.__timers[key].args,
                 ),
                 kwargs=self.__timers[key].kwargs,
+            )
+            thread.daemon = False
+            thread.start()
+        # Start available repeaters in a thread
+        for key in self.__repeaters:
+            # Create Thread object
+            thread = threading.Thread(
+                target=run_repeater,
+                name=key,
+                args=(
+                    key,
+                    self.__repeaters[key].action,
+                    self.__repeaters[key].repeat,
+                    self.__repeaters[key].pause,
+                    self.__repeaters[key].signal,
+                    self.__repeaters[key].args,
+                ),
+                kwargs=self.__repeaters[key].kwargs,
             )
             thread.daemon = False
             thread.start()
@@ -4029,7 +4154,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if args.http or args.https or args.wait or args.ping_init or args.safe_word:
+    if args.http or args.https or args.wait or args.safe_word:
         print(&#34;Unimplemented options&#34;, file=sys.stderr)
         sys.exit(1)
 
@@ -4076,9 +4201,6 @@ def main():
     cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # &#34;wait&#34;: args.wait,
-    # &#34;ping_init&#34;: args.ping_init,
-    # &#34;ping_intvl&#34;: args.ping_intvl,
-    # &#34;ping_word&#34;: args.ping_word,
     # &#34;ping_robing&#34;: args.ping_robin,
     # &#34;safe_word&#34;: args.safe_word,
 
@@ -4259,8 +4381,13 @@ def main():
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
-                &#34;PING&#34;,
+                &#34;PING-INT&#34;,
                 DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
+            )
+        if args.ping_init:
+            run.add_repeater(
+                &#34;PING-REP&#34;,
+                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (args.ping_word)),  # send data
             )
         run.run()
 
@@ -4813,7 +4940,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if args.http or args.https or args.wait or args.ping_init or args.safe_word:
+    if args.http or args.https or args.wait or args.safe_word:
         print(&#34;Unimplemented options&#34;, file=sys.stderr)
         sys.exit(1)
 
@@ -4875,9 +5002,6 @@ accidentally by other input.
     cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # &#34;wait&#34;: args.wait,
-    # &#34;ping_init&#34;: args.ping_init,
-    # &#34;ping_intvl&#34;: args.ping_intvl,
-    # &#34;ping_word&#34;: args.ping_word,
     # &#34;ping_robing&#34;: args.ping_robin,
     # &#34;safe_word&#34;: args.safe_word,
 
@@ -5058,8 +5182,13 @@ accidentally by other input.
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
             run.add_timer(
-                &#34;PING&#34;,
+                &#34;PING-INT&#34;,
                 DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
+            )
+        if args.ping_init:
+            run.add_repeater(
+                &#34;PING-REP&#34;,
+                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (args.ping_word)),  # send data
             )
         run.run()</code></pre>
 </details>
@@ -6882,6 +7011,169 @@ def transformers(self):
 </dd>
 </dl>
 </dd>
+<dt id="pwncat.DsRunnerRepeater"><code class="flex name class">
+<span>class <span class="ident">DsRunnerRepeater</span></span>
+<span>(</span><span>action, signal, repeat, pause, *args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A type-safe data structure for repeated functions for the Runner class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DsRunnerRepeater(object):
+    &#34;&#34;&#34;A type-safe data structure for repeated functions for the Runner class.&#34;&#34;&#34;
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def action(self):
+        # type: () -&gt; Callable[..., None]
+        &#34;&#34;&#34;`Callable[..., None]`: function to be run periodically.&#34;&#34;&#34;
+        return self.__action
+
+    @property
+    def repeat(self):
+        # type: () -&gt; int
+        &#34;&#34;&#34;`int`: how many times to repeat the action function.&#34;&#34;&#34;
+        return self.__repeat
+
+    @property
+    def pause(self):
+        # type: () -&gt; float
+        &#34;&#34;&#34;`int`: pause in seconds between repeated action calls.&#34;&#34;&#34;
+        return self.__pause
+
+    @property
+    def args(self):
+        # type: () -&gt; Tuple[Any, ...]
+        &#34;&#34;&#34;`*args`: optional *args for the action function.&#34;&#34;&#34;
+        return self.__args
+
+    @property
+    def kwargs(self):
+        # type: () -&gt; Dict[str, Any]
+        &#34;&#34;&#34;`**kargs`: optional *kwargs for the action function.&#34;&#34;&#34;
+        return self.__kwargs
+
+    @property
+    def signal(self):
+        # type: () -&gt; StopSignal
+        &#34;&#34;&#34;`StopSignal`: StopSignal instance.&#34;&#34;&#34;
+        return self.__signal
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(
+        self,
+        action,  # type: Callable[..., None]
+        signal,  # type: StopSignal
+        repeat,  # type: int
+        pause,  # type: float
+        *args,  # type: Tuple[Any, ...]
+        **kwargs  # type: Dict[str, Any]
+    ):
+        # type: (...) -&gt; None
+        assert type(repeat) is int, type(repeat)
+        assert type(pause) is float, type(pause)
+        assert type(kwargs) is dict, type(kwargs)
+        self.__action = action
+        self.__signal = signal
+        self.__repeat = repeat
+        self.__pause = pause
+        self.__args = args
+        self.__kwargs = kwargs</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pwncat.DsRunnerRepeater.action"><code class="name">var <span class="ident">action</span></code></dt>
+<dd>
+<div class="desc"><p><code>Callable[&hellip;, None]</code>: function to be run periodically.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def action(self):
+    # type: () -&gt; Callable[..., None]
+    &#34;&#34;&#34;`Callable[..., None]`: function to be run periodically.&#34;&#34;&#34;
+    return self.__action</code></pre>
+</details>
+</dd>
+<dt id="pwncat.DsRunnerRepeater.args"><code class="name">var <span class="ident">args</span></code></dt>
+<dd>
+<div class="desc"><p><code>*args</code>: optional *args for the action function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def args(self):
+    # type: () -&gt; Tuple[Any, ...]
+    &#34;&#34;&#34;`*args`: optional *args for the action function.&#34;&#34;&#34;
+    return self.__args</code></pre>
+</details>
+</dd>
+<dt id="pwncat.DsRunnerRepeater.kwargs"><code class="name">var <span class="ident">kwargs</span></code></dt>
+<dd>
+<div class="desc"><p><code>**kargs</code>: optional *kwargs for the action function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def kwargs(self):
+    # type: () -&gt; Dict[str, Any]
+    &#34;&#34;&#34;`**kargs`: optional *kwargs for the action function.&#34;&#34;&#34;
+    return self.__kwargs</code></pre>
+</details>
+</dd>
+<dt id="pwncat.DsRunnerRepeater.pause"><code class="name">var <span class="ident">pause</span></code></dt>
+<dd>
+<div class="desc"><p><code>int</code>: pause in seconds between repeated action calls.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def pause(self):
+    # type: () -&gt; float
+    &#34;&#34;&#34;`int`: pause in seconds between repeated action calls.&#34;&#34;&#34;
+    return self.__pause</code></pre>
+</details>
+</dd>
+<dt id="pwncat.DsRunnerRepeater.repeat"><code class="name">var <span class="ident">repeat</span></code></dt>
+<dd>
+<div class="desc"><p><code>int</code>: how many times to repeat the action function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def repeat(self):
+    # type: () -&gt; int
+    &#34;&#34;&#34;`int`: how many times to repeat the action function.&#34;&#34;&#34;
+    return self.__repeat</code></pre>
+</details>
+</dd>
+<dt id="pwncat.DsRunnerRepeater.signal"><code class="name">var <span class="ident">signal</span></code></dt>
+<dd>
+<div class="desc"><p><code><a title="pwncat.StopSignal" href="#pwncat.StopSignal">StopSignal</a></code>: StopSignal instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def signal(self):
+    # type: () -&gt; StopSignal
+    &#34;&#34;&#34;`StopSignal`: StopSignal instance.&#34;&#34;&#34;
+    return self.__signal</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="pwncat.DsRunnerTimer"><code class="flex name class">
 <span>class <span class="ident">DsRunnerTimer</span></span>
 <span>(</span><span>action, signal, intvl, *args, **kwargs)</span>
@@ -8664,6 +8956,10 @@ def store(self):
         # Each list item will be run in its own thread.
         self.__timers = {}  # type: Dict[str, DsRunnerTimer]
 
+        # Dict of repeater function definition to run in a thread.
+        # Each list item will be run in its own thread.
+        self.__repeaters = {}  # type: Dict[str, DsRunnerRepeater]
+
         # A dict which holds the threads created from actions.
         # The name is based on the __actions name
         # {&#34;name&#34;: &#34;&lt;thread&gt;&#34;}
@@ -8693,6 +8989,16 @@ def store(self):
             timer (DsRunnerTimer): Instance of DsRunnerTimer.
         &#34;&#34;&#34;
         self.__timers[name] = timer
+
+    def add_repeater(self, name, repeater):
+        # type: (str, DsRunnerRepeater) -&gt; None
+        &#34;&#34;&#34;Add a function to the repeater thread pool runner.
+
+        Args:
+            name (str): The name for the added repeater (will be used for logging the thread name).
+            repeater (DsRunnerRepeater): Instance of DsRunnerRepeater.
+        &#34;&#34;&#34;
+        self.__repeaters[name] = repeater
 
     def run(self):
         # type: () -&gt; None
@@ -8775,6 +9081,30 @@ def store(self):
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
+        def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
+            # type: (str, Callable[..., None], int, float, StopSignal, Any, Any) -&gt; None
+            &#34;&#34;&#34;Repeater run function to be thrown into a thread (Execs periodic tasks).
+
+            Args:
+                name (str):        Name for logging output
+                action (function): Function to be called
+                repeat (int):      Repeat the function so many times before quitting
+                pause (float):     Pause between repeated calls
+                ssig (StopSignal): Providing has_stop() and raise_stop()
+                args (*args):      *args for action func
+                kwargs (**kwargs): **kwargs for action func
+            &#34;&#34;&#34;
+            cycles = 1
+            self.log.trace(&#34;Repeater Start (%d/%d)&#34;, cycles, repeat)  # type: ignore
+            while cycles &lt;= repeat:
+                if ssig.has_stop():
+                    self.log.trace(&#34;Stop signal acknowledged for timer %s&#34;, name)  # type: ignore
+                    return
+                self.log.debug(&#34;Executing repeated function (%d/%d)&#34;, cycles, repeat)
+                action(*args, **kwargs)
+                cycles += 1
+                time.sleep(pause)
+
         # Start available action in a thread
         for key in self.__actions:
             # Create Thread object
@@ -8806,6 +9136,24 @@ def store(self):
                     self.__timers[key].args,
                 ),
                 kwargs=self.__timers[key].kwargs,
+            )
+            thread.daemon = False
+            thread.start()
+        # Start available repeaters in a thread
+        for key in self.__repeaters:
+            # Create Thread object
+            thread = threading.Thread(
+                target=run_repeater,
+                name=key,
+                args=(
+                    key,
+                    self.__repeaters[key].action,
+                    self.__repeaters[key].repeat,
+                    self.__repeaters[key].pause,
+                    self.__repeaters[key].signal,
+                    self.__repeaters[key].args,
+                ),
+                kwargs=self.__repeaters[key].kwargs,
             )
             thread.daemon = False
             thread.start()
@@ -8880,6 +9228,33 @@ def store(self):
         action (DsRunnerAction): Instance of DSRunnerAction.
     &#34;&#34;&#34;
     self.__actions[name] = action</code></pre>
+</details>
+</dd>
+<dt id="pwncat.Runner.add_repeater"><code class="name flex">
+<span>def <span class="ident">add_repeater</span></span>(<span>self, name, repeater)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a function to the repeater thread pool runner.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>The name for the added repeater (will be used for logging the thread name).</dd>
+<dt><strong><code>repeater</code></strong> :&ensp;<code><a title="pwncat.DsRunnerRepeater" href="#pwncat.DsRunnerRepeater">DsRunnerRepeater</a></code></dt>
+<dd>Instance of DsRunnerRepeater.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_repeater(self, name, repeater):
+    # type: (str, DsRunnerRepeater) -&gt; None
+    &#34;&#34;&#34;Add a function to the repeater thread pool runner.
+
+    Args:
+        name (str): The name for the added repeater (will be used for logging the thread name).
+        repeater (DsRunnerRepeater): Instance of DsRunnerRepeater.
+    &#34;&#34;&#34;
+    self.__repeaters[name] = repeater</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Runner.add_timer"><code class="name flex">
@@ -8999,6 +9374,30 @@ def store(self):
                 time_last = time_now  # Reset previous time
             time.sleep(0.1)
 
+    def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
+        # type: (str, Callable[..., None], int, float, StopSignal, Any, Any) -&gt; None
+        &#34;&#34;&#34;Repeater run function to be thrown into a thread (Execs periodic tasks).
+
+        Args:
+            name (str):        Name for logging output
+            action (function): Function to be called
+            repeat (int):      Repeat the function so many times before quitting
+            pause (float):     Pause between repeated calls
+            ssig (StopSignal): Providing has_stop() and raise_stop()
+            args (*args):      *args for action func
+            kwargs (**kwargs): **kwargs for action func
+        &#34;&#34;&#34;
+        cycles = 1
+        self.log.trace(&#34;Repeater Start (%d/%d)&#34;, cycles, repeat)  # type: ignore
+        while cycles &lt;= repeat:
+            if ssig.has_stop():
+                self.log.trace(&#34;Stop signal acknowledged for timer %s&#34;, name)  # type: ignore
+                return
+            self.log.debug(&#34;Executing repeated function (%d/%d)&#34;, cycles, repeat)
+            action(*args, **kwargs)
+            cycles += 1
+            time.sleep(pause)
+
     # Start available action in a thread
     for key in self.__actions:
         # Create Thread object
@@ -9030,6 +9429,24 @@ def store(self):
                 self.__timers[key].args,
             ),
             kwargs=self.__timers[key].kwargs,
+        )
+        thread.daemon = False
+        thread.start()
+    # Start available repeaters in a thread
+    for key in self.__repeaters:
+        # Create Thread object
+        thread = threading.Thread(
+            target=run_repeater,
+            name=key,
+            args=(
+                key,
+                self.__repeaters[key].action,
+                self.__repeaters[key].repeat,
+                self.__repeaters[key].pause,
+                self.__repeaters[key].signal,
+                self.__repeaters[key].args,
+            ),
+            kwargs=self.__repeaters[key].kwargs,
         )
         thread.daemon = False
         thread.start()
@@ -11335,6 +11752,17 @@ def transform(self, data):
 </ul>
 </li>
 <li>
+<h4><code><a title="pwncat.DsRunnerRepeater" href="#pwncat.DsRunnerRepeater">DsRunnerRepeater</a></code></h4>
+<ul class="two-column">
+<li><code><a title="pwncat.DsRunnerRepeater.action" href="#pwncat.DsRunnerRepeater.action">action</a></code></li>
+<li><code><a title="pwncat.DsRunnerRepeater.args" href="#pwncat.DsRunnerRepeater.args">args</a></code></li>
+<li><code><a title="pwncat.DsRunnerRepeater.kwargs" href="#pwncat.DsRunnerRepeater.kwargs">kwargs</a></code></li>
+<li><code><a title="pwncat.DsRunnerRepeater.pause" href="#pwncat.DsRunnerRepeater.pause">pause</a></code></li>
+<li><code><a title="pwncat.DsRunnerRepeater.repeat" href="#pwncat.DsRunnerRepeater.repeat">repeat</a></code></li>
+<li><code><a title="pwncat.DsRunnerRepeater.signal" href="#pwncat.DsRunnerRepeater.signal">signal</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="pwncat.DsRunnerTimer" href="#pwncat.DsRunnerTimer">DsRunnerTimer</a></code></h4>
 <ul class="">
 <li><code><a title="pwncat.DsRunnerTimer.action" href="#pwncat.DsRunnerTimer.action">action</a></code></li>
@@ -11414,6 +11842,7 @@ def transform(self, data):
 <h4><code><a title="pwncat.Runner" href="#pwncat.Runner">Runner</a></code></h4>
 <ul class="">
 <li><code><a title="pwncat.Runner.add_action" href="#pwncat.Runner.add_action">add_action</a></code></li>
+<li><code><a title="pwncat.Runner.add_repeater" href="#pwncat.Runner.add_repeater">add_repeater</a></code></li>
 <li><code><a title="pwncat.Runner.add_timer" href="#pwncat.Runner.add_timer">add_timer</a></code></li>
 <li><code><a title="pwncat.Runner.run" href="#pwncat.Runner.run">run</a></code></li>
 </ul>

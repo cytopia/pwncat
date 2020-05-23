@@ -143,7 +143,7 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (1/9) DsRunnerAction
+# [1/10 DATA STRUCTURE TYPES]: (1/10) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
 class DsRunnerAction(object):
     """A type-safe data structure for Action functions for the Runner class."""
@@ -201,7 +201,7 @@ class DsRunnerAction(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (2/9) DsRunnerTimer
+# [1/10 DATA STRUCTURE TYPES]: (2/10) DsRunnerTimer
 # -------------------------------------------------------------------------------------------------
 class DsRunnerTimer(object):
     """A type-safe data structure for Timer functions for the Runner class."""
@@ -261,7 +261,76 @@ class DsRunnerTimer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (3/9) DsSock
+# [1/10 DATA STRUCTURE TYPES]: (3/10) DsRunnerRepeater
+# -------------------------------------------------------------------------------------------------
+class DsRunnerRepeater(object):
+    """A type-safe data structure for repeated functions for the Runner class."""
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def action(self):
+        # type: () -> Callable[..., None]
+        """`Callable[..., None]`: function to be run periodically."""
+        return self.__action
+
+    @property
+    def repeat(self):
+        # type: () -> int
+        """`int`: how many times to repeat the action function."""
+        return self.__repeat
+
+    @property
+    def pause(self):
+        # type: () -> float
+        """`int`: pause in seconds between repeated action calls."""
+        return self.__pause
+
+    @property
+    def args(self):
+        # type: () -> Tuple[Any, ...]
+        """`*args`: optional *args for the action function."""
+        return self.__args
+
+    @property
+    def kwargs(self):
+        # type: () -> Dict[str, Any]
+        """`**kargs`: optional *kwargs for the action function."""
+        return self.__kwargs
+
+    @property
+    def signal(self):
+        # type: () -> StopSignal
+        """`StopSignal`: StopSignal instance."""
+        return self.__signal
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(
+        self,
+        action,  # type: Callable[..., None]
+        signal,  # type: StopSignal
+        repeat,  # type: int
+        pause,  # type: float
+        *args,  # type: Tuple[Any, ...]
+        **kwargs  # type: Dict[str, Any]
+    ):
+        # type: (...) -> None
+        assert type(repeat) is int, type(repeat)
+        assert type(pause) is float, type(pause)
+        assert type(kwargs) is dict, type(kwargs)
+        self.__action = action
+        self.__signal = signal
+        self.__repeat = repeat
+        self.__pause = pause
+        self.__args = args
+        self.__kwargs = kwargs
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/10 DATA STRUCTURE TYPES]: (4/10) DsSock
 # -------------------------------------------------------------------------------------------------
 class DsSock(object):
     """A type-safe data structure for DsSock options."""
@@ -377,7 +446,7 @@ class DsSock(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (4/9) DsIONetworkSock
+# [1/10 DATA STRUCTURE TYPES]: (5/10) DsIONetworkSock
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSock(DsSock):
     """A type-safe data structure for IONetwork socket options."""
@@ -418,7 +487,7 @@ class DsIONetworkSock(DsSock):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (5/9) DsIONetworkCli
+# [1/10 DATA STRUCTURE TYPES]: (6/10) DsIONetworkCli
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkCli(object):
     """A type-safe data structure for IONetwork client options."""
@@ -472,7 +541,7 @@ class DsIONetworkCli(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (6/9) DsIONetworkSrv
+# [1/10 DATA STRUCTURE TYPES]: (7/10) DsIONetworkSrv
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSrv(object):
     """A type-safe data structure for IONetwork server options."""
@@ -535,7 +604,7 @@ class DsIONetworkSrv(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (7/9) DsTransformLinefeed
+# [1/10 DATA STRUCTURE TYPES]: (8/10) DsTransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class DsTransformLinefeed(object):
     """A type-safe data structure for DsTransformLinefeed options."""
@@ -559,7 +628,7 @@ class DsTransformLinefeed(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (8/9) DsIOStdinStdout
+# [1/10 DATA STRUCTURE TYPES]: (9/10) DsIOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class DsIOStdinStdout(object):
     """A type-safe data structure for IOStdinStdout options."""
@@ -590,7 +659,7 @@ class DsIOStdinStdout(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (9/9) DsIOCommand
+# [1/10 DATA STRUCTURE TYPES]: (10/10) DsIOCommand
 # -------------------------------------------------------------------------------------------------
 class DsIOCommand(object):
     """A type-safe data structure for IOCommand options."""
@@ -2607,6 +2676,10 @@ class Runner(object):
         # Each list item will be run in its own thread.
         self.__timers = {}  # type: Dict[str, DsRunnerTimer]
 
+        # Dict of repeater function definition to run in a thread.
+        # Each list item will be run in its own thread.
+        self.__repeaters = {}  # type: Dict[str, DsRunnerRepeater]
+
         # A dict which holds the threads created from actions.
         # The name is based on the __actions name
         # {"name": "<thread>"}
@@ -2636,6 +2709,16 @@ class Runner(object):
             timer (DsRunnerTimer): Instance of DsRunnerTimer.
         """
         self.__timers[name] = timer
+
+    def add_repeater(self, name, repeater):
+        # type: (str, DsRunnerRepeater) -> None
+        """Add a function to the repeater thread pool runner.
+
+        Args:
+            name (str): The name for the added repeater (will be used for logging the thread name).
+            repeater (DsRunnerRepeater): Instance of DsRunnerRepeater.
+        """
+        self.__repeaters[name] = repeater
 
     def run(self):
         # type: () -> None
@@ -2718,6 +2801,30 @@ class Runner(object):
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
+        def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
+            # type: (str, Callable[..., None], int, float, StopSignal, Any, Any) -> None
+            """Repeater run function to be thrown into a thread (Execs periodic tasks).
+
+            Args:
+                name (str):        Name for logging output
+                action (function): Function to be called
+                repeat (int):      Repeat the function so many times before quitting
+                pause (float):     Pause between repeated calls
+                ssig (StopSignal): Providing has_stop() and raise_stop()
+                args (*args):      *args for action func
+                kwargs (**kwargs): **kwargs for action func
+            """
+            cycles = 1
+            self.log.trace("Repeater Start (%d/%d)", cycles, repeat)  # type: ignore
+            while cycles <= repeat:
+                if ssig.has_stop():
+                    self.log.trace("Stop signal acknowledged for timer %s", name)  # type: ignore
+                    return
+                self.log.debug("Executing repeated function (%d/%d)", cycles, repeat)
+                action(*args, **kwargs)
+                cycles += 1
+                time.sleep(pause)
+
         # Start available action in a thread
         for key in self.__actions:
             # Create Thread object
@@ -2749,6 +2856,24 @@ class Runner(object):
                     self.__timers[key].args,
                 ),
                 kwargs=self.__timers[key].kwargs,
+            )
+            thread.daemon = False
+            thread.start()
+        # Start available repeaters in a thread
+        for key in self.__repeaters:
+            # Create Thread object
+            thread = threading.Thread(
+                target=run_repeater,
+                name=key,
+                args=(
+                    key,
+                    self.__repeaters[key].action,
+                    self.__repeaters[key].repeat,
+                    self.__repeaters[key].pause,
+                    self.__repeaters[key].signal,
+                    self.__repeaters[key].args,
+                ),
+                kwargs=self.__repeaters[key].kwargs,
             )
             thread.daemon = False
             thread.start()
@@ -4002,7 +4127,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if args.http or args.https or args.wait or args.ping_init or args.safe_word:
+    if args.http or args.https or args.wait or args.safe_word:
         print("Unimplemented options", file=sys.stderr)
         sys.exit(1)
 
@@ -4049,9 +4174,6 @@ def main():
     cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
     # TODO:
     # "wait": args.wait,
-    # "ping_init": args.ping_init,
-    # "ping_intvl": args.ping_intvl,
-    # "ping_word": args.ping_word,
     # "ping_robing": args.ping_robin,
     # "safe_word": args.safe_word,
 
@@ -4232,8 +4354,13 @@ def main():
         )
         if type(args.ping_intvl) is int and args.ping_intvl > 0:
             run.add_timer(
-                "PING",
+                "PING-INT",
                 DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
+            )
+        if args.ping_init:
+            run.add_repeater(
+                "PING-REP",
+                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (args.ping_word)),  # send data
             )
         run.run()
 
