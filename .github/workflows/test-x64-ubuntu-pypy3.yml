@@ -43,8 +43,14 @@ jobs:
           echo "\$ python -c 'import socket;print(socket.gethostbyname(\"localhost\"))'"
           python -c 'import socket;print(socket.gethostbyname("localhost"))' || true
           echo
-          echo "\$ python -c 'import socket;print(socket.gethostbyname(\"localhost\"))'"
+          echo "\$ python -c 'import socket;print(socket.getaddrinfo(\"localhost\", None))'"
           python -c 'import socket;print(socket.getaddrinfo("localhost", None))' || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.getaddrinfo(\"localhost\", None, socket.AF_INET))'"
+          python -c 'import socket;print(socket.getaddrinfo("localhost", None, socket.AF_INET))' || true
+          echo
+          echo "\$ python -c 'import socket;print(socket.getaddrinfo(\"localhost\", None, socket.AF_INET6))'"
+          python -c 'import socket;print(socket.getaddrinfo("localhost", None, socket.AF_INET6))' || true
 
 
       # ------------------------------------------------------------
