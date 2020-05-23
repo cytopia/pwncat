@@ -112,7 +112,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.21-alpha"
+VERSION = "0.0.22-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -498,6 +498,12 @@ class DsIONetworkSrv(object):
         # type: () -> int
         """`int`: If binding fails, retry endless (if negative) or x many times."""
         return self.__rebind
+
+    @rebind.setter
+    def rebind(self, value):
+        # type: (int) -> None
+        assert type(value) is int, type(value)
+        self.__rebind = value
 
     @property
     def rebind_wait(self):
@@ -2059,7 +2065,8 @@ class IONetwork(IO):
 
         if role == "server":
             if not self.__net.run_server(self.__host, self.__ports[self.__pport]):
-                sys.exit(1)
+                if not self.__server_rebind():
+                    sys.exit(1)
         if role == "client":
             if not self.__net.run_client(self.__host, self.__ports[self.__pport]):
                 if self.__sock_opts.udp:
@@ -2201,6 +2208,58 @@ class IONetwork(IO):
 
         # [5/5] Signal failure
         self.log.info("Reconnect count is used up. Shutting down.")
+        return False
+
+    def __server_rebind(self):
+        # type: () -> bool
+
+        # rebind < 0 (endlessly)
+        # rebind > 0 (rebind until counter reaches zero)
+        while self.__srv_opts.rebind != 0:
+
+            # [1/7] Let's ask the interrupter() function if we should terminate?
+            if self.ssig.has_stop():
+                return False
+
+            # [2/7] Increment the port numer (if --reconn-robin has multiple)
+            self.__pport += 1
+            if self.__pport == len(self.__ports):
+                self.__pport = 0
+
+            # [3/7] Notify user
+            if self.__srv_opts.rebind > 0:
+                self.log.info(
+                    "Rebinding to port %d in %.1f sec (%d more times left)",
+                    self.__ports[self.__pport],
+                    self.__srv_opts.rebind_wait,
+                    self.__srv_opts.rebind,
+                )
+            else:
+                self.log.info(
+                    "Rebinding to port %d in %.1f sec (indefinitely)",
+                    self.__ports[self.__pport],
+                    self.__srv_opts.rebind_wait,
+                )
+
+            # [4/7] Decrease reconnect counter
+            if self.__srv_opts.rebind > 0:
+                self.__srv_opts.rebind -= 1
+
+            # [5/7] Wait (--rebind-wait)
+            time.sleep(self.__srv_opts.rebind_wait)
+
+            # [6/7] Let's ask the interrupter() function if we should terminate?
+            # In case the other threads were slower as the sleep time in [1/7]
+            # we will check again here.
+            if self.ssig.has_stop():
+                return False
+
+            # [6/7] Recurse until True or reconnect count is used up
+            if self.__net.run_server(self.__host, self.__ports[self.__pport]):
+                return True
+
+        # [7/7] Nope
+        self.log.info("Rebind count is used up. Shutting down.")
         return False
 
     def __server_reaccept_from_client(self):
@@ -2604,9 +2663,9 @@ class Runner(object):
                 self.log.trace("[%s] Producer received: %s", name, repr(data))  # type: ignore
 
                 # [1/3] Transform data before sending it to the consumer
-                for transformer in transformers:
-                    data = transformer.transform(data)
                 if transformers:
+                    for transformer in transformers:
+                        data = transformer.transform(data)
                     self.log.trace(  # type: ignore
                         "[%s] Producer data after transformers: %s", name, repr(data)
                     )
@@ -3347,7 +3406,7 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [OPTIONS] -s/-p
+    # [OPTIONS] --source-addr/--source-port
     if not connect_mode and (args.source_port or args.source_addr):
         print(
             "%s: error: --source-addr and --source-port can only be used in connect mode."
@@ -3356,7 +3415,7 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [OPTIONS] -s/-p
+    # [OPTIONS] --source-addr/--source-port
     if (args.source_port and not args.source_addr) or (not args.source_port and args.source_addr):
         print(
             "%s: error: --source-addr and --source-port are both required." % (APPNAME),
@@ -3416,12 +3475,6 @@ def _args_check_mutually_exclusive(parser, args):
         print(
             "%s: error: --ping-init mutually excl. with -l/--listen or -L/--local" % (APPNAME),
             file=sys.stderr,
-        )
-        sys.exit(1)
-    if args.ping_init is not False and not args.udp:
-        parser.print_usage()
-        print(
-            "%s: error: --ping-init only works with -u/--udp" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
 
@@ -3949,7 +4002,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if args.http or args.https or args.rebind or args.wait or args.ping_init or args.safe_word:
+    if args.http or args.https or args.wait or args.ping_init or args.safe_word:
         print("Unimplemented options", file=sys.stderr)
         sys.exit(1)
 
@@ -4119,7 +4172,9 @@ def main():
         run.run()
     # Run server
     if args.listen:
-        net = IONetwork(ssig, enc, host, ports, "server", srv_opts, cli_opts, sock_opts)
+        net = IONetwork(
+            ssig, enc, host, ports + args.rebind_robin, "server", srv_opts, cli_opts, sock_opts
+        )
         # Run blocking auto-deploy.
         # This will hand over to normal listening server on success or failure
         if args.self_inject:

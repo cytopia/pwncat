@@ -4,6 +4,14 @@
 ## Unreleased
 
 
+## Release 0.0.22-alpha
+
+### Added
+- Feature: Rebind forever: `--rebind`: #44
+- Feature: Wait between rebind attempts: `--rebind-wait`: #45
+- Feature: Port hopping for rebinds: `--rebind-robin`: #46
+
+
 ## Release 0.0.21-alpha
 
 ### Added
