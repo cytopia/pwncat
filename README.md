@@ -79,9 +79,9 @@
      <thead>
       <tr>
        <th><sub>Python</sub><sup>OS</sup></th>
-       <th>Linux</th>
+       <th>Linux <sup><small>[2]</small></sup></th>
        <th>MacOS</th>
-       <th>Windows <sup><small>[2]</small></sup></th>
+       <th>Windows <sup><small>[3]</small></sup></th>
       </tr>
      </thead>
      <tbody>
@@ -135,7 +135,8 @@
 <table>
 
 > <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.37%)</strong></sup><br/>
-> <sup>[2] Windows builds are currently only failing, because they are simply stuck on GitHub actions.</sup>
+> <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
+> <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
 
 #### Motivation
