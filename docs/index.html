@@ -4,9 +4,9 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="author" content="cytopia">
-	<meta name="description" content="Pwncat - Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python">
+	<meta name="description" content="Pwncat - Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell, forwarding magic and insanely fast UDP port scanning - and its fully scriptable with Python">
 	<meta name="keywords" content="pwncat, reverse shell handler, reverse shell, bind shell, self-injecting shell, inject shell, unbreakable reverse shell, UDP reverse shell, pwncat scripting engine, IDS evasion, IPS evasion, Firewall evasion, netcat">
-	<title>pwncat - reverse shell, bind shell, inject shell and port forwarding</title>
+	<title>pwncat - reverse shell handler with all netcat features</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
 	<style>
 		html, body {
@@ -139,18 +139,18 @@
 				</marquee>
 
 
-				<p><code>pwncat</code> is a sophisticated bind and reverse shell handler with many features as well as a drop-in replacement or complement to <code>netcat</code> and <code>ncat</code>.</p>
+				<p><code>pwncat</code> is a sophisticated bind and reverse shell handler with many features as well as a drop-in replacement or compatible complement to <code>netcat</code>, <code>ncat</code> or <code>socat</code>.</p>
 				<br/>
 
 
 				<blockquote cite="github.com/cytopia/pwncat">
-					Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python (<a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a>).
+					pwncat is like netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell, forwarding magic and insanely fast port scanning - and its fully scriptable with Python (<a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a>)
 				</blockquote>
 				<br/>
 
 
 				<h2>Get it</h2>
-				<p>Use <code>pip</code> to install locally</p>
+				<p>Install from official Python repo via <code>pip</code></p>
 <pre class="hi">
 pip install pwncat
 </pre>
@@ -222,6 +222,12 @@ pwncat -l 4444 --self-inject /bin/sh:10.0.0.1:4445+3
 						<div class="section dark">
 							<h4>Reverse shell</h4>
 							<p>Create normal reverse shells for any operating system over IPv4, IPV6 or both</p>
+						</div>
+					</div>
+					<div class="card large">
+						<div class="section dark">
+							<h4>Insanely fast port scanning</h4>
+							<p>When doing a full range UDP port scan, <code>pwncat</code> reaches a speed of <strong>21x faster</strong> than <code>nmap</code></p>
 						</div>
 					</div>
 					<div class="card large">
@@ -328,8 +334,15 @@ reconnect.
 </pre>
 <pre class="hi">
 positional arguments:
-  hostname              Address to listen, forward or connect to
-  port                  Port to listen, forward or connect to
+  hostname              Address to listen, forward or connect to.
+
+  port                  [All modes]
+                        Single port to listen, forward or connect to.
+                        [Zero-I/O mode]
+                        Specify multiple ports to scan:
+                        Via list:  4444,4445,4446
+                        Via range: 4444-4446
+                        Via incr:  4444+2
 </pre>
 <pre class="hi">
 mode arguments:

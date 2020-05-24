@@ -11,6 +11,7 @@
 - Feature: Wait between rebind attempts: `--rebind-wait`: #45
 - Feature: Port hopping for rebinds: `--rebind-robin`: #46
 - Feature: Send initial ping `--ping-init`: #48
+- Feature: Zero-I/O mode (port scan) `--zero`: #32
 
 
 ## Release 0.0.21-alpha

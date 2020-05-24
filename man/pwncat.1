@@ -23,10 +23,16 @@ reconnect.
 .SS "positional arguments:"
 .TP
 hostname
-Address to listen, forward or connect to
+Address to listen, forward or connect to.
 .TP
 port
-Port to listen, forward or connect to
+[All modes]
+Single port to listen, forward or connect to.
+[Zero\-I/O mode]
+Specify multiple ports to scan:
+Via list:  4444,4445,4446
+Via range: 4444\-4446
+Via incr:  4444+2
 .SS "mode arguments:"
 .TP
 \fB\-l\fR, \fB\-\-listen\fR
