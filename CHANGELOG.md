@@ -13,6 +13,10 @@
 - Feature: Send initial ping `--ping-init`: #48
 - Feature: Zero-I/O mode (port scan) `--zero`: #32
 - Feature: Safeword: `--safe-word`: #51
+- Feature: Stateless UDP connect: `--udp-sconnect` and `--udp-sconnect-word`: #79
+
+### Changes
+- Re-organized command line arguments for better overview
 
 
 ## Release 0.0.21-alpha

@@ -159,10 +159,10 @@ for curr_round in $(seq "${RUNS}"); do
 	#         server opts            client opts
 	# BIND ON ANY
 	run_test "-l ${RPORT}    -u -vvvv" "${RHOST} ${RPORT}    -u -vvvv"  "1" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -4 -u -vvvv"  "2" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -4 -u -vvvv --udp-sconnect --udp-sconnect-word"  "2" "14" "${curr_round}" "${RUNS}"
 	run_test "-l ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -6 -u -vvvv"  "3" "14" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT}    -u -vvvv"  "4" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT}    -u -vvvv --udp-sconnect --udp-sconnect-word"  "4" "14" "${curr_round}" "${RUNS}"
 	run_test "-l ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT} -4 -u -vvvv"  "5" "14" "${curr_round}" "${RUNS}"
 
 	run_test "-l ${RPORT} -6 -u -vvvv" "${RHOST} ${RPORT}    -u -vvvv"  "6" "14" "${curr_round}" "${RUNS}"
@@ -173,7 +173,7 @@ for curr_round in $(seq "${RUNS}"); do
 	run_test "-l ${RHOST} ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -4 -u -vvvv"   "9" "14" "${curr_round}" "${RUNS}"
 	run_test "-l ${RHOST} ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -6 -u -vvvv"  "10" "14" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RHOST} ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT}    -u -vvvv"  "11" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT}    -u -vvvv --udp-sconnect --udp-sconnect-word"  "11" "14" "${curr_round}" "${RUNS}"
 	run_test "-l ${RHOST} ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT} -4 -u -vvvv"  "12" "14" "${curr_round}" "${RUNS}"
 
 	run_test "-l ${RHOST} ${RPORT} -6 -u -vvvv" "${RHOST} ${RPORT}    -u -vvvv"  "13" "14" "${curr_round}" "${RUNS}"

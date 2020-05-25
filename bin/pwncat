@@ -431,6 +431,18 @@ class DsSock(object):
         return self.__udp
 
     @property
+    def udp_sconnect(self):
+        # type: () -> bool
+        """`bool`: Determines if we use stateful connect for UDP."""
+        return self.__udp_sconnect
+
+    @property
+    def udp_sconnect_word(self):
+        # type: () -> str
+        """`str`: What string to send when emulating a stateful UDP connect."""
+        return self.__udp_sconnect_word
+
+    @property
     def ip_tos(self):
         # type: () -> Optional[str]
         """`str`: Determines what IP_TOS (Type of Service) value to set for the socket."""
@@ -456,6 +468,8 @@ class DsSock(object):
         src_addr,  # type: Optional[str]
         src_port,  # type: Optional[int]
         udp,  # type: bool
+        udp_sconnect,  # type: bool
+        udp_sconnect_word,  # type: str
         ip_tos,  # type: Optional[str]
         info,  # type: str
     ):
@@ -479,6 +493,8 @@ class DsSock(object):
         self.__src_addr = src_addr
         self.__src_port = src_port
         self.__udp = udp
+        self.__udp_sconnect = udp_sconnect
+        self.__udp_sconnect_word = udp_sconnect_word
         self.__ip_tos = ip_tos
         self.__info = info
 
@@ -513,6 +529,8 @@ class DsIONetworkSock(DsSock):
         src_addr,  # type: Optional[str]
         src_port,  # type: Optional[bool]
         udp,  # type: bool
+        udp_sconnect,  # type: bool
+        udp_sconnect_word,  # type: str
         ip_tos,  # type: Optional[str]
         info,  # type: str
     ):
@@ -520,7 +538,19 @@ class DsIONetworkSock(DsSock):
         assert type(recv_timeout_retry) is int, type(recv_timeout_retry)
         self.__recv_timeout_retry = recv_timeout_retry
         super(DsIONetworkSock, self).__init__(
-            bufsize, backlog, recv_timeout, nodns, ipv4, ipv6, src_addr, src_port, udp, ip_tos, info
+            bufsize,
+            backlog,
+            recv_timeout,
+            nodns,
+            ipv4,
+            ipv6,
+            src_addr,
+            src_port,
+            udp,
+            udp_sconnect,
+            udp_sconnect_word,
+            ip_tos,
+            info,
         )
 
 
@@ -1925,8 +1955,15 @@ class Sock(object):
             # A UDP client doesn't know if the connect() was successful, so the trick
             # is to send an empty packet and see if an exception is triggered during
             # receive or simply a timeout (which means success).
-            if self.__options.udp:
-                sock.send(self.__enc.encode(""))
+            if self.__options.udp and self.__options.udp_sconnect:
+                # Some applications like netcat do not like to receive empty
+                # data, as they treat it as an EOF and will quit upon receive,
+                # so we're using a nullbyte character instead.
+                data = self.__enc.encode(self.__options.udp_sconnect_word)
+                self.__log.debug(
+                    "Trying to send %d bytes (%s) to UDP stateful connect", len(data), repr(data)
+                )
+                sock.send(data)
                 sock.settimeout(0.1)
                 try:
                     sock.recv(self.__options.bufsize)
@@ -2262,8 +2299,6 @@ class IONetwork(IO):
                     sys.exit(1)
         if role == "client":
             if not self.__net.run_client(self.__host, self.__ports[self.__pport]):
-                if self.__sock_opts.udp:
-                    sys.exit(1)
                 if not self.__client_reconnect_to_server():
                     sys.exit(1)
 
@@ -2347,7 +2382,6 @@ class IONetwork(IO):
         Returns:
             bool: Returns `True` on success and `False` on failure or stop signal requested.
         """
-        assert not self.__sock_opts.udp, "This should have been caught during arg check."
         assert self.__role == "client", "This should have been caught during arg check."
 
         # reconn < 0 (endlessly)
@@ -3734,7 +3768,7 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [MODE --local
+    # [MODE]--local
     if args.local and (args.listen or args.zero or args.remote):
         parser.print_usage()
         print(
@@ -3743,7 +3777,7 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [MODE --remote
+    # [MODE] --remote
     if args.remote and (args.listen or args.zero or args.local):
         parser.print_usage()
         print(
@@ -3818,17 +3852,11 @@ def _args_check_mutually_exclusive(parser, args):
         )
         sys.exit(1)
 
-    # [ADVANCED] --wait
-    if args.wait is not False and args.udp:
+    # [ADVANCED] --reconn
+    if args.reconn != 0 and not connect_mode:
         parser.print_usage()
         print(
-            "%s: error: -w/--wait mutually excl. with -u/--udp" % (APPNAME), file=sys.stderr,
-        )
-        sys.exit(1)
-    if args.wait is not False and not connect_mode:
-        parser.print_usage()
-        print(
-            "%s: error: -w/--wait only works with connect mode" % (APPNAME), file=sys.stderr,
+            "%s: error: --reconn only works in connect mode" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
 
@@ -3838,6 +3866,14 @@ def _args_check_mutually_exclusive(parser, args):
         print(
             "%s: error: --ping-init mutually excl. with -l/--listen or -L/--local" % (APPNAME),
             file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # [ADVANCED] --udp-sconnect
+    if args.udp_sconnect and not connect_mode:
+        parser.print_usage()
+        print(
+            "%s: error: --udp-sconnect only works in connect mode" % (APPNAME), file=sys.stderr,
         )
         sys.exit(1)
 
@@ -3851,11 +3887,11 @@ def get_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False,
-        usage="""%(prog)s [-Cnuv] [-e cmd] hostname port
-       %(prog)s [-Cnuv] [-e cmd] -l [hostname] port
-       %(prog)s [-Cnuv] -z hostname port
-       %(prog)s [-Cnuv] -L [addr:]port hostname port
-       %(prog)s [-Cnuv] -R addr:port hostname port
+        usage="""%(prog)s [options] hostname port
+       %(prog)s [options] -l [hostname] port
+       %(prog)s [options] -z hostname port
+       %(prog)s [options] -L [addr:]port hostname port
+       %(prog)s [options] -R addr:port hostname port
        %(prog)s -V, --version
        %(prog)s -h, --help
        """
@@ -3867,22 +3903,28 @@ firewalls and intrusion detection/prevention systems.
 
 If no mode arguments are specified, pwncat will run in connect mode and act as
 a client to connect to a remote endpoint. If the connection to the remote
-endoint is lost, pwncat will quit. See advanced options for how to automatically
-reconnect.""",
+endoint is lost, pwncat will quit. See options for how to automatically re-
+connect.""",
     )
 
     positional = parser.add_argument_group("positional arguments")
     mode = parser.add_argument_group("mode arguments")
     optional = parser.add_argument_group("optional arguments")
+    protocol = parser.add_argument_group("protocol arguments")
     cnc = parser.add_argument_group("command & control arguments")
-    advanced = parser.add_argument_group("advanced arguments")
+    pse = parser.add_argument_group("pwncat scripting engine")
+    lmode = parser.add_argument_group("listen mode arguments")
+    cmode = parser.add_argument_group("connect mode arguments")
     misc = parser.add_argument_group("misc arguments")
 
+    # --------------------------------------------------------------------------
+    # Positional arguments
+    # --------------------------------------------------------------------------
     positional.add_argument(
         "hostname",
         nargs="?",
         type=str,
-        help="""Address to listen, forward or connect to.
+        help="""Address to listen, forward, scan or connect to.
 
 """,
     )
@@ -3899,6 +3941,9 @@ Via incr:  4444+2
 """,
     )
 
+    # --------------------------------------------------------------------------
+    # Mode arguments
+    # --------------------------------------------------------------------------
     mode.add_argument(
         "-l",
         "--listen",
@@ -3959,20 +4004,10 @@ The connection to your listening server is given by
 target machine via the positional arguments.
 """,
     )
-    optional.add_argument(
-        "-4",
-        dest="ipv4",
-        action="store_true",
-        default=False,
-        help="Only Use IPv4 instead of both, IPv4 and IPv6.",
-    )
-    optional.add_argument(
-        "-6",
-        action="store_true",
-        default=False,
-        dest="ipv6",
-        help="Only Use IPv6 instead of both, IPv4 and IPv6.",
-    )
+
+    # --------------------------------------------------------------------------
+    # Optional arguments
+    # --------------------------------------------------------------------------
     optional.add_argument(
         "-e",
         "--exec",
@@ -3980,7 +4015,9 @@ target machine via the positional arguments.
         type=str,
         default=False,
         dest="cmd",
-        help="Execute shell command. Only for connect or listen mode.",
+        help="""Execute shell command. Only for connect or listen mode.
+
+""",
     )
     # TODO: add --crlf-i and --crlf-o to only do this on input or output and have
     # --crlf to always do it on input and output!
@@ -3995,44 +4032,18 @@ line endings for input and outout accordingly. Specify
 'no' to completely remove any line feeds. By default
 it will not replace anything and takes what is entered
 (usually CRLF on Windows, LF on Linux and some times
-CR on MacOS).""",
-    )
-    optional.add_argument(
-        "-n", "--nodns", action="store_true", default=False, help="Do not resolve DNS.",
-    )
-    optional.add_argument(
-        "-u",
-        "--udp",
-        action="store_true",
-        default=False,
-        help="Use UDP for the connection instead of TCP.",
-    )
-    optional.add_argument(
-        "-T",
-        "--tos",
-        metavar="str",
-        type=ArgValidator.type_tos,
-        default=None,
-        help="""Specifies IP Type of Service (ToS) for the connection.
-Valid values are the tokens 'mincost', 'lowcost',
-'reliability', 'throughput' or 'lowdelay'.
+CR on MacOS).
+
 """,
     )
     optional.add_argument(
-        "--source-addr",
-        metavar="addr",
-        type=str,
-        default=None,
-        dest="source_addr",
-        help="Specify the source IP address of the interface for connect mode.",
-    )
-    optional.add_argument(
-        "--source-port",
-        metavar="port",
-        type=ArgValidator.type_port,
-        default=None,
-        dest="source_port",
-        help="Specify the source port for connect mode.",
+        "-n",
+        "--nodns",
+        action="store_true",
+        default=False,
+        help="""Do not resolve DNS.
+
+""",
     )
     optional.add_argument(
         "-v",
@@ -4041,18 +4052,22 @@ Valid values are the tokens 'mincost', 'lowcost',
         default=0,
         help="""Be verbose and print info to stderr. Use -v, -vv, -vvv
 or -vvvv for more verbosity. The server performance will
-decrease drastically if you use more than three times.""",
+decrease drastically if you use more than three times.
+
+""",
     )
     optional.add_argument(
         "--info",
         metavar="type",
         type=ArgValidator.type_info,
         default="",
-        help="""Show additional info about sockets, ip4/6 or tcp opts
+        help="""Show additional info about sockets, IPv4/6 or TCP opts
 applied to the current socket connection. Valid
 parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
 Note, you must at least be in INFO verbose mode in order
-to see them (-vv).""",
+to see them (-vv).
+
+""",
     )
     optional.add_argument(
         "-c",
@@ -4065,9 +4080,97 @@ In 'auto' mode, color is displayed as long as the output
 goes to a terminal. If it is piped into a file, color
 will automatically be disabled. This mode also disables
 color on Windows by default. (default: auto)
+
 """,
     )
+    optional.add_argument(
+        "--safe-word",
+        metavar="str",
+        type=str,
+        default=None,
+        help="""All modes:
+If %(prog)s is started with this argument, it will shut
+down as soon as it receives the specified string. The
+--keep-open (server) or --reconn (client) options will
+be ignored and it won't listen again or reconnect to you.
+Use a very unique string to not have it shut down
+accidentally by other input.
+"""
+        % ({"prog": APPNAME}),
+    )
 
+    # --------------------------------------------------------------------------
+    # Protocol arguments
+    # --------------------------------------------------------------------------
+    protocol.add_argument(
+        "-4",
+        dest="ipv4",
+        action="store_true",
+        default=False,
+        help="""Only Use IPv4 (default: IPv4 and IPv6 dualstack).
+
+""",
+    )
+    protocol.add_argument(
+        "-6",
+        action="store_true",
+        default=False,
+        dest="ipv6",
+        help="""Only Use IPv6 (default: IPv4 and IPv6 dualstack).
+
+""",
+    )
+    protocol.add_argument(
+        "-u",
+        "--udp",
+        action="store_true",
+        default=False,
+        help="""Use UDP for the connection instead of TCP.
+
+""",
+    )
+    protocol.add_argument(
+        "-T",
+        "--tos",
+        metavar="str",
+        type=ArgValidator.type_tos,
+        default=None,
+        help="""Specifies IP Type of Service (ToS) for the connection.
+Valid values are the tokens 'mincost', 'lowcost',
+'reliability', 'throughput' or 'lowdelay'.
+
+""",
+    )
+    protocol.add_argument(
+        "--http",
+        action="store_true",
+        default=False,
+        help="""Connect / Listen mode (TCP and UDP):
+Hide traffic in http packets to fool Firewalls/IDS/IPS.
+
+""",
+    )
+    protocol.add_argument(
+        "--https",
+        action="store_true",
+        default=False,
+        help="""Connect / Listen mode (TCP and UDP):
+Hide traffic in https packets to fool Firewalls/IDS/IPS.
+
+""",
+    )
+    protocol.add_argument(
+        "-H",
+        "--header",
+        metavar="str",
+        nargs="*",
+        default=[],
+        help="""Add HTTP headers to your request when using --http(s).""",
+    )
+
+    # --------------------------------------------------------------------------
+    # Command & Control arguments
+    # --------------------------------------------------------------------------
     cnc.add_argument(
         "--self-inject",
         metavar="cmd:host:port[s]",
@@ -4091,7 +4194,11 @@ Note: this is currently an experimental feature and does
 not work on Windows remote hosts yet.
 """,
     )
-    advanced.add_argument(
+
+    # --------------------------------------------------------------------------
+    # PSE arguments
+    # --------------------------------------------------------------------------
+    pse.add_argument(
         "--script-send",
         metavar="file",
         type=ArgValidator.type_file_content,
@@ -4115,7 +4222,7 @@ file will be called with exec().
 
 """,
     )
-    advanced.add_argument(
+    pse.add_argument(
         "--script-recv",
         metavar="file",
         type=ArgValidator.type_file_content,
@@ -4136,28 +4243,13 @@ You can also define as many custom functions or classes
 within this file, but ensure to prefix them uniquely to
 not collide with pwncat's function or classes, as the
 file will be called with exec().
-
 """,
     )
-    advanced.add_argument(
-        "--http",
-        action="store_true",
-        default=False,
-        help="""Connect / Listen / Local forward mode (TCP only):
-Hide traffic in http packets to fool Firewalls/IDS/IPS.
 
-""",
-    )
-    advanced.add_argument(
-        "--https",
-        action="store_true",
-        default=False,
-        help="""Connect / Listen / Local forward mode (TCP only):
-Hide traffic in https packets to fool Firewalls/IDS/IPS.
-
-""",
-    )
-    advanced.add_argument(
+    # --------------------------------------------------------------------------
+    # Listen mode arguments
+    # --------------------------------------------------------------------------
+    lmode.add_argument(
         "-k",
         "--keep-open",
         action="store_true",
@@ -4169,7 +4261,7 @@ disconnected or the connection is unterrupted otherwise.
 
 """,
     )
-    advanced.add_argument(
+    lmode.add_argument(
         "--rebind",
         metavar="x",
         nargs="?",
@@ -4185,7 +4277,7 @@ See --rebind-robin for an interesting use-case.
 
 """,
     )
-    advanced.add_argument(
+    lmode.add_argument(
         "--rebind-wait",
         metavar="s",
         type=float,
@@ -4195,7 +4287,7 @@ Wait x seconds between re-initialization. (default: 1)
 
 """,
     )
-    advanced.add_argument(
+    lmode.add_argument(
         "--rebind-robin",
         metavar="port",
         type=ArgValidator.type_port_list,
@@ -4208,16 +4300,39 @@ Use comma separated string such as '80,81,82,83', a range
 of ports '80-83' or an increment '80+3'.
 Set --rebind to at least the number of ports to probe +1
 This option requires --rebind to be specified.
+""",
+    )
+
+    # --------------------------------------------------------------------------
+    # Connect mode arguments
+    # --------------------------------------------------------------------------
+    cmode.add_argument(
+        "--source-addr",
+        metavar="addr",
+        type=str,
+        default=None,
+        dest="source_addr",
+        help="""Specify source bind IP address for connect mode.
 
 """,
     )
-    advanced.add_argument(
+    cmode.add_argument(
+        "--source-port",
+        metavar="port",
+        type=ArgValidator.type_port,
+        default=None,
+        dest="source_port",
+        help="""Specify source bind port for connect mode.
+
+""",
+    )
+    cmode.add_argument(
         "--reconn",
         metavar="x",
         nargs="?",
         type=int,
         default=0,
-        help="""Connect mode / Zero-I/O mode (TCP only):
+        help="""Connect mode (TCP and UDP):
 If the remote server is not reachable or the connection
 is interrupted, the client will connect again x many
 times before giving up. Omit the quantifier to retry
@@ -4226,25 +4341,30 @@ times to retry before giving up.
 (default: quit if the remote is not available or the
 connection was interrupted)
 This might be handy for stable TCP reverse shells ;-)
+Note on UDP:
+By default UDP does not know if it is connected, so
+it will stop at the first port and assume it has a
+connection. Consider using --udp-sconnect with this
+option to make UDP aware of a successful connection.
 
 """,
     )
-    advanced.add_argument(
+    cmode.add_argument(
         "--reconn-wait",
         metavar="s",
         type=float,
         default=1.0,
-        help="""Connect mode / Zero-I/O mode (TCP only):
+        help="""Connect mode (TCP and UDP):
 Wait x seconds between re-connects. (default: 1)
 
 """,
     )
-    advanced.add_argument(
+    cmode.add_argument(
         "--reconn-robin",
         metavar="port",
         type=ArgValidator.type_port_list,
         default=[],
-        help="""Connect mode / Zero-I/O mode (TCP only):
+        help="""Connect mode (TCP and UDP):
 If the remote server is not reachable or the connection
 is interrupted and --reconn is specified, the client
 will shuffle ports in round-robin mode to connect to.
@@ -4259,26 +4379,11 @@ figure out what outbound ports are allowed.
 
 """,
     )
-    advanced.add_argument(
-        "-w",
-        "--wait",
-        metavar="s",
-        type=int,
-        default=False,
-        help="""Connect mode (TCP only):
-If a connection and stdin are idle for more than s sec,
-then the connection is silently closed and the client
-will exit. (default: wait forever).
-Note: if --reconn is specified, the connection will be
-re-opened.
-
-""",
-    )
-    advanced.add_argument(
+    cmode.add_argument(
         "--ping-init",
         action="store_true",
         default=False,
-        help="""Connect mode / Zero-I/O mode (TCP and UDP):
+        help="""Connect mode (TCP and UDP):
 UDP is a stateless protocol unlike TCP, so no hand-
 shake communication takes place and the client just
 sends data to a server without being "accepted" by
@@ -4291,18 +4396,18 @@ connect.
 The --ping-init option instructs the client to send one
 single initial ping packet to the server, so that it is
 able to talk to the client.
-This is the only way to make a UDP reverse shell work.
+This is a way to make a UDP reverse shell work.
 See --ping-word for what char/string to send as initial
 ping packet (default: '\\0')
 
 """,
     )
-    advanced.add_argument(
+    cmode.add_argument(
         "--ping-intvl",
         metavar="s",
         type=int,
         default=False,
-        help="""Connect mode / Zero-I/O mode (TCP and UDP):
+        help="""Connect mode (TCP and UDP):
 Instruct the client to send ping intervalls every s sec.
 This allows you to restart your UDP server and just wait
 for the client to report back in. This might be handy
@@ -4312,23 +4417,25 @@ ping packet (default: '\\0')
 
 """,
     )
-    advanced.add_argument(
+    cmode.add_argument(
         "--ping-word",
         metavar="str",
         type=str,
         default="\0",
-        help="""Connect mode / Zero-I/O mode (TCP and UDP):
+        help="""Connect mode (TCP and UDP):
 Change the default character '\\0' to use for upd ping.
 Single character or strings are supported.
 
 """,
     )
-    advanced.add_argument(
+    # TODO: Isn't this already covered by --reconn-robin or --zero
+    # What should be the behaviour (keep connection or hop on?)
+    cmode.add_argument(
         "--ping-robin",
         metavar="port",
         type=ArgValidator.type_port_list,
         default=[],
-        help="""Connect mode / Zero-I/O mode (TCP and UDP):
+        help="""Connect mode (TCP and UDP):
 Instruct the client to shuffle the specified ports in
 round-robin mode for a remote server to ping.
 This might be handy to scan outbound allowed ports.
@@ -4338,21 +4445,40 @@ Use --ping-intvl 0 to be faster.
 
 """,
     )
-    advanced.add_argument(
-        "--safe-word",
+    cmode.add_argument(
+        "--udp-sconnect",
+        action="store_true",
+        default=False,
+        help="""Connect mode (UDP only):
+Emulating stateful behaviour for UDP connect phase by
+sending an initial packet to the server to validate if
+it is actually connected.
+By default, UDP will simply issue a connect and is not
+aware if it is really connected or not.
+The default connect packet to be send is '\\0', you
+can change this with --udp-sconnect-word.
+
+""",
+    )
+    cmode.add_argument(
+        "--udp-sconnect-word",
+        nargs="?",
         metavar="str",
         type=str,
-        default=None,
-        help="""All modes:
-If %(prog)s is started with this argument, it will shut
-down as soon as it receives the specified string. The
---keep-open (server) or --reconn (client) options will
-be ignored and it won't listen again or reconnect to you.
-Use a very unique string to not have it shut down
-accidentally by other input.
-"""
-        % ({"prog": APPNAME}),
+        default="\0",
+        help="""Connect mode (UDP only):
+Change the the data to be send for UDP stateful connect
+behaviour. Note you can also omit the string to send an
+empty packet (EOF), but be aware that some servers such
+as netcat will instantly quit upon receive of an EOF
+packet.
+The default is to send a null byte sting: '\\0'.
+""",
     )
+
+    # --------------------------------------------------------------------------
+    # Misc arguments
+    # --------------------------------------------------------------------------
     misc.add_argument("-h", "--help", action="help", help="Show this help message and exit")
     misc.add_argument(
         "-V",
@@ -4387,7 +4513,7 @@ accidentally by other input.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if args.http or args.https or args.wait:
+    if args.http or args.https:
         print("Unimplemented options", file=sys.stderr)
         sys.exit(1)
 
@@ -4431,6 +4557,15 @@ def main():
 
     host = args.hostname
 
+    # No argument supplied --udp-sconnect-word to it
+    if args.udp_sconnect_word is None:
+        udp_sconnect_word = ""
+    # --udp-sconnect-word not specified
+    elif args.udp_sconnect_word == "":
+        udp_sconnect_word = "\0"
+    else:
+        udp_sconnect_word = args.udp_sconnect_word
+
     reconn = -1 if args.reconn is None else args.reconn
     rebind = -1 if args.rebind is None else args.rebind
 
@@ -4446,6 +4581,8 @@ def main():
         args.source_addr,
         args.source_port,
         args.udp,
+        args.udp_sconnect,
+        udp_sconnect_word,
         args.tos,
         args.info,
     )

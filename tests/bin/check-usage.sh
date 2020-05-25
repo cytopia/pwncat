@@ -30,55 +30,60 @@ validate_readme() {
 	return 1
 }
 
-validate_website() {
-	local bin="${1}"
-	local website="${2}"
+_diff_website() {
+	local curr_arg="${1}"
+	local next_arg="${2}"
 
-	printf "[TEST] Checking Website (docs/index.html) ... "
-
-	# [1/5] usage:
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
-		<("${bin}" -h | grep '^positional arguments' -B 2000 | grep -v 'positional arguments') \
-		<(grep '^positional arguments' -B 2000 "${website}" | grep -v 'positional arguments' | grep '^usage:' -A 2000 | grep -v '<pre' | grep -v '</pre>') \
+		<("${bin}" -h | grep "^${curr_arg}" -A 2000 | grep "^${next_arg}" -B 2000 | grep -v "^${next_arg}" ) \
+		<(grep "^${curr_arg}" -A 2000 "${website}"  | grep "^${next_arg}" -B 2000 | grep -v "^${next_arg}" | grep -v '<pre' | grep -v '</pre>') \
 		; then
 		printf "%s\\n" "ERROR - usage"
 		return 1
 	fi
+}
+validate_website() {
+	local bin="${1}"
+	local website="${2}"
+	local errors=0
 
-	# [2/5] positional arguments:
-	if ! diff --ignore-trailing-space --ignore-blank-lines \
-		<("${bin}" -h | grep '^positional arguments' -A 2000 | grep '^mode arguments' -B 2000 | grep -v 'mode arguments') \
-		<(grep '^positional arguments' -A 2000 "${website}" | grep '^mode arguments' -B 2000 | grep -v 'mode arguments' | grep -v '<pre' | grep -v '</pre>') \
-		; then
-		printf "%s\\n" "ERROR - positional arguments"
-		return 1
+	printf "[TEST] Checking Website (docs/index.html) ... "
+
+	# [1/9] usage:
+	if ! _diff_website "usage:" "positional arguments"; then
+		errors=$(( errors + 1 ))
 	fi
-
-	# [3/5] mode arguments:
-	if ! diff --ignore-trailing-space --ignore-blank-lines \
-		<("${bin}" -h | grep '^mode arguments' -A 2000 | grep '^optional arguments' -B 2000 | grep -v 'optional arguments') \
-		<(grep '^mode arguments' -A 2000 "${website}" | grep '^optional arguments' -B 2000 | grep -v 'optional arguments' | grep -v '<pre' | grep -v '</pre>') \
-		; then
-		printf "%s\\n" "ERROR - mode arguments"
-		return 1
+	# [2/9] positional arguments:
+	if ! _diff_website "positional arguments" "mode arguments"; then
+		errors=$(( errors + 1 ))
 	fi
-
-	# [3/5] optional arguments:
-	if ! diff --ignore-trailing-space --ignore-blank-lines \
-		<("${bin}" -h | grep '^optional arguments' -A 2000 | grep '^advanced arguments' -B 2000 | grep -v 'advanced arguments') \
-		<(grep '^optional arguments' -A 2000 "${website}" | grep '^advanced arguments' -B 2000 | grep -v 'advanced arguments' | grep -v '<pre' | grep -v '</pre>') \
-		; then
-		printf "%s\\n" "ERROR - optional arguments"
-		return 1
+	# [3/9] mode arguments:
+	if ! _diff_website "mode arguments" "optional arguments"; then
+		errors=$(( errors + 1 ))
 	fi
-
-	# [3/5] advanced arguments:
-	if ! diff --ignore-trailing-space --ignore-blank-lines \
-		<("${bin}" -h | grep '^advanced arguments' -A 2000 | grep '^misc arguments' -B 2000 | grep -v 'misc arguments') \
-		<(grep '^advanced arguments' -A 2000 "${website}" | grep '^misc arguments' -B 2000 | grep -v 'misc arguments' | grep -v '<pre' | grep -v '</pre>') \
-		; then
-		printf "%s\\n" "ERROR - advanced arguments"
-		return 1
+	# [4/9] optional arguments:
+	if ! _diff_website "optional arguments" "protocol arguments"; then
+		errors=$(( errors + 1 ))
+	fi
+	# [5/9] protocol arguments:
+	if ! _diff_website "protocol arguments" "command & control arguments"; then
+		errors=$(( errors + 1 ))
+	fi
+	# [6/9] command & control arguments:
+	if ! _diff_website "command & control arguments" "pwncat scripting engine"; then
+		errors=$(( errors + 1 ))
+	fi
+	# [7/9] pwncat scripting engine:
+	if ! _diff_website "pwncat scripting engine" "listen mode arguments"; then
+		errors=$(( errors + 1 ))
+	fi
+	# [8/9] listen mode arguments:
+	if ! _diff_website "listen mode arguments" "connect mode arguments"; then
+		errors=$(( errors + 1 ))
+	fi
+	# [9/9] connect mode arguments:
+	if ! _diff_website "connect mode arguments" "misc arguments"; then
+		errors=$(( errors + 1 ))
 	fi
 
 	# [6/5] Check misc arguments:
@@ -90,9 +95,12 @@ validate_website() {
 		return 1
 	fi
 
+	if [ "${errors}" -eq "0" ]; then
+		printf "%s\\n" "OK"
+		return 0
+	fi
 
-	printf "%s\\n" "OK"
-	return 0
+	return 1
 }
 
 if ! validate_readme "${BINARY_PATH}" "${README_PATH}"; then

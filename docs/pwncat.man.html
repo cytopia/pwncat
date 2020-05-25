@@ -40,14 +40,14 @@ pwncat</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">usage: pwncat
-[&minus;Cnuv] [&minus;e cmd] hostname port</p>
+[options] hostname port</p>
 
 <p style="margin-left:22%; margin-top: 1em">pwncat
-[&minus;Cnuv] [&minus;e cmd] <b>&minus;l</b> [hostname] port
-pwncat [&minus;Cnuv] <b>&minus;z</b> hostname port pwncat
-[&minus;Cnuv] <b>&minus;L</b> [addr:]port hostname port
-pwncat [&minus;Cnuv] <b>&minus;R</b> addr:port hostname port
-pwncat <b>&minus;V</b>, <b>&minus;&minus;version</b> pwncat
+[options] <b>&minus;l</b> [hostname] port pwncat [options]
+<b>&minus;z</b> hostname port pwncat [options]
+<b>&minus;L</b> [addr:]port hostname port pwncat [options]
+<b>&minus;R</b> addr:port hostname port pwncat
+<b>&minus;V</b>, <b>&minus;&minus;version</b> pwncat
 <b>&minus;h</b>, <b>&minus;&minus;help</b></p>
 
 <p style="margin-left:11%; margin-top: 1em">Enhanced and
@@ -60,14 +60,14 @@ detection/prevention systems.</p>
 arguments are specified, pwncat will run in connect mode and
 act as a client to connect to a remote endpoint. If the
 connection to the remote endoint is lost, pwncat will quit.
-See advanced options for how to automatically reconnect.</p>
+See options for how to automatically reconnect.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>positional
 arguments:</b> <br>
 hostname</p>
 
-<p style="margin-left:22%;">Address to listen, forward or
-connect to.</p>
+<p style="margin-left:22%;">Address to listen, forward,
+scan or connect to.</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -132,40 +132,8 @@ addr:port and the connection to the target machine via the
 positional arguments.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>optional
-arguments:</b></p>
-
-<table width="100%" border="0" rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="3%">
-
-
-<p><b>&minus;4</b></p></td>
-<td width="8%"></td>
-<td width="69%">
-
-
-<p>Only Use IPv4 instead of both, IPv4 and IPv6.</p></td>
-<td width="9%">
-</td></tr>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="3%">
-
-
-<p><b>&minus;6</b></p></td>
-<td width="8%"></td>
-<td width="69%">
-
-
-<p>Only Use IPv6 instead of both, IPv4 and IPv6.</p></td>
-<td width="9%">
-</td></tr>
-</table>
-
-<p style="margin-left:11%;"><b>&minus;e</b> cmd,
-<b>&minus;&minus;exec</b> cmd</p>
+arguments: <br>
+&minus;e</b> cmd, <b>&minus;&minus;exec</b> cmd</p>
 
 <p style="margin-left:22%;">Execute shell command. Only for
 connect or listen mode.</p>
@@ -186,35 +154,6 @@ some times CR on MacOS).</p>
 
 <p style="margin-left:22%;">Do not resolve DNS.</p>
 
-<p style="margin-left:11%;"><b>&minus;u</b>,
-<b>&minus;&minus;udp</b></p>
-
-<p style="margin-left:22%;">Use UDP for the connection
-instead of TCP.</p>
-
-<p style="margin-left:11%;"><b>&minus;T</b> str,
-<b>&minus;&minus;tos</b> str</p>
-
-<p style="margin-left:22%;">Specifies IP Type of Service
-(ToS) for the connection. Valid values are the tokens
-&rsquo;mincost&rsquo;, &rsquo;lowcost&rsquo;,
-&rsquo;reliability&rsquo;, &rsquo;throughput&rsquo; or
-&rsquo;lowdelay&rsquo;.</p>
-
-
-<p style="margin-left:11%;"><b>&minus;&minus;source&minus;addr</b>
-addr</p>
-
-<p style="margin-left:22%;">Specify the source IP address
-of the interface for connect mode.</p>
-
-
-<p style="margin-left:11%;"><b>&minus;&minus;source&minus;port</b>
-port</p>
-
-<p style="margin-left:22%;">Specify the source port for
-connect mode.</p>
-
 <p style="margin-left:11%;"><b>&minus;v</b>,
 <b>&minus;&minus;verbose</b></p>
 
@@ -228,7 +167,7 @@ more than three times.</p>
 type</p>
 
 <p style="margin-left:22%;">Show additional info about
-sockets, ip4/6 or tcp opts applied to the current socket
+sockets, IPv4/6 or TCP opts applied to the current socket
 connection. Valid parameter are &rsquo;sock&rsquo;,
 &rsquo;ipv4&rsquo;, &rsquo;ipv6&rsquo;, &rsquo;tcp&rsquo; or
 &rsquo;all&rsquo;. Note, you must at least be in INFO
@@ -244,6 +183,95 @@ displayed as long as the output goes to a terminal. If it is
 piped into a file, color will automatically be disabled.
 This mode also disables color on Windows by default.
 (default: auto)</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;safe&minus;word</b>
+str</p>
+
+<p style="margin-left:22%;">All modes: If pwncat is started
+with this argument, it will shut down as soon as it receives
+the specified string. The
+<b>&minus;&minus;keep&minus;open</b> (server) or
+<b>&minus;&minus;reconn</b> (client) options will be ignored
+and it won&rsquo;t listen again or reconnect to you. Use a
+very unique string to not have it shut down accidentally by
+other input.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>protocol
+arguments:</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;4</b></p></td>
+<td width="8%"></td>
+<td width="75%">
+
+
+<p>Only Use IPv4 (default: IPv4 and IPv6 dualstack).</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;6</b></p></td>
+<td width="8%"></td>
+<td width="75%">
+
+
+<p>Only Use IPv6 (default: IPv4 and IPv6 dualstack).</p></td>
+<td width="3%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>&minus;u</b>,
+<b>&minus;&minus;udp</b></p>
+
+<p style="margin-left:22%;">Use UDP for the connection
+instead of TCP.</p>
+
+<p style="margin-left:11%;"><b>&minus;T</b> str,
+<b>&minus;&minus;tos</b> str</p>
+
+<p style="margin-left:22%;">Specifies IP Type of Service
+(ToS) for the connection. Valid values are the tokens
+&rsquo;mincost&rsquo;, &rsquo;lowcost&rsquo;,
+&rsquo;reliability&rsquo;, &rsquo;throughput&rsquo; or
+&rsquo;lowdelay&rsquo;.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>&minus;&minus;http</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Connect / Listen mode (TCP and UDP): Hide traffic in
+http packets to fool Firewalls/IDS/IPS.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>&minus;&minus;https</b></p>
+
+<p style="margin-left:22%;">Connect / Listen mode (TCP and
+UDP): Hide traffic in https packets to fool
+Firewalls/IDS/IPS.</p>
+
+<p style="margin-left:11%;"><b>&minus;H</b> [str [str
+...]], <b>&minus;&minus;header</b> [str [str ...]]</p>
+
+<p style="margin-left:22%;">Add HTTP headers to your
+request when using <b>&minus;&minus;http</b>(s).</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>command
 &amp; control arguments: <br>
@@ -269,8 +297,8 @@ list: <b>&minus;&minus;self&minus;inject</b>
 experimental feature and does not work on Windows remote
 hosts yet.</p>
 
-<p style="margin-left:11%; margin-top: 1em"><b>advanced
-arguments: <br>
+<p style="margin-left:11%; margin-top: 1em"><b>pwncat
+scripting engine: <br>
 &minus;&minus;script&minus;send</b> file</p>
 
 <p style="margin-left:22%;">All modes (TCP and UDP): A
@@ -321,30 +349,9 @@ prefix them uniquely to not collide with pwncat&rsquo;s
 function or classes, as the file will be called with
 exec().</p>
 
-<table width="100%" border="0" rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="9%">
-
-
-<p><b>&minus;&minus;http</b></p></td>
-<td width="2%"></td>
-<td width="78%">
-
-
-<p>Connect / Listen / Local forward mode (TCP only): Hide
-traffic in http packets to fool Firewalls/IDS/IPS.</p></td></tr>
-</table>
-
-<p style="margin-left:11%;"><b>&minus;&minus;https</b></p>
-
-<p style="margin-left:22%;">Connect / Listen / Local
-forward mode (TCP only): Hide traffic in https packets to
-fool Firewalls/IDS/IPS.</p>
-
-<p style="margin-left:11%;"><b>&minus;k</b>,
-<b>&minus;&minus;keep&minus;open</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>listen mode
+arguments: <br>
+&minus;k</b>, <b>&minus;&minus;keep&minus;open</b></p>
 
 <p style="margin-left:22%;">Listen mode (TCP only):
 Re&minus;accept new clients in listen mode after a client
@@ -384,37 +391,55 @@ of ports &rsquo;80&minus;83&rsquo; or an increment
 least the number of ports to probe +1 This option requires
 <b>&minus;&minus;rebind</b> to be specified.</p>
 
+<p style="margin-left:11%; margin-top: 1em"><b>connect mode
+arguments: <br>
+&minus;&minus;source&minus;addr</b> addr</p>
+
+<p style="margin-left:22%;">Specify source bind IP address
+for connect mode.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;source&minus;port</b>
+port</p>
+
+<p style="margin-left:22%;">Specify source bind port for
+connect mode.</p>
+
 <p style="margin-left:11%;"><b>&minus;&minus;reconn</b>
 [x]</p>
 
-<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (TCP only): If the remote server is not reachable or
-the connection is interrupted, the client will connect again
-x many times before giving up. Omit the quantifier to retry
-endlessly or specify a positive integer for how many times
-to retry before giving up. (default: quit if the remote is
-not available or the connection was interrupted) This might
-be handy for stable TCP reverse shells ;&minus;)</p>
+<p style="margin-left:22%;">Connect mode (TCP and UDP): If
+the remote server is not reachable or the connection is
+interrupted, the client will connect again x many times
+before giving up. Omit the quantifier to retry endlessly or
+specify a positive integer for how many times to retry
+before giving up. (default: quit if the remote is not
+available or the connection was interrupted) This might be
+handy for stable TCP reverse shells ;&minus;) Note on UDP:
+By default UDP does not know if it is connected, so it will
+stop at the first port and assume it has a connection.
+Consider using <b>&minus;&minus;udp&minus;sconnect</b> with
+this option to make UDP aware of a successful
+connection.</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;reconn&minus;wait</b>
 s</p>
 
-<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (TCP only): Wait x seconds between re&minus;connects.
-(default: 1)</p>
+<p style="margin-left:22%;">Connect mode (TCP and UDP):
+Wait x seconds between re&minus;connects. (default: 1)</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;reconn&minus;robin</b>
 port</p>
 
-<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (TCP only): If the remote server is not reachable or
-the connection is interrupted and
-<b>&minus;&minus;reconn</b> is specified, the client will
-shuffle ports in round&minus;robin mode to connect to. Use
-comma separated string such as &rsquo;80,81,82,83&rsquo;, a
-range of ports &rsquo;80&minus;83&rsquo; or an increment
+<p style="margin-left:22%;">Connect mode (TCP and UDP): If
+the remote server is not reachable or the connection is
+interrupted and <b>&minus;&minus;reconn</b> is specified,
+the client will shuffle ports in round&minus;robin mode to
+connect to. Use comma separated string such as
+&rsquo;80,81,82,83&rsquo;, a range of ports
+&rsquo;80&minus;83&rsquo; or an increment
 &rsquo;80+3&rsquo;. Set <b>&minus;&minus;reconn</b> to at
 least the number of ports to probe +1 This helps reverse
 shell to evade intrusiona prevention systems that will cut
@@ -422,31 +447,20 @@ your connection and block the outbound port. This is also
 useful in Connect or Zero&minus;I/O mode to figure out what
 outbound ports are allowed.</p>
 
-<p style="margin-left:11%;"><b>&minus;w</b> s,
-<b>&minus;&minus;wait</b> s</p>
-
-<p style="margin-left:22%;">Connect mode (TCP only): If a
-connection and stdin are idle for more than s sec, then the
-connection is silently closed and the client will exit.
-(default: wait forever). Note: if
-<b>&minus;&minus;reconn</b> is specified, the connection
-will be re&minus;opened.</p>
-
 
 <p style="margin-left:11%;"><b>&minus;&minus;ping&minus;init</b></p>
 
-<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (TCP and UDP): UDP is a stateless protocol unlike TCP,
-so no handshake communication takes place and the client
-just sends data to a server without being
-&quot;accepted&quot; by the server first. This means a
-server waiting for an UDP client to connect to, is unable to
-send any data to the client, before the client hasn&rsquo;t
-send data first. The server simply doesn&rsquo;t know the IP
-address before an initial connect. The
-<b>&minus;&minus;ping&minus;init</b> option instructs the
-client to send one single initial ping packet to the server,
-so that it is able to talk to the client. This is the only
+<p style="margin-left:22%;">Connect mode (TCP and UDP): UDP
+is a stateless protocol unlike TCP, so no handshake
+communication takes place and the client just sends data to
+a server without being &quot;accepted&quot; by the server
+first. This means a server waiting for an UDP client to
+connect to, is unable to send any data to the client, before
+the client hasn&rsquo;t send data first. The server simply
+doesn&rsquo;t know the IP address before an initial connect.
+The <b>&minus;&minus;ping&minus;init</b> option instructs
+the client to send one single initial ping packet to the
+server, so that it is able to talk to the client. This is a
 way to make a UDP reverse shell work. See
 <b>&minus;&minus;ping&minus;word</b> for what char/string to
 send as initial ping packet (default: &rsquo;\0&rsquo;)</p>
@@ -455,11 +469,11 @@ send as initial ping packet (default: &rsquo;\0&rsquo;)</p>
 <p style="margin-left:11%;"><b>&minus;&minus;ping&minus;intvl</b>
 s</p>
 
-<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (TCP and UDP): Instruct the client to send ping
-intervalls every s sec. This allows you to restart your UDP
-server and just wait for the client to report back in. This
-might be handy for stable UDP reverse shells ;&minus;) See
+<p style="margin-left:22%;">Connect mode (TCP and UDP):
+Instruct the client to send ping intervalls every s sec.
+This allows you to restart your UDP server and just wait for
+the client to report back in. This might be handy for stable
+UDP reverse shells ;&minus;) See
 <b>&minus;&minus;ping&minus;word</b> for what char/string to
 send as initial ping packet (default: &rsquo;\0&rsquo;)</p>
 
@@ -467,37 +481,45 @@ send as initial ping packet (default: &rsquo;\0&rsquo;)</p>
 <p style="margin-left:11%;"><b>&minus;&minus;ping&minus;word</b>
 str</p>
 
-<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (TCP and UDP): Change the default character
-&rsquo;\0&rsquo; to use for upd ping. Single character or
-strings are supported.</p>
+<p style="margin-left:22%;">Connect mode (TCP and UDP):
+Change the default character &rsquo;\0&rsquo; to use for upd
+ping. Single character or strings are supported.</p>
 
 
 <p style="margin-left:11%;"><b>&minus;&minus;ping&minus;robin</b>
 port</p>
 
-<p style="margin-left:22%;">Connect mode / Zero&minus;I/O
-mode (TCP and UDP): Instruct the client to shuffle the
-specified ports in round&minus;robin mode for a remote
-server to ping. This might be handy to scan outbound allowed
-ports. Use comma separated string such as
-&rsquo;80,81,82,83&rsquo;, a range of ports
-&rsquo;80&minus;83&rsquo; or an increment
+<p style="margin-left:22%;">Connect mode (TCP and UDP):
+Instruct the client to shuffle the specified ports in
+round&minus;robin mode for a remote server to ping. This
+might be handy to scan outbound allowed ports. Use comma
+separated string such as &rsquo;80,81,82,83&rsquo;, a range
+of ports &rsquo;80&minus;83&rsquo; or an increment
 &rsquo;80+3&rsquo;. Use
 <b>&minus;&minus;ping&minus;intvl</b> 0 to be faster.</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;safe&minus;word</b>
-str</p>
+<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;sconnect</b></p>
 
-<p style="margin-left:22%;">All modes: If pwncat is started
-with this argument, it will shut down as soon as it receives
-the specified string. The
-<b>&minus;&minus;keep&minus;open</b> (server) or
-<b>&minus;&minus;reconn</b> (client) options will be ignored
-and it won&rsquo;t listen again or reconnect to you. Use a
-very unique string to not have it shut down accidentally by
-other input.</p>
+<p style="margin-left:22%;">Connect mode (UDP only):
+Emulating stateful behaviour for UDP connect phase by
+sending an initial packet to the server to validate if it is
+actually connected. By default, UDP will simply issue a
+connect and is not aware if it is really connected or not.
+The default connect packet to be send is &rsquo;\0&rsquo;,
+you can change this with
+<b>&minus;&minus;udp&minus;sconnect&minus;word</b>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;udp&minus;sconnect&minus;word</b>
+[str]</p>
+
+<p style="margin-left:22%;">Connect mode (UDP only): Change
+the the data to be send for UDP stateful connect behaviour.
+Note you can also omit the string to send an empty packet
+(EOF), but be aware that some servers such as netcat will
+instantly quit upon receive of an EOF packet. The default is
+to send a null byte sting: &rsquo;\0&rsquo;.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>misc
 arguments: <br>
