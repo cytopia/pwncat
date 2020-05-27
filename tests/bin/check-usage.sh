@@ -49,39 +49,43 @@ validate_website() {
 
 	printf "[TEST] Checking Website (docs/index.html) ... "
 
-	# [1/9] usage:
+	# [1/10] usage:
 	if ! _diff_website "usage:" "positional arguments"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [2/9] positional arguments:
+	# [2/10] positional arguments:
 	if ! _diff_website "positional arguments" "mode arguments"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [3/9] mode arguments:
+	# [3/10] mode arguments:
 	if ! _diff_website "mode arguments" "optional arguments"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [4/9] optional arguments:
+	# [4/10] optional arguments:
 	if ! _diff_website "optional arguments" "protocol arguments"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [5/9] protocol arguments:
+	# [5/10] protocol arguments:
 	if ! _diff_website "protocol arguments" "command & control arguments"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [6/9] command & control arguments:
+	# [6/10] command & control arguments:
 	if ! _diff_website "command & control arguments" "pwncat scripting engine"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [7/9] pwncat scripting engine:
-	if ! _diff_website "pwncat scripting engine" "listen mode arguments"; then
+	# [7/10] pwncat scripting engine:
+	if ! _diff_website "pwncat scripting engine" "zero-i/o mode arguments"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [8/9] listen mode arguments:
+	# [8/10] zero-i/0 mode arguments:
+	if ! _diff_website "zero-i/o mode arguments" "listen mode arguments"; then
+		errors=$(( errors + 1 ))
+	fi
+	# [9/10] listen mode arguments:
 	if ! _diff_website "listen mode arguments" "connect mode arguments"; then
 		errors=$(( errors + 1 ))
 	fi
-	# [9/9] connect mode arguments:
+	# [10/10] connect mode arguments:
 	if ! _diff_website "connect mode arguments" "misc arguments"; then
 		errors=$(( errors + 1 ))
 	fi

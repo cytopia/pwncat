@@ -45,6 +45,7 @@ quit. See \fB\-k\fR/\-\-keep\-open to change this behaviour.
 [Zero\-I/0 mode]:
 Connect to a remote endpoint and report status only.
 Used for port scanning.
+See \fB\-\-banner\fR for version detection.
 .TP
 \fB\-L\fR [addr:]port, \fB\-\-local\fR [addr:]port
 [Local forward mode]:
@@ -196,6 +197,11 @@ You can also define as many custom functions or classes
 within this file, but ensure to prefix them uniquely to
 not collide with pwncat's function or classes, as the
 file will be called with exec().
+.SS "zero-i/o mode arguments:"
+.TP
+\fB\-\-banner\fR
+Zero\-I/O (TCP and UDP):
+Try banner grabbing during port scan.
 .SS "listen mode arguments:"
 .TP
 \fB\-k\fR, \fB\-\-keep\-open\fR

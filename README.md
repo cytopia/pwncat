@@ -25,7 +25,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell, forwarding magic and insanely fast UDP port scanning - and its fully scriptable with Python ([PSE](pse/)).
+> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.62%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.72%)</strong></sup><br/>
 > <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
 > <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
@@ -218,7 +218,7 @@ pwncat -z 10.0.0.1 80,443,8080
 pwncat -z 10.0.0.1 1-65535
 pwncat -z 10.0.0.1 1+1023
 
-# [UDP] IPv4 + IPv6 (insanely fast)
+# [UDP] IPv4 + IPv6
 pwncat -z 10.0.0.1 80,443,8080 -u
 pwncat -z 10.0.0.1 1-65535 -u
 pwncat -z 10.0.0.1 1+1023 -u
@@ -226,6 +226,9 @@ pwncat -z 10.0.0.1 1+1023 -u
 # Use only IPv6 or IPv4
 pwncat -z 10.0.0.1 1-65535 -4
 pwncat -z 10.0.0.1 1-65535 -6 -u
+
+# Add version detection
+pwncat -z 10.0.0.1 1-65535 --banner
 ```
 
 ### Local port forward `-L` (listening proxy)
@@ -419,6 +422,7 @@ mode arguments:
   -z, --zero            [Zero-I/0 mode]:
                         Connect to a remote endpoint and report status only.
                         Used for port scanning.
+                        See --banner for version detection.
 
   -L [addr:]port, --local [addr:]port
                         [Local forward mode]:
@@ -552,6 +556,10 @@ pwncat scripting engine:
                         within this file, but ensure to prefix them uniquely to
                         not collide with pwncat's function or classes, as the
                         file will be called with exec().
+
+zero-i/o mode arguments:
+  --banner              Zero-I/O (TCP and UDP):
+                        Try banner grabbing during port scan.
 
 listen mode arguments:
   -k, --keep-open       Listen mode (TCP only):
@@ -1181,21 +1189,26 @@ pwncat -vvvv localhost 4444 \
   --script-recv pse/http-post/pse-http_post-unpack.py
 ```
 
-### Insanely fast UDP port scanning
+### Port scanning
 
-#### Average results
+#### TCP
+```bash
+$ sudo netstat -tlpn
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address     State
+tcp        0      0 127.0.0.1:631           0.0.0.0:*           LISTEN
+tcp        0      0 127.0.0.1:25            0.0.0.0:*           LISTEN
+tcp        0      0 127.0.0.1:4444          0.0.0.0:*           LISTEN
+tcp        0      0 0.0.0.0:902             0.0.0.0:*           LISTEN
+tcp6       0      0 ::1:631                 :::*                LISTEN
+tcp6       0      0 ::1:25                  :::*                LISTEN
+tcp6       0      0 ::1:4444                :::*                LISTEN
+tcp6       0      0 :::1053                 :::*                LISTEN
+tcp6       0      0 :::902                  :::*                LISTEN
+```
 
-Tests were run 10x for each tool against localhost and may vary over remote networks.
-
-|                      | pwncat | netcat | nmap <sup>[1]</sup>  |
-|----------------------|--------|--------|-------|
-| UDP scan time        | 8s     | 18s    | 2m53s |
-| UDP ports discovered | 5      | 5      | 5     |
-
-> **Note:** On TCP `nmap` is about 6.5x faster than `pwncat`.
-> <sup>[1]</sup> Also note that `nmap` does additional version detection which I was not able to disable. If you know some arguments that make `nmap` faster on UDP, please let me know.
-
-The following UDP ports had listeners:
+#### UDP
+The following UDP ports are exposing:
 ```bash
 $ sudo netstat -ulpn
 Active Internet connections (only servers)
@@ -1210,7 +1223,7 @@ udp6       0      0 :::5353                 :::*
 udp6       0      0 :::57728                :::*
 ```
 
-#### nmap
+##### nmap
 ```bash
 $ time sudo nmap -T5 localhost --version-intensity 0 -p- -sU
 Starting Nmap 7.70 ( https://nmap.org ) at 2020-05-24 17:03 CEST
@@ -1233,7 +1246,7 @@ real    2m52.446s
 user    0m0.844s
 sys     0m2.571s
 ```
-#### netcat
+##### netcat
 ```bash
 $ time nc  -z localhost 1-65535  -u -4 -v
 Connection to localhost 68 port [udp/bootpc] succeeded!
@@ -1246,7 +1259,7 @@ real    0m18.734s
 user    0m1.004s
 sys     0m2.634s
 ```
-#### pwncat
+##### pwncat
 ```bash
 $ time pwncat -z localhost 1-65535 -u -4
 Scanning 65535 ports

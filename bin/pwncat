@@ -79,10 +79,11 @@ ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
 
 # Only used with mypy for static source code analysis
 if os.environ.get("MYPY_CHECK", False):
-    from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union
+    from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union, TypeVar
     from types import CodeType
     from typing_extensions import TypedDict  # pylint: disable=import-error
 
+    SockInst = TypeVar("SockInst", bound="Sock")
     # The following is only to create virtual types for mypy in order to find
     # issues via static type linting.
     SockConn = TypedDict(
@@ -450,7 +451,7 @@ class DsSock(object):
 
     @property
     def info(self):
-        # type: () -> str
+        # type: () -> Optional[str]
         """`str`: Determines what info to display about the socket connection."""
         return self.__info
 
@@ -483,7 +484,6 @@ class DsSock(object):
         assert type(src_addr) is str or src_addr is None, type(src_addr)
         assert type(src_port) is int or src_port is None, type(src_port)
         assert type(udp) is bool, type(udp)
-        assert type(info) is str, type(info)
         self.__bufsize = bufsize
         self.__backlog = backlog
         self.__recv_timeout = recv_timeout
@@ -1010,13 +1010,47 @@ class StopSignal(object):
 # -------------------------------------------------------------------------------------------------
 # [3/10 NETWORK]: (1/1) Sock
 # -------------------------------------------------------------------------------------------------
-class Sock(object):
-    """Provides an abstracted server client socket for TCP and UDP."""
+class _Singleton(type):
+    """A thread-safe metaclass that creates a Singleton base class when called."""
 
-    # For Internet Protocol v4 the value consists of an integer, the least significant 8 bits of
-    # which represent the value of the TOS octet in IP packets sent by the socket.
-    # RFC 1349 defines the TOS values as follows:
-    IP_TOS = {
+    # https://refactoring.guru/design-patterns/singleton/python/example#example-1
+    _instances = {}  # type: Dict[_Singleton, _Singleton]
+
+    _lock = threading.Lock()
+
+    def __call__(cls, *args, **kwargs):
+        # type: (_Singleton, Any, Any) -> _Singleton
+
+        # Now, imagine that the program has just been launched. Since there's no
+        # Singleton instance yet, multiple threads can simultaneously pass the
+        # previous conditional and reach this point almost at the same time. The
+        # first of them will acquire lock and will proceed further, while the
+        # rest will wait here.
+        with cls._lock:
+            # The first thread to acquire the lock, reaches this conditional,
+            # goes inside and creates the Singleton instance. Once it leaves the
+            # lock block, a thread that might have been waiting for the lock
+            # release may then enter this section. But since the Singleton field
+            # is already initialized, the thread won't create a new object.
+            if cls not in cls._instances:
+                cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
+    """Thread-safe Socket singleton helper to emulate a module within the same file."""
+
+    def __init__(self):
+        # type: () -> None
+        self.__log = logging.getLogger(__name__)
+
+    # --------------------------------------------------------------------------
+    # Private constants
+    # --------------------------------------------------------------------------
+    # For Internet Protocol v4 the value consists of an integer, the least
+    # significant 8 bits of which represent the value of the TOS octet in IP
+    # packets sent by the socket. RFC 1349 defines the TOS values as follows:
+    __IP_TOS = {
         "mincost": 0x02,
         "lowcost": 0x02,
         "reliability": 0x04,
@@ -1029,46 +1063,516 @@ class Sock(object):
         int(socket.AF_INET): "IPv4",
         int(socket.AF_INET6): "IPv6",
     }
+
     # Human readable socket types
     __ST_HUMAN = {
         int(socket.SOCK_STREAM): "TCP",
         int(socket.SOCK_DGRAM): "UDP",
     }
 
+    # https://hg.python.org/cpython/file/3.5/Modules/socketmodule.c
+    __SOCK_OPTS = {
+        "Sock": [
+            "SO_DEBUG",
+            "SO_ACCEPTCONN",
+            "SO_REUSEADDR",
+            "SO_EXCLUSIVEADDRUSE",
+            "SO_KEEPALIVE",
+            "SO_DONTROUTE",
+            "SO_BROADCAST",
+            "SO_USELOOPBACK",
+            "SO_LINGER",
+            "SO_OOBINLINE",
+            "SO_REUSEPORT",
+            "SO_SNDBUF",
+            "SO_RCVBUF",
+            "SO_SNDLOWAT",
+            "SO_RCVLOWAT",
+            "SO_SNDTIMEO",
+            "SO_RCVTIMEO",
+            "SO_ERROR",
+            "SO_TYPE",
+            "SO_SETFIB",
+            "SO_PASSCRED",
+            "SO_PEERCRED",
+            "LOCAL_PEERCRED",
+            "SO_BINDTODEVICE",
+            "SO_PRIORITY",
+            "SO_MARK",
+        ],
+        "IPv4": [
+            "IP_OPTIONS",
+            "IP_HDRINCL",
+            "IP_TOS",
+            "IP_TTL",
+            "IP_RECVOPTS",
+            "IP_RECVRETOPTS",
+            "IP_RECVDSTADDR",
+            "IP_RETOPTS",
+            "IP_MULTICAST_IF",
+            "IP_MULTICAST_TTL",
+            "IP_MULTICAST_LOOP",
+            "IP_ADD_MEMBERSHIP",
+            "IP_DROP_MEMBERSHIP",
+            "IP_DEFAULT_MULTICAST_TTL",
+            "IP_DEFAULT_MULTICAST_LOOP",
+            "IP_MAX_MEMBERSHIPS",
+            "IP_TRANSPARENT",
+        ],
+        "IPv6": [
+            "IPV6_JOIN_GROUP",
+            "IPV6_LEAVE_GROUP",
+            "IPV6_MULTICAST_HOPS",
+            "IPV6_MULTICAST_IF",
+            "IPV6_MULTICAST_LOOP",
+            "IPV6_UNICAST_HOPS",
+            "IPV6_V6ONLY",
+            "IPV6_CHECKSUM",
+            "IPV6_DONTFRAG",
+            "IPV6_DSTOPTS",
+            "IPV6_HOPLIMIT",
+            "IPV6_HOPOPTS",
+            "IPV6_NEXTHOP",
+            "IPV6_PATHMTU",
+            "IPV6_PKTINFO",
+            "IPV6_RECVDSTOPTS",
+            "IPV6_RECVHOPLIMIT",
+            "IPV6_RECVHOPOPTS",
+            "IPV6_RECVPKTINFO",
+            "IPV6_RECVRTHDR",
+            "IPV6_RECVTCLASS",
+            "IPV6_RTHDR",
+            "IPV6_RTHDRDSTOPTS",
+            "IPV6_RTHDR_TYPE_0",
+            "IPV6_RECVPATHMTU",
+            "IPV6_TCLASS",
+            "IPV6_USE_MIN_MTU",
+        ],
+        "TCP": [
+            "TCP_NODELAY",
+            "TCP_MAXSEG",
+            "TCP_CORK",
+            "TCP_KEEPIDLE",
+            "TCP_KEEPINTVL",
+            "TCP_KEEPCNT",
+            "TCP_SYNCNT",
+            "TCP_LINGER2",
+            "TCP_DEFER_ACCEPT",
+            "TCP_WINDOW_CLAMP",
+            "TCP_INFO",
+            "TCP_QUICKACK",
+            "TCP_FASTOPEN",
+        ],
+    }
+
+    # --------------------------------------------------------------------------
+    # Get functions
+    # --------------------------------------------------------------------------
+    def get_iptos_by_name(self, name):
+        # type: (str) -> int
+        """Get IP Type of Service hexadecimal value by name."""
+        assert name in self.__IP_TOS
+        return self.__IP_TOS[name]
+
+    def get_family_name(self, family):
+        # type: (Union[socket.AddressFamily, int]) -> str
+        """Returns human readable name of given address family as str."""
+        try:
+            return self.__AF_HUMAN[int(family)]
+        except KeyError:
+            self.__log.error(
+                "Invalid key for address family: %s (type: %s) (valid: %s)",
+                repr(family),
+                repr(type(family)),
+                repr(self.__AF_HUMAN),
+            )
+            return "unknown"
+
+    def get_type_name(self, sock_type):
+        # type: (int) -> str
+        """Returns human readable name of given socket type as str."""
+        try:
+            return self.__ST_HUMAN[int(sock_type)]
+        except KeyError:
+            self.__log.error(
+                "Invalid key for address sock_type: %s (type: %s) (valid: %s)",
+                repr(sock_type),
+                repr(type(sock_type)),
+                repr(self.__ST_HUMAN),
+            )
+            return "unknown"
+
+    def get_sock_opts(self, sock, opts):
+        # type: (Sock, socket.socket, Optional[str]) -> List[str]
+        """Debug logs configured socket options."""
+        if opts is None:
+            return []
+        assert opts in ["all", "sock", "ipv4", "ipv6", "tcp"], "Value: {}".format(repr(opts))
+        info = []
+        for proto, optnames in self.__SOCK_OPTS.items():
+            if opts == "all" or proto.lower() == opts:
+                for optname in optnames:
+                    if proto.lower() == "sock":
+                        level = socket.SOL_SOCKET
+                    elif proto.lower() == "ipv4":
+                        level = socket.IPPROTO_IP
+                    elif proto.lower() == "ipv6":
+                        level = socket.IPPROTO_IPV6
+                    elif proto.lower() == "tcp":
+                        level = socket.IPPROTO_TCP
+                    try:
+                        info.append(
+                            "{}: {}: {}".format(
+                                proto,
+                                optname,
+                                sock.getsockopt(
+                                    level, eval("socket." + optname)  # pylint: disable=eval-used
+                                ),
+                            )
+                        )
+                    except AttributeError:
+                        pass
+                    except (OSError, socket.error):
+                        pass
+        return info
+
+    def gethostbyname(self, host, family, resolvedns):
+        # type: (Sock, Optional[str], Union[socket.AddressFamily, int], bool) -> str
+        """Translate hostname into a IP address for a given address family.
+
+        Args:
+            host (str): The hostname to resolvea.
+            family (socket.family): IPv4 or IPv6 family
+
+        Returns:
+            str: Numeric IP address.
+
+        Raises:
+            socket.gaierror: If hostname cannot be resolved.
+        """
+        socktype = 0
+        proto = 0
+        flags = 0
+        port = None
+        family = int(family)
+
+        # [1/4] Wildcard without host
+        if host is None:
+            if family == int(socket.AF_INET):
+                self.__log.debug("Resolving IPv4 name not required, using wildcard: 0.0.0.0")
+                return "0.0.0.0"
+            if family == int(socket.AF_INET6):
+                self.__log.debug("Resolving IPv6 name not required, using wildcard: ::")
+                return "::"
+        assert host is not None
+
+        # [2/4] Already an IP address
+        # TODO: might also use socket.getaddr with AI_NUMERICHOST as a check
+        if family == int(socket.AF_INET6):
+            try:
+                socket.inet_pton(socket.AF_INET6, host)
+                self.__log.debug("Resolving IPv6 name not required, already an IP: %s", host)
+                return host
+            except socket.error:
+                try:
+                    host6 = "::ffff:" + host
+                    socket.inet_pton(socket.AF_INET6, host6)
+                    self.__log.debug(
+                        "Resolving IPv6 name not required, changing to IPv6: %s", host6
+                    )
+                    return host6
+                except socket.error:
+                    pass
+        else:
+            try:
+                socket.inet_pton(family, host)
+                self.__log.debug("Resolving IPv4 host not required, already an IP: %s", host)
+                return host
+            except socket.error:
+                pass
+
+        # [3/4] Do we disable DNS resolution?
+        if not resolvedns:
+            flags = socket.AI_NUMERICHOST
+
+        # [4/4] Resolve
+        try:
+            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
+            addr = str(infos[0][4][0])
+            self.__log.debug("Resolved %s host: %s", self.get_family_name(family), addr)
+            return addr
+        except (AttributeError, socket.gaierror) as error:
+            msg = "Resolving {} host: {} failed: {}".format(
+                self.get_family_name(family), str(host), str(error)
+            )
+            self.__log.debug(msg)
+            raise socket.gaierror(msg)  # type: ignore
+
+    # --------------------------------------------------------------------------
+    # Create functions
+    # --------------------------------------------------------------------------
+    def create_socket(self, family, sock_type, ip_tos_name=None):
+        # type: (Union[socket.AddressFamily, int], int, Optional[str]) -> socket.socket
+        """Create TCP or UDP socket.
+
+        Args:
+            family (socket.family): The address family for which to create the socket for.
+            sock_type (int): The socket type: socket.SOCK_DGRAM or socket.SOCK_STREAM
+            ip_tos_name (str): Optional IP type of service value to apply to socket
+
+        Returns:
+            socket.socket: Returns TCP or UDP socket for the given address family.
+
+        Raises:
+            socket.error: If socket cannot be created.
+        """
+        assert int(sock_type) in [int(socket.SOCK_DGRAM), int(socket.SOCK_STREAM)]
+        try:
+            if int(sock_type) == socket.SOCK_DGRAM:
+                self.__log.debug("Creating %s UDP socket", self.get_family_name(family))
+                sock = socket.socket(family, socket.SOCK_DGRAM)
+            else:
+                self.__log.debug("Creating %s TCP socket", self.get_family_name(family))
+                sock = socket.socket(family, socket.SOCK_STREAM)
+        except socket.error as error:
+            msg = "Creating {} {} socket failed: {}".format(
+                self.get_family_name(family), self.get_type_name(sock_type), error
+            )
+            self.__log.debug(msg)
+            raise socket.error(msg)
+
+        if family == socket.AF_INET6:
+            # On Linux, IPv6 sockets accept IPv4 too by default, but this makes
+            # it impossible to bind to both 0.0.0.0 in IPv4 and :: in IPv6.
+            # On other systems, separate sockets *must* be used to listen for
+            # both IPv4 and IPv6. For consistency, always disable IPv4 on our
+            # IPv6 sockets and use a separate ipv4 socket when needed.
+            #
+            # Python 2.x on windows doesn't have IPPROTO_IPV6.
+            if hasattr(socket, "IPPROTO_IPV6"):
+                self.__log.debug(
+                    "Disabling IPv4 support on %s socket", self.get_family_name(family)
+                )
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+
+        # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
+        # we instruct it to reuse the address anyway.
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # If requested, set IP Type of Service value for current socket
+        if ip_tos_name is not None:
+            ip_tos_val = self.get_iptos_by_name(ip_tos_name)
+            self.__log.debug("Setting IP_TOS to: %d (%s)", ip_tos_val, ip_tos_name)
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, ip_tos_val)
+        # All done, return it to the requestor
+        return sock
+
+    def bind(self, sock, addr, port):
+        # type: (socket.socket, str, int) -> None
+        """Bind the socket to an address.
+
+        Args:
+            sock (socket.socket): The socket to bind.
+            addr (str): The numerical IP address to bind to.
+            port (int): The port to bind to.
+
+        Raises:
+            socket.error if socket cannot be bound.
+        """
+        sock_family_name = self.get_family_name(sock.family)
+        sock_type_name = self.get_type_name(sock.type)
+        self.__log.debug(
+            "Binding (family %d/%s, %s) socket to %s:%d",
+            int(sock.family),
+            sock_family_name,
+            sock_type_name,
+            addr,
+            port,
+        )
+        try:
+            sock.bind((addr, port))
+        except (OverflowError, OSError, socket.gaierror, socket.error) as error:
+            msg = "Binding (family {}/{}, {}) socket to {}:{} failed: {}".format(
+                sock.family, sock_family_name, sock_type_name, addr, port, error
+            )
+            raise socket.error(msg)
+
+    def listen(self, sock, backlog):
+        # type: (socket.socket, int) -> None
+        """Listen for connections made to the socket.
+
+        Args:
+            sock (socket.socket): The socket to listen on.
+            backlog (int): Listen backlog
+
+        Raises:
+            socket.error: If listening fails.
+        """
+        try:
+            self.__log.debug("Listening with backlog=%d", backlog)
+            sock.listen(backlog)
+        except socket.error as error:
+            msg = "Listening failed: {}".format(error)
+            self.__log.error(msg)
+            raise socket.error(msg)
+
+    def accept(self, sockets, fstop):
+        # type: (List[socket.socket], Callable[[], bool]) -> Tuple[socket.socket, Tuple[str, int]]
+        """Accept a single connection from given list of sockets.
+
+        Given sockets must be bound to an addr and listening for connections.
+
+        Args:
+            sock ([socket.socket]): List of sockets IPv4 and/or IPv6 to accept on.
+            fstop (Callable[[], bool]): A function that returns True if abort is requested.
+
+        Returns:
+            socket.socket: Returns the connection socket (whatever protocol was faster).
+
+        Raises:
+            socket.error: Raised if server cannot accept connection or stop signal is requested.
+        """
+        self.__log.debug("Waiting for TCP client")
+        while True:
+            ssockets = select.select(sockets, [], [], 0.01)[0]  # type: List[socket.socket]
+            if fstop():
+                raise socket.error("StopSignal acknknowledged")
+            for sock in ssockets:
+                try:
+                    conn, addr = sock.accept()
+                except (socket.gaierror, socket.error) as error:
+                    msg = "Accept failed: {}".format(error)
+                    self.__log.error(msg)
+                    raise socket.error(msg)
+                self.__log.info(
+                    "Client connected from %s:%d (family %d/%s, TCP)",
+                    addr[0],
+                    addr[1],
+                    int(conn.family),
+                    self.get_family_name(conn.family),
+                )
+                return conn, (addr[0], addr[1])
+
+    def connect(
+        self,
+        sock,  # type: socket.socket
+        addr,  # type: str
+        port,  # type: int
+        src_addr=None,  # type: Optional[str]
+        src_port=None,  # type: Optional[int]
+        udp_sconnect=False,  # type: bool
+        udp_send_payload=b"",  # type: bytes
+        udp_recv_bufsize=8192,  # type: int
+        udp_recv_timeout=0.1,  # type: float
+    ):
+        # type: (...) -> None
+        """Connect to a remote socket at given address and port.
+
+        Args:
+            sock (socket.socket): The socket to use for connecting/communication.
+            addr (str): Numerical IP address of server to connect to.
+            port (int): Port of server to connect to.
+
+        Raises:
+            socker.error: If client cannot connect to remote peer or custom bind did not succeed.
+        """
+        sock_family_name = self.get_family_name(sock.family)
+        sock_type_name = self.get_type_name(sock.type)
+        # Bind to a custom addr/port
+        if src_addr is not None and src_port is not None:
+            try:
+                self.bind(sock, src_addr, src_port)
+            except socket.error as error:
+                raise socket.error(error)
+
+        self.__log.debug(
+            "Connecting to %s:%d (family %d/%s, %s)",
+            addr,
+            port,
+            int(sock.family),
+            sock_family_name,
+            sock_type_name,
+        )
+
+        try:
+            sock.connect((addr, port))
+
+            # UDP stateful connect
+            # A UDP client doesn't know if the connect() was successful, so the trick
+            # is to send an empty packet and see if an exception is triggered during
+            # receive or simply a timeout (which means success).
+            if udp_sconnect and int(sock.type) == int(socket.SOCK_DGRAM):
+                assert type(udp_send_payload) is bytes
+                assert type(udp_recv_bufsize) is int
+                # Some applications like netcat do not like to receive empty
+                # data, as they treat it as an EOF and will quit upon receive,
+                # so we're using a nullbyte character instead.
+                self.__log.debug(
+                    "Trying to send %d bytes (%s) for UDP stateful connect",
+                    len(udp_send_payload),
+                    repr(udp_send_payload),
+                )
+                sock.send(udp_send_payload)
+                sock.settimeout(udp_recv_timeout)
+                try:
+                    sock.recv(udp_recv_bufsize)
+                except socket.timeout:
+                    pass
+                finally:
+                    sock.settimeout(0)
+
+        except (OSError, socket.error) as error:
+            msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(
+                addr, port, sock.family, sock_family_name, sock_type_name, error,
+            )
+            raise socket.error(msg)
+
+        local = sock.getsockname()
+        self.__log.debug(
+            "Connected from %s:%d", local[0], local[1],
+        )
+        self.__log.info(
+            "Connected to %s:%d (family %d/%s, %s)",
+            addr,
+            port,
+            int(sock.family),
+            sock_family_name,
+            sock_type_name,
+        )
+
+    # --------------------------------------------------------------------------
+    # Destroy functions
+    # --------------------------------------------------------------------------
+    def close(self, sock, name):
+        # type: (socket.socket, str) -> None
+        """Shuts down and closes a socket.
+
+        Args:
+            name (str): Name of the socket used for logging purposes.
+            sock (str): Socket to shutdown and close.
+        """
+        try:
+            # (SHUT_RD)   0 = Done receiving (disallows receiving)
+            # (SHUT_WR)   1 = Done sending (disallows sending)
+            # (SHUT_RDWR) 2 = Both
+            self.__log.trace("Shutting down %s socket", name)  # type: ignore
+            sock.shutdown(socket.SHUT_RDWR)
+        except (OSError, socket.error) as error:
+            self.__log.trace("Could not shutdown %s socket: %s", name, error)  # type: ignore
+        try:
+            self.__log.trace("Closing %s socket", name)  # type: ignore
+            sock.close()
+        except (OSError, socket.error) as error:
+            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
+
+
+class Net(object):
+    """Provides an abstracted server client socket for TCP and UDP."""
+
     def get_enabled_af(self):
         # type: () -> Dict[int, socket.AddressFamily]
         """Returns enabled address families."""
         return self.__families
-
-    def get_af_name(self, address_family):
-        # type: (Union[socket.AddressFamily, int]) -> str
-        """Get an address family name by integer or AddressFamily enum."""
-        try:
-            name = self.__AF_HUMAN[int(address_family)]
-        except KeyError:
-            self.__log.error(
-                "Invalid key for address family: %s (type: %s) (valid: %s)",
-                repr(address_family),
-                repr(type(address_family)),
-                repr(self.__AF_HUMAN),
-            )
-            name = "unknown"
-        return name
-
-    def get_st_name(self, socket_type):
-        # type: (int) -> str
-        """Get socket type name by integer."""
-        try:
-            name = self.__ST_HUMAN[int(socket_type)]
-        except KeyError:
-            self.__log.error(
-                "Invalid key for socket type: %s (type: %s) (valid: %s)",
-                repr(socket_type),
-                repr(type(socket_type)),
-                repr(self.__ST_HUMAN),
-            )
-            name = "unknown"
-        return name
 
     # --------------------------------------------------------------------------
     # Constructor / Destructor
@@ -1086,6 +1590,7 @@ class Sock(object):
         self.__enc = encoder
         self.__ssig = ssig
         self.__options = options
+        self.__sock = Sock()
 
         # Set families to listen on or connect to
         if self.__options.ipv6:
@@ -1179,6 +1684,7 @@ class Sock(object):
         assert size == len(byte), "Encoding messed up string length, might need to do len() after."
 
         # Loop until all bytes have been send
+        # TODO: Does this make it impossible to send nullbytes (Ctrl+d)
         while send < size:
             self.__log.debug(
                 "Trying to send %d bytes to %s:%d",
@@ -1294,7 +1800,7 @@ class Sock(object):
                     addr[0],
                     addr[1],
                     int(conn.family),
-                    self.get_af_name(conn.family),
+                    self.__sock.get_family_name(conn.family),
                 )
             # A different UDP client connects
             elif self.__active["remote_addr"] != addr[0] or self.__active["remote_port"] != addr[1]:
@@ -1303,7 +1809,7 @@ class Sock(object):
                     addr[0],
                     addr[1],
                     int(conn.family),
-                    self.get_af_name(conn.family),
+                    self.__sock.get_family_name(conn.family),
                 )
             # Set currently active UDP connection socket
             self.__active = {
@@ -1327,65 +1833,6 @@ class Sock(object):
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
-    def get_sockets(self):
-        # type: () -> Dict[int, socket.socket]
-        """Creates sockets for enabled socket families.
-
-        Returns:
-            Dict[int, socket.socket]: Returns a {family: socket} dictionary.
-        """
-        # The connection dictionary.
-        conns = {}  # type: Dict[int, socket.socket]
-
-        for family in self.__families:
-            try:
-                conns[family] = self.__create_socket(self.__families[family])
-            except socket.error:
-                pass
-        return conns
-
-    def gethostbyname(self, host, family):
-        # type: (Optional[str], int) -> str
-        """Translate hostname into IP address.
-
-        Args:
-            host (str): The hostname to resolvea.
-            family (socket.family): IPv4 or IPv6 family
-
-        Returns:
-            str: Numeric IP address.
-
-        Raises:
-            socket.gaierror: If hostname cannot be resolved.
-        """
-        socktype = 0  # socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM
-        proto = 0  # socket.SOL_UDP if self.__options.udp else socket.SOL_TCP
-        flags = 0
-        port = None
-
-        # Quickly do wildcards for listening addresses
-        if host is None:
-            if family == int(socket.AF_INET):
-                self.__log.debug("Resolving hostname not required, using wildcard: 0.0.0.0")
-                return "0.0.0.0"
-            if family == int(socket.AF_INET6):
-                self.__log.debug("Resolving hostname not required, using wildcard: ::")
-                return "::"
-
-        if self.__options.nodns:
-            flags = socket.AI_NUMERICHOST
-
-        self.__log.debug("Resolving hostname: %s", host)
-        try:
-            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)
-            addr = str(infos[0][4][0])
-        except (AttributeError, socket.gaierror) as error:
-            msg = "Resolving hostname: {} failed: {}".format(str(host), str(error))
-            self.__log.trace(msg)  # type: ignore
-            raise socket.gaierror(msg)  # type: ignore
-        self.__log.debug("Resolved hostname: %s", addr)
-        return addr
-
     def run_client(self, host, port):
         # type: (str, int) -> bool
         """Run and create a TCP or UDP client and connect to a remote peer.
@@ -1401,10 +1848,20 @@ class Sock(object):
         conns = {}  # type: Dict[int, SockConn]
 
         # [1/4] Add sockets to connection dictionary
-        socks = self.get_sockets()
-        for key in socks:
-            conns[key] = {"conn": socks[key]}
-        if not conns:
+        succ = 0
+        for key in self.__families:
+            try:
+                conns[key] = {
+                    "conn": self.__sock.create_socket(
+                        self.__families[key],
+                        socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
+                        self.__options.ip_tos,
+                    )
+                }
+                succ += 1
+            except socket.error:
+                pass
+        if succ == 0:
             return False
 
         # [2/4] Resolve address
@@ -1413,13 +1870,15 @@ class Sock(object):
         for family in conns:
             try:
                 conns[family]["remote_host"] = host
-                conns[family]["remote_addr"] = self.gethostbyname(host, family)
+                conns[family]["remote_addr"] = self.__sock.gethostbyname(
+                    host, family, not self.__options.nodns
+                )
                 conns[family]["remote_port"] = port
             except socket.gaierror as err:
                 remove.append(family)
                 errors.append(str(err))
         for family in remove:
-            self.__close(self.get_af_name(family), conns[family]["conn"])
+            self.__sock.close(conns[family]["conn"], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
             for error in errors:
@@ -1431,10 +1890,15 @@ class Sock(object):
         errors = []
         for family in conns:
             try:
-                self.__connect(
+                self.__sock.connect(
                     conns[family]["conn"],
                     conns[family]["remote_addr"],
                     conns[family]["remote_port"],
+                    self.__options.src_addr,
+                    self.__options.src_port,
+                    self.__options.udp_sconnect,
+                    self.__enc.encode(self.__options.udp_sconnect_word),
+                    self.__options.bufsize,
                 )
                 # On successful connect, we can abandon/remove all other sockets
                 remove = [key for key in conns if key != family]
@@ -1443,7 +1907,7 @@ class Sock(object):
                 remove.append(family)
                 errors.append(str(err))
         for family in remove:
-            self.__close(self.get_af_name(family), conns[family]["conn"])
+            self.__sock.close(conns[family]["conn"], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
             for error in errors:
@@ -1462,7 +1926,8 @@ class Sock(object):
         # Store sockets as a list
         self.__conns = conns
         # Print socket info
-        self.__print_socket_opts(self.__active["conn"], self.get_af_name(self.__active["af"]))
+        for info in self.__sock.get_sock_opts(self.__active["conn"], self.__options.info):
+            self.__log.info("[%s] %s", self.__sock.get_family_name(family), info)
         return True
 
     def run_server(self, host, port):
@@ -1484,7 +1949,13 @@ class Sock(object):
         succ = 0
         for key in self.__families:
             try:
-                conns[key] = {"sock": self.__create_socket(self.__families[key])}
+                conns[key] = {
+                    "sock": self.__sock.create_socket(
+                        self.__families[key],
+                        socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
+                        self.__options.ip_tos,
+                    )
+                }
                 succ += 1
             except socket.error:
                 pass
@@ -1496,14 +1967,16 @@ class Sock(object):
         errors = []
         for family in conns:
             try:
-                conns[family]["local_addr"] = self.gethostbyname(host, family)
+                conns[family]["local_addr"] = self.__sock.gethostbyname(
+                    host, family, not self.__options.nodns
+                )
                 conns[family]["local_host"] = host
                 conns[family]["local_port"] = port
             except socket.gaierror as err:
                 remove.append(family)
                 errors.append(str(err))
         for family in remove:
-            self.__close(self.get_af_name(family), conns[family]["sock"])
+            self.__sock.close(conns[family]["sock"], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
             for error in errors:
@@ -1515,12 +1988,12 @@ class Sock(object):
         errors = []
         for family in conns:
             try:
-                self.__bind(conns[family]["sock"], conns[family]["local_addr"], port)
+                self.__sock.bind(conns[family]["sock"], conns[family]["local_addr"], port)
             except socket.error as err:
                 remove.append(family)
                 errors.append(str(err))
         for family in remove:
-            self.__close(self.get_af_name(family), conns[family]["sock"])
+            self.__sock.close(conns[family]["sock"], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
             for error in errors:
@@ -1536,7 +2009,7 @@ class Sock(object):
                     conns[family]["local_addr"],
                     conns[family]["local_port"],
                     family,
-                    self.get_af_name(family),
+                    self.__sock.get_family_name(family),
                 )
             self.__conns = conns
             self.__udp_mode_server = True
@@ -1546,32 +2019,35 @@ class Sock(object):
         # (1/3) Listen
         remove = []
         for family in conns:
-            if self.__listen(conns[family]["sock"]):
+            try:
+                self.__sock.listen(conns[family]["sock"], self.__options.backlog)
                 self.__log.info(
                     "Listening on %s:%d (family %d/%s, TCP)",
                     conns[family]["local_addr"],
                     conns[family]["local_port"],
                     family,
-                    self.get_af_name(family),
+                    self.__sock.get_family_name(family),
                 )
-            else:
+            except socket.error:
                 remove.append(family)
         for family in remove:
-            self.__close(self.get_af_name(family), conns[family]["sock"])
+            self.__sock.close(conns[family]["sock"], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
             return False
 
         # (2/3) Accept
         try:
-            conn, client = self.__accept([conns[family]["sock"] for family in conns])
+            conn, client = self.__sock.accept(
+                [conns[family]["sock"] for family in conns], self.__ssig.has_stop
+            )
             conns[conn.family]["conn"] = conn
             conns[conn.family]["remote_addr"] = client[0]
             conns[conn.family]["remote_port"] = client[1]
         except socket.error:
             # On error, remove all bind sockets
             for family in conns:
-                self.__close(self.get_af_name(family), conns[family]["sock"])
+                self.__sock.close(conns[family]["sock"], self.__sock.get_family_name(family))
                 del conns[family]
             return False
 
@@ -1584,7 +2060,8 @@ class Sock(object):
                     "remote_addr": conns[family]["remote_addr"],
                     "remote_port": conns[family]["remote_port"],
                 }
-                self.__print_socket_opts(conns[family]["conn"], "conn-sock")
+                for info in self.__sock.get_sock_opts(self.__active["conn"], self.__options.info):
+                    self.__log.info("[%s] %s", self.__sock.get_family_name(family), info)
         self.__conns = conns
         return True
 
@@ -1603,7 +2080,9 @@ class Sock(object):
 
         # [2/3] Accept
         try:
-            conn, client = self.__accept([self.__conns[family]["sock"] for family in self.__conns])
+            conn, client = self.__sock.accept(
+                [self.__conns[family]["sock"] for family in self.__conns], self.__ssig.has_stop
+            )
         except socket.error:
             return False
         self.__conns[conn.family]["conn"] = conn
@@ -1617,7 +2096,6 @@ class Sock(object):
             "remote_addr": client[0],
             "remote_port": client[1],
         }
-
         return True
 
     def close_bind_sock(self):
@@ -1625,371 +2103,14 @@ class Sock(object):
         """Close the bind socket used by the server to accept clients."""
         for family in self.__conns:
             if "sock" in self.__conns[family]:
-                self.__close("sock", self.__conns[family]["sock"])
+                self.__sock.close(self.__conns[family]["sock"], "sock")
 
     def close_conn_sock(self):
         # type: () -> None
         """Close the communication socket used for send and receive."""
         for family in self.__conns:
             if "conn" in self.__conns[family]:
-                self.__close("conn", self.__conns[family]["conn"])
-
-    # --------------------------------------------------------------------------
-    # Private Functions (general)
-    # --------------------------------------------------------------------------
-    def __print_socket_opts(self, sock, log_prefix="Socket"):
-        # type: (socket.socket, str) -> None
-        """Debug logs configured socket options."""
-        # https://hg.python.org/cpython/file/3.5/Modules/socketmodule.c
-        options = {
-            "Sock": [
-                "SO_DEBUG",
-                "SO_ACCEPTCONN",
-                "SO_REUSEADDR",
-                "SO_EXCLUSIVEADDRUSE",
-                "SO_KEEPALIVE",
-                "SO_DONTROUTE",
-                "SO_BROADCAST",
-                "SO_USELOOPBACK",
-                "SO_LINGER",
-                "SO_OOBINLINE",
-                "SO_REUSEPORT",
-                "SO_SNDBUF",
-                "SO_RCVBUF",
-                "SO_SNDLOWAT",
-                "SO_RCVLOWAT",
-                "SO_SNDTIMEO",
-                "SO_RCVTIMEO",
-                "SO_ERROR",
-                "SO_TYPE",
-                "SO_SETFIB",
-                "SO_PASSCRED",
-                "SO_PEERCRED",
-                "LOCAL_PEERCRED",
-                "SO_BINDTODEVICE",
-                "SO_PRIORITY",
-                "SO_MARK",
-            ],
-            "IPv4": [
-                "IP_OPTIONS",
-                "IP_HDRINCL",
-                "IP_TOS",
-                "IP_TTL",
-                "IP_RECVOPTS",
-                "IP_RECVRETOPTS",
-                "IP_RECVDSTADDR",
-                "IP_RETOPTS",
-                "IP_MULTICAST_IF",
-                "IP_MULTICAST_TTL",
-                "IP_MULTICAST_LOOP",
-                "IP_ADD_MEMBERSHIP",
-                "IP_DROP_MEMBERSHIP",
-                "IP_DEFAULT_MULTICAST_TTL",
-                "IP_DEFAULT_MULTICAST_LOOP",
-                "IP_MAX_MEMBERSHIPS",
-                "IP_TRANSPARENT",
-            ],
-            "IPv6": [
-                "IPV6_JOIN_GROUP",
-                "IPV6_LEAVE_GROUP",
-                "IPV6_MULTICAST_HOPS",
-                "IPV6_MULTICAST_IF",
-                "IPV6_MULTICAST_LOOP",
-                "IPV6_UNICAST_HOPS",
-                "IPV6_V6ONLY",
-                "IPV6_CHECKSUM",
-                "IPV6_DONTFRAG",
-                "IPV6_DSTOPTS",
-                "IPV6_HOPLIMIT",
-                "IPV6_HOPOPTS",
-                "IPV6_NEXTHOP",
-                "IPV6_PATHMTU",
-                "IPV6_PKTINFO",
-                "IPV6_RECVDSTOPTS",
-                "IPV6_RECVHOPLIMIT",
-                "IPV6_RECVHOPOPTS",
-                "IPV6_RECVPKTINFO",
-                "IPV6_RECVRTHDR",
-                "IPV6_RECVTCLASS",
-                "IPV6_RTHDR",
-                "IPV6_RTHDRDSTOPTS",
-                "IPV6_RTHDR_TYPE_0",
-                "IPV6_RECVPATHMTU",
-                "IPV6_TCLASS",
-                "IPV6_USE_MIN_MTU",
-            ],
-            "TCP": [
-                "TCP_NODELAY",
-                "TCP_MAXSEG",
-                "TCP_CORK",
-                "TCP_KEEPIDLE",
-                "TCP_KEEPINTVL",
-                "TCP_KEEPCNT",
-                "TCP_SYNCNT",
-                "TCP_LINGER2",
-                "TCP_DEFER_ACCEPT",
-                "TCP_WINDOW_CLAMP",
-                "TCP_INFO",
-                "TCP_QUICKACK",
-                "TCP_FASTOPEN",
-            ],
-        }
-        for proto, optnames in options.items():
-            if self.__options.info == "all" or proto.lower() == self.__options.info:
-                for optname in optnames:
-                    if proto.lower() == "sock":
-                        level = socket.SOL_SOCKET
-                    elif proto.lower() == "ipv4":
-                        level = socket.IPPROTO_IP
-                    elif proto.lower() == "ipv6":
-                        level = socket.IPPROTO_IPV6
-                    elif proto.lower() == "tcp":
-                        level = socket.IPPROTO_TCP
-                    try:
-                        self.__log.info(
-                            "[%s] %s: %s: %s",
-                            log_prefix,
-                            proto,
-                            optname,
-                            sock.getsockopt(
-                                level, eval("socket." + optname)  # pylint: disable=eval-used
-                            ),
-                        )
-                    except AttributeError:
-                        pass
-                    except (OSError, socket.error):
-                        pass
-
-    def __create_socket(self, family):
-        # type: (socket.AddressFamily) -> socket.socket
-        """Create TCP or UDP socket.
-
-        Args:
-            family (socket.family): The address family for which to create the socket for.
-
-        Returns:
-            socket.socket: Returns TCP or UDP socket for the given address family.
-
-        Raises:
-            socket.error: If socket cannot be created.
-        """
-        try:
-            if self.__options.udp:
-                self.__log.debug("Creating %s UDP socket", self.get_af_name(family))
-                sock = socket.socket(family, socket.SOCK_DGRAM)
-            else:
-                self.__log.debug("Creating %s TCP socket", self.get_af_name(family))
-                sock = socket.socket(family, socket.SOCK_STREAM)
-        except socket.error as error:
-            msg = "Failed to create {} socket: {}".format(self.get_af_name(family), error)
-            self.__log.error(msg)
-            raise socket.error(msg)
-
-        if family == socket.AF_INET6:
-            # On linux, ipv6 sockets accept ipv4 too by default,
-            # but this makes it impossible to bind to both
-            # 0.0.0.0 in ipv4 and :: in ipv6.  On other systems,
-            # separate sockets *must* be used to listen for both ipv4
-            # and ipv6.  For consistency, always disable ipv4 on our
-            # ipv6 sockets and use a separate ipv4 socket when needed.
-            #
-            # Python 2.x on windows doesn't have IPPROTO_IPV6.
-            if hasattr(socket, "IPPROTO_IPV6"):
-                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
-
-        # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
-        # we instruct it to reuse the address anyway.
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # If requested, set IP Type of Service value for current socket
-        if self.__options.ip_tos is not None:
-            self.__log.info("Setting IP_TOS to: %d", self.IP_TOS[self.__options.ip_tos])
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, self.IP_TOS[self.__options.ip_tos])
-        # All done, return it to the requestor
-        return sock
-
-    def __close(self, name, sock):
-        # type: (str, socket.socket) -> None
-        """Shuts down and closes a socket.
-
-        Args:
-            name (str): Name of the socket used for logging purposes.
-            sock (str): Socket to shutdown and close.
-        """
-        assert name in ["sock", "conn", "IPv4", "IPv6"]
-        try:
-            # (SHUT_RD)   0 = Done receiving (disallows receiving)
-            # (SHUT_WR)   1 = Done sending (disallows sending)
-            # (SHUT_RDWR) 2 = Both
-            self.__log.trace("Shutting down %s socket", name)  # type: ignore
-            sock.shutdown(socket.SHUT_RDWR)
-        except (OSError, socket.error) as error:
-            self.__log.trace("Could not shutdown %s socket: %s", name, error)  # type: ignore
-
-        try:
-            self.__log.trace("Closing %s socket", name)  # type: ignore
-            sock.close()
-        except (OSError, socket.error) as error:
-            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
-
-    # --------------------------------------------------------------------------
-    # Private Functions (server)
-    # --------------------------------------------------------------------------
-    def __bind(self, sock, addr, port):
-        # type: (socket.socket, str, int) -> None
-        """Bind the socket to an address.
-
-        Args:
-            sock (socket.socket): The socket to bind.
-            addr (str): The numerical IP address to bind to.
-            port (int): The port to bind to.
-
-        Raises:
-            socket.error if socket cannot be bound.
-        """
-        sock_family_name = self.get_af_name(sock.family)
-        sock_type_name = self.get_st_name(sock.type)
-        self.__log.debug(
-            "Binding (family %d/%s, %s) socket to %s:%d",
-            int(sock.family),
-            sock_family_name,
-            sock_type_name,
-            addr,
-            port,
-        )
-        try:
-            sock.bind((addr, port))
-        except (OverflowError, OSError, socket.gaierror, socket.error) as error:
-            msg = "Binding (family {}/{}, {}) socket to {}:{} failed: {}".format(
-                sock.family, sock_family_name, sock_type_name, addr, port, error
-            )
-            raise socket.error(msg)
-
-    def __listen(self, sock):
-        # type: (socket.socket) -> bool
-        """Listen for connections made to the socket.
-
-        Args:
-            sock (socket.socket): The socket to listen on.
-
-        Returns:
-            bool: Returns `True` on success and `False` on Failure.
-        """
-        try:
-            self.__log.debug("Listening with backlog=%d", self.__options.backlog)
-            sock.listen(self.__options.backlog)
-            return True
-        except socket.error as error:
-            self.__log.error("Listening failed: %s", error)
-            return False
-
-    def __accept(self, sockets):
-        # type: (List[socket.socket]) -> Tuple[socket.socket, Tuple[str, int]]
-        """Accept a connection. The socket must be bound to an addr and listening for connections.
-
-        Args:
-            sock ([socket.socket]): List of sockets IPv4 and/or IPv6 to accept on.
-
-        Returns:
-            socket.socket: Returns the connection socket (whatever protocol was faster).
-
-        Raises:
-            socket.error: If the server cannot accept connections on its socket.
-        """
-        self.__log.debug("Waiting for TCP client")
-        while True:
-            ssockets = select.select(sockets, [], [], 0.01)[0]  # type: List[socket.socket]
-            if self.__ssig.has_stop():
-                raise socket.error("StopSignal requested")
-            for sock in ssockets:
-                try:
-                    conn, addr = sock.accept()
-                except (socket.gaierror, socket.error) as error:
-                    msg = "Accept failed: {}".format(error)
-                    self.__log.error(msg)
-                    raise socket.error(msg)
-                self.__log.info(
-                    "Client connected from %s:%d (family %d/%s, TCP)",
-                    addr[0],
-                    addr[1],
-                    int(conn.family),
-                    self.get_af_name(conn.family),
-                )
-                return conn, (addr[0], addr[1])
-
-    # --------------------------------------------------------------------------
-    # Private Functions (client)
-    # --------------------------------------------------------------------------
-    def __connect(self, sock, addr, port):
-        # type: (socket.socket, str, int) -> None
-        """Connect to a remote socket at given address and port (TCP-only).
-
-        Args:
-            sock (socket.socket): The socket to use for connecting/communication.
-            addr (str): Numerical IP address of server to connect to.
-            port (int): Port of server to connect to.
-
-        Raises:
-            socker.error: If client cannot connect to remote peer or custom bind did not succeed.
-        """
-        sock_family_name = self.get_af_name(sock.family)
-        sock_type_name = self.get_st_name(sock.type)
-        # Bind to a custom addr/port
-        if self.__options.src_addr is not None and self.__options.src_port is not None:
-            try:
-                self.__bind(sock, self.__options.src_addr, self.__options.src_port)
-            except socket.error as error:
-                raise socket.error(error)
-
-        self.__log.debug(
-            "Connecting to %s:%d (family %d/%s, %s)",
-            addr,
-            port,
-            int(sock.family),
-            sock_family_name,
-            sock_type_name,
-        )
-        try:
-            sock.connect((addr, port))
-
-            # UDP stateful connect
-            # A UDP client doesn't know if the connect() was successful, so the trick
-            # is to send an empty packet and see if an exception is triggered during
-            # receive or simply a timeout (which means success).
-            if self.__options.udp and self.__options.udp_sconnect:
-                # Some applications like netcat do not like to receive empty
-                # data, as they treat it as an EOF and will quit upon receive,
-                # so we're using a nullbyte character instead.
-                data = self.__enc.encode(self.__options.udp_sconnect_word)
-                self.__log.debug(
-                    "Trying to send %d bytes (%s) to UDP stateful connect", len(data), repr(data)
-                )
-                sock.send(data)
-                sock.settimeout(0.1)
-                try:
-                    sock.recv(self.__options.bufsize)
-                except socket.timeout:
-                    pass
-                finally:
-                    sock.settimeout(0)
-
-        except (OSError, socket.error) as error:
-            msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(
-                addr, port, sock.family, sock_family_name, sock_type_name, error,
-            )
-            raise socket.error(msg)
-
-        local = sock.getsockname()
-        self.__log.debug(
-            "Connected from %s:%d", local[0], local[1],
-        )
-        self.__log.info(
-            "Connected to %s:%d (family %d/%s, %s)",
-            addr,
-            port,
-            int(sock.family),
-            sock_family_name,
-            sock_type_name,
-        )
+                self.__sock.close(self.__conns[family]["conn"], "conn")
 
 
 # #################################################################################################
@@ -2283,7 +2404,7 @@ class IONetwork(IO):
         super(IONetwork, self).__init__(ssig)
 
         self.__role = role
-        self.__net = Sock(encoder, ssig, sock_opts)
+        self.__net = Net(encoder, ssig, sock_opts)
         self.__sock_opts = sock_opts
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
@@ -2523,6 +2644,28 @@ class IONetwork(IO):
 class IONetworkScanner(IO):
     """Pwncat Scanner implementation based on custom Socket library."""
 
+    BANNER_PAYLOADS = {
+        # 0 is for generic ones, which do not have a custom port definition already
+        0: [
+            None,  # This means to not send anything, but receive first
+            "",
+            "\0",
+            "\r",
+            "\n",
+            "\r\n",
+            "HEAD /\r\n\r\n",
+        ],
+    }
+
+    # Common regexes
+    BANNER_REG = [
+        r"Server:\s*(.*)",  # extract webserver from header
+        r"(.*[0-9][-.0-9]*.*)",  # generic version string
+    ]
+
+    # Compiled versions of common regexes
+    BANNER_REG_COMP = []  # type: List[re.Pattern[str]]
+
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
@@ -2531,6 +2674,7 @@ class IONetworkScanner(IO):
         ssig,  # type: StopSignal
         encoder,  # type: StringEncoder
         host,  # type: str
+        banner,  # type: bool
         cli_opts,  # type: DsIONetworkCli
         sock_opts,  # type: DsIONetworkSock
     ):
@@ -2541,6 +2685,7 @@ class IONetworkScanner(IO):
             ssig (StopSignal): Stop signal instance
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
             host (str): The hostname to resolve.
+            banner (bool): Determines if we do banner grabbing as well.
             cli_opts (DsIONetworkCli):   Options for the client.
             sock_opts (DsIONetworkSock): Options to parse back to Sock.
         """
@@ -2549,72 +2694,161 @@ class IONetworkScanner(IO):
         self.__enc = encoder
         self.__cli_opts = cli_opts
         self.__sock_opts = sock_opts
+        self.__banner = banner
 
-        self.__net = Sock(encoder, ssig, sock_opts)
+        self.__log = logging.getLogger(__name__)
+        self.__net = Net(encoder, ssig, sock_opts)
+        self.__sock = Sock()
         self.__screen_lock = threading.Semaphore()
 
-        self.__data = encoder.encode("")
+        # Compile our regexes if using banner detection
+        if banner:
+            for reg in self.BANNER_REG:
+                self.BANNER_REG_COMP.append(re.compile(reg, re.IGNORECASE))
 
         # Get numerical IP addresses for IPv4 and/or IPv6
-        self.__addresses = {}
-        for family in self.__net.get_enabled_af():
-            self.__addresses[family] = self.__net.gethostbyname(host, family)
+        self.__targets = {}
+        families = self.__net.get_enabled_af()
+        try:
+            for family in families:
+                self.__targets[family] = self.__sock.gethostbyname(
+                    host, family, not self.__sock_opts.nodns
+                )
+        except socket.gaierror:
+            pass
 
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
+    def __get_socket(self, family):
+        # type: (Union[socket.AddressFamily, int]) -> socket.socket
+        """Create socket for specific address family endlessly until resources are available."""
+        # The scanner is starting many threads, each creating a single socket
+        # and we might hit the max allowed open files limit, so we will
+        # endlessly ask the system for a new socket until success.
+        # Also adding a delay, which will give other threads the time to
+        # release their sockets.
+        while True:
+            try:
+                if self.__sock_opts.udp:
+                    return self.__sock.create_socket(family, socket.SOCK_DGRAM)
+                return self.__sock.create_socket(family, socket.SOCK_STREAM)
+            except socket.error:
+                time.sleep(0.1)
+
+    def __get_banner_version(self, banner):
+        # type: (str) -> Optional[str]
+        """Extract version information from a string."""
+        if not banner or banner is None:
+            return None
+
+        # If we only have a single line, return it (all we got)
+        lines = banner.splitlines()
+        if len(lines) == 1:
+            return lines[0]
+
+        # Version extraction
+        for reg in self.BANNER_REG_COMP:
+            match = re.search(reg, banner)
+            if match:
+                return match.group(1).rstrip()
+
+        # Nothing found, return first non-empty line
+        for line in lines:
+            if line:
+                return line
+
+        # Nothing found
+        return None
+
+    def __get_banner(self, sock, addr, port):
+        # type: (socket.socket, str, int) -> Tuple[bool, Optional[str]]
+        """Retrieve the (version) banner from a network service."""
+        if port in self.BANNER_PAYLOADS:
+            payloads = self.BANNER_PAYLOADS[port] + self.BANNER_PAYLOADS[0]
+        else:
+            payloads = self.BANNER_PAYLOADS[0]
+
+        for payload in payloads:
+            try:
+                if payload is not None:
+                    sock.send(self.__enc.encode(payload))
+                    self.__log.debug("%s:%d - payload sent: %s", addr, port, repr(payload))
+
+                sock.settimeout(0.1)
+                banner = sock.recv(self.__sock_opts.bufsize)
+                version = self.__get_banner_version(self.__enc.decode(banner))
+                self.__log.debug("%s:%d - respone received: %s", addr, port, repr(banner))
+                return (True, version)
+            except socket.timeout:
+                time.sleep(0.1)
+                continue
+            except (OSError, socket.error):
+                return (False, None)
+        return (True, None)
+
     def producer(self, *args, **kwargs):
         # type: (Any, Any) -> Iterator[str]
         """Port scanner yielding open/closed string for given port.
+
+        Args:
+            args: additional arguments.
+            kwargs: additional arguments.
 
         Yields:
             str: Open/closed state (optionally with banner) from a port.
         """
         port = args[0]
-        conns = self.__net.get_sockets()
-        for family in conns:
-            sock = conns[family]
-            addr = self.__addresses[family]
 
-            # Connect
-            closed = []
+        # Loop over adress families
+        for family in self.__targets:
+
+            addr = self.__targets[family]
+
+            # [1/5] Get socket
+            sock = self.__get_socket(family)
+
+            # [2/5] Connect scan
+            succ_conn = False
             try:
-                sock.connect((addr, port))
-            except (OSError, socket.error):
-                closed.append(family)
-                sock.close()
+                Sock().connect(
+                    sock,
+                    addr,
+                    port,
+                    None,
+                    None,
+                    True,
+                    self.__enc.encode("\0"),
+                    self.__sock_opts.bufsize,
+                    0.1,
+                )
+                succ_conn = True
+            except socket.error:
+                succ_conn = False
 
-            # Banner grabbing
-            if family not in closed:
-                try:
-                    # [TCP] Try to grab the bannser
-                    #
-                    # [UDP] Stateful connect:
-                    # A UDP client doesn't know if the connect() was successful, so the trick
-                    # is to send an empty packet and see if an exception is triggered during
-                    # receive or simply a timeout (which means success).
-                    sock.send(self.__data)
+            # [3/5] Banner grabbing
+            succ_banner = True
+            banner = None
+            if self.__banner:
+                (succ_banner, banner) = self.__get_banner(sock, addr, port)
 
-                    sock.settimeout(1.0)
-                    byte = sock.recv(1024)
-                    yield "[+] {:>5}/{} open   ({}): {}".format(
-                        port,
-                        self.__net.get_st_name(sock.type),
-                        self.__net.get_af_name(family),
-                        self.__enc.decode(byte).rstrip(),
-                    )
-                except socket.timeout:
-                    yield "[+] {:>5}/{} open   ({})".format(
-                        port, self.__net.get_st_name(sock.type), self.__net.get_af_name(family),
-                    )
-                except (OSError, socket.error):
-                    # [TCP] Only successful for TCP
-                    if not self.__sock_opts.udp:
-                        yield "[+] {:>5}/{} open   ({})".format(
-                            port, self.__net.get_st_name(sock.type), self.__net.get_af_name(family),
-                        )
-                finally:
-                    sock.close()
+            # [4/5] Evaluation
+            if banner is not None and (succ_conn and succ_banner):
+                sock_type = sock.type
+                yield "[+] {:>5}/{} open   ({}): {}".format(
+                    port,
+                    self.__sock.get_type_name(sock_type),
+                    self.__sock.get_family_name(family),
+                    banner,
+                )
+            if banner is None and (succ_conn and succ_banner):
+                sock_type = sock.type
+                yield "[+] {:>5}/{} open   ({})".format(
+                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),
+                )
+
+            # [5/5] Cleanup
+            self.__sock.close(sock, addr + "-" + str(port))
 
     def consumer(self, data):
         # type: (str) -> None
@@ -3120,7 +3354,13 @@ class Runner(object):
                 ),
             )
             thread.daemon = False
-            thread.start()
+            # Add delay if threads cannot be started
+            while True:
+                try:
+                    thread.start()
+                    break
+                except (RuntimeError, Exception):  # pylint: disable=broad-except
+                    time.sleep(0.1)
             self.__threads[key] = thread
         # Start available timers in a thread
         for key in self.__timers:
@@ -3913,6 +4153,7 @@ connect.""",
     protocol = parser.add_argument_group("protocol arguments")
     cnc = parser.add_argument_group("command & control arguments")
     pse = parser.add_argument_group("pwncat scripting engine")
+    zero = parser.add_argument_group("zero-i/o mode arguments")
     lmode = parser.add_argument_group("listen mode arguments")
     cmode = parser.add_argument_group("connect mode arguments")
     misc = parser.add_argument_group("misc arguments")
@@ -3965,6 +4206,7 @@ quit. See -k/--keep-open to change this behaviour.
         help="""[Zero-I/0 mode]:
 Connect to a remote endpoint and report status only.
 Used for port scanning.
+See --banner for version detection.
 
 """,
     )
@@ -4060,7 +4302,7 @@ decrease drastically if you use more than three times.
         "--info",
         metavar="type",
         type=ArgValidator.type_info,
-        default="",
+        default=None,
         help="""Show additional info about sockets, IPv4/6 or TCP opts
 applied to the current socket connection. Valid
 parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
@@ -4243,6 +4485,18 @@ You can also define as many custom functions or classes
 within this file, but ensure to prefix them uniquely to
 not collide with pwncat's function or classes, as the
 file will be called with exec().
+""",
+    )
+
+    # --------------------------------------------------------------------------
+    # Zero-I/O mode arguments
+    # --------------------------------------------------------------------------
+    zero.add_argument(
+        "--banner",
+        action="store_true",
+        default=False,
+        help="""Zero-I/O (TCP and UDP):
+Try banner grabbing during port scan.
 """,
     )
 
@@ -4581,7 +4835,7 @@ def main():
         args.source_addr,
         args.source_port,
         args.udp,
-        args.udp_sconnect,
+        True if args.zero else args.udp_sconnect,
         udp_sconnect_word,
         args.tos,
         args.info,
@@ -4711,7 +4965,7 @@ def main():
     # Port Scan
     if mode == "scan":
         print("Scanning {} ports".format(len(ports)))
-        net = IONetworkScanner(ssig, enc, host, cli_opts, sock_opts)
+        net = IONetworkScanner(ssig, enc, host, args.banner, cli_opts, sock_opts)
         run = Runner(PSEStore(ssig, [net]))
         for port in ports:
             run.add_action(

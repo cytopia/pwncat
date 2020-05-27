@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="author" content="cytopia">
-	<meta name="description" content="Pwncat - Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell, forwarding magic and insanely fast UDP port scanning - and its fully scriptable with Python">
+	<meta name="description" content="Pwncat - Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and forwarding magic - and its fully scriptable with Python">
 	<meta name="keywords" content="pwncat, reverse shell handler, reverse shell, bind shell, self-injecting shell, inject shell, unbreakable reverse shell, UDP reverse shell, pwncat scripting engine, IDS evasion, IPS evasion, Firewall evasion, netcat">
 	<title>pwncat - reverse shell handler with all netcat features</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css">
@@ -144,7 +144,7 @@
 
 
 				<blockquote cite="github.com/cytopia/pwncat">
-					pwncat is like netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell, forwarding magic and insanely fast port scanning - and its fully scriptable with Python (<a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a>)
+					pwncat is like netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and forwarding magic - and its fully scriptable with Python (<a href="https://github.com/cytopia/pwncat/tree/master/pse">PSE</a>)
 				</blockquote>
 				<br/>
 
@@ -226,8 +226,8 @@ pwncat -l 4444 --self-inject /bin/sh:10.0.0.1:4445+3
 					</div>
 					<div class="card large">
 						<div class="section dark">
-							<h4>Insanely fast port scanning</h4>
-							<p>When doing a full range UDP port scan, <code>pwncat</code> reaches a speed of <strong>21x faster</strong> than <code>nmap</code></p>
+							<h4>Port scanning with version detection</h4>
+							<p>Built-in version detection while doing a TCP or UDP port scan.</p>
 						</div>
 					</div>
 					<div class="card large">
@@ -355,6 +355,7 @@ mode arguments:
   -z, --zero            [Zero-I/0 mode]:
                         Connect to a remote endpoint and report status only.
                         Used for port scanning.
+                        See --banner for version detection.
 
   -L [addr:]port, --local [addr:]port
                         [Local forward mode]:
@@ -492,6 +493,11 @@ pwncat scripting engine:
                         within this file, but ensure to prefix them uniquely to
                         not collide with pwncat's function or classes, as the
                         file will be called with exec().
+</pre>
+<pre class="hi">
+zero-i/o mode arguments:
+  --banner              Zero-I/O (TCP and UDP):
+                        Try banner grabbing during port scan.
 </pre>
 <pre class="hi">
 listen mode arguments:
