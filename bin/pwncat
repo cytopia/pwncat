@@ -74,9 +74,6 @@ import sys
 import threading
 import time
 
-# Abstract class with Python 2 + Python 3 support: https://stackoverflow.com/questions/35673474
-ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
-
 # Only used with mypy for static source code analysis
 if os.environ.get("MYPY_CHECK", False):
     from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union, TypeVar
@@ -139,13 +136,58 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   1 / 10   D A T A   S T R U C T U R E   T Y P E S
+# ###   1 / 11   M E T A   C L A S S E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (1/12) DsCallableProducer
+# [1/11 META CLASSES]: (1/2) Abstract
+# -------------------------------------------------------------------------------------------------
+# Abstract class with Python 2 + Python 3 support: https://stackoverflow.com/questions/35673474
+ABC = ABCMeta("ABC", (object,), {"__slots__": ()})
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/11 META CLASSES]: (2/2) Singleton
+# -------------------------------------------------------------------------------------------------
+class _Singleton(type):
+    """A thread-safe metaclass that creates a Singleton base class when called."""
+
+    # https://refactoring.guru/design-patterns/singleton/python/example#example-1
+    _instances = {}  # type: Dict[_Singleton, _Singleton]
+
+    _lock = threading.Lock()
+
+    def __call__(cls, *args, **kwargs):
+        # type: (_Singleton, Any, Any) -> _Singleton
+
+        # Now, imagine that the program has just been launched. Since there's no
+        # Singleton instance yet, multiple threads can simultaneously pass the
+        # previous conditional and reach this point almost at the same time. The
+        # first of them will acquire lock and will proceed further, while the
+        # rest will wait here.
+        with cls._lock:
+            # The first thread to acquire the lock, reaches this conditional,
+            # goes inside and creates the Singleton instance. Once it leaves the
+            # lock block, a thread that might have been waiting for the lock
+            # release may then enter this section. But since the Singleton field
+            # is already initialized, the thread won't create a new object.
+            if cls not in cls._instances:
+                cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   2 / 11   D A T A   S T R U C T U R E   T Y P E S
+# ###
+# #################################################################################################
+# #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# [2/11 DATA STRUCTURE TYPES]: (1/12) DsCallableProducer
 # -------------------------------------------------------------------------------------------------
 class DsCallableProducer(object):
     """A type-safe data structure for Callable functions."""
@@ -182,7 +224,7 @@ class DsCallableProducer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (2/12) DsRunnerAction
+# [2/11 DATA STRUCTURE TYPES]: (2/12) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
 class DsRunnerAction(object):
     """A type-safe data structure for Action functions for the Runner class."""
@@ -240,7 +282,7 @@ class DsRunnerAction(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (3/12) DsRunnerTimer
+# [2/11 DATA STRUCTURE TYPES]: (3/12) DsRunnerTimer
 # -------------------------------------------------------------------------------------------------
 class DsRunnerTimer(object):
     """A type-safe data structure for Timer functions for the Runner class."""
@@ -300,7 +342,7 @@ class DsRunnerTimer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (4/12) DsRunnerRepeater
+# [2/11 DATA STRUCTURE TYPES]: (4/12) DsRunnerRepeater
 # -------------------------------------------------------------------------------------------------
 class DsRunnerRepeater(object):
     """A type-safe data structure for repeated functions for the Runner class."""
@@ -369,7 +411,7 @@ class DsRunnerRepeater(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (5/12) DsSock
+# [2/11 DATA STRUCTURE TYPES]: (5/12) DsSock
 # -------------------------------------------------------------------------------------------------
 class DsSock(object):
     """A type-safe data structure for DsSock options."""
@@ -500,7 +542,7 @@ class DsSock(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (6/12) DsIONetworkSock
+# [2/11 DATA STRUCTURE TYPES]: (6/12) DsIONetworkSock
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSock(DsSock):
     """A type-safe data structure for IONetwork socket options."""
@@ -555,7 +597,7 @@ class DsIONetworkSock(DsSock):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (7/12) DsIONetworkCli
+# [2/11 DATA STRUCTURE TYPES]: (7/12) DsIONetworkCli
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkCli(object):
     """A type-safe data structure for IONetwork client options."""
@@ -609,7 +651,7 @@ class DsIONetworkCli(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (8/12) DsIONetworkSrv
+# [2/11 DATA STRUCTURE TYPES]: (8/12) DsIONetworkSrv
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSrv(object):
     """A type-safe data structure for IONetwork server options."""
@@ -672,7 +714,7 @@ class DsIONetworkSrv(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (9/12) DsTransformLinefeed
+# [2/11 DATA STRUCTURE TYPES]: (9/12) DsTransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class DsTransformLinefeed(object):
     """A type-safe data structure for DsTransformLinefeed options."""
@@ -696,7 +738,7 @@ class DsTransformLinefeed(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (10/12) DsTransformSafeword
+# [2/11 DATA STRUCTURE TYPES]: (10/12) DsTransformSafeword
 # -------------------------------------------------------------------------------------------------
 class DsTransformSafeword(object):
     """A type-safe data structure for DsTransformSafeword options."""
@@ -727,7 +769,7 @@ class DsTransformSafeword(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (11/12) DsIOStdinStdout
+# [2/11 DATA STRUCTURE TYPES]: (11/12) DsIOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class DsIOStdinStdout(object):
     """A type-safe data structure for IOStdinStdout options."""
@@ -758,7 +800,7 @@ class DsIOStdinStdout(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (12/12) DsIOCommand
+# [2/11 DATA STRUCTURE TYPES]: (12/12) DsIOCommand
 # -------------------------------------------------------------------------------------------------
 class DsIOCommand(object):
     """A type-safe data structure for IOCommand options."""
@@ -804,13 +846,13 @@ class DsIOCommand(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   2 / 10   L I B R A R Y   C L A S S E S
+# ###   3 / 11   L I B R A R Y   C L A S S E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (1/4) TraceLogger
+# [3/11 LIBRARY CLASSES]: (1/4) TraceLogger
 # -------------------------------------------------------------------------------------------------
 class TraceLogger(logging.getLoggerClass()):  # type: ignore
     """Extend Python's default logger class with TRACE level logging."""
@@ -850,7 +892,7 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
+# [3/11 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
 # -------------------------------------------------------------------------------------------------
 class ColoredLogFormatter(logging.Formatter):
     """Custom log formatter which adds different details and color support."""
@@ -923,7 +965,7 @@ class ColoredLogFormatter(logging.Formatter):
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (3/4) StringEncoder
+# [3/11 LIBRARY CLASSES]: (3/4) StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
     """Takes care about Python 2/3 string encoding/decoding.
@@ -972,7 +1014,7 @@ class StringEncoder(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (4/4): StopSignal
+# [3/11 LIBRARY CLASSES]: (4/4): StopSignal
 # -------------------------------------------------------------------------------------------------
 class StopSignal(object):
     """Provide a simple boolean switch."""
@@ -1002,43 +1044,16 @@ class StopSignal(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   3 / 10   N E T W O R K
+# ###   4 / 11   N E T W O R K
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [3/10 NETWORK]: (1/1) Sock
+# [4/11 NETWORK]: (1/1) Sock
 # -------------------------------------------------------------------------------------------------
-class _Singleton(type):
-    """A thread-safe metaclass that creates a Singleton base class when called."""
-
-    # https://refactoring.guru/design-patterns/singleton/python/example#example-1
-    _instances = {}  # type: Dict[_Singleton, _Singleton]
-
-    _lock = threading.Lock()
-
-    def __call__(cls, *args, **kwargs):
-        # type: (_Singleton, Any, Any) -> _Singleton
-
-        # Now, imagine that the program has just been launched. Since there's no
-        # Singleton instance yet, multiple threads can simultaneously pass the
-        # previous conditional and reach this point almost at the same time. The
-        # first of them will acquire lock and will proceed further, while the
-        # rest will wait here.
-        with cls._lock:
-            # The first thread to acquire the lock, reaches this conditional,
-            # goes inside and creates the Singleton instance. Once it leaves the
-            # lock block, a thread that might have been waiting for the lock
-            # release may then enter this section. But since the Singleton field
-            # is already initialized, the thread won't create a new object.
-            if cls not in cls._instances:
-                cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-
 class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
-    """Thread-safe Socket singleton helper to emulate a module within the same file."""
+    """Thread-safe singleton Socket helper to emulate a module within the same file."""
 
     def __init__(self):
         # type: () -> None
@@ -1267,7 +1282,6 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
         assert host is not None
 
         # [2/4] Already an IP address
-        # TODO: might also use socket.getaddr with AI_NUMERICHOST as a check
         if family == int(socket.AF_INET6):
             try:
                 socket.inet_pton(socket.AF_INET6, host)
@@ -1278,7 +1292,7 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
                     host6 = "::ffff:" + host
                     socket.inet_pton(socket.AF_INET6, host6)
                     self.__log.debug(
-                        "Resolving IPv6 name not required, changing to IPv6: %s", host6
+                        "Resolving IPv4 name not required, changing to IPv6: %s", host6
                     )
                     return host6
                 except socket.error:
@@ -2116,13 +2130,13 @@ class Net(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   4 / 10   T R A N S F O R M E R
+# ###   5 / 11   T R A N S F O R M E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [4/10 TRANSFORM]: (1/3): Transform
+# [5/11 TRANSFORM]: (1/3): Transform
 # -------------------------------------------------------------------------------------------------
 class Transform(ABC):  # type: ignore
     """Abstract class to for pwncat I/O transformers.
@@ -2163,7 +2177,7 @@ class Transform(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/10 TRANSFORM]: (2/3) TransformLinefeed
+# [5/11 TRANSFORM]: (2/3) TransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class TransformLinefeed(Transform):
     """Implement basic linefeed replacement."""
@@ -2237,7 +2251,7 @@ class TransformLinefeed(Transform):
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/10 TRANSFORM]: (3/3) TransformSafeword
+# [5/11 TRANSFORM]: (3/3) TransformSafeword
 # -------------------------------------------------------------------------------------------------
 class TransformSafeword(Transform):
     """Implement a trigger to emergency shutdown upon receival of a specific safeword."""
@@ -2276,13 +2290,13 @@ class TransformSafeword(Transform):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   5 / 10   I O   M O D U L E S
+# ###   6 / 11   I O   M O D U L E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IO]: (1/5): IO
+# [6/11 IO]: (1/5): IO
 # -------------------------------------------------------------------------------------------------
 class IO(ABC):  # type: ignore
     """Abstract class to for pwncat I/O modules.
@@ -2368,7 +2382,7 @@ class IO(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IONetwork]: (2/5) IONetwork
+# [6/11 IONetwork]: (2/5) IONetwork
 # -------------------------------------------------------------------------------------------------
 class IONetwork(IO):
     """Pwncat implementation based on custom Socket library."""
@@ -2639,7 +2653,7 @@ class IONetwork(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IONetwork]: (3/5) IONetwork
+# [6/11 IONetwork]: (3/5) IONetwork
 # -------------------------------------------------------------------------------------------------
 class IONetworkScanner(IO):
     """Pwncat Scanner implementation based on custom Socket library."""
@@ -2874,7 +2888,7 @@ class IONetworkScanner(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IOStdinStdout]: (4/5) IOStdinStdout
+# [6/11 IOStdinStdout]: (4/5) IOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class IOStdinStdout(IO):
     """Implement basic stdin/stdout I/O module.
@@ -2978,7 +2992,7 @@ class IOStdinStdout(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IOCommand]: (5/5) IOCommand
+# [6/11 IOCommand]: (5/5) IOCommand
 # -------------------------------------------------------------------------------------------------
 class IOCommand(IO):
     """Implement command execution functionality.
@@ -3084,13 +3098,13 @@ class IOCommand(IO):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   6 / 10   P S E   S T O R E
+# ###   7 / 11   P S E   S T O R E
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [6/9 PSE]: (1/1) PSEStore
+# [7/11 PSE]: (1/1) PSEStore
 # -------------------------------------------------------------------------------------------------
 class PSEStore(object):
     """Pwncats Scripting Engine store to persist and exchange data for send/recv scripts.
@@ -3159,13 +3173,13 @@ class PSEStore(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   7 / 10   R U N N E R
+# ###   8 / 11   R U N N E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [7/10 IO RUNNER]: (1/1) Runner
+# [8/11 IO RUNNER]: (1/1) Runner
 # -------------------------------------------------------------------------------------------------
 class Runner(object):
     """Runner class that takes care about putting everything into threads."""
@@ -3445,13 +3459,13 @@ class Runner(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   8 / 10   C O M M A N D   A N D   C O N T R O L   M O D U L E S
+# ###   9 / 11   C O M M A N D   A N D   C O N T R O L   M O D U L E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [8/10 Command & Control]: (1/2) CNC
+# [9/11 Command & Control]: (1/2) CNC
 # -------------------------------------------------------------------------------------------------
 class CNC(object):
     """Command and Control base class."""
@@ -3722,7 +3736,7 @@ class CNC(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [8/10 Command & Control]: (1/2) CNCAutoDeploy
+# [9/11 Command & Control]: (1/2) CNCAutoDeploy
 # -------------------------------------------------------------------------------------------------
 class CNCAutoDeploy(CNC):
     """Command&Control pwncat auto deployment class."""
@@ -3773,13 +3787,13 @@ class CNCAutoDeploy(CNC):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   9 / 10   C O M M A N D   L I N E   A R G U M E N T S
+# ###   10 / 11   C O M M A N D   L I N E   A R G U M E N T S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [9/10 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
+# [19/11 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
 # -------------------------------------------------------------------------------------------------
 def get_version():
     # type: () -> str
@@ -4119,7 +4133,7 @@ def _args_check_mutually_exclusive(parser, args):
 
 
 # -------------------------------------------------------------------------------------------------
-# [9/10 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
+# [10/11 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
 # -------------------------------------------------------------------------------------------------
 def get_args():
     # type: () -> argparse.Namespace
@@ -4777,13 +4791,13 @@ The default is to send a null byte sting: '\\0'.
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   10 / 10   M A I N   E N T R Y P O I N T
+# ###   11 / 11   M A I N   E N T R Y P O I N T
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [9/9 MAIN ENTRYPOINT]: (1/2) main
+# [11/11 MAIN ENTRYPOINT]: (1/2) main
 # -------------------------------------------------------------------------------------------------
 def main():
     # type: () -> None
@@ -5054,7 +5068,7 @@ def main():
 
 
 # -------------------------------------------------------------------------------------------------
-# [9/9 MAIN ENTRYPOINT]: (2/2) start
+# [11/11 MAIN ENTRYPOINT]: (2/2) start
 # -------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Catch Ctrl+c and exit without error message
