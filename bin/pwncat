@@ -1483,13 +1483,16 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
         udp_recv_bufsize=8192,  # type: int
         udp_recv_timeout=0.1,  # type: float
     ):
-        # type: (...) -> None
+        # type: (...) -> Tuple[str, int]
         """Connect to a remote socket at given address and port.
 
         Args:
             sock (socket.socket): The socket to use for connecting/communication.
             addr (str): Numerical IP address of server to connect to.
             port (int): Port of server to connect to.
+
+        Returns:
+            Tuple[str,int]: Adress/port tuple of local bin of the client.
 
         Raises:
             socker.error: If client cannot connect to remote peer or custom bind did not succeed.
@@ -1556,6 +1559,7 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
             sock_family_name,
             sock_type_name,
         )
+        return (local[0], local[1])
 
     # --------------------------------------------------------------------------
     # Destroy functions
@@ -2716,6 +2720,10 @@ class IONetworkScanner(IO):
         self.__sock = Sock()
         self.__screen_lock = threading.Semaphore()
 
+        # Keep track of local binds (addr-port) of the threaded scanner
+        # clients as we do not want to treat them as open ports (false posistives)
+        self.__local_binds = []  # type: List[str]
+
         # Compile our regexes if using banner detection
         if banner:
             for reg in self.BANNER_REG:
@@ -2834,7 +2842,7 @@ class IONetworkScanner(IO):
             # [2/5] Connect scan
             succ_conn = False
             try:
-                Sock().connect(
+                laddr, lport = self.__sock.connect(
                     sock,
                     addr,
                     port,
@@ -2845,6 +2853,8 @@ class IONetworkScanner(IO):
                     self.__sock_opts.bufsize,
                     0.1,
                 )
+                # Append local binds (addr-port) to check against during port scan
+                self.__local_binds.append(str(laddr + "-" + str(lport)))
                 succ_conn = True
             except socket.error:
                 succ_conn = False
@@ -2857,21 +2867,29 @@ class IONetworkScanner(IO):
 
             # [4/5] Evaluation
             if banner is not None and (succ_conn and succ_banner):
-                sock_type = sock.type
-                yield "[+] {:>5}/{} open   ({}): {}".format(
-                    port,
-                    self.__sock.get_type_name(sock_type),
-                    self.__sock.get_family_name(family),
-                    banner,
-                )
+                if str(addr + "-" + str(port)) not in self.__local_binds:
+                    sock_type = sock.type
+                    yield "[+] {:>5}/{} open   ({}): {}".format(
+                        port,
+                        self.__sock.get_type_name(sock_type),
+                        self.__sock.get_family_name(family),
+                        banner,
+                    )
             if banner is None and (succ_conn and succ_banner):
-                sock_type = sock.type
-                yield "[+] {:>5}/{} open   ({})".format(
-                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),
-                )
+                if str(addr + "-" + str(port)) not in self.__local_binds:
+                    sock_type = sock.type
+                    yield "[+] {:>5}/{} open   ({})".format(
+                        port,
+                        self.__sock.get_type_name(sock_type),
+                        self.__sock.get_family_name(family),
+                    )
 
             # [5/5] Cleanup
             self.__sock.close(sock, addr + "-" + str(port))
+            try:
+                self.__local_binds.remove(str(addr + "-" + str(port)))
+            except ValueError:
+                pass
 
     def consumer(self, data):
         # type: (str) -> None
