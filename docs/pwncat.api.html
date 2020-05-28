@@ -1510,13 +1510,16 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
         udp_recv_bufsize=8192,  # type: int
         udp_recv_timeout=0.1,  # type: float
     ):
-        # type: (...) -&gt; None
+        # type: (...) -&gt; Tuple[str, int]
         &#34;&#34;&#34;Connect to a remote socket at given address and port.
 
         Args:
             sock (socket.socket): The socket to use for connecting/communication.
             addr (str): Numerical IP address of server to connect to.
             port (int): Port of server to connect to.
+
+        Returns:
+            Tuple[str,int]: Adress/port tuple of local bin of the client.
 
         Raises:
             socker.error: If client cannot connect to remote peer or custom bind did not succeed.
@@ -1583,6 +1586,7 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
             sock_family_name,
             sock_type_name,
         )
+        return (local[0], local[1])
 
     # --------------------------------------------------------------------------
     # Destroy functions
@@ -1903,16 +1907,19 @@ class Net(object):
         # [2/4] Resolve address
         remove = []
         errors = []
-        for family in conns:
-            try:
-                conns[family][&#34;remote_host&#34;] = host
-                conns[family][&#34;remote_addr&#34;] = self.__sock.gethostbyname(
-                    host, family, not self.__options.nodns
-                )
-                conns[family][&#34;remote_port&#34;] = port
-            except socket.gaierror as err:
-                remove.append(family)
-                errors.append(str(err))
+        # NOTE: We&#39;re still looping over the initial family list
+        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+        for family in self.__families:
+            if family in conns:
+                try:
+                    conns[family][&#34;remote_host&#34;] = host
+                    conns[family][&#34;remote_addr&#34;] = self.__sock.gethostbyname(
+                        host, family, not self.__options.nodns
+                    )
+                    conns[family][&#34;remote_port&#34;] = port
+                except socket.gaierror as err:
+                    remove.append(family)
+                    errors.append(str(err))
         for family in remove:
             self.__sock.close(conns[family][&#34;conn&#34;], self.__sock.get_family_name(family))
             del conns[family]
@@ -1924,24 +1931,27 @@ class Net(object):
         # [3/4] Connect
         remove = []
         errors = []
-        for family in conns:
-            try:
-                self.__sock.connect(
-                    conns[family][&#34;conn&#34;],
-                    conns[family][&#34;remote_addr&#34;],
-                    conns[family][&#34;remote_port&#34;],
-                    self.__options.src_addr,
-                    self.__options.src_port,
-                    self.__options.udp_sconnect,
-                    self.__enc.encode(self.__options.udp_sconnect_word),
-                    self.__options.bufsize,
-                )
-                # On successful connect, we can abandon/remove all other sockets
-                remove = [key for key in conns if key != family]
-                break
-            except (OSError, socket.error) as err:
-                remove.append(family)
-                errors.append(str(err))
+        # NOTE: We&#39;re still looping over the initial family list
+        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+        for family in self.__families:
+            if family in conns:
+                try:
+                    self.__sock.connect(
+                        conns[family][&#34;conn&#34;],
+                        conns[family][&#34;remote_addr&#34;],
+                        conns[family][&#34;remote_port&#34;],
+                        self.__options.src_addr,
+                        self.__options.src_port,
+                        self.__options.udp_sconnect,
+                        self.__enc.encode(self.__options.udp_sconnect_word),
+                        self.__options.bufsize,
+                    )
+                    # On successful connect, we can abandon/remove all other sockets
+                    remove = [key for key in conns if key != family]
+                    break
+                except (OSError, socket.error) as err:
+                    remove.append(family)
+                    errors.append(str(err))
         for family in remove:
             self.__sock.close(conns[family][&#34;conn&#34;], self.__sock.get_family_name(family))
             del conns[family]
@@ -2737,6 +2747,10 @@ class IONetworkScanner(IO):
         self.__sock = Sock()
         self.__screen_lock = threading.Semaphore()
 
+        # Keep track of local binds (addr-port) of the threaded scanner
+        # clients as we do not want to treat them as open ports (false posistives)
+        self.__local_binds = []  # type: List[str]
+
         # Compile our regexes if using banner detection
         if banner:
             for reg in self.BANNER_REG:
@@ -2855,7 +2869,7 @@ class IONetworkScanner(IO):
             # [2/5] Connect scan
             succ_conn = False
             try:
-                Sock().connect(
+                laddr, lport = self.__sock.connect(
                     sock,
                     addr,
                     port,
@@ -2866,6 +2880,8 @@ class IONetworkScanner(IO):
                     self.__sock_opts.bufsize,
                     0.1,
                 )
+                # Append local binds (addr-port) to check against during port scan
+                self.__local_binds.append(str(laddr + &#34;-&#34; + str(lport)))
                 succ_conn = True
             except socket.error:
                 succ_conn = False
@@ -2878,21 +2894,29 @@ class IONetworkScanner(IO):
 
             # [4/5] Evaluation
             if banner is not None and (succ_conn and succ_banner):
-                sock_type = sock.type
-                yield &#34;[+] {:&gt;5}/{} open   ({}): {}&#34;.format(
-                    port,
-                    self.__sock.get_type_name(sock_type),
-                    self.__sock.get_family_name(family),
-                    banner,
-                )
+                if str(addr + &#34;-&#34; + str(port)) not in self.__local_binds:
+                    sock_type = sock.type
+                    yield &#34;[+] {:&gt;5}/{} open   ({}): {}&#34;.format(
+                        port,
+                        self.__sock.get_type_name(sock_type),
+                        self.__sock.get_family_name(family),
+                        banner,
+                    )
             if banner is None and (succ_conn and succ_banner):
-                sock_type = sock.type
-                yield &#34;[+] {:&gt;5}/{} open   ({})&#34;.format(
-                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),
-                )
+                if str(addr + &#34;-&#34; + str(port)) not in self.__local_binds:
+                    sock_type = sock.type
+                    yield &#34;[+] {:&gt;5}/{} open   ({})&#34;.format(
+                        port,
+                        self.__sock.get_type_name(sock_type),
+                        self.__sock.get_family_name(family),
+                    )
 
             # [5/5] Cleanup
             self.__sock.close(sock, addr + &#34;-&#34; + str(port))
+            try:
+                self.__local_binds.remove(str(addr + &#34;-&#34; + str(port)))
+            except ValueError:
+                pass
 
     def consumer(self, data):
         # type: (str) -&gt; None
@@ -9701,6 +9725,10 @@ def producer(self, *args, **kwargs):
         self.__sock = Sock()
         self.__screen_lock = threading.Semaphore()
 
+        # Keep track of local binds (addr-port) of the threaded scanner
+        # clients as we do not want to treat them as open ports (false posistives)
+        self.__local_binds = []  # type: List[str]
+
         # Compile our regexes if using banner detection
         if banner:
             for reg in self.BANNER_REG:
@@ -9819,7 +9847,7 @@ def producer(self, *args, **kwargs):
             # [2/5] Connect scan
             succ_conn = False
             try:
-                Sock().connect(
+                laddr, lport = self.__sock.connect(
                     sock,
                     addr,
                     port,
@@ -9830,6 +9858,8 @@ def producer(self, *args, **kwargs):
                     self.__sock_opts.bufsize,
                     0.1,
                 )
+                # Append local binds (addr-port) to check against during port scan
+                self.__local_binds.append(str(laddr + &#34;-&#34; + str(lport)))
                 succ_conn = True
             except socket.error:
                 succ_conn = False
@@ -9842,21 +9872,29 @@ def producer(self, *args, **kwargs):
 
             # [4/5] Evaluation
             if banner is not None and (succ_conn and succ_banner):
-                sock_type = sock.type
-                yield &#34;[+] {:&gt;5}/{} open   ({}): {}&#34;.format(
-                    port,
-                    self.__sock.get_type_name(sock_type),
-                    self.__sock.get_family_name(family),
-                    banner,
-                )
+                if str(addr + &#34;-&#34; + str(port)) not in self.__local_binds:
+                    sock_type = sock.type
+                    yield &#34;[+] {:&gt;5}/{} open   ({}): {}&#34;.format(
+                        port,
+                        self.__sock.get_type_name(sock_type),
+                        self.__sock.get_family_name(family),
+                        banner,
+                    )
             if banner is None and (succ_conn and succ_banner):
-                sock_type = sock.type
-                yield &#34;[+] {:&gt;5}/{} open   ({})&#34;.format(
-                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),
-                )
+                if str(addr + &#34;-&#34; + str(port)) not in self.__local_binds:
+                    sock_type = sock.type
+                    yield &#34;[+] {:&gt;5}/{} open   ({})&#34;.format(
+                        port,
+                        self.__sock.get_type_name(sock_type),
+                        self.__sock.get_family_name(family),
+                    )
 
             # [5/5] Cleanup
             self.__sock.close(sock, addr + &#34;-&#34; + str(port))
+            try:
+                self.__local_binds.remove(str(addr + &#34;-&#34; + str(port)))
+            except ValueError:
+                pass
 
     def consumer(self, data):
         # type: (str) -&gt; None
@@ -9989,7 +10027,7 @@ def producer(self, *args, **kwargs):
         # [2/5] Connect scan
         succ_conn = False
         try:
-            Sock().connect(
+            laddr, lport = self.__sock.connect(
                 sock,
                 addr,
                 port,
@@ -10000,6 +10038,8 @@ def producer(self, *args, **kwargs):
                 self.__sock_opts.bufsize,
                 0.1,
             )
+            # Append local binds (addr-port) to check against during port scan
+            self.__local_binds.append(str(laddr + &#34;-&#34; + str(lport)))
             succ_conn = True
         except socket.error:
             succ_conn = False
@@ -10012,21 +10052,29 @@ def producer(self, *args, **kwargs):
 
         # [4/5] Evaluation
         if banner is not None and (succ_conn and succ_banner):
-            sock_type = sock.type
-            yield &#34;[+] {:&gt;5}/{} open   ({}): {}&#34;.format(
-                port,
-                self.__sock.get_type_name(sock_type),
-                self.__sock.get_family_name(family),
-                banner,
-            )
+            if str(addr + &#34;-&#34; + str(port)) not in self.__local_binds:
+                sock_type = sock.type
+                yield &#34;[+] {:&gt;5}/{} open   ({}): {}&#34;.format(
+                    port,
+                    self.__sock.get_type_name(sock_type),
+                    self.__sock.get_family_name(family),
+                    banner,
+                )
         if banner is None and (succ_conn and succ_banner):
-            sock_type = sock.type
-            yield &#34;[+] {:&gt;5}/{} open   ({})&#34;.format(
-                port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),
-            )
+            if str(addr + &#34;-&#34; + str(port)) not in self.__local_binds:
+                sock_type = sock.type
+                yield &#34;[+] {:&gt;5}/{} open   ({})&#34;.format(
+                    port,
+                    self.__sock.get_type_name(sock_type),
+                    self.__sock.get_family_name(family),
+                )
 
         # [5/5] Cleanup
-        self.__sock.close(sock, addr + &#34;-&#34; + str(port))</code></pre>
+        self.__sock.close(sock, addr + &#34;-&#34; + str(port))
+        try:
+            self.__local_binds.remove(str(addr + &#34;-&#34; + str(port)))
+        except ValueError:
+            pass</code></pre>
 </details>
 </dd>
 </dl>
@@ -10590,16 +10638,19 @@ callback that writes to stdout.</p>
         # [2/4] Resolve address
         remove = []
         errors = []
-        for family in conns:
-            try:
-                conns[family][&#34;remote_host&#34;] = host
-                conns[family][&#34;remote_addr&#34;] = self.__sock.gethostbyname(
-                    host, family, not self.__options.nodns
-                )
-                conns[family][&#34;remote_port&#34;] = port
-            except socket.gaierror as err:
-                remove.append(family)
-                errors.append(str(err))
+        # NOTE: We&#39;re still looping over the initial family list
+        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+        for family in self.__families:
+            if family in conns:
+                try:
+                    conns[family][&#34;remote_host&#34;] = host
+                    conns[family][&#34;remote_addr&#34;] = self.__sock.gethostbyname(
+                        host, family, not self.__options.nodns
+                    )
+                    conns[family][&#34;remote_port&#34;] = port
+                except socket.gaierror as err:
+                    remove.append(family)
+                    errors.append(str(err))
         for family in remove:
             self.__sock.close(conns[family][&#34;conn&#34;], self.__sock.get_family_name(family))
             del conns[family]
@@ -10611,24 +10662,27 @@ callback that writes to stdout.</p>
         # [3/4] Connect
         remove = []
         errors = []
-        for family in conns:
-            try:
-                self.__sock.connect(
-                    conns[family][&#34;conn&#34;],
-                    conns[family][&#34;remote_addr&#34;],
-                    conns[family][&#34;remote_port&#34;],
-                    self.__options.src_addr,
-                    self.__options.src_port,
-                    self.__options.udp_sconnect,
-                    self.__enc.encode(self.__options.udp_sconnect_word),
-                    self.__options.bufsize,
-                )
-                # On successful connect, we can abandon/remove all other sockets
-                remove = [key for key in conns if key != family]
-                break
-            except (OSError, socket.error) as err:
-                remove.append(family)
-                errors.append(str(err))
+        # NOTE: We&#39;re still looping over the initial family list
+        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+        for family in self.__families:
+            if family in conns:
+                try:
+                    self.__sock.connect(
+                        conns[family][&#34;conn&#34;],
+                        conns[family][&#34;remote_addr&#34;],
+                        conns[family][&#34;remote_port&#34;],
+                        self.__options.src_addr,
+                        self.__options.src_port,
+                        self.__options.udp_sconnect,
+                        self.__enc.encode(self.__options.udp_sconnect_word),
+                        self.__options.bufsize,
+                    )
+                    # On successful connect, we can abandon/remove all other sockets
+                    remove = [key for key in conns if key != family]
+                    break
+                except (OSError, socket.error) as err:
+                    remove.append(family)
+                    errors.append(str(err))
         for family in remove:
             self.__sock.close(conns[family][&#34;conn&#34;], self.__sock.get_family_name(family))
             del conns[family]
@@ -11111,16 +11165,19 @@ callback that writes to stdout.</p>
     # [2/4] Resolve address
     remove = []
     errors = []
-    for family in conns:
-        try:
-            conns[family][&#34;remote_host&#34;] = host
-            conns[family][&#34;remote_addr&#34;] = self.__sock.gethostbyname(
-                host, family, not self.__options.nodns
-            )
-            conns[family][&#34;remote_port&#34;] = port
-        except socket.gaierror as err:
-            remove.append(family)
-            errors.append(str(err))
+    # NOTE: We&#39;re still looping over the initial family list
+    # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+    for family in self.__families:
+        if family in conns:
+            try:
+                conns[family][&#34;remote_host&#34;] = host
+                conns[family][&#34;remote_addr&#34;] = self.__sock.gethostbyname(
+                    host, family, not self.__options.nodns
+                )
+                conns[family][&#34;remote_port&#34;] = port
+            except socket.gaierror as err:
+                remove.append(family)
+                errors.append(str(err))
     for family in remove:
         self.__sock.close(conns[family][&#34;conn&#34;], self.__sock.get_family_name(family))
         del conns[family]
@@ -11132,24 +11189,27 @@ callback that writes to stdout.</p>
     # [3/4] Connect
     remove = []
     errors = []
-    for family in conns:
-        try:
-            self.__sock.connect(
-                conns[family][&#34;conn&#34;],
-                conns[family][&#34;remote_addr&#34;],
-                conns[family][&#34;remote_port&#34;],
-                self.__options.src_addr,
-                self.__options.src_port,
-                self.__options.udp_sconnect,
-                self.__enc.encode(self.__options.udp_sconnect_word),
-                self.__options.bufsize,
-            )
-            # On successful connect, we can abandon/remove all other sockets
-            remove = [key for key in conns if key != family]
-            break
-        except (OSError, socket.error) as err:
-            remove.append(family)
-            errors.append(str(err))
+    # NOTE: We&#39;re still looping over the initial family list
+    # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+    for family in self.__families:
+        if family in conns:
+            try:
+                self.__sock.connect(
+                    conns[family][&#34;conn&#34;],
+                    conns[family][&#34;remote_addr&#34;],
+                    conns[family][&#34;remote_port&#34;],
+                    self.__options.src_addr,
+                    self.__options.src_port,
+                    self.__options.udp_sconnect,
+                    self.__enc.encode(self.__options.udp_sconnect_word),
+                    self.__options.bufsize,
+                )
+                # On successful connect, we can abandon/remove all other sockets
+                remove = [key for key in conns if key != family]
+                break
+            except (OSError, socket.error) as err:
+                remove.append(family)
+                errors.append(str(err))
     for family in remove:
         self.__sock.close(conns[family][&#34;conn&#34;], self.__sock.get_family_name(family))
         del conns[family]
@@ -12612,13 +12672,16 @@ def store(self):
         udp_recv_bufsize=8192,  # type: int
         udp_recv_timeout=0.1,  # type: float
     ):
-        # type: (...) -&gt; None
+        # type: (...) -&gt; Tuple[str, int]
         &#34;&#34;&#34;Connect to a remote socket at given address and port.
 
         Args:
             sock (socket.socket): The socket to use for connecting/communication.
             addr (str): Numerical IP address of server to connect to.
             port (int): Port of server to connect to.
+
+        Returns:
+            Tuple[str,int]: Adress/port tuple of local bin of the client.
 
         Raises:
             socker.error: If client cannot connect to remote peer or custom bind did not succeed.
@@ -12685,6 +12748,7 @@ def store(self):
             sock_family_name,
             sock_type_name,
         )
+        return (local[0], local[1])
 
     # --------------------------------------------------------------------------
     # Destroy functions
@@ -12886,6 +12950,11 @@ def store(self):
 <dt><strong><code>port</code></strong> :&ensp;<code>int</code></dt>
 <dd>Port of server to connect to.</dd>
 </dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Tuple[str,int]</code></dt>
+<dd>Adress/port tuple of local bin of the client.</dd>
+</dl>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>socker.error</code></dt>
@@ -12907,13 +12976,16 @@ def store(self):
     udp_recv_bufsize=8192,  # type: int
     udp_recv_timeout=0.1,  # type: float
 ):
-    # type: (...) -&gt; None
+    # type: (...) -&gt; Tuple[str, int]
     &#34;&#34;&#34;Connect to a remote socket at given address and port.
 
     Args:
         sock (socket.socket): The socket to use for connecting/communication.
         addr (str): Numerical IP address of server to connect to.
         port (int): Port of server to connect to.
+
+    Returns:
+        Tuple[str,int]: Adress/port tuple of local bin of the client.
 
     Raises:
         socker.error: If client cannot connect to remote peer or custom bind did not succeed.
@@ -12979,7 +13051,8 @@ def store(self):
         int(sock.family),
         sock_family_name,
         sock_type_name,
-    )</code></pre>
+    )
+    return (local[0], local[1])</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Sock.create_socket"><code class="name flex">

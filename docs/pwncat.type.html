@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.28% imprecise</th>
-<th class="summary summary-lines">5082 LOC</th>
+<th class="summary summary-precision">6.31% imprecise</th>
+<th class="summary summary-lines">5106 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.28% imprecise</td>
-<td class="summary summary-lines">5082 LOC</td>
+<td class="summary summary-precision">6.31% imprecise</td>
+<td class="summary summary-lines">5106 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -5117,6 +5117,30 @@
 <span id="L5080" class="lineno"><a class="lineno" href="#L5080">5080</a></span>
 <span id="L5081" class="lineno"><a class="lineno" href="#L5081">5081</a></span>
 <span id="L5082" class="lineno"><a class="lineno" href="#L5082">5082</a></span>
+<span id="L5083" class="lineno"><a class="lineno" href="#L5083">5083</a></span>
+<span id="L5084" class="lineno"><a class="lineno" href="#L5084">5084</a></span>
+<span id="L5085" class="lineno"><a class="lineno" href="#L5085">5085</a></span>
+<span id="L5086" class="lineno"><a class="lineno" href="#L5086">5086</a></span>
+<span id="L5087" class="lineno"><a class="lineno" href="#L5087">5087</a></span>
+<span id="L5088" class="lineno"><a class="lineno" href="#L5088">5088</a></span>
+<span id="L5089" class="lineno"><a class="lineno" href="#L5089">5089</a></span>
+<span id="L5090" class="lineno"><a class="lineno" href="#L5090">5090</a></span>
+<span id="L5091" class="lineno"><a class="lineno" href="#L5091">5091</a></span>
+<span id="L5092" class="lineno"><a class="lineno" href="#L5092">5092</a></span>
+<span id="L5093" class="lineno"><a class="lineno" href="#L5093">5093</a></span>
+<span id="L5094" class="lineno"><a class="lineno" href="#L5094">5094</a></span>
+<span id="L5095" class="lineno"><a class="lineno" href="#L5095">5095</a></span>
+<span id="L5096" class="lineno"><a class="lineno" href="#L5096">5096</a></span>
+<span id="L5097" class="lineno"><a class="lineno" href="#L5097">5097</a></span>
+<span id="L5098" class="lineno"><a class="lineno" href="#L5098">5098</a></span>
+<span id="L5099" class="lineno"><a class="lineno" href="#L5099">5099</a></span>
+<span id="L5100" class="lineno"><a class="lineno" href="#L5100">5100</a></span>
+<span id="L5101" class="lineno"><a class="lineno" href="#L5101">5101</a></span>
+<span id="L5102" class="lineno"><a class="lineno" href="#L5102">5102</a></span>
+<span id="L5103" class="lineno"><a class="lineno" href="#L5103">5103</a></span>
+<span id="L5104" class="lineno"><a class="lineno" href="#L5104">5104</a></span>
+<span id="L5105" class="lineno"><a class="lineno" href="#L5105">5105</a></span>
+<span id="L5106" class="lineno"><a class="lineno" href="#L5106">5106</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -6694,13 +6718,16 @@ Explicit (x4)">                self.__log.info(</span>
 <span class="line-precise" title="No Anys on this line!">        udp_recv_bufsize=8192,  # type: int</span>
 <span class="line-precise" title="No Anys on this line!">        udp_recv_timeout=0.1,  # type: float</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; Tuple[str, int]</span>
 <span class="line-empty" title="No Anys on this line!">        """Connect to a remote socket at given address and port.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            sock (socket.socket): The socket to use for connecting/communication.</span>
 <span class="line-empty" title="No Anys on this line!">            addr (str): Numerical IP address of server to connect to.</span>
 <span class="line-empty" title="No Anys on this line!">            port (int): Port of server to connect to.</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        Returns:</span>
+<span class="line-empty" title="No Anys on this line!">            Tuple[str,int]: Adress/port tuple of local bin of the client.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Raises:</span>
 <span class="line-empty" title="No Anys on this line!">            socker.error: If client cannot connect to remote peer or custom bind did not succeed.</span>
@@ -6775,6 +6802,7 @@ Explicit (x4)">        self.__log.info(</span>
 <span class="line-precise" title="No Anys on this line!">            sock_family_name,</span>
 <span class="line-precise" title="No Anys on this line!">            sock_type_name,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
+<span class="line-precise" title="No Anys on this line!">        return (local[0], local[1])</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Destroy functions</span>
@@ -7115,16 +7143,19 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-empty" title="No Anys on this line!">        # [2/4] Resolve address</span>
 <span class="line-precise" title="No Anys on this line!">        remove = []</span>
 <span class="line-precise" title="No Anys on this line!">        errors = []</span>
-<span class="line-precise" title="No Anys on this line!">        for family in conns:</span>
-<span class="line-empty" title="No Anys on this line!">            try:</span>
-<span class="line-precise" title="No Anys on this line!">                conns[family]["remote_host"] = host</span>
-<span class="line-precise" title="No Anys on this line!">                conns[family]["remote_addr"] = self.__sock.gethostbyname(</span>
-<span class="line-precise" title="No Anys on this line!">                    host, family, not self.__options.nodns</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
-<span class="line-precise" title="No Anys on this line!">                conns[family]["remote_port"] = port</span>
-<span class="line-precise" title="No Anys on this line!">            except socket.gaierror as err:</span>
-<span class="line-precise" title="No Anys on this line!">                remove.append(family)</span>
-<span class="line-precise" title="No Anys on this line!">                errors.append(str(err))</span>
+<span class="line-empty" title="No Anys on this line!">        # NOTE: We're still looping over the initial family list</span>
+<span class="line-empty" title="No Anys on this line!">        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)</span>
+<span class="line-precise" title="No Anys on this line!">        for family in self.__families:</span>
+<span class="line-precise" title="No Anys on this line!">            if family in conns:</span>
+<span class="line-empty" title="No Anys on this line!">                try:</span>
+<span class="line-precise" title="No Anys on this line!">                    conns[family]["remote_host"] = host</span>
+<span class="line-precise" title="No Anys on this line!">                    conns[family]["remote_addr"] = self.__sock.gethostbyname(</span>
+<span class="line-precise" title="No Anys on this line!">                        host, family, not self.__options.nodns</span>
+<span class="line-empty" title="No Anys on this line!">                    )</span>
+<span class="line-precise" title="No Anys on this line!">                    conns[family]["remote_port"] = port</span>
+<span class="line-precise" title="No Anys on this line!">                except socket.gaierror as err:</span>
+<span class="line-precise" title="No Anys on this line!">                    remove.append(family)</span>
+<span class="line-precise" title="No Anys on this line!">                    errors.append(str(err))</span>
 <span class="line-precise" title="No Anys on this line!">        for family in remove:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__sock.close(conns[family]["conn"], self.__sock.get_family_name(family))</span>
 <span class="line-precise" title="No Anys on this line!">            del conns[family]</span>
@@ -7137,24 +7168,27 @@ Explicit (x4)">                self.__log.error("Resolve Error: %s", error)</spa
 <span class="line-empty" title="No Anys on this line!">        # [3/4] Connect</span>
 <span class="line-precise" title="No Anys on this line!">        remove = []</span>
 <span class="line-precise" title="No Anys on this line!">        errors = []</span>
-<span class="line-precise" title="No Anys on this line!">        for family in conns:</span>
-<span class="line-empty" title="No Anys on this line!">            try:</span>
-<span class="line-precise" title="No Anys on this line!">                self.__sock.connect(</span>
-<span class="line-precise" title="No Anys on this line!">                    conns[family]["conn"],</span>
-<span class="line-precise" title="No Anys on this line!">                    conns[family]["remote_addr"],</span>
-<span class="line-precise" title="No Anys on this line!">                    conns[family]["remote_port"],</span>
-<span class="line-precise" title="No Anys on this line!">                    self.__options.src_addr,</span>
-<span class="line-precise" title="No Anys on this line!">                    self.__options.src_port,</span>
-<span class="line-precise" title="No Anys on this line!">                    self.__options.udp_sconnect,</span>
-<span class="line-precise" title="No Anys on this line!">                    self.__enc.encode(self.__options.udp_sconnect_word),</span>
-<span class="line-precise" title="No Anys on this line!">                    self.__options.bufsize,</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
-<span class="line-empty" title="No Anys on this line!">                # On successful connect, we can abandon/remove all other sockets</span>
-<span class="line-precise" title="No Anys on this line!">                remove = [key for key in conns if key != family]</span>
-<span class="line-precise" title="No Anys on this line!">                break</span>
-<span class="line-precise" title="No Anys on this line!">            except (OSError, socket.error) as err:</span>
-<span class="line-precise" title="No Anys on this line!">                remove.append(family)</span>
-<span class="line-precise" title="No Anys on this line!">                errors.append(str(err))</span>
+<span class="line-empty" title="No Anys on this line!">        # NOTE: We're still looping over the initial family list</span>
+<span class="line-empty" title="No Anys on this line!">        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)</span>
+<span class="line-precise" title="No Anys on this line!">        for family in self.__families:</span>
+<span class="line-precise" title="No Anys on this line!">            if family in conns:</span>
+<span class="line-empty" title="No Anys on this line!">                try:</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__sock.connect(</span>
+<span class="line-precise" title="No Anys on this line!">                        conns[family]["conn"],</span>
+<span class="line-precise" title="No Anys on this line!">                        conns[family]["remote_addr"],</span>
+<span class="line-precise" title="No Anys on this line!">                        conns[family]["remote_port"],</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__options.src_addr,</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__options.src_port,</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__options.udp_sconnect,</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__enc.encode(self.__options.udp_sconnect_word),</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__options.bufsize,</span>
+<span class="line-empty" title="No Anys on this line!">                    )</span>
+<span class="line-empty" title="No Anys on this line!">                    # On successful connect, we can abandon/remove all other sockets</span>
+<span class="line-precise" title="No Anys on this line!">                    remove = [key for key in conns if key != family]</span>
+<span class="line-precise" title="No Anys on this line!">                    break</span>
+<span class="line-precise" title="No Anys on this line!">                except (OSError, socket.error) as err:</span>
+<span class="line-precise" title="No Anys on this line!">                    remove.append(family)</span>
+<span class="line-precise" title="No Anys on this line!">                    errors.append(str(err))</span>
 <span class="line-precise" title="No Anys on this line!">        for family in remove:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__sock.close(conns[family]["conn"], self.__sock.get_family_name(family))</span>
 <span class="line-precise" title="No Anys on this line!">            del conns[family]</span>
@@ -7979,6 +8013,10 @@ Explicit (x4)">            self.log.info("Re-accepting new clients")</span>
 <span class="line-precise" title="No Anys on this line!">        self.__sock = Sock()</span>
 <span class="line-precise" title="No Anys on this line!">        self.__screen_lock = threading.Semaphore()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # Keep track of local binds (addr-port) of the threaded scanner</span>
+<span class="line-empty" title="No Anys on this line!">        # clients as we do not want to treat them as open ports (false posistives)</span>
+<span class="line-precise" title="No Anys on this line!">        self.__local_binds = []  # type: List[str]</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Compile our regexes if using banner detection</span>
 <span class="line-precise" title="No Anys on this line!">        if banner:</span>
 <span class="line-precise" title="No Anys on this line!">            for reg in self.BANNER_REG:</span>
@@ -8101,7 +8139,7 @@ Explicit (x3)">        port = args[0]</span>
 <span class="line-empty" title="No Anys on this line!">            # [2/5] Connect scan</span>
 <span class="line-precise" title="No Anys on this line!">            succ_conn = False</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
-<span class="line-precise" title="No Anys on this line!">                Sock().connect(</span>
+<span class="line-precise" title="No Anys on this line!">                laddr, lport = self.__sock.connect(</span>
 <span class="line-precise" title="No Anys on this line!">                    sock,</span>
 <span class="line-precise" title="No Anys on this line!">                    addr,</span>
 <span class="line-any" title="Any Types on this line: 
@@ -8113,6 +8151,8 @@ Explicit (x1)">                    port,</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__sock_opts.bufsize,</span>
 <span class="line-precise" title="No Anys on this line!">                    0.1,</span>
 <span class="line-empty" title="No Anys on this line!">                )</span>
+<span class="line-empty" title="No Anys on this line!">                # Append local binds (addr-port) to check against during port scan</span>
+<span class="line-precise" title="No Anys on this line!">                self.__local_binds.append(str(laddr + "-" + str(lport)))</span>
 <span class="line-precise" title="No Anys on this line!">                succ_conn = True</span>
 <span class="line-precise" title="No Anys on this line!">            except socket.error:</span>
 <span class="line-precise" title="No Anys on this line!">                succ_conn = False</span>
@@ -8126,24 +8166,35 @@ Explicit (x1)">                (succ_banner, banner) = self.__get_banner(sock, a
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # [4/5] Evaluation</span>
 <span class="line-precise" title="No Anys on this line!">            if banner is not None and (succ_conn and succ_banner):</span>
-<span class="line-precise" title="No Anys on this line!">                sock_type = sock.type</span>
-<span class="line-precise" title="No Anys on this line!">                yield "[+] {:&gt;5}/{} open   ({}): {}".format(</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">                    port,</span>
-<span class="line-precise" title="No Anys on this line!">                    self.__sock.get_type_name(sock_type),</span>
-<span class="line-precise" title="No Anys on this line!">                    self.__sock.get_family_name(family),</span>
-<span class="line-precise" title="No Anys on this line!">                    banner,</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
+Explicit (x1)">                if str(addr + "-" + str(port)) not in self.__local_binds:</span>
+<span class="line-precise" title="No Anys on this line!">                    sock_type = sock.type</span>
+<span class="line-precise" title="No Anys on this line!">                    yield "[+] {:&gt;5}/{} open   ({}): {}".format(</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                        port,</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__sock.get_type_name(sock_type),</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__sock.get_family_name(family),</span>
+<span class="line-precise" title="No Anys on this line!">                        banner,</span>
+<span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-precise" title="No Anys on this line!">            if banner is None and (succ_conn and succ_banner):</span>
-<span class="line-precise" title="No Anys on this line!">                sock_type = sock.type</span>
-<span class="line-precise" title="No Anys on this line!">                yield "[+] {:&gt;5}/{} open   ({})".format(</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
+Explicit (x1)">                if str(addr + "-" + str(port)) not in self.__local_binds:</span>
+<span class="line-precise" title="No Anys on this line!">                    sock_type = sock.type</span>
+<span class="line-precise" title="No Anys on this line!">                    yield "[+] {:&gt;5}/{} open   ({})".format(</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                        port,</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__sock.get_type_name(sock_type),</span>
+<span class="line-precise" title="No Anys on this line!">                        self.__sock.get_family_name(family),</span>
+<span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # [5/5] Cleanup</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">            self.__sock.close(sock, addr + "-" + str(port))</span>
+<span class="line-empty" title="No Anys on this line!">            try:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                self.__local_binds.remove(str(addr + "-" + str(port)))</span>
+<span class="line-precise" title="No Anys on this line!">            except ValueError:</span>
+<span class="line-precise" title="No Anys on this line!">                pass</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def consumer(self, data):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; None</span>
