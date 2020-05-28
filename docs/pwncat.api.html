@@ -101,9 +101,6 @@ import sys
 import threading
 import time
 
-# Abstract class with Python 2 + Python 3 support: https://stackoverflow.com/questions/35673474
-ABC = ABCMeta(&#34;ABC&#34;, (object,), {&#34;__slots__&#34;: ()})
-
 # Only used with mypy for static source code analysis
 if os.environ.get(&#34;MYPY_CHECK&#34;, False):
     from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union, TypeVar
@@ -166,13 +163,58 @@ LISTEN_BACKLOG = 0
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   1 / 10   D A T A   S T R U C T U R E   T Y P E S
+# ###   1 / 11   M E T A   C L A S S E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (1/12) DsCallableProducer
+# [1/11 META CLASSES]: (1/2) Abstract
+# -------------------------------------------------------------------------------------------------
+# Abstract class with Python 2 + Python 3 support: https://stackoverflow.com/questions/35673474
+ABC = ABCMeta(&#34;ABC&#34;, (object,), {&#34;__slots__&#34;: ()})
+
+
+# -------------------------------------------------------------------------------------------------
+# [1/11 META CLASSES]: (2/2) Singleton
+# -------------------------------------------------------------------------------------------------
+class _Singleton(type):
+    &#34;&#34;&#34;A thread-safe metaclass that creates a Singleton base class when called.&#34;&#34;&#34;
+
+    # https://refactoring.guru/design-patterns/singleton/python/example#example-1
+    _instances = {}  # type: Dict[_Singleton, _Singleton]
+
+    _lock = threading.Lock()
+
+    def __call__(cls, *args, **kwargs):
+        # type: (_Singleton, Any, Any) -&gt; _Singleton
+
+        # Now, imagine that the program has just been launched. Since there&#39;s no
+        # Singleton instance yet, multiple threads can simultaneously pass the
+        # previous conditional and reach this point almost at the same time. The
+        # first of them will acquire lock and will proceed further, while the
+        # rest will wait here.
+        with cls._lock:
+            # The first thread to acquire the lock, reaches this conditional,
+            # goes inside and creates the Singleton instance. Once it leaves the
+            # lock block, a thread that might have been waiting for the lock
+            # release may then enter this section. But since the Singleton field
+            # is already initialized, the thread won&#39;t create a new object.
+            if cls not in cls._instances:
+                cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+# #################################################################################################
+# #################################################################################################
+# ###
+# ###   2 / 11   D A T A   S T R U C T U R E   T Y P E S
+# ###
+# #################################################################################################
+# #################################################################################################
+
+# -------------------------------------------------------------------------------------------------
+# [2/11 DATA STRUCTURE TYPES]: (1/12) DsCallableProducer
 # -------------------------------------------------------------------------------------------------
 class DsCallableProducer(object):
     &#34;&#34;&#34;A type-safe data structure for Callable functions.&#34;&#34;&#34;
@@ -209,7 +251,7 @@ class DsCallableProducer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (2/12) DsRunnerAction
+# [2/11 DATA STRUCTURE TYPES]: (2/12) DsRunnerAction
 # -------------------------------------------------------------------------------------------------
 class DsRunnerAction(object):
     &#34;&#34;&#34;A type-safe data structure for Action functions for the Runner class.&#34;&#34;&#34;
@@ -267,7 +309,7 @@ class DsRunnerAction(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (3/12) DsRunnerTimer
+# [2/11 DATA STRUCTURE TYPES]: (3/12) DsRunnerTimer
 # -------------------------------------------------------------------------------------------------
 class DsRunnerTimer(object):
     &#34;&#34;&#34;A type-safe data structure for Timer functions for the Runner class.&#34;&#34;&#34;
@@ -327,7 +369,7 @@ class DsRunnerTimer(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (4/12) DsRunnerRepeater
+# [2/11 DATA STRUCTURE TYPES]: (4/12) DsRunnerRepeater
 # -------------------------------------------------------------------------------------------------
 class DsRunnerRepeater(object):
     &#34;&#34;&#34;A type-safe data structure for repeated functions for the Runner class.&#34;&#34;&#34;
@@ -396,7 +438,7 @@ class DsRunnerRepeater(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (5/12) DsSock
+# [2/11 DATA STRUCTURE TYPES]: (5/12) DsSock
 # -------------------------------------------------------------------------------------------------
 class DsSock(object):
     &#34;&#34;&#34;A type-safe data structure for DsSock options.&#34;&#34;&#34;
@@ -527,7 +569,7 @@ class DsSock(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (6/12) DsIONetworkSock
+# [2/11 DATA STRUCTURE TYPES]: (6/12) DsIONetworkSock
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSock(DsSock):
     &#34;&#34;&#34;A type-safe data structure for IONetwork socket options.&#34;&#34;&#34;
@@ -582,7 +624,7 @@ class DsIONetworkSock(DsSock):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (7/12) DsIONetworkCli
+# [2/11 DATA STRUCTURE TYPES]: (7/12) DsIONetworkCli
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkCli(object):
     &#34;&#34;&#34;A type-safe data structure for IONetwork client options.&#34;&#34;&#34;
@@ -636,7 +678,7 @@ class DsIONetworkCli(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (8/12) DsIONetworkSrv
+# [2/11 DATA STRUCTURE TYPES]: (8/12) DsIONetworkSrv
 # -------------------------------------------------------------------------------------------------
 class DsIONetworkSrv(object):
     &#34;&#34;&#34;A type-safe data structure for IONetwork server options.&#34;&#34;&#34;
@@ -699,7 +741,7 @@ class DsIONetworkSrv(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (9/12) DsTransformLinefeed
+# [2/11 DATA STRUCTURE TYPES]: (9/12) DsTransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class DsTransformLinefeed(object):
     &#34;&#34;&#34;A type-safe data structure for DsTransformLinefeed options.&#34;&#34;&#34;
@@ -723,7 +765,7 @@ class DsTransformLinefeed(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (10/12) DsTransformSafeword
+# [2/11 DATA STRUCTURE TYPES]: (10/12) DsTransformSafeword
 # -------------------------------------------------------------------------------------------------
 class DsTransformSafeword(object):
     &#34;&#34;&#34;A type-safe data structure for DsTransformSafeword options.&#34;&#34;&#34;
@@ -754,7 +796,7 @@ class DsTransformSafeword(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (11/12) DsIOStdinStdout
+# [2/11 DATA STRUCTURE TYPES]: (11/12) DsIOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class DsIOStdinStdout(object):
     &#34;&#34;&#34;A type-safe data structure for IOStdinStdout options.&#34;&#34;&#34;
@@ -785,7 +827,7 @@ class DsIOStdinStdout(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [1/10 DATA STRUCTURE TYPES]: (12/12) DsIOCommand
+# [2/11 DATA STRUCTURE TYPES]: (12/12) DsIOCommand
 # -------------------------------------------------------------------------------------------------
 class DsIOCommand(object):
     &#34;&#34;&#34;A type-safe data structure for IOCommand options.&#34;&#34;&#34;
@@ -831,13 +873,13 @@ class DsIOCommand(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   2 / 10   L I B R A R Y   C L A S S E S
+# ###   3 / 11   L I B R A R Y   C L A S S E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (1/4) TraceLogger
+# [3/11 LIBRARY CLASSES]: (1/4) TraceLogger
 # -------------------------------------------------------------------------------------------------
 class TraceLogger(logging.getLoggerClass()):  # type: ignore
     &#34;&#34;&#34;Extend Python&#39;s default logger class with TRACE level logging.&#34;&#34;&#34;
@@ -877,7 +919,7 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
+# [3/11 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
 # -------------------------------------------------------------------------------------------------
 class ColoredLogFormatter(logging.Formatter):
     &#34;&#34;&#34;Custom log formatter which adds different details and color support.&#34;&#34;&#34;
@@ -950,7 +992,7 @@ class ColoredLogFormatter(logging.Formatter):
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (3/4) StringEncoder
+# [3/11 LIBRARY CLASSES]: (3/4) StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
     &#34;&#34;&#34;Takes care about Python 2/3 string encoding/decoding.
@@ -999,7 +1041,7 @@ class StringEncoder(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [2/10 LIBRARY CLASSES]: (4/4): StopSignal
+# [3/11 LIBRARY CLASSES]: (4/4): StopSignal
 # -------------------------------------------------------------------------------------------------
 class StopSignal(object):
     &#34;&#34;&#34;Provide a simple boolean switch.&#34;&#34;&#34;
@@ -1029,43 +1071,16 @@ class StopSignal(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   3 / 10   N E T W O R K
+# ###   4 / 11   N E T W O R K
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [3/10 NETWORK]: (1/1) Sock
+# [4/11 NETWORK]: (1/1) Sock
 # -------------------------------------------------------------------------------------------------
-class _Singleton(type):
-    &#34;&#34;&#34;A thread-safe metaclass that creates a Singleton base class when called.&#34;&#34;&#34;
-
-    # https://refactoring.guru/design-patterns/singleton/python/example#example-1
-    _instances = {}  # type: Dict[_Singleton, _Singleton]
-
-    _lock = threading.Lock()
-
-    def __call__(cls, *args, **kwargs):
-        # type: (_Singleton, Any, Any) -&gt; _Singleton
-
-        # Now, imagine that the program has just been launched. Since there&#39;s no
-        # Singleton instance yet, multiple threads can simultaneously pass the
-        # previous conditional and reach this point almost at the same time. The
-        # first of them will acquire lock and will proceed further, while the
-        # rest will wait here.
-        with cls._lock:
-            # The first thread to acquire the lock, reaches this conditional,
-            # goes inside and creates the Singleton instance. Once it leaves the
-            # lock block, a thread that might have been waiting for the lock
-            # release may then enter this section. But since the Singleton field
-            # is already initialized, the thread won&#39;t create a new object.
-            if cls not in cls._instances:
-                cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-
 class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
-    &#34;&#34;&#34;Thread-safe Socket singleton helper to emulate a module within the same file.&#34;&#34;&#34;
+    &#34;&#34;&#34;Thread-safe singleton Socket helper to emulate a module within the same file.&#34;&#34;&#34;
 
     def __init__(self):
         # type: () -&gt; None
@@ -1294,7 +1309,6 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
         assert host is not None
 
         # [2/4] Already an IP address
-        # TODO: might also use socket.getaddr with AI_NUMERICHOST as a check
         if family == int(socket.AF_INET6):
             try:
                 socket.inet_pton(socket.AF_INET6, host)
@@ -1305,7 +1319,7 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
                     host6 = &#34;::ffff:&#34; + host
                     socket.inet_pton(socket.AF_INET6, host6)
                     self.__log.debug(
-                        &#34;Resolving IPv6 name not required, changing to IPv6: %s&#34;, host6
+                        &#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6
                     )
                     return host6
                 except socket.error:
@@ -1355,15 +1369,19 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
         &#34;&#34;&#34;
         assert int(sock_type) in [int(socket.SOCK_DGRAM), int(socket.SOCK_STREAM)]
         try:
-            if int(sock_type) == socket.SOCK_DGRAM:
-                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.get_family_name(family))
+            if int(sock_type) == int(socket.SOCK_DGRAM):
+                self.__log.debug(
+                    &#34;Creating (family %d/%s, UDP) socket&#34;, int(family), self.get_family_name(family)
+                )
                 sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.get_family_name(family))
+                self.__log.debug(
+                    &#34;Creating (family %d/%s, TCP) socket&#34;, int(family), self.get_family_name(family)
+                )
                 sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Creating {} {} socket failed: {}&#34;.format(
-                self.get_family_name(family), self.get_type_name(sock_type), error
+            msg = &#34;Creating (family {}/{}, {}) socket failed: {}&#34;.format(
+                int(family), self.get_family_name(family), self.get_type_name(sock_type), error
             )
             self.__log.debug(msg)
             raise socket.error(msg)
@@ -1508,20 +1526,19 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
         # Bind to a custom addr/port
         if src_addr is not None and src_port is not None:
             try:
+                self.__log.debug(&#34;Binding specifically to %s:%d&#34;, src_addr, src_port)
                 self.bind(sock, src_addr, src_port)
             except socket.error as error:
                 raise socket.error(error)
-
-        self.__log.debug(
-            &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
-            addr,
-            port,
-            int(sock.family),
-            sock_family_name,
-            sock_type_name,
-        )
-
         try:
+            self.__log.debug(
+                &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
+                addr,
+                port,
+                int(sock.family),
+                sock_family_name,
+                sock_type_name,
+            )
             sock.connect((addr, port))
 
             # UDP stateful connect
@@ -1596,11 +1613,6 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
 class Net(object):
     &#34;&#34;&#34;Provides an abstracted server client socket for TCP and UDP.&#34;&#34;&#34;
 
-    def get_enabled_af(self):
-        # type: () -&gt; Dict[int, socket.AddressFamily]
-        &#34;&#34;&#34;Returns enabled address families.&#34;&#34;&#34;
-        return self.__families
-
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
@@ -1620,19 +1632,16 @@ class Net(object):
         self.__sock = Sock()
 
         # Set families to listen on or connect to
+        # Using a list here to ensure IPv6 will always come first
         if self.__options.ipv6:
-            self.__families = {
-                int(socket.AF_INET6): socket.AF_INET6,
-            }
+            self.__families = [int(socket.AF_INET6)]
         elif self.__options.ipv4:
-            self.__families = {
-                int(socket.AF_INET): socket.AF_INET,
-            }
+            self.__families = [int(socket.AF_INET)]
         else:
-            self.__families = {
-                int(socket.AF_INET6): socket.AF_INET6,
-                int(socket.AF_INET): socket.AF_INET,
-            }
+            self.__families = [
+                int(socket.AF_INET6),
+                int(socket.AF_INET),
+            ]
 
         # The connection dictionary.
         # A dictionary is necessary, as we can have multiple entries for
@@ -1876,11 +1885,11 @@ class Net(object):
 
         # [1/4] Add sockets to connection dictionary
         succ = 0
-        for key in self.__families:
+        for family in self.__families:
             try:
-                conns[key] = {
+                conns[family] = {
                     &#34;conn&#34;: self.__sock.create_socket(
-                        self.__families[key],
+                        family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                         self.__options.ip_tos,
                     )
@@ -1974,11 +1983,11 @@ class Net(object):
 
         # [1/4] Create socket
         succ = 0
-        for key in self.__families:
+        for family in self.__families:
             try:
-                conns[key] = {
+                conns[family] = {
                     &#34;sock&#34;: self.__sock.create_socket(
-                        self.__families[key],
+                        family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                         self.__options.ip_tos,
                     )
@@ -2143,13 +2152,13 @@ class Net(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   4 / 10   T R A N S F O R M E R
+# ###   5 / 11   T R A N S F O R M E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [4/10 TRANSFORM]: (1/3): Transform
+# [5/11 TRANSFORM]: (1/3): Transform
 # -------------------------------------------------------------------------------------------------
 class Transform(ABC):  # type: ignore
     &#34;&#34;&#34;Abstract class to for pwncat I/O transformers.
@@ -2190,7 +2199,7 @@ class Transform(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/10 TRANSFORM]: (2/3) TransformLinefeed
+# [5/11 TRANSFORM]: (2/3) TransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class TransformLinefeed(Transform):
     &#34;&#34;&#34;Implement basic linefeed replacement.&#34;&#34;&#34;
@@ -2264,7 +2273,7 @@ class TransformLinefeed(Transform):
 
 
 # -------------------------------------------------------------------------------------------------
-# [4/10 TRANSFORM]: (3/3) TransformSafeword
+# [5/11 TRANSFORM]: (3/3) TransformSafeword
 # -------------------------------------------------------------------------------------------------
 class TransformSafeword(Transform):
     &#34;&#34;&#34;Implement a trigger to emergency shutdown upon receival of a specific safeword.&#34;&#34;&#34;
@@ -2303,13 +2312,13 @@ class TransformSafeword(Transform):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   5 / 10   I O   M O D U L E S
+# ###   6 / 11   I O   M O D U L E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IO]: (1/5): IO
+# [6/11 IO]: (1/5): IO
 # -------------------------------------------------------------------------------------------------
 class IO(ABC):  # type: ignore
     &#34;&#34;&#34;Abstract class to for pwncat I/O modules.
@@ -2395,7 +2404,7 @@ class IO(ABC):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IONetwork]: (2/5) IONetwork
+# [6/11 IONetwork]: (2/5) IONetwork
 # -------------------------------------------------------------------------------------------------
 class IONetwork(IO):
     &#34;&#34;&#34;Pwncat implementation based on custom Socket library.&#34;&#34;&#34;
@@ -2666,7 +2675,7 @@ class IONetwork(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IONetwork]: (3/5) IONetwork
+# [6/11 IONetwork]: (3/5) IONetwork
 # -------------------------------------------------------------------------------------------------
 class IONetworkScanner(IO):
     &#34;&#34;&#34;Pwncat Scanner implementation based on custom Socket library.&#34;&#34;&#34;
@@ -2734,8 +2743,16 @@ class IONetworkScanner(IO):
                 self.BANNER_REG_COMP.append(re.compile(reg, re.IGNORECASE))
 
         # Get numerical IP addresses for IPv4 and/or IPv6
+        if self.__sock_opts.ipv6:
+            families = [int(socket.AF_INET6)]
+        elif self.__sock_opts.ipv4:
+            families = [int(socket.AF_INET)]
+        else:
+            families = [
+                int(socket.AF_INET6),
+                int(socket.AF_INET),
+            ]
         self.__targets = {}
-        families = self.__net.get_enabled_af()
         try:
             for family in families:
                 self.__targets[family] = self.__sock.gethostbyname(
@@ -2901,7 +2918,7 @@ class IONetworkScanner(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IOStdinStdout]: (4/5) IOStdinStdout
+# [6/11 IOStdinStdout]: (4/5) IOStdinStdout
 # -------------------------------------------------------------------------------------------------
 class IOStdinStdout(IO):
     &#34;&#34;&#34;Implement basic stdin/stdout I/O module.
@@ -3005,7 +3022,7 @@ class IOStdinStdout(IO):
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/10 IOCommand]: (5/5) IOCommand
+# [6/11 IOCommand]: (5/5) IOCommand
 # -------------------------------------------------------------------------------------------------
 class IOCommand(IO):
     &#34;&#34;&#34;Implement command execution functionality.
@@ -3111,13 +3128,13 @@ class IOCommand(IO):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   6 / 10   P S E   S T O R E
+# ###   7 / 11   P S E   S T O R E
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [6/9 PSE]: (1/1) PSEStore
+# [7/11 PSE]: (1/1) PSEStore
 # -------------------------------------------------------------------------------------------------
 class PSEStore(object):
     &#34;&#34;&#34;Pwncats Scripting Engine store to persist and exchange data for send/recv scripts.
@@ -3186,13 +3203,13 @@ class PSEStore(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   7 / 10   R U N N E R
+# ###   8 / 11   R U N N E R
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [7/10 IO RUNNER]: (1/1) Runner
+# [8/11 IO RUNNER]: (1/1) Runner
 # -------------------------------------------------------------------------------------------------
 class Runner(object):
     &#34;&#34;&#34;Runner class that takes care about putting everything into threads.&#34;&#34;&#34;
@@ -3472,13 +3489,13 @@ class Runner(object):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   8 / 10   C O M M A N D   A N D   C O N T R O L   M O D U L E S
+# ###   9 / 11   C O M M A N D   A N D   C O N T R O L   M O D U L E S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [8/10 Command &amp; Control]: (1/2) CNC
+# [9/11 Command &amp; Control]: (1/2) CNC
 # -------------------------------------------------------------------------------------------------
 class CNC(object):
     &#34;&#34;&#34;Command and Control base class.&#34;&#34;&#34;
@@ -3749,7 +3766,7 @@ class CNC(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [8/10 Command &amp; Control]: (1/2) CNCAutoDeploy
+# [9/11 Command &amp; Control]: (1/2) CNCAutoDeploy
 # -------------------------------------------------------------------------------------------------
 class CNCAutoDeploy(CNC):
     &#34;&#34;&#34;Command&amp;Control pwncat auto deployment class.&#34;&#34;&#34;
@@ -3800,13 +3817,13 @@ class CNCAutoDeploy(CNC):
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   9 / 10   C O M M A N D   L I N E   A R G U M E N T S
+# ###   10 / 11   C O M M A N D   L I N E   A R G U M E N T S
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [9/10 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
+# [19/11 COMMAND LINE ARGUMENTS]: (1/2) Helper Functions
 # -------------------------------------------------------------------------------------------------
 def get_version():
     # type: () -&gt; str
@@ -4146,7 +4163,7 @@ def _args_check_mutually_exclusive(parser, args):
 
 
 # -------------------------------------------------------------------------------------------------
-# [9/10 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
+# [10/11 COMMAND LINE ARGUMENTS]: (2/2) Argument Parser
 # -------------------------------------------------------------------------------------------------
 def get_args():
     # type: () -&gt; argparse.Namespace
@@ -4804,13 +4821,13 @@ The default is to send a null byte sting: &#39;\\0&#39;.
 # #################################################################################################
 # #################################################################################################
 # ###
-# ###   10 / 10   M A I N   E N T R Y P O I N T
+# ###   11 / 11   M A I N   E N T R Y P O I N T
 # ###
 # #################################################################################################
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [9/9 MAIN ENTRYPOINT]: (1/2) main
+# [11/11 MAIN ENTRYPOINT]: (1/2) main
 # -------------------------------------------------------------------------------------------------
 def main():
     # type: () -&gt; None
@@ -5081,7 +5098,7 @@ def main():
 
 
 # -------------------------------------------------------------------------------------------------
-# [9/9 MAIN ENTRYPOINT]: (2/2) start
+# [11/11 MAIN ENTRYPOINT]: (2/2) start
 # -------------------------------------------------------------------------------------------------
 if __name__ == &#34;__main__&#34;:
     # Catch Ctrl+c and exit without error message
@@ -9690,8 +9707,16 @@ def producer(self, *args, **kwargs):
                 self.BANNER_REG_COMP.append(re.compile(reg, re.IGNORECASE))
 
         # Get numerical IP addresses for IPv4 and/or IPv6
+        if self.__sock_opts.ipv6:
+            families = [int(socket.AF_INET6)]
+        elif self.__sock_opts.ipv4:
+            families = [int(socket.AF_INET)]
+        else:
+            families = [
+                int(socket.AF_INET6),
+                int(socket.AF_INET),
+            ]
         self.__targets = {}
-        families = self.__net.get_enabled_af()
         try:
             for family in families:
                 self.__targets[family] = self.__sock.gethostbyname(
@@ -10275,11 +10300,6 @@ callback that writes to stdout.</p>
 <pre><code class="python">class Net(object):
     &#34;&#34;&#34;Provides an abstracted server client socket for TCP and UDP.&#34;&#34;&#34;
 
-    def get_enabled_af(self):
-        # type: () -&gt; Dict[int, socket.AddressFamily]
-        &#34;&#34;&#34;Returns enabled address families.&#34;&#34;&#34;
-        return self.__families
-
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
@@ -10299,19 +10319,16 @@ callback that writes to stdout.</p>
         self.__sock = Sock()
 
         # Set families to listen on or connect to
+        # Using a list here to ensure IPv6 will always come first
         if self.__options.ipv6:
-            self.__families = {
-                int(socket.AF_INET6): socket.AF_INET6,
-            }
+            self.__families = [int(socket.AF_INET6)]
         elif self.__options.ipv4:
-            self.__families = {
-                int(socket.AF_INET): socket.AF_INET,
-            }
+            self.__families = [int(socket.AF_INET)]
         else:
-            self.__families = {
-                int(socket.AF_INET6): socket.AF_INET6,
-                int(socket.AF_INET): socket.AF_INET,
-            }
+            self.__families = [
+                int(socket.AF_INET6),
+                int(socket.AF_INET),
+            ]
 
         # The connection dictionary.
         # A dictionary is necessary, as we can have multiple entries for
@@ -10555,11 +10572,11 @@ callback that writes to stdout.</p>
 
         # [1/4] Add sockets to connection dictionary
         succ = 0
-        for key in self.__families:
+        for family in self.__families:
             try:
-                conns[key] = {
+                conns[family] = {
                     &#34;conn&#34;: self.__sock.create_socket(
-                        self.__families[key],
+                        family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                         self.__options.ip_tos,
                     )
@@ -10653,11 +10670,11 @@ callback that writes to stdout.</p>
 
         # [1/4] Create socket
         succ = 0
-        for key in self.__families:
+        for family in self.__families:
             try:
-                conns[key] = {
+                conns[family] = {
                     &#34;sock&#34;: self.__sock.create_socket(
-                        self.__families[key],
+                        family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                         self.__options.ip_tos,
                     )
@@ -10852,21 +10869,6 @@ callback that writes to stdout.</p>
     for family in self.__conns:
         if &#34;conn&#34; in self.__conns[family]:
             self.__sock.close(self.__conns[family][&#34;conn&#34;], &#34;conn&#34;)</code></pre>
-</details>
-</dd>
-<dt id="pwncat.Net.get_enabled_af"><code class="name flex">
-<span>def <span class="ident">get_enabled_af</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Returns enabled address families.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_enabled_af(self):
-    # type: () -&gt; Dict[int, socket.AddressFamily]
-    &#34;&#34;&#34;Returns enabled address families.&#34;&#34;&#34;
-    return self.__families</code></pre>
 </details>
 </dd>
 <dt id="pwncat.Net.re_accept_client"><code class="name flex">
@@ -11091,11 +11093,11 @@ callback that writes to stdout.</p>
 
     # [1/4] Add sockets to connection dictionary
     succ = 0
-    for key in self.__families:
+    for family in self.__families:
         try:
-            conns[key] = {
+            conns[family] = {
                 &#34;conn&#34;: self.__sock.create_socket(
-                    self.__families[key],
+                    family,
                     socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                     self.__options.ip_tos,
                 )
@@ -11211,11 +11213,11 @@ callback that writes to stdout.</p>
 
     # [1/4] Create socket
     succ = 0
-    for key in self.__families:
+    for family in self.__families:
         try:
-            conns[key] = {
+            conns[family] = {
                 &#34;sock&#34;: self.__sock.create_socket(
-                    self.__families[key],
+                    family,
                     socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                     self.__options.ip_tos,
                 )
@@ -12174,13 +12176,13 @@ def store(self):
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Thread-safe Socket singleton helper to emulate a module within the same file.</p></div>
+<div class="desc"><p>Thread-safe singleton Socket helper to emulate a module within the same file.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
-    &#34;&#34;&#34;Thread-safe Socket singleton helper to emulate a module within the same file.&#34;&#34;&#34;
+    &#34;&#34;&#34;Thread-safe singleton Socket helper to emulate a module within the same file.&#34;&#34;&#34;
 
     def __init__(self):
         # type: () -&gt; None
@@ -12409,7 +12411,6 @@ def store(self):
         assert host is not None
 
         # [2/4] Already an IP address
-        # TODO: might also use socket.getaddr with AI_NUMERICHOST as a check
         if family == int(socket.AF_INET6):
             try:
                 socket.inet_pton(socket.AF_INET6, host)
@@ -12420,7 +12421,7 @@ def store(self):
                     host6 = &#34;::ffff:&#34; + host
                     socket.inet_pton(socket.AF_INET6, host6)
                     self.__log.debug(
-                        &#34;Resolving IPv6 name not required, changing to IPv6: %s&#34;, host6
+                        &#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6
                     )
                     return host6
                 except socket.error:
@@ -12470,15 +12471,19 @@ def store(self):
         &#34;&#34;&#34;
         assert int(sock_type) in [int(socket.SOCK_DGRAM), int(socket.SOCK_STREAM)]
         try:
-            if int(sock_type) == socket.SOCK_DGRAM:
-                self.__log.debug(&#34;Creating %s UDP socket&#34;, self.get_family_name(family))
+            if int(sock_type) == int(socket.SOCK_DGRAM):
+                self.__log.debug(
+                    &#34;Creating (family %d/%s, UDP) socket&#34;, int(family), self.get_family_name(family)
+                )
                 sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug(&#34;Creating %s TCP socket&#34;, self.get_family_name(family))
+                self.__log.debug(
+                    &#34;Creating (family %d/%s, TCP) socket&#34;, int(family), self.get_family_name(family)
+                )
                 sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = &#34;Creating {} {} socket failed: {}&#34;.format(
-                self.get_family_name(family), self.get_type_name(sock_type), error
+            msg = &#34;Creating (family {}/{}, {}) socket failed: {}&#34;.format(
+                int(family), self.get_family_name(family), self.get_type_name(sock_type), error
             )
             self.__log.debug(msg)
             raise socket.error(msg)
@@ -12623,20 +12628,19 @@ def store(self):
         # Bind to a custom addr/port
         if src_addr is not None and src_port is not None:
             try:
+                self.__log.debug(&#34;Binding specifically to %s:%d&#34;, src_addr, src_port)
                 self.bind(sock, src_addr, src_port)
             except socket.error as error:
                 raise socket.error(error)
-
-        self.__log.debug(
-            &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
-            addr,
-            port,
-            int(sock.family),
-            sock_family_name,
-            sock_type_name,
-        )
-
         try:
+            self.__log.debug(
+                &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
+                addr,
+                port,
+                int(sock.family),
+                sock_family_name,
+                sock_type_name,
+            )
             sock.connect((addr, port))
 
             # UDP stateful connect
@@ -12919,20 +12923,19 @@ def store(self):
     # Bind to a custom addr/port
     if src_addr is not None and src_port is not None:
         try:
+            self.__log.debug(&#34;Binding specifically to %s:%d&#34;, src_addr, src_port)
             self.bind(sock, src_addr, src_port)
         except socket.error as error:
             raise socket.error(error)
-
-    self.__log.debug(
-        &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
-        addr,
-        port,
-        int(sock.family),
-        sock_family_name,
-        sock_type_name,
-    )
-
     try:
+        self.__log.debug(
+            &#34;Connecting to %s:%d (family %d/%s, %s)&#34;,
+            addr,
+            port,
+            int(sock.family),
+            sock_family_name,
+            sock_type_name,
+        )
         sock.connect((addr, port))
 
         # UDP stateful connect
@@ -13024,15 +13027,19 @@ def store(self):
     &#34;&#34;&#34;
     assert int(sock_type) in [int(socket.SOCK_DGRAM), int(socket.SOCK_STREAM)]
     try:
-        if int(sock_type) == socket.SOCK_DGRAM:
-            self.__log.debug(&#34;Creating %s UDP socket&#34;, self.get_family_name(family))
+        if int(sock_type) == int(socket.SOCK_DGRAM):
+            self.__log.debug(
+                &#34;Creating (family %d/%s, UDP) socket&#34;, int(family), self.get_family_name(family)
+            )
             sock = socket.socket(family, socket.SOCK_DGRAM)
         else:
-            self.__log.debug(&#34;Creating %s TCP socket&#34;, self.get_family_name(family))
+            self.__log.debug(
+                &#34;Creating (family %d/%s, TCP) socket&#34;, int(family), self.get_family_name(family)
+            )
             sock = socket.socket(family, socket.SOCK_STREAM)
     except socket.error as error:
-        msg = &#34;Creating {} {} socket failed: {}&#34;.format(
-            self.get_family_name(family), self.get_type_name(sock_type), error
+        msg = &#34;Creating (family {}/{}, {}) socket failed: {}&#34;.format(
+            int(family), self.get_family_name(family), self.get_type_name(sock_type), error
         )
         self.__log.debug(msg)
         raise socket.error(msg)
@@ -13229,7 +13236,6 @@ def store(self):
     assert host is not None
 
     # [2/4] Already an IP address
-    # TODO: might also use socket.getaddr with AI_NUMERICHOST as a check
     if family == int(socket.AF_INET6):
         try:
             socket.inet_pton(socket.AF_INET6, host)
@@ -13240,7 +13246,7 @@ def store(self):
                 host6 = &#34;::ffff:&#34; + host
                 socket.inet_pton(socket.AF_INET6, host6)
                 self.__log.debug(
-                    &#34;Resolving IPv6 name not required, changing to IPv6: %s&#34;, host6
+                    &#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6
                 )
                 return host6
             except socket.error:
@@ -14182,7 +14188,6 @@ def transform(self, data):
 <ul class="two-column">
 <li><code><a title="pwncat.Net.close_bind_sock" href="#pwncat.Net.close_bind_sock">close_bind_sock</a></code></li>
 <li><code><a title="pwncat.Net.close_conn_sock" href="#pwncat.Net.close_conn_sock">close_conn_sock</a></code></li>
-<li><code><a title="pwncat.Net.get_enabled_af" href="#pwncat.Net.get_enabled_af">get_enabled_af</a></code></li>
 <li><code><a title="pwncat.Net.re_accept_client" href="#pwncat.Net.re_accept_client">re_accept_client</a></code></li>
 <li><code><a title="pwncat.Net.receive" href="#pwncat.Net.receive">receive</a></code></li>
 <li><code><a title="pwncat.Net.run_client" href="#pwncat.Net.run_client">run_client</a></code></li>

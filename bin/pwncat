@@ -1342,15 +1342,19 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
         """
         assert int(sock_type) in [int(socket.SOCK_DGRAM), int(socket.SOCK_STREAM)]
         try:
-            if int(sock_type) == socket.SOCK_DGRAM:
-                self.__log.debug("Creating %s UDP socket", self.get_family_name(family))
+            if int(sock_type) == int(socket.SOCK_DGRAM):
+                self.__log.debug(
+                    "Creating (family %d/%s, UDP) socket", int(family), self.get_family_name(family)
+                )
                 sock = socket.socket(family, socket.SOCK_DGRAM)
             else:
-                self.__log.debug("Creating %s TCP socket", self.get_family_name(family))
+                self.__log.debug(
+                    "Creating (family %d/%s, TCP) socket", int(family), self.get_family_name(family)
+                )
                 sock = socket.socket(family, socket.SOCK_STREAM)
         except socket.error as error:
-            msg = "Creating {} {} socket failed: {}".format(
-                self.get_family_name(family), self.get_type_name(sock_type), error
+            msg = "Creating (family {}/{}, {}) socket failed: {}".format(
+                int(family), self.get_family_name(family), self.get_type_name(sock_type), error
             )
             self.__log.debug(msg)
             raise socket.error(msg)
@@ -1495,20 +1499,19 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
         # Bind to a custom addr/port
         if src_addr is not None and src_port is not None:
             try:
+                self.__log.debug("Binding specifically to %s:%d", src_addr, src_port)
                 self.bind(sock, src_addr, src_port)
             except socket.error as error:
                 raise socket.error(error)
-
-        self.__log.debug(
-            "Connecting to %s:%d (family %d/%s, %s)",
-            addr,
-            port,
-            int(sock.family),
-            sock_family_name,
-            sock_type_name,
-        )
-
         try:
+            self.__log.debug(
+                "Connecting to %s:%d (family %d/%s, %s)",
+                addr,
+                port,
+                int(sock.family),
+                sock_family_name,
+                sock_type_name,
+            )
             sock.connect((addr, port))
 
             # UDP stateful connect
@@ -1583,11 +1586,6 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
 class Net(object):
     """Provides an abstracted server client socket for TCP and UDP."""
 
-    def get_enabled_af(self):
-        # type: () -> Dict[int, socket.AddressFamily]
-        """Returns enabled address families."""
-        return self.__families
-
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
@@ -1607,19 +1605,16 @@ class Net(object):
         self.__sock = Sock()
 
         # Set families to listen on or connect to
+        # Using a list here to ensure IPv6 will always come first
         if self.__options.ipv6:
-            self.__families = {
-                int(socket.AF_INET6): socket.AF_INET6,
-            }
+            self.__families = [int(socket.AF_INET6)]
         elif self.__options.ipv4:
-            self.__families = {
-                int(socket.AF_INET): socket.AF_INET,
-            }
+            self.__families = [int(socket.AF_INET)]
         else:
-            self.__families = {
-                int(socket.AF_INET6): socket.AF_INET6,
-                int(socket.AF_INET): socket.AF_INET,
-            }
+            self.__families = [
+                int(socket.AF_INET6),
+                int(socket.AF_INET),
+            ]
 
         # The connection dictionary.
         # A dictionary is necessary, as we can have multiple entries for
@@ -1863,11 +1858,11 @@ class Net(object):
 
         # [1/4] Add sockets to connection dictionary
         succ = 0
-        for key in self.__families:
+        for family in self.__families:
             try:
-                conns[key] = {
+                conns[family] = {
                     "conn": self.__sock.create_socket(
-                        self.__families[key],
+                        family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                         self.__options.ip_tos,
                     )
@@ -1881,16 +1876,19 @@ class Net(object):
         # [2/4] Resolve address
         remove = []
         errors = []
-        for family in conns:
-            try:
-                conns[family]["remote_host"] = host
-                conns[family]["remote_addr"] = self.__sock.gethostbyname(
-                    host, family, not self.__options.nodns
-                )
-                conns[family]["remote_port"] = port
-            except socket.gaierror as err:
-                remove.append(family)
-                errors.append(str(err))
+        # NOTE: We're still looping over the initial family list
+        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+        for family in self.__families:
+            if family in conns:
+                try:
+                    conns[family]["remote_host"] = host
+                    conns[family]["remote_addr"] = self.__sock.gethostbyname(
+                        host, family, not self.__options.nodns
+                    )
+                    conns[family]["remote_port"] = port
+                except socket.gaierror as err:
+                    remove.append(family)
+                    errors.append(str(err))
         for family in remove:
             self.__sock.close(conns[family]["conn"], self.__sock.get_family_name(family))
             del conns[family]
@@ -1902,24 +1900,27 @@ class Net(object):
         # [3/4] Connect
         remove = []
         errors = []
-        for family in conns:
-            try:
-                self.__sock.connect(
-                    conns[family]["conn"],
-                    conns[family]["remote_addr"],
-                    conns[family]["remote_port"],
-                    self.__options.src_addr,
-                    self.__options.src_port,
-                    self.__options.udp_sconnect,
-                    self.__enc.encode(self.__options.udp_sconnect_word),
-                    self.__options.bufsize,
-                )
-                # On successful connect, we can abandon/remove all other sockets
-                remove = [key for key in conns if key != family]
-                break
-            except (OSError, socket.error) as err:
-                remove.append(family)
-                errors.append(str(err))
+        # NOTE: We're still looping over the initial family list
+        # to ensure order: IPv6 before IPv4 (the conn dict does not preserve order)
+        for family in self.__families:
+            if family in conns:
+                try:
+                    self.__sock.connect(
+                        conns[family]["conn"],
+                        conns[family]["remote_addr"],
+                        conns[family]["remote_port"],
+                        self.__options.src_addr,
+                        self.__options.src_port,
+                        self.__options.udp_sconnect,
+                        self.__enc.encode(self.__options.udp_sconnect_word),
+                        self.__options.bufsize,
+                    )
+                    # On successful connect, we can abandon/remove all other sockets
+                    remove = [key for key in conns if key != family]
+                    break
+                except (OSError, socket.error) as err:
+                    remove.append(family)
+                    errors.append(str(err))
         for family in remove:
             self.__sock.close(conns[family]["conn"], self.__sock.get_family_name(family))
             del conns[family]
@@ -1961,11 +1962,11 @@ class Net(object):
 
         # [1/4] Create socket
         succ = 0
-        for key in self.__families:
+        for family in self.__families:
             try:
-                conns[key] = {
+                conns[family] = {
                     "sock": self.__sock.create_socket(
-                        self.__families[key],
+                        family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
                         self.__options.ip_tos,
                     )
@@ -2721,8 +2722,16 @@ class IONetworkScanner(IO):
                 self.BANNER_REG_COMP.append(re.compile(reg, re.IGNORECASE))
 
         # Get numerical IP addresses for IPv4 and/or IPv6
+        if self.__sock_opts.ipv6:
+            families = [int(socket.AF_INET6)]
+        elif self.__sock_opts.ipv4:
+            families = [int(socket.AF_INET)]
+        else:
+            families = [
+                int(socket.AF_INET6),
+                int(socket.AF_INET),
+            ]
         self.__targets = {}
-        families = self.__net.get_enabled_af()
         try:
             for family in families:
                 self.__targets[family] = self.__sock.gethostbyname(
