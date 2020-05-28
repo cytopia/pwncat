@@ -101,6 +101,11 @@ import sys
 import threading
 import time
 
+try:
+    import ipaddress
+except ImportError:
+    pass
+
 # Only used with mypy for static source code analysis
 if os.environ.get(&#34;MYPY_CHECK&#34;, False):
     from typing import Optional, Iterator, List, Dict, Any, Callable, Tuple, Union, TypeVar
@@ -1208,6 +1213,94 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
     }
 
     # --------------------------------------------------------------------------
+    # Static methods
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def is_ipv6_address(host):
+        # type: (str) -&gt; bool
+        &#34;&#34;&#34;Check if a given str is a valid IPv6 address.&#34;&#34;&#34;
+        # TODO: check for link-local addresses (start with: fe80)
+        # https://stackoverflow.com/questions/3801701
+
+        # [1/4] socket.inet_pton
+        if hasattr(socket, &#34;inet_pton&#34;):
+            try:
+                socket.inet_pton(socket.AF_INET6, host)
+                return True
+            except socket.error:
+                return False
+
+        # [2/4] optional module: ipaddress
+        try:
+            addr = unicode(host)  # type: ignore
+        except NameError:
+            addr = host
+        try:
+            try:
+                ipaddress.IPv6Address(addr)
+                return True
+            except ipaddress.AddressValueError:
+                return False
+        except NameError:
+            pass
+
+        # [3/4] regex
+        # This is a poor mans solution, but we only want to know if it
+        # is on the format of IPv6 and not if it is a valid IPv6. The
+        # validation will be figured out during connect()
+        reg = r&#34;^([a-f0-9]{0,4}:){5}[a-f0-9]{0,4}$&#34;
+        if re.match(reg, host):
+            return True
+
+        # [4/4] Nope
+        return False
+
+    @staticmethod
+    def is_ipv4_address(host):
+        # type: (str) -&gt; bool
+        &#34;&#34;&#34;Check if a given str is a valid IPv4 address.&#34;&#34;&#34;
+        # [1/5] socket.inet_aton
+        if hasattr(socket, &#34;inet_aton&#34;):
+            try:
+                socket.inet_aton(host)
+                return True
+            except socket.error:
+                return False
+
+        # [2/5] socket.inet_pton
+        if hasattr(socket, &#34;inet_pton&#34;):
+            try:
+                socket.inet_pton(socket.AF_INET, host)
+                return True
+            except socket.error:
+                return False
+
+        # [3/5] optional module: ipaddress
+        try:
+            addr = unicode(host)  # type: ignore
+        except NameError:
+            addr = host
+        try:
+            try:
+                ipaddress.IPv4Address(addr)
+                return True
+            except ipaddress.AddressValueError:
+                return False
+        except NameError:
+            pass
+
+        # [4/5] regex
+        # This is a poor mans solution, but we only want to know if it
+        # is on the format of IPv4 and not if it is a valid IPv4. The
+        # validation will be figured out during connect()
+        reg = r&#34;^([0-9]{1,3}\.){3}[0-9]{1,3}$&#34;
+        if re.match(reg, host):
+            return True
+
+        # [5/5] Nope
+        return False
+
+    # --------------------------------------------------------------------------
     # Get functions
     # --------------------------------------------------------------------------
     def get_iptos_by_name(self, name):
@@ -1310,27 +1403,18 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
 
         # [2/4] Already an IP address
         if family == int(socket.AF_INET6):
-            try:
-                socket.inet_pton(socket.AF_INET6, host)
+            if Sock.is_ipv6_address(host):
                 self.__log.debug(&#34;Resolving IPv6 name not required, already an IP: %s&#34;, host)
                 return host
-            except socket.error:
-                try:
-                    host6 = &#34;::ffff:&#34; + host
-                    socket.inet_pton(socket.AF_INET6, host6)
-                    self.__log.debug(
-                        &#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6
-                    )
-                    return host6
-                except socket.error:
-                    pass
-        else:
-            try:
-                socket.inet_pton(family, host)
+            # Map IPv4 address to IPv6
+            host6 = &#34;::ffff:&#34; + host
+            if Sock.is_ipv6_address(host6):
+                self.__log.debug(&#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6)
+                return host6
+        elif family == int(socket.AF_INET):
+            if Sock.is_ipv4_address(host):
                 self.__log.debug(&#34;Resolving IPv4 host not required, already an IP: %s&#34;, host)
                 return host
-            except socket.error:
-                pass
 
         # [3/4] Do we disable DNS resolution?
         if not resolvedns:
@@ -1542,7 +1626,10 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
                 sock_family_name,
                 sock_type_name,
             )
-            sock.connect((addr, port))
+
+            # Ensure to use connect() protocol independent
+            info = socket.getaddrinfo(addr, port, sock.family, sock.type, sock.proto)
+            sock.connect(info[0][4])
 
             # UDP stateful connect
             # A UDP client doesn&#39;t know if the connect() was successful, so the trick
@@ -1606,7 +1693,9 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
             self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
         except (OSError, socket.error) as error:
-            self.__log.trace(&#34;Could not shutdown %s socket: %s&#34;, name, error)  # type: ignore
+            # We do not log errors here, as unconnected sockets cannot
+            # be shutdown and we want to throw any socket at this function.
+            pass
         try:
             self.__log.trace(&#34;Closing %s socket&#34;, name)  # type: ignore
             sock.close()
@@ -2003,14 +2092,14 @@ class Net(object):
                     )
                 }
                 succ += 1
-            except socket.error:
-                pass
+            except socket.error as err:
+                self.__log.debug(err)
         if succ == 0:
+            self.__log.error(&#34;Socket Error: Could not create any socket.&#34;)
             return False
 
         # [2/4] Resolve local address
-        remove = []
-        errors = []
+        remove = {}
         for family in conns:
             try:
                 conns[family][&#34;local_addr&#34;] = self.__sock.gethostbyname(
@@ -2019,31 +2108,38 @@ class Net(object):
                 conns[family][&#34;local_host&#34;] = host
                 conns[family][&#34;local_port&#34;] = port
             except socket.gaierror as err:
-                remove.append(family)
-                errors.append(str(err))
+                remove[family] = str(err)
         for family in remove:
+            self.__log.debug(
+                &#34;Removing (family %d/%s) due to: %s&#34;,
+                family,
+                self.__sock.get_family_name(family),
+                remove[family],
+            )
             self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
-            for error in errors:
-                self.__log.error(&#34;Resolve Error: %s&#34;, error)
+            self.__log.error(&#34;Resolve Error: Could not resolve any hostname&#34;)
             return False
 
         # [3/4] Bind socket
-        remove = []
-        errors = []
+        remove = {}
         for family in conns:
             try:
                 self.__sock.bind(conns[family][&#34;sock&#34;], conns[family][&#34;local_addr&#34;], port)
             except socket.error as err:
-                remove.append(family)
-                errors.append(str(err))
+                remove[family] = str(err)
         for family in remove:
+            self.__log.debug(
+                &#34;Removing (family %d/%s) due to: %s&#34;,
+                family,
+                self.__sock.get_family_name(family),
+                remove[family],
+            )
             self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
-            for error in errors:
-                self.__log.error(error)
+            self.__log.error(&#34;Bind Error: Could not bind any socket&#34;)
             return False
 
         # [UDP 4/4] There is no listen or accept for UDP
@@ -2063,7 +2159,7 @@ class Net(object):
 
         # [TCP 4/4] Requires listen and accept
         # (1/3) Listen
-        remove = []
+        remove = {}
         for family in conns:
             try:
                 self.__sock.listen(conns[family][&#34;sock&#34;], self.__options.backlog)
@@ -2074,12 +2170,19 @@ class Net(object):
                     family,
                     self.__sock.get_family_name(family),
                 )
-            except socket.error:
-                remove.append(family)
+            except socket.error as err:
+                remove[family] = str(err)
         for family in remove:
+            self.__log.debug(
+                &#34;Removing (family %d/%s) due to: %s&#34;,
+                family,
+                self.__sock.get_family_name(family),
+                remove[family],
+            )
             self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
+            self.__log.error(&#34;Could not listen on any address&#34;)
             return False
 
         # (2/3) Accept
@@ -2090,9 +2193,15 @@ class Net(object):
             conns[conn.family][&#34;conn&#34;] = conn
             conns[conn.family][&#34;remote_addr&#34;] = client[0]
             conns[conn.family][&#34;remote_port&#34;] = client[1]
-        except socket.error:
+        except socket.error as err:
             # On error, remove all bind sockets
             for family in conns:
+                self.__log.debug(
+                    &#34;Removing (family %d/%s) due to: %s&#34;,
+                    family,
+                    self.__sock.get_family_name(family),
+                    err,
+                )
                 self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
                 del conns[family]
             return False
@@ -10734,14 +10843,14 @@ callback that writes to stdout.</p>
                     )
                 }
                 succ += 1
-            except socket.error:
-                pass
+            except socket.error as err:
+                self.__log.debug(err)
         if succ == 0:
+            self.__log.error(&#34;Socket Error: Could not create any socket.&#34;)
             return False
 
         # [2/4] Resolve local address
-        remove = []
-        errors = []
+        remove = {}
         for family in conns:
             try:
                 conns[family][&#34;local_addr&#34;] = self.__sock.gethostbyname(
@@ -10750,31 +10859,38 @@ callback that writes to stdout.</p>
                 conns[family][&#34;local_host&#34;] = host
                 conns[family][&#34;local_port&#34;] = port
             except socket.gaierror as err:
-                remove.append(family)
-                errors.append(str(err))
+                remove[family] = str(err)
         for family in remove:
+            self.__log.debug(
+                &#34;Removing (family %d/%s) due to: %s&#34;,
+                family,
+                self.__sock.get_family_name(family),
+                remove[family],
+            )
             self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
-            for error in errors:
-                self.__log.error(&#34;Resolve Error: %s&#34;, error)
+            self.__log.error(&#34;Resolve Error: Could not resolve any hostname&#34;)
             return False
 
         # [3/4] Bind socket
-        remove = []
-        errors = []
+        remove = {}
         for family in conns:
             try:
                 self.__sock.bind(conns[family][&#34;sock&#34;], conns[family][&#34;local_addr&#34;], port)
             except socket.error as err:
-                remove.append(family)
-                errors.append(str(err))
+                remove[family] = str(err)
         for family in remove:
+            self.__log.debug(
+                &#34;Removing (family %d/%s) due to: %s&#34;,
+                family,
+                self.__sock.get_family_name(family),
+                remove[family],
+            )
             self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
-            for error in errors:
-                self.__log.error(error)
+            self.__log.error(&#34;Bind Error: Could not bind any socket&#34;)
             return False
 
         # [UDP 4/4] There is no listen or accept for UDP
@@ -10794,7 +10910,7 @@ callback that writes to stdout.</p>
 
         # [TCP 4/4] Requires listen and accept
         # (1/3) Listen
-        remove = []
+        remove = {}
         for family in conns:
             try:
                 self.__sock.listen(conns[family][&#34;sock&#34;], self.__options.backlog)
@@ -10805,12 +10921,19 @@ callback that writes to stdout.</p>
                     family,
                     self.__sock.get_family_name(family),
                 )
-            except socket.error:
-                remove.append(family)
+            except socket.error as err:
+                remove[family] = str(err)
         for family in remove:
+            self.__log.debug(
+                &#34;Removing (family %d/%s) due to: %s&#34;,
+                family,
+                self.__sock.get_family_name(family),
+                remove[family],
+            )
             self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
             del conns[family]
         if not conns:
+            self.__log.error(&#34;Could not listen on any address&#34;)
             return False
 
         # (2/3) Accept
@@ -10821,9 +10944,15 @@ callback that writes to stdout.</p>
             conns[conn.family][&#34;conn&#34;] = conn
             conns[conn.family][&#34;remote_addr&#34;] = client[0]
             conns[conn.family][&#34;remote_port&#34;] = client[1]
-        except socket.error:
+        except socket.error as err:
             # On error, remove all bind sockets
             for family in conns:
+                self.__log.debug(
+                    &#34;Removing (family %d/%s) due to: %s&#34;,
+                    family,
+                    self.__sock.get_family_name(family),
+                    err,
+                )
                 self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
                 del conns[family]
             return False
@@ -11283,14 +11412,14 @@ callback that writes to stdout.</p>
                 )
             }
             succ += 1
-        except socket.error:
-            pass
+        except socket.error as err:
+            self.__log.debug(err)
     if succ == 0:
+        self.__log.error(&#34;Socket Error: Could not create any socket.&#34;)
         return False
 
     # [2/4] Resolve local address
-    remove = []
-    errors = []
+    remove = {}
     for family in conns:
         try:
             conns[family][&#34;local_addr&#34;] = self.__sock.gethostbyname(
@@ -11299,31 +11428,38 @@ callback that writes to stdout.</p>
             conns[family][&#34;local_host&#34;] = host
             conns[family][&#34;local_port&#34;] = port
         except socket.gaierror as err:
-            remove.append(family)
-            errors.append(str(err))
+            remove[family] = str(err)
     for family in remove:
+        self.__log.debug(
+            &#34;Removing (family %d/%s) due to: %s&#34;,
+            family,
+            self.__sock.get_family_name(family),
+            remove[family],
+        )
         self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
         del conns[family]
     if not conns:
-        for error in errors:
-            self.__log.error(&#34;Resolve Error: %s&#34;, error)
+        self.__log.error(&#34;Resolve Error: Could not resolve any hostname&#34;)
         return False
 
     # [3/4] Bind socket
-    remove = []
-    errors = []
+    remove = {}
     for family in conns:
         try:
             self.__sock.bind(conns[family][&#34;sock&#34;], conns[family][&#34;local_addr&#34;], port)
         except socket.error as err:
-            remove.append(family)
-            errors.append(str(err))
+            remove[family] = str(err)
     for family in remove:
+        self.__log.debug(
+            &#34;Removing (family %d/%s) due to: %s&#34;,
+            family,
+            self.__sock.get_family_name(family),
+            remove[family],
+        )
         self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
         del conns[family]
     if not conns:
-        for error in errors:
-            self.__log.error(error)
+        self.__log.error(&#34;Bind Error: Could not bind any socket&#34;)
         return False
 
     # [UDP 4/4] There is no listen or accept for UDP
@@ -11343,7 +11479,7 @@ callback that writes to stdout.</p>
 
     # [TCP 4/4] Requires listen and accept
     # (1/3) Listen
-    remove = []
+    remove = {}
     for family in conns:
         try:
             self.__sock.listen(conns[family][&#34;sock&#34;], self.__options.backlog)
@@ -11354,12 +11490,19 @@ callback that writes to stdout.</p>
                 family,
                 self.__sock.get_family_name(family),
             )
-        except socket.error:
-            remove.append(family)
+        except socket.error as err:
+            remove[family] = str(err)
     for family in remove:
+        self.__log.debug(
+            &#34;Removing (family %d/%s) due to: %s&#34;,
+            family,
+            self.__sock.get_family_name(family),
+            remove[family],
+        )
         self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
         del conns[family]
     if not conns:
+        self.__log.error(&#34;Could not listen on any address&#34;)
         return False
 
     # (2/3) Accept
@@ -11370,9 +11513,15 @@ callback that writes to stdout.</p>
         conns[conn.family][&#34;conn&#34;] = conn
         conns[conn.family][&#34;remote_addr&#34;] = client[0]
         conns[conn.family][&#34;remote_port&#34;] = client[1]
-    except socket.error:
+    except socket.error as err:
         # On error, remove all bind sockets
         for family in conns:
+            self.__log.debug(
+                &#34;Removing (family %d/%s) due to: %s&#34;,
+                family,
+                self.__sock.get_family_name(family),
+                err,
+            )
             self.__sock.close(conns[family][&#34;sock&#34;], self.__sock.get_family_name(family))
             del conns[family]
         return False
@@ -12370,6 +12519,94 @@ def store(self):
     }
 
     # --------------------------------------------------------------------------
+    # Static methods
+    # --------------------------------------------------------------------------
+    @staticmethod
+    def is_ipv6_address(host):
+        # type: (str) -&gt; bool
+        &#34;&#34;&#34;Check if a given str is a valid IPv6 address.&#34;&#34;&#34;
+        # TODO: check for link-local addresses (start with: fe80)
+        # https://stackoverflow.com/questions/3801701
+
+        # [1/4] socket.inet_pton
+        if hasattr(socket, &#34;inet_pton&#34;):
+            try:
+                socket.inet_pton(socket.AF_INET6, host)
+                return True
+            except socket.error:
+                return False
+
+        # [2/4] optional module: ipaddress
+        try:
+            addr = unicode(host)  # type: ignore
+        except NameError:
+            addr = host
+        try:
+            try:
+                ipaddress.IPv6Address(addr)
+                return True
+            except ipaddress.AddressValueError:
+                return False
+        except NameError:
+            pass
+
+        # [3/4] regex
+        # This is a poor mans solution, but we only want to know if it
+        # is on the format of IPv6 and not if it is a valid IPv6. The
+        # validation will be figured out during connect()
+        reg = r&#34;^([a-f0-9]{0,4}:){5}[a-f0-9]{0,4}$&#34;
+        if re.match(reg, host):
+            return True
+
+        # [4/4] Nope
+        return False
+
+    @staticmethod
+    def is_ipv4_address(host):
+        # type: (str) -&gt; bool
+        &#34;&#34;&#34;Check if a given str is a valid IPv4 address.&#34;&#34;&#34;
+        # [1/5] socket.inet_aton
+        if hasattr(socket, &#34;inet_aton&#34;):
+            try:
+                socket.inet_aton(host)
+                return True
+            except socket.error:
+                return False
+
+        # [2/5] socket.inet_pton
+        if hasattr(socket, &#34;inet_pton&#34;):
+            try:
+                socket.inet_pton(socket.AF_INET, host)
+                return True
+            except socket.error:
+                return False
+
+        # [3/5] optional module: ipaddress
+        try:
+            addr = unicode(host)  # type: ignore
+        except NameError:
+            addr = host
+        try:
+            try:
+                ipaddress.IPv4Address(addr)
+                return True
+            except ipaddress.AddressValueError:
+                return False
+        except NameError:
+            pass
+
+        # [4/5] regex
+        # This is a poor mans solution, but we only want to know if it
+        # is on the format of IPv4 and not if it is a valid IPv4. The
+        # validation will be figured out during connect()
+        reg = r&#34;^([0-9]{1,3}\.){3}[0-9]{1,3}$&#34;
+        if re.match(reg, host):
+            return True
+
+        # [5/5] Nope
+        return False
+
+    # --------------------------------------------------------------------------
     # Get functions
     # --------------------------------------------------------------------------
     def get_iptos_by_name(self, name):
@@ -12472,27 +12709,18 @@ def store(self):
 
         # [2/4] Already an IP address
         if family == int(socket.AF_INET6):
-            try:
-                socket.inet_pton(socket.AF_INET6, host)
+            if Sock.is_ipv6_address(host):
                 self.__log.debug(&#34;Resolving IPv6 name not required, already an IP: %s&#34;, host)
                 return host
-            except socket.error:
-                try:
-                    host6 = &#34;::ffff:&#34; + host
-                    socket.inet_pton(socket.AF_INET6, host6)
-                    self.__log.debug(
-                        &#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6
-                    )
-                    return host6
-                except socket.error:
-                    pass
-        else:
-            try:
-                socket.inet_pton(family, host)
+            # Map IPv4 address to IPv6
+            host6 = &#34;::ffff:&#34; + host
+            if Sock.is_ipv6_address(host6):
+                self.__log.debug(&#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6)
+                return host6
+        elif family == int(socket.AF_INET):
+            if Sock.is_ipv4_address(host):
                 self.__log.debug(&#34;Resolving IPv4 host not required, already an IP: %s&#34;, host)
                 return host
-            except socket.error:
-                pass
 
         # [3/4] Do we disable DNS resolution?
         if not resolvedns:
@@ -12704,7 +12932,10 @@ def store(self):
                 sock_family_name,
                 sock_type_name,
             )
-            sock.connect((addr, port))
+
+            # Ensure to use connect() protocol independent
+            info = socket.getaddrinfo(addr, port, sock.family, sock.type, sock.proto)
+            sock.connect(info[0][4])
 
             # UDP stateful connect
             # A UDP client doesn&#39;t know if the connect() was successful, so the trick
@@ -12768,7 +12999,9 @@ def store(self):
             self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
         except (OSError, socket.error) as error:
-            self.__log.trace(&#34;Could not shutdown %s socket: %s&#34;, name, error)  # type: ignore
+            # We do not log errors here, as unconnected sockets cannot
+            # be shutdown and we want to throw any socket at this function.
+            pass
         try:
             self.__log.trace(&#34;Closing %s socket&#34;, name)  # type: ignore
             sock.close()
@@ -12779,6 +13012,114 @@ def store(self):
 <ul class="hlist">
 <li>pwncat.SingletonMeta</li>
 </ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="pwncat.Sock.is_ipv4_address"><code class="name flex">
+<span>def <span class="ident">is_ipv4_address</span></span>(<span>host)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check if a given str is a valid IPv4 address.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def is_ipv4_address(host):
+    # type: (str) -&gt; bool
+    &#34;&#34;&#34;Check if a given str is a valid IPv4 address.&#34;&#34;&#34;
+    # [1/5] socket.inet_aton
+    if hasattr(socket, &#34;inet_aton&#34;):
+        try:
+            socket.inet_aton(host)
+            return True
+        except socket.error:
+            return False
+
+    # [2/5] socket.inet_pton
+    if hasattr(socket, &#34;inet_pton&#34;):
+        try:
+            socket.inet_pton(socket.AF_INET, host)
+            return True
+        except socket.error:
+            return False
+
+    # [3/5] optional module: ipaddress
+    try:
+        addr = unicode(host)  # type: ignore
+    except NameError:
+        addr = host
+    try:
+        try:
+            ipaddress.IPv4Address(addr)
+            return True
+        except ipaddress.AddressValueError:
+            return False
+    except NameError:
+        pass
+
+    # [4/5] regex
+    # This is a poor mans solution, but we only want to know if it
+    # is on the format of IPv4 and not if it is a valid IPv4. The
+    # validation will be figured out during connect()
+    reg = r&#34;^([0-9]{1,3}\.){3}[0-9]{1,3}$&#34;
+    if re.match(reg, host):
+        return True
+
+    # [5/5] Nope
+    return False</code></pre>
+</details>
+</dd>
+<dt id="pwncat.Sock.is_ipv6_address"><code class="name flex">
+<span>def <span class="ident">is_ipv6_address</span></span>(<span>host)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check if a given str is a valid IPv6 address.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def is_ipv6_address(host):
+    # type: (str) -&gt; bool
+    &#34;&#34;&#34;Check if a given str is a valid IPv6 address.&#34;&#34;&#34;
+    # TODO: check for link-local addresses (start with: fe80)
+    # https://stackoverflow.com/questions/3801701
+
+    # [1/4] socket.inet_pton
+    if hasattr(socket, &#34;inet_pton&#34;):
+        try:
+            socket.inet_pton(socket.AF_INET6, host)
+            return True
+        except socket.error:
+            return False
+
+    # [2/4] optional module: ipaddress
+    try:
+        addr = unicode(host)  # type: ignore
+    except NameError:
+        addr = host
+    try:
+        try:
+            ipaddress.IPv6Address(addr)
+            return True
+        except ipaddress.AddressValueError:
+            return False
+    except NameError:
+        pass
+
+    # [3/4] regex
+    # This is a poor mans solution, but we only want to know if it
+    # is on the format of IPv6 and not if it is a valid IPv6. The
+    # validation will be figured out during connect()
+    reg = r&#34;^([a-f0-9]{0,4}:){5}[a-f0-9]{0,4}$&#34;
+    if re.match(reg, host):
+        return True
+
+    # [4/4] Nope
+    return False</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="pwncat.Sock.accept"><code class="name flex">
@@ -12928,7 +13269,9 @@ def store(self):
         self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
         sock.shutdown(socket.SHUT_RDWR)
     except (OSError, socket.error) as error:
-        self.__log.trace(&#34;Could not shutdown %s socket: %s&#34;, name, error)  # type: ignore
+        # We do not log errors here, as unconnected sockets cannot
+        # be shutdown and we want to throw any socket at this function.
+        pass
     try:
         self.__log.trace(&#34;Closing %s socket&#34;, name)  # type: ignore
         sock.close()
@@ -13008,7 +13351,10 @@ def store(self):
             sock_family_name,
             sock_type_name,
         )
-        sock.connect((addr, port))
+
+        # Ensure to use connect() protocol independent
+        info = socket.getaddrinfo(addr, port, sock.family, sock.type, sock.proto)
+        sock.connect(info[0][4])
 
         # UDP stateful connect
         # A UDP client doesn&#39;t know if the connect() was successful, so the trick
@@ -13310,27 +13656,18 @@ def store(self):
 
     # [2/4] Already an IP address
     if family == int(socket.AF_INET6):
-        try:
-            socket.inet_pton(socket.AF_INET6, host)
+        if Sock.is_ipv6_address(host):
             self.__log.debug(&#34;Resolving IPv6 name not required, already an IP: %s&#34;, host)
             return host
-        except socket.error:
-            try:
-                host6 = &#34;::ffff:&#34; + host
-                socket.inet_pton(socket.AF_INET6, host6)
-                self.__log.debug(
-                    &#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6
-                )
-                return host6
-            except socket.error:
-                pass
-    else:
-        try:
-            socket.inet_pton(family, host)
+        # Map IPv4 address to IPv6
+        host6 = &#34;::ffff:&#34; + host
+        if Sock.is_ipv6_address(host6):
+            self.__log.debug(&#34;Resolving IPv4 name not required, changing to IPv6: %s&#34;, host6)
+            return host6
+    elif family == int(socket.AF_INET):
+        if Sock.is_ipv4_address(host):
             self.__log.debug(&#34;Resolving IPv4 host not required, already an IP: %s&#34;, host)
             return host
-        except socket.error:
-            pass
 
     # [3/4] Do we disable DNS resolution?
     if not resolvedns:
@@ -14300,6 +14637,8 @@ def transform(self, data):
 <li><code><a title="pwncat.Sock.get_sock_opts" href="#pwncat.Sock.get_sock_opts">get_sock_opts</a></code></li>
 <li><code><a title="pwncat.Sock.get_type_name" href="#pwncat.Sock.get_type_name">get_type_name</a></code></li>
 <li><code><a title="pwncat.Sock.gethostbyname" href="#pwncat.Sock.gethostbyname">gethostbyname</a></code></li>
+<li><code><a title="pwncat.Sock.is_ipv4_address" href="#pwncat.Sock.is_ipv4_address">is_ipv4_address</a></code></li>
+<li><code><a title="pwncat.Sock.is_ipv6_address" href="#pwncat.Sock.is_ipv6_address">is_ipv6_address</a></code></li>
 <li><code><a title="pwncat.Sock.listen" href="#pwncat.Sock.listen">listen</a></code></li>
 </ul>
 </li>

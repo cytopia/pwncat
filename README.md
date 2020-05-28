@@ -25,7 +25,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
+> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
 > &nbsp;
 
 | :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.69%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.52%)</strong></sup><br/>
 > <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
 > <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
@@ -266,7 +266,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Feature        | Description |
 |----------------|-------------|
 | [PSE](pse)        | Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive |
-| Insanely fast port scanning | Up to 21x faster scanning a the full range of UDP ports than nmap |
+| port scanning  | TCP und UDP port scanning with basic version detection support |
 | Self-injecting rshell | Self-injecting mode to deploy itself and start an unbreakable reverse shell back to you automatically |
 | Bind shell        | Create bind shells |
 | Reverse shell     | Create reverse shells |
@@ -290,30 +290,36 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 |                     | pwncat   | netcat | ncat  | socat |
 |---------------------|----------|--------|-------|-------|
 | Scripting engine    | ✔ Python | :x:    | ✔ Lua | :x:   |
+|                     |          |        |       |       |
 | IP ToS              | ✔        | ✔      | :x:   | ✔     |
 | IPv4                | ✔        | ✔      | ✔     | ✔     |
 | IPv6                | ✔        | ✔      | ✔     | ✔     |
 | Unix domain sockets | :x:      | ✔      | ✔     | ✔     |
 | Linux vsock         | :x:      | :x:    | ✔     | :x:   |
 | Socket source bind  | ✔        | ✔      | ✔     | ✔     |
+|                     |          |        |       |       |
 | TCP                 | ✔        | ✔      | ✔     | ✔     |
 | UDP                 | ✔        | ✔      | ✔     | ✔     |
 | SCTP                | :x:      | :x:    | ✔     | ✔     |
 | SSL                 | :x:      | :x:    | ✔     | ✔     |
 | HTTP                | *        | :x:    | :x:   | :x:   |
 | HTTPS               | *        | :x:    | :x:   | :x:   |
-| Telnet              | :x:      | ✔      | ✔     | :x:   |
-| Chat                | ✔        | ✔      | ✔     | ✔     |
-| Proxy               | :x:      | ✔      | ✔     | ✔     |
-| Command execution   | ✔        | ✔      | ✔     | ✔     |
+|                     |          |        |       |       |
+| Telnet negotiation  | :x:      | ✔      | ✔     | :x:   |
+| Proxy support       | :x:      | ✔      | ✔     | ✔     |
+| Local port forward  | ✔        | :x:    | :x:   | ✔     |
+| Remote port forward | ✔        | :x:    | :x:   | :x:   |
+|                     |          |        |       |       |
 | Inbound port scan   | ✔        | ✔      | ✔     | :x:   |
 | Outbound port scan  | ✔        | :x:    | :x:   | :x:   |
+| Version detection   | ✔        | :x:    | :x:   | :x:   |
+|                     |          |        |       |       |
+| Chat                | ✔        | ✔      | ✔     | ✔     |
+| Command execution   | ✔        | ✔      | ✔     | ✔     |
 | Hex dump            | *        | ✔      | ✔     | ✔     |
 | Broker              | :x:      | :x:    | ✔     | :x:   |
 | Simultaneous conns  | :x:      | :x:    | ✔     | ✔     |
 | Allow/deny          | :x:      | :x:    | ✔     | ✔     |
-| Local port forward  | ✔        | :x:    | :x:   | ✔     |
-| Remote port forward | ✔        | :x:    | :x:   | :x:   |
 | Re-accept           | ✔        | ✔      | ✔     | ✔     |
 | Self-injecting      | ✔        | :x:    | :x:   | :x:   |
 | UDP reverse shell   | ✔        | :x:    | :x:   | :x:   |
