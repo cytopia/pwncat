@@ -4,6 +4,21 @@
 ## Unreleased
 
 
+## Release 0.0.22-alpha
+
+### Added
+- Feature: Rebind forever: `--rebind`: #44
+- Feature: Wait between rebind attempts: `--rebind-wait`: #45
+- Feature: Port hopping for rebinds: `--rebind-robin`: #46
+- Feature: Send initial ping `--ping-init`: #48
+- Feature: Zero-I/O mode (port scan) `--zero`: #32
+- Feature: Safeword: `--safe-word`: #51
+- Feature: Stateless UDP connect: `--udp-sconnect` and `--udp-sconnect-word`: #79
+
+### Changes
+- Re-organized command line arguments for better overview
+
+
 ## Release 0.0.21-alpha
 
 ### Added

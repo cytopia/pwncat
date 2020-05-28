@@ -82,7 +82,7 @@ run_test() {
 	test_case_instance_is_running "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 	# [SERVER] Ensure Server has no errors
-	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "" "" "" "" "(Connection refused)|(timed out)"
+	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "" "" "" "" "(Connection refused)|(actively refused)|(timed out)"
 
 
 	# --------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ run_test() {
 	print_h2 "(5/5) Stop: Server"
 
 	action_stop_instance "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "" "" "" "" "(Connection refused)|(timed out)"
+	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "" "" "" "" "(Connection refused)|(actively refused)|(timed out)"
 }
 
 

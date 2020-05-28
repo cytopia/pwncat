@@ -3,12 +3,12 @@
 .SH NAME
 pwncat: \- pwncat
 .SH DESCRIPTION
-usage: pwncat [\-Cnuv] [\-e cmd] hostname port
+usage: pwncat [options] hostname port
 .IP
-pwncat [\-Cnuv] [\-e cmd] \fB\-l\fR [hostname] port
-pwncat [\-Cnuv] \fB\-z\fR hostname port
-pwncat [\-Cnuv] \fB\-L\fR [addr:]port hostname port
-pwncat [\-Cnuv] \fB\-R\fR addr:port hostname port
+pwncat [options] \fB\-l\fR [hostname] port
+pwncat [options] \fB\-z\fR hostname port
+pwncat [options] \fB\-L\fR [addr:]port hostname port
+pwncat [options] \fB\-R\fR addr:port hostname port
 pwncat \fB\-V\fR, \fB\-\-version\fR
 pwncat \fB\-h\fR, \fB\-\-help\fR
 .PP
@@ -18,15 +18,20 @@ firewalls and intrusion detection/prevention systems.
 .PP
 If no mode arguments are specified, pwncat will run in connect mode and act as
 a client to connect to a remote endpoint. If the connection to the remote
-endoint is lost, pwncat will quit. See advanced options for how to automatically
-reconnect.
+endoint is lost, pwncat will quit. See options for how to automatically reconnect.
 .SS "positional arguments:"
 .TP
 hostname
-Address to listen, forward or connect to
+Address to listen, forward, scan or connect to.
 .TP
 port
-Port to listen, forward or connect to
+[All modes]
+Single port to listen, forward or connect to.
+[Zero\-I/O mode]
+Specify multiple ports to scan:
+Via list:  4444,4445,4446
+Via range: 4444\-4446
+Via incr:  4444+2
 .SS "mode arguments:"
 .TP
 \fB\-l\fR, \fB\-\-listen\fR
@@ -40,6 +45,7 @@ quit. See \fB\-k\fR/\-\-keep\-open to change this behaviour.
 [Zero\-I/0 mode]:
 Connect to a remote endpoint and report status only.
 Used for port scanning.
+See \fB\-\-banner\fR for version detection.
 .TP
 \fB\-L\fR [addr:]port, \fB\-\-local\fR [addr:]port
 [Local forward mode]:
@@ -64,12 +70,6 @@ The connection to your listening server is given by
 target machine via the positional arguments.
 .SS "optional arguments:"
 .TP
-\fB\-4\fR
-Only Use IPv4 instead of both, IPv4 and IPv6.
-.TP
-\fB\-6\fR
-Only Use IPv6 instead of both, IPv4 and IPv6.
-.TP
 \fB\-e\fR cmd, \fB\-\-exec\fR cmd
 Execute shell command. Only for connect or listen mode.
 .TP
@@ -84,27 +84,13 @@ CR on MacOS).
 \fB\-n\fR, \fB\-\-nodns\fR
 Do not resolve DNS.
 .TP
-\fB\-u\fR, \fB\-\-udp\fR
-Use UDP for the connection instead of TCP.
-.TP
-\fB\-T\fR str, \fB\-\-tos\fR str
-Specifies IP Type of Service (ToS) for the connection.
-Valid values are the tokens 'mincost', 'lowcost',
-\&'reliability', 'throughput' or 'lowdelay'.
-.TP
-\fB\-\-source\-addr\fR addr
-Specify the source IP address of the interface for connect mode.
-.TP
-\fB\-\-source\-port\fR port
-Specify the source port for connect mode.
-.TP
 \fB\-v\fR, \fB\-\-verbose\fR
 Be verbose and print info to stderr. Use \fB\-v\fR, \fB\-vv\fR, \fB\-vvv\fR
 or \fB\-vvvv\fR for more verbosity. The server performance will
 decrease drastically if you use more than three times.
 .TP
 \fB\-\-info\fR type
-Show additional info about sockets, ip4/6 or tcp opts
+Show additional info about sockets, IPv4/6 or TCP opts
 applied to the current socket connection. Valid
 parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
 Note, you must at least be in INFO verbose mode in order
@@ -116,6 +102,41 @@ In 'auto' mode, color is displayed as long as the output
 goes to a terminal. If it is piped into a file, color
 will automatically be disabled. This mode also disables
 color on Windows by default. (default: auto)
+.TP
+\fB\-\-safe\-word\fR str
+All modes:
+If pwncat is started with this argument, it will shut
+down as soon as it receives the specified string. The
+\fB\-\-keep\-open\fR (server) or \fB\-\-reconn\fR (client) options will
+be ignored and it won't listen again or reconnect to you.
+Use a very unique string to not have it shut down
+accidentally by other input.
+.SS "protocol arguments:"
+.TP
+\fB\-4\fR
+Only Use IPv4 (default: IPv4 and IPv6 dualstack).
+.TP
+\fB\-6\fR
+Only Use IPv6 (default: IPv4 and IPv6 dualstack).
+.TP
+\fB\-u\fR, \fB\-\-udp\fR
+Use UDP for the connection instead of TCP.
+.TP
+\fB\-T\fR str, \fB\-\-tos\fR str
+Specifies IP Type of Service (ToS) for the connection.
+Valid values are the tokens 'mincost', 'lowcost',
+\&'reliability', 'throughput' or 'lowdelay'.
+.TP
+\fB\-\-http\fR
+Connect / Listen mode (TCP and UDP):
+Hide traffic in http packets to fool Firewalls/IDS/IPS.
+.TP
+\fB\-\-https\fR
+Connect / Listen mode (TCP and UDP):
+Hide traffic in https packets to fool Firewalls/IDS/IPS.
+.TP
+\fB\-H\fR [str [str ...]], \fB\-\-header\fR [str [str ...]]
+Add HTTP headers to your request when using \fB\-\-http\fR(s).
 .SS "command & control arguments:"
 .TP
 \fB\-\-self\-inject\fR cmd:host:port[s]
@@ -135,7 +156,7 @@ Via range: \fB\-\-self\-inject\fR /bin/sh:10.0.0.1:4444\-4446
 Via incr:  \fB\-\-self\-inject\fR /bin/sh:10.0.0.1:4444+2
 Note: this is currently an experimental feature and does
 not work on Windows remote hosts yet.
-.SS "advanced arguments:"
+.SS "pwncat scripting engine:"
 .TP
 \fB\-\-script\-send\fR file
 All modes (TCP and UDP):
@@ -176,14 +197,12 @@ You can also define as many custom functions or classes
 within this file, but ensure to prefix them uniquely to
 not collide with pwncat's function or classes, as the
 file will be called with exec().
+.SS "zero-i/o mode arguments:"
 .TP
-\fB\-\-http\fR
-Connect / Listen / Local forward mode (TCP only):
-Hide traffic in http packets to fool Firewalls/IDS/IPS.
-.TP
-\fB\-\-https\fR
-Connect / Listen / Local forward mode (TCP only):
-Hide traffic in https packets to fool Firewalls/IDS/IPS.
+\fB\-\-banner\fR
+Zero\-I/O (TCP and UDP):
+Try banner grabbing during port scan.
+.SS "listen mode arguments:"
 .TP
 \fB\-k\fR, \fB\-\-keep\-open\fR
 Listen mode (TCP only):
@@ -213,9 +232,16 @@ Use comma separated string such as '80,81,82,83', a range
 of ports '80\-83' or an increment '80+3'.
 Set \fB\-\-rebind\fR to at least the number of ports to probe +1
 This option requires \fB\-\-rebind\fR to be specified.
+.SS "connect mode arguments:"
+.TP
+\fB\-\-source\-addr\fR addr
+Specify source bind IP address for connect mode.
+.TP
+\fB\-\-source\-port\fR port
+Specify source bind port for connect mode.
 .TP
 \fB\-\-reconn\fR [x]
-Connect mode / Zero\-I/O mode (TCP only):
+Connect mode (TCP and UDP):
 If the remote server is not reachable or the connection
 is interrupted, the client will connect again x many
 times before giving up. Omit the quantifier to retry
@@ -224,13 +250,18 @@ times to retry before giving up.
 (default: quit if the remote is not available or the
 connection was interrupted)
 This might be handy for stable TCP reverse shells ;\-)
+Note on UDP:
+By default UDP does not know if it is connected, so
+it will stop at the first port and assume it has a
+connection. Consider using \fB\-\-udp\-sconnect\fR with this
+option to make UDP aware of a successful connection.
 .TP
 \fB\-\-reconn\-wait\fR s
-Connect mode / Zero\-I/O mode (TCP only):
+Connect mode (TCP and UDP):
 Wait x seconds between re\-connects. (default: 1)
 .TP
 \fB\-\-reconn\-robin\fR port
-Connect mode / Zero\-I/O mode (TCP only):
+Connect mode (TCP and UDP):
 If the remote server is not reachable or the connection
 is interrupted and \fB\-\-reconn\fR is specified, the client
 will shuffle ports in round\-robin mode to connect to.
@@ -243,16 +274,8 @@ outbound port.
 This is also useful in Connect or Zero\-I/O mode to
 figure out what outbound ports are allowed.
 .TP
-\fB\-w\fR s, \fB\-\-wait\fR s
-Connect mode (TCP only):
-If a connection and stdin are idle for more than s sec,
-then the connection is silently closed and the client
-will exit. (default: wait forever).
-Note: if \fB\-\-reconn\fR is specified, the connection will be
-re\-opened.
-.TP
 \fB\-\-ping\-init\fR
-Connect mode / Zero\-I/O mode (TCP and UDP):
+Connect mode (TCP and UDP):
 UDP is a stateless protocol unlike TCP, so no handshake communication takes place and the client just
 sends data to a server without being "accepted" by
 the server first.
@@ -264,12 +287,12 @@ connect.
 The \fB\-\-ping\-init\fR option instructs the client to send one
 single initial ping packet to the server, so that it is
 able to talk to the client.
-This is the only way to make a UDP reverse shell work.
+This is a way to make a UDP reverse shell work.
 See \fB\-\-ping\-word\fR for what char/string to send as initial
 ping packet (default: '\e0')
 .TP
 \fB\-\-ping\-intvl\fR s
-Connect mode / Zero\-I/O mode (TCP and UDP):
+Connect mode (TCP and UDP):
 Instruct the client to send ping intervalls every s sec.
 This allows you to restart your UDP server and just wait
 for the client to report back in. This might be handy
@@ -278,12 +301,12 @@ See \fB\-\-ping\-word\fR for what char/string to send as initial
 ping packet (default: '\e0')
 .TP
 \fB\-\-ping\-word\fR str
-Connect mode / Zero\-I/O mode (TCP and UDP):
+Connect mode (TCP and UDP):
 Change the default character '\e0' to use for upd ping.
 Single character or strings are supported.
 .TP
 \fB\-\-ping\-robin\fR port
-Connect mode / Zero\-I/O mode (TCP and UDP):
+Connect mode (TCP and UDP):
 Instruct the client to shuffle the specified ports in
 round\-robin mode for a remote server to ping.
 This might be handy to scan outbound allowed ports.
@@ -291,14 +314,24 @@ Use comma separated string such as '80,81,82,83', a range
 of ports '80\-83' or an increment '80+3'.
 Use \fB\-\-ping\-intvl\fR 0 to be faster.
 .TP
-\fB\-\-safe\-word\fR str
-All modes:
-If pwncat is started with this argument, it will shut
-down as soon as it receives the specified string. The
-\fB\-\-keep\-open\fR (server) or \fB\-\-reconn\fR (client) options will
-be ignored and it won't listen again or reconnect to you.
-Use a very unique string to not have it shut down
-accidentally by other input.
+\fB\-\-udp\-sconnect\fR
+Connect mode (UDP only):
+Emulating stateful behaviour for UDP connect phase by
+sending an initial packet to the server to validate if
+it is actually connected.
+By default, UDP will simply issue a connect and is not
+aware if it is really connected or not.
+The default connect packet to be send is '\e0', you
+can change this with \fB\-\-udp\-sconnect\-word\fR.
+.TP
+\fB\-\-udp\-sconnect\-word\fR [str]
+Connect mode (UDP only):
+Change the the data to be send for UDP stateful connect
+behaviour. Note you can also omit the string to send an
+empty packet (EOF), but be aware that some servers such
+as netcat will instantly quit upon receive of an EOF
+packet.
+The default is to send a null byte sting: '\e0'.
 .SS "misc arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR

