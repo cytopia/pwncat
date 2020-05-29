@@ -1798,9 +1798,8 @@ class Net(object):
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
-        size = len(data)  # bytes of data that needs to be send
         byte = self.__enc.encode(data)
-        assert size == len(byte), "Encoding messed up string length, might need to do len() after."
+        size = len(byte)  # bytes of data that needs to be send
 
         # Loop until all bytes have been send
         # TODO: Does this make it impossible to send nullbytes (Ctrl+d)
