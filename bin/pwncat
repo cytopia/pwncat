@@ -127,7 +127,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.23-alpha"
+VERSION = "0.1.0"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
