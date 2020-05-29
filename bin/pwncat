@@ -1000,8 +1000,11 @@ class StringEncoder(object):
         self.__py3 = sys.version_info >= (3, 0)  # type: bool
 
         # https://stackoverflow.com/questions/606191/27527728#27527728
-        self.__codec = "cp437"
-        self.__fallback = "latin-1"
+        self.__codecs = [
+            "utf-8",
+            "cp437",
+            "latin-1",
+        ]
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -1010,23 +1013,24 @@ class StringEncoder(object):
         # type: (str) -> bytes
         """Convert string into a byte type for Python3."""
         if self.__py3:
-            try:
-                return data.encode(self.__codec)
-            except UnicodeEncodeError:
-                # TODO: Add logging
+            for codec in self.__codecs:
                 try:
-                    return data.encode(self.__fallback)
+                    return data.encode(codec)
                 except UnicodeEncodeError:
-                    # TODO: Add logging
-                    return data.encode("utf-8")
-
+                    pass
+            raise UnicodeEncodeError(self.__codecs[-1], "Unable to encode", data, 0, len(data)-1)
         return data  # type: ignore
 
     def decode(self, data):
         # type: (bytes) -> str
         """Convert bytes into a string type for Python3."""
         if self.__py3:
-            return data.decode(self.__codec)
+            for codec in self.__codecs:
+                try:
+                    return data.decode(codec)
+                except UnicodeDecodeError:
+                    pass
+            raise UnicodeDecodeError(self.__codecs[-1], "Unable to encode", data, 0, len(data)-1)
         return data  # type: ignore
 
     def base64_encode(self, data):
