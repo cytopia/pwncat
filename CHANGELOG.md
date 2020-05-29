@@ -18,6 +18,10 @@
 
 ## Release 0.0.22-alpha
 
+## Fixes
+- Fixes UTF-8 char conversion
+
+
 ### Added
 - Feature: Rebind forever: `--rebind`: #44
 - Feature: Wait between rebind attempts: `--rebind-wait`: #45

@@ -1014,7 +1014,12 @@ class StringEncoder(object):
                 return data.encode(self.__codec)
             except UnicodeEncodeError:
                 # TODO: Add logging
-                return data.encode(self.__fallback)
+                try:
+                    return data.encode(self.__fallback)
+                except UnicodeEncodeError:
+                    # TODO: Add logging
+                    return data.encode("utf-8")
+
         return data  # type: ignore
 
     def decode(self, data):
