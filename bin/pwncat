@@ -1802,7 +1802,6 @@ class Net(object):
         size = len(byte)  # bytes of data that needs to be send
 
         # Loop until all bytes have been send
-        # TODO: Does this make it impossible to send nullbytes (Ctrl+d)
         while send < size:
             self.__log.debug(
                 "Trying to send %d bytes to %s:%d",
@@ -1850,7 +1849,7 @@ class Net(object):
             socket.timeout: Except here to do an action when the socket is not busy.
             AttributeError: Except here when current instance has closed itself (Ctrl+c).
             socket.error:   Except here when unconnected or connection was forcibly closed.
-            EOFError:       Except here when upstream has closed the connection.
+            EOFError:       Except here when upstream has closed the connection via EOF.
         """
         # This is required for a UDP server that has no connected clients yet
         # and is waiting for data receival for the first time on either IPv4 or IPv6
@@ -1866,9 +1865,9 @@ class Net(object):
                 0
             ]  # type: List[socket.socket]
         # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
-        except (ValueError, AttributeError):
-            msg = "Connection was closed by self."
-            self.__log.warning(msg)
+        except (ValueError, AttributeError) as error:
+            msg = "Connection was closed by self: [1]: {}".format(error)
+            self.__log.debug(msg)
             raise AttributeError(msg)
         if not conns:
             # This is raised for the calling function to determine what to do
@@ -1883,9 +1882,9 @@ class Net(object):
             (byte, addr) = conn.recvfrom(self.__options.bufsize)
 
         # [1/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
-        except AttributeError:
-            msg = "Connection was closed by self."
-            self.__log.warning(msg)
+        except AttributeError as error:
+            msg = "Connection was closed by self: [2]: {}".format(error)
+            self.__log.debug(msg)
             raise AttributeError(msg)
 
         # [2/5] Connection was forcibly closed
@@ -1900,7 +1899,7 @@ class Net(object):
         # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.
         # In UDP, there is no such thing as a peer disconnect, so zero means an empty datagram.
         if not byte:
-            msg = "Upstream has closed the connection."
+            msg = "EOF: Remote finished sending."
             self.__log.info(msg)
             raise EOFError(msg)
 
@@ -2890,7 +2889,7 @@ class IONetworkScanner(IO):
                     return self.__sock.create_socket(family, socket.SOCK_DGRAM)
                 return self.__sock.create_socket(family, socket.SOCK_STREAM)
             except socket.error:
-                time.sleep(0.1)
+                time.sleep(0.1)  # This can be bigger to give the system some time to release fd's
 
     def __get_banner_version(self, banner):
         # type: (str) -> Optional[str]
@@ -2931,13 +2930,12 @@ class IONetworkScanner(IO):
                     sock.send(self.__enc.encode(payload))
                     self.__log.debug("%s:%d - payload sent: %s", addr, port, repr(payload))
 
-                sock.settimeout(0.1)
+                sock.settimeout(0.5)
                 banner = sock.recv(self.__sock_opts.bufsize)
                 version = self.__get_banner_version(self.__enc.decode(banner))
                 self.__log.debug("%s:%d - respone received: %s", addr, port, repr(banner))
                 return (True, version)
             except socket.timeout:
-                time.sleep(0.1)
                 continue
             except (OSError, socket.error):
                 return (False, None)
@@ -3582,7 +3580,7 @@ class Runner(object):
                     thread.start()
                     break
                 except (RuntimeError, Exception):  # pylint: disable=broad-except
-                    time.sleep(0.1)
+                    time.sleep(0.1)  # This can be big to give the system some time to release fd's
             self.__threads[key] = thread
         # Start available timers in a thread
         for key in self.__timers:
