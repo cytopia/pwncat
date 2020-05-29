@@ -1546,7 +1546,7 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
             fstop (Callable[[], bool]): A function that returns True if abort is requested.
 
         Returns:
-            socket.socket: Returns the connection socket (whatever protocol was faster).
+            (socket.socket, str, int): Returns tuple of socket, address and port of client.
 
         Raises:
             socket.error: Raised if server cannot accept connection or stop signal is requested.
