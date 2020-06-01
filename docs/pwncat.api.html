@@ -1891,7 +1891,7 @@ class Net(object):
                     self.__active[&#34;remote_port&#34;],
                     size - send,
                 )
-            except (BrokenPipeError, OSError, socket.error) as error:
+            except (IOError, OSError, socket.error) as error:
                 msg = &#34;Socket send Error: {}&#34;.format(error)
                 raise socket.error(msg)
         return send
@@ -3294,9 +3294,9 @@ class IONetworkScanner(IO):
         print(data)
         try:
             sys.stdout.flush()
-        except (BrokenPipeError, IOError):
+        except IOError:
             # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another BrokenPipeError at shutdown
+            # to devnull to avoid another broken pipe at shutdown
             devnull = os.open(os.devnull, os.O_WRONLY)
             os.dup2(devnull, sys.stdout.fileno())
         finally:
@@ -3441,9 +3441,9 @@ class IOStdinStdout(IO):
 
         try:
             sys.stdout.flush()
-        except (BrokenPipeError, IOError):
+        except IOError:
             # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another BrokenPipeError at shutdown
+            # to devnull to avoid another broken pipe at shutdown
             devnull = os.open(os.devnull, os.O_WRONLY)
             os.dup2(devnull, sys.stdout.fileno())
 
@@ -10723,9 +10723,9 @@ def producer(self, *args, **kwargs):
         print(data)
         try:
             sys.stdout.flush()
-        except (BrokenPipeError, IOError):
+        except IOError:
             # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another BrokenPipeError at shutdown
+            # to devnull to avoid another broken pipe at shutdown
             devnull = os.open(os.devnull, os.O_WRONLY)
             os.dup2(devnull, sys.stdout.fileno())
         finally:
@@ -10778,9 +10778,9 @@ def producer(self, *args, **kwargs):
     print(data)
     try:
         sys.stdout.flush()
-    except (BrokenPipeError, IOError):
+    except IOError:
         # Python flushes standard streams on exit; redirect remaining output
-        # to devnull to avoid another BrokenPipeError at shutdown
+        # to devnull to avoid another broken pipe at shutdown
         devnull = os.open(os.devnull, os.O_WRONLY)
         os.dup2(devnull, sys.stdout.fileno())
     finally:
@@ -11063,9 +11063,9 @@ callback that writes to stdout.</p>
 
         try:
             sys.stdout.flush()
-        except (BrokenPipeError, IOError):
+        except IOError:
             # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another BrokenPipeError at shutdown
+            # to devnull to avoid another broken pipe at shutdown
             devnull = os.open(os.devnull, os.O_WRONLY)
             os.dup2(devnull, sys.stdout.fileno())
 
@@ -11172,9 +11172,9 @@ callback that writes to stdout.</p>
 
     try:
         sys.stdout.flush()
-    except (BrokenPipeError, IOError):
+    except IOError:
         # Python flushes standard streams on exit; redirect remaining output
-        # to devnull to avoid another BrokenPipeError at shutdown
+        # to devnull to avoid another broken pipe at shutdown
         devnull = os.open(os.devnull, os.O_WRONLY)
         os.dup2(devnull, sys.stdout.fileno())</code></pre>
 </details>
@@ -11719,7 +11719,7 @@ command line arguments) what to do.</p>
                     self.__active[&#34;remote_port&#34;],
                     size - send,
                 )
-            except (BrokenPipeError, OSError, socket.error) as error:
+            except (IOError, OSError, socket.error) as error:
                 msg = &#34;Socket send Error: {}&#34;.format(error)
                 raise socket.error(msg)
         return send
@@ -12758,7 +12758,7 @@ command line arguments) what to do.</p>
                 self.__active[&#34;remote_port&#34;],
                 size - send,
             )
-        except (BrokenPipeError, OSError, socket.error) as error:
+        except (IOError, OSError, socket.error) as error:
             msg = &#34;Socket send Error: {}&#34;.format(error)
             raise socket.error(msg)
     return send</code></pre>

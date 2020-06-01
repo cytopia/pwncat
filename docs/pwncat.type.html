@@ -7721,7 +7721,7 @@ Explicit (x4)">                self.__log.debug(</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__active["remote_port"],</span>
 <span class="line-precise" title="No Anys on this line!">                    size - send,</span>
 <span class="line-empty" title="No Anys on this line!">                )</span>
-<span class="line-precise" title="No Anys on this line!">            except (BrokenPipeError, OSError, socket.error) as error:</span>
+<span class="line-precise" title="No Anys on this line!">            except (IOError, OSError, socket.error) as error:</span>
 <span class="line-precise" title="No Anys on this line!">                msg = "Socket send Error: {}".format(error)</span>
 <span class="line-precise" title="No Anys on this line!">                raise socket.error(msg)</span>
 <span class="line-precise" title="No Anys on this line!">        return send</span>
@@ -9193,9 +9193,9 @@ Explicit (x1)">                    port, self.__sock.get_type_name(sock_type), s
 <span class="line-precise" title="No Anys on this line!">        print(data)</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="No Anys on this line!">            sys.stdout.flush()</span>
-<span class="line-precise" title="No Anys on this line!">        except (BrokenPipeError, IOError):</span>
+<span class="line-precise" title="No Anys on this line!">        except IOError:</span>
 <span class="line-empty" title="No Anys on this line!">            # Python flushes standard streams on exit; redirect remaining output</span>
-<span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another BrokenPipeError at shutdown</span>
+<span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another broken pipe at shutdown</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
 <span class="line-precise" title="No Anys on this line!">            os.dup2(devnull, sys.stdout.fileno())</span>
@@ -9346,9 +9346,9 @@ Error (x2)">                self.log.trace("Received: %s", repr(line))  # type: 
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="No Anys on this line!">            sys.stdout.flush()</span>
-<span class="line-precise" title="No Anys on this line!">        except (BrokenPipeError, IOError):</span>
+<span class="line-precise" title="No Anys on this line!">        except IOError:</span>
 <span class="line-empty" title="No Anys on this line!">            # Python flushes standard streams on exit; redirect remaining output</span>
-<span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another BrokenPipeError at shutdown</span>
+<span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another broken pipe at shutdown</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
 <span class="line-precise" title="No Anys on this line!">            os.dup2(devnull, sys.stdout.fileno())</span>
