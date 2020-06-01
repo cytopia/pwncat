@@ -11,9 +11,9 @@ services:
     hostname: server
     command: python${PYTHON_VERSION} /usr/bin/pwncat --no-shutdown -vvvvv -l 4444 --keep-open
     restart: "no"
-    ports:
-      - "4444:4444/tcp"
-      - "4444:4444/udp"
+    #    ports:
+    #      - "4444:4444/tcp"
+    #      - "4444:4444/udp"
     volumes:
       - ../../../bin/pwncat:/usr/bin/pwncat
   client_1:
@@ -35,9 +35,9 @@ services:
     hostname: server
     command: python${PYTHON_VERSION} /usr/bin/pwncat --no-shutdown -vvvvv -l 4444 --keep-open
     restart: "no"
-    ports:
-      - "4444:4444/tcp"
-      - "4444:4444/udp"
+    #    ports:
+    #      - "4444:4444/tcp"
+    #      - "4444:4444/udp"
     volumes:
       - ../../../bin/pwncat:/usr/bin/pwncat
   client_2:

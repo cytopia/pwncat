@@ -23,6 +23,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Docker versions
+        shell: bash
+        run: |
+            docker version
+
+      - name: Docker Compose versions
+        shell: bash
+        run: |
+            docker-compose version
+
       # ------------------------------------------------------------
       # Tests: Behaviour
       # ------------------------------------------------------------

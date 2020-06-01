@@ -107,23 +107,23 @@ run "sleep ${WAIT_STARTUP}"
 print_h2 "(3/5) Validate running"
 
 if ! run "docker-compose ps --filter 'status=running' --services | grep ${SERVER}"; then
-	print_error "Server is not running"
 	run "docker-compose logs"
 	run "docker-compose ps"
 	run "docker-compose exec $( tty -s && echo || echo '-T' ) ${CLIENT} ps || true"
 	run "docker-compose exec $( tty -s && echo || echo '-T' ) ${SERVER} ps || true"
 	run "docker-compose kill  || true 2>/dev/null"
 	run "docker-compose rm -f || true 2>/dev/null"
+	print_error "Server is not running"
 	exit 1
 fi
 if ! run "docker-compose ps --filter 'status=running' --services | grep ${CLIENT}"; then
-	print_error "Client is not running"
 	run "docker-compose logs"
 	run "docker-compose ps"
 	run "docker-compose exec $( tty -s && echo || echo '-T' ) ${CLIENT} ps || true"
 	run "docker-compose exec $( tty -s && echo || echo '-T' ) ${SERVER} ps || true"
 	run "docker-compose kill  || true 2>/dev/null"
 	run "docker-compose rm -f || true 2>/dev/null"
+	print_error "Client is not running"
 	exit 1
 fi
 
@@ -136,7 +136,17 @@ run "docker-compose exec $( tty -s && echo || echo '-T' ) ${SERVER} ps || true"
 # -------------------------------------------------------------------------------------------------
 print_h2 "(4/5) Test"
 
-run "docker-compose exec $( tty -s && echo || echo '-T' ) ${SERVER} kill -2 1"
+if ! run "docker-compose exec $( tty -s && echo || echo '-T' ) ${SERVER} kill -2 1"; then
+	run "docker-compose logs"
+	run "docker-compose ps"
+	run "docker-compose exec $( tty -s && echo || echo '-T' ) ${CLIENT} ps || true"
+	run "docker-compose exec $( tty -s && echo || echo '-T' ) ${SERVER} ps || true"
+	run "docker-compose kill  || true 2>/dev/null"
+	run "docker-compose rm -f || true 2>/dev/null"
+	print_error "Kill command not successful"
+	exit 1
+fi
+
 run "sleep ${WAIT_SHUTDOWN}"
 run "docker-compose exec $( tty -s && echo || echo '-T' ) ${CLIENT} ps || true"
 run "docker-compose exec $( tty -s && echo || echo '-T' ) ${SERVER} ps || true"
@@ -176,3 +186,4 @@ run "docker-compose logs ${CLIENT}"
 run "docker-compose ps"
 run "docker-compose kill  || true 2>/dev/null"
 run "docker-compose rm -f || true 2>/dev/null"
+run "sleep ${WAIT_SHUTDOWN}"
