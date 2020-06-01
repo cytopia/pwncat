@@ -136,19 +136,19 @@ run_test() {
 for curr_round in $(seq "${RUNS}"); do
 	echo
 	#         server opts         client opts
-	run_test "-l ${RPORT} --crlf crlf -vvvv" "${RHOST} ${RPORT} --crlf crlf -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -vvv " "${RHOST} ${RPORT} --crlf crlf -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -vv  " "${RHOST} ${RPORT} --crlf crlf -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -v   " "${RHOST} ${RPORT} --crlf crlf -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf      " "${RHOST} ${RPORT} --crlf crlf -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown --crlf crlf -vvvv" "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vvvv"  "1" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vvv " "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vvvv"  "2" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vv  " "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vvvv"  "3" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -v   " "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vvvv"  "4" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf      " "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vvvv"  "5" "13" "${curr_round}" "${RUNS}"
 
-	#run_test "-l ${RPORT} --crlf crlf -vvvv" "${RHOST} ${RPORT} --crlf crlf -vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -vvvv" "${RHOST} ${RPORT} --crlf crlf -vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -vvvv" "${RHOST} ${RPORT} --crlf crlf -v   "  "8" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -vvvv" "${RHOST} ${RPORT} --crlf crlf      "  "9" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vvvv" "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vvv "  "6" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vvvv" "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vv  "  "7" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vvvv" "${RHOST} ${RPORT} --no-shutdown --crlf crlf -v   "  "8" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vvvv" "${RHOST} ${RPORT} --no-shutdown --crlf crlf      "  "9" "13" "${curr_round}" "${RUNS}"
 
-	#run_test "-l ${RPORT} --crlf crlf -vvv " "${RHOST} ${RPORT} --crlf crlf -vvv " "10" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -vv  " "${RHOST} ${RPORT} --crlf crlf -vv  " "11" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf -v   " "${RHOST} ${RPORT} --crlf crlf -v   " "12" "13" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RPORT} --crlf crlf      " "${RHOST} ${RPORT} --crlf crlf      " "13" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vvv " "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vvv " "10" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -vv  " "${RHOST} ${RPORT} --no-shutdown --crlf crlf -vv  " "11" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf -v   " "${RHOST} ${RPORT} --no-shutdown --crlf crlf -v   " "12" "13" "${curr_round}" "${RUNS}"
+	#run_test "-l ${RPORT} --no-shutdown --crlf crlf      " "${RHOST} ${RPORT} --no-shutdown --crlf crlf      " "13" "13" "${curr_round}" "${RUNS}"
 done

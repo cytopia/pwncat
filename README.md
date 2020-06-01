@@ -468,6 +468,15 @@ optional arguments:
 
   -n, --nodns           Do not resolve DNS.
 
+  --send-on-eof         Buffer data received on stdin until EOF and send
+                        everything in one chunk.
+
+  --no-shutdown         Do not shutdown into half-duplex mode.
+                        If this option is passed, pwncat won't invoke shutdown
+                        on a socket after seeing EOF on stdin. This is provided
+                        for backward-compatibility with OpenBSD netcat, which
+                        exhibits this behavior.
+
   -v, --verbose         Be verbose and print info to stderr. Use -v, -vv, -vvv
                         or -vvvv for more verbosity. The server performance will
                         decrease drastically if you use more than three times.

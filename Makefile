@@ -21,7 +21,7 @@ INTPATH = tests/integration/
 BINNAME = pwncat
 
 FL_VERSION = 0.3
-FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/,.mypy_cache/
+FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/,.mypy_cache/,rtfm/venv,rtfm/_build
 
 UID := $(shell id -u)
 GID := $(shell id -g)

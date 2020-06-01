@@ -155,6 +155,21 @@ some times CR on MacOS).</p>
 
 <p style="margin-left:22%;">Do not resolve DNS.</p>
 
+
+<p style="margin-left:11%;"><b>&minus;&minus;send&minus;on&minus;eof</b></p>
+
+<p style="margin-left:22%;">Buffer data received on stdin
+until EOF and send everything in one chunk.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;no&minus;shutdown</b></p>
+
+<p style="margin-left:22%;">Do not shutdown into
+half&minus;duplex mode. If this option is passed, pwncat
+won&rsquo;t invoke shutdown on a socket after seeing EOF on
+stdin. This is provided for backward&minus;compatibility
+with OpenBSD netcat, which exhibits this behavior.</p>
+
 <p style="margin-left:11%;"><b>&minus;v</b>,
 <b>&minus;&minus;verbose</b></p>
 

@@ -155,19 +155,19 @@ run_test() {
 
 for curr_round in $(seq "${RUNS}"); do
 	#         server opts         client opts
-	run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vvvv" "-vvvv"  "1" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vvv " "-vvvv"  "2" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vv  " "-vvvv"  "3" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -v   " "-vvvv"  "4" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT}      " "-vvvv"  "5" "13" "${curr_round}" "${RUNS}"
+	run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vvvv" "-vvvv"  "1" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vvv " "-vvvv"  "2" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vv  " "-vvvv"  "3" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -v   " "-vvvv"  "4" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT}      " "-vvvv"  "5" "13" "${curr_round}" "${RUNS}"
 
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vvvv" "-vvv "  "6" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vvvv" "-vv  "  "7" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vvvv" "-v   "  "8" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vvvv" "     "  "9" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vvvv" "-vvv "  "6" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vvvv" "-vv  "  "7" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vvvv" "-v   "  "8" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vvvv" "     "  "9" "13" "${curr_round}" "${RUNS}"
 
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vvv " "-vvv " "10" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -vv  " "-vv  " "11" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT} -v   " "-v   " "12" "13" "${curr_round}" "${RUNS}"
-	#run_test "--remote ${RHOST}:${RPORT} ${THOST} ${TPORT}      " "     " "13" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vvv " "-vvv " "10" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -vv  " "-vv  " "11" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT} -v   " "-v   " "12" "13" "${curr_round}" "${RUNS}"
+	#run_test "--remote ${RHOST}:${RPORT} --no-shutdown ${THOST} ${TPORT}      " "     " "13" "13" "${curr_round}" "${RUNS}"
 done

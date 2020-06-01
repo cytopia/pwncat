@@ -9,7 +9,7 @@ services:
   server_1:
     image: python:${PYTHON_VERSION}-alpine
     hostname: server
-    command: python${PYTHON_VERSION} /usr/bin/pwncat -vvvvv -l 4444 --keep-open
+    command: python${PYTHON_VERSION} /usr/bin/pwncat --no-shutdown -vvvvv -l 4444 --keep-open
     restart: "no"
     ports:
       - "4444:4444/tcp"
@@ -19,7 +19,7 @@ services:
   client_1:
     image: python:${PYTHON_VERSION}-alpine
     hostname: client
-    command: python${PYTHON_VERSION} /usr/bin/pwncat -vvvvv server_1 4444
+    command: python${PYTHON_VERSION} /usr/bin/pwncat --no-shutdown -vvvvv server_1 4444
     restart: "no"
     volumes:
       - ../../../bin/pwncat:/usr/bin/pwncat
@@ -33,7 +33,7 @@ services:
   server_2:
     image: python:${PYTHON_VERSION}-alpine
     hostname: server
-    command: python${PYTHON_VERSION} /usr/bin/pwncat -vvvvv -l 4444 --keep-open
+    command: python${PYTHON_VERSION} /usr/bin/pwncat --no-shutdown -vvvvv -l 4444 --keep-open
     restart: "no"
     ports:
       - "4444:4444/tcp"

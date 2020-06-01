@@ -6,6 +6,22 @@
 
 ## Release 0.1.0
 
+### Fixes
+- Fixed UTF-8 char conversion for Python3
+- Fixed calculation for socket bytes sent
+- Fixed shutdown handling for port scanner
+- Fixed false positives for port scanner
+- FIxed sending binary data from stdin
+
+### Added
+- Implemented signal handler to distribute shutdown signals across threads
+- Feature: `--no-shutdown` to copy the behaviour of OpenBSD netcat to keep stdin open after EOF
+- Feature: `--http`
+- Feature: `send-on-eof`
+
+### Changed
+- Changed behaviour to close after EOF on stdin (can be reverted via `--no-shutdown`)
+
 
 ## Release 0.0.23-alpha
 
@@ -17,10 +33,6 @@
 
 
 ## Release 0.0.22-alpha
-
-## Fixes
-- Fixes UTF-8 char conversion
-
 
 ### Added
 - Feature: Rebind forever: `--rebind`: #44
