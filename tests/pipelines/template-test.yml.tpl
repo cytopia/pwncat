@@ -49,6 +49,10 @@ jobs:
             cat /etc/hosts
           fi
 
+__WINDOWS_JOBS__
+__LINUX_JOBS__
+__MACOS_JOBS__
+
       - name: Resolve localhost
         shell: bash
         run: |

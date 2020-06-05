@@ -11,6 +11,22 @@ TPL_PATH="${SCRIPT_PATH}/${TPL_NAME}"
 FLW_PATH="${SCRIPT_PATH}/../../.github/workflows"
 
 
+escape_for_sed() {
+	local data="${1}"
+	data="${data//\\/\\\\}"
+	data="${data//\"/\\\"}"
+	data="${data//\'/\\\'}"
+	data="${data//\(/\\\(}"
+	data="${data//\)/\\\)}"
+	data="${data//\{/\\\{}"
+	data="${data//\}/\\\}}"
+	data="${data//\$/\\\$}"
+	data="${data//\*/\\\*}"
+	data="${data//\;/\\\;}"
+	data="$( printf "%s" "${data}" | sed 's/$/__NL__/g' | tr -d '\n' )"
+	echo "${data}"
+}
+
 ###
 ### Build Matrix
 ###
@@ -77,16 +93,7 @@ RETRY_FUNCTION="$(cat <<-'END_HEREDOC'
           }
 END_HEREDOC
 )"
-RETRY_FUNCTION="${RETRY_FUNCTION//\"/\\\"}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\'/\\\'}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\(/\\\(}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\)/\\\)}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\{/\\\{}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\}/\\\}}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\$/\\\$}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\*/\\\*}"
-RETRY_FUNCTION="${RETRY_FUNCTION//\;/\\\;}"
-RETRY_FUNCTION="$( printf "%s" "${RETRY_FUNCTION}" | sed 's/$/__NL__/g' | tr -d '\n' )"
+RETRY_FUNCTION="$( escape_for_sed "${RETRY_FUNCTION}" )"
 
 
 ###
@@ -110,6 +117,30 @@ for v in "${VERSION_MATRIX[@]}"; do
 	printf "Arch:      %s\\n" "${arch}"
 	printf "Python:    %s\\n" "${py}"
 
+	# Add custom jobs
+	if [ "${os}" == "ubuntu" ]; then
+		linux_jobs=""
+		macos_jobs=""
+		windows_jobs=""
+	fi
+	if [ "${os}" == "macos" ]; then
+		linux_jobs=""
+		macos_jobs=""
+		windows_jobs=""
+	fi
+	if [ "${os}" == "windows" ]; then
+		linux_jobs=""
+		macos_jobs=""
+		windows_jobs="$(cat <<-'END_HEREDOC'
+      - name: Add bash to the Path
+         run: |
+           echo "::add-path::c:\msys64\mingw32\bin"
+           echo "::add-path::c:\msys64\usr\bin"
+END_HEREDOC
+)"
+		windows_jobs="$( escape_for_sed "${windows_jobs}" )"
+	fi
+
 
 	if [ "${os}" == "ubuntu" ]; then
 		os="${os}-16.04"
@@ -129,12 +160,16 @@ for v in "${VERSION_MATRIX[@]}"; do
 	# shellcheck disable=SC2002
 	cat "${TPL_PATH}" \
 		| sed "s/__DISABLE_CRLF__/${crlf_comment}/g" \
-		| sed "s|__RETRY_FUNCTION_CRLF__|${retry_func_crlf}|g" | sed "s/__NL__/\\n/g" \
-		| sed "s|__RETRY_FUNCTION__|${RETRY_FUNCTION}|g" | sed "s/__NL__/\\n/g" \
+		| sed "s|__RETRY_FUNCTION_CRLF__|${retry_func_crlf}|g" \
+		| sed "s|__RETRY_FUNCTION__|${RETRY_FUNCTION}|g" \
 		| sed "s/__WORKFLOW_NAME__/${flw_name}/g" \
 		| sed "s/__OS__/${os}/g" \
 		| sed "s/__PYTHON_VERSION__/${py}/g" \
 		| sed "s/__JOB_NAME__/${job_name}/g" \
 		| sed "s/__ARCHITECTURE__/${arch}/g" \
+		| sed "s#__LINUX_JOBS__#${linux_jobs}#g" \
+		| sed "s#__MACOS_JOBS__#${macos_jobs}#g" \
+		| sed "s#__WINDOWS_JOBS__#${windows_jobs}#g" \
+		| sed "s/__NL__/\\n/g" \
 		> "${flw_file}"
 done

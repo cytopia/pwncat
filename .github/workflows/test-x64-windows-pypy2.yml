@@ -49,6 +49,14 @@ jobs:
             cat /etc/hosts
           fi
 
+      - name: Add bash to the Path
+         run: |
+           echo "::add-path::c:\msys64\mingw32\bin"
+           echo "::add-path::c:\msys64\usr\bin"
+
+
+
+
       - name: Resolve localhost
         shell: bash
         run: |
