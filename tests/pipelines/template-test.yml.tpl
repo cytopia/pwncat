@@ -254,6 +254,18 @@ __RETRY_FUNCTION__
           RETRIES: 5
 
       # ------------------------------------------------------------
+      # Tests: Behaviour (File Transfer)
+      # ------------------------------------------------------------
+
+      - name: "[BEHAVIOUR] File Transfer"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make _test-behaviour-base--file_transfer
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
       # Tests: Modes
       # ------------------------------------------------------------
 

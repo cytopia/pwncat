@@ -217,6 +217,7 @@ TEST_PWNCAT_WAIT=2
 TEST_PWNCAT_RUNS=1
 test: _test-behaviour-quit--client
 test: _test-behaviour-quit--server
+test: _test-behaviour-base--file_transfer
 test: _test-mode--local_forward
 test: _test-mode--remote_forward
 test: _test-options--nodns
@@ -322,6 +323,11 @@ __test-behaviour-quit--server-200:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 __test-behaviour-quit--server-201:
 	$(INTPATH)02-behaviour-quit--server/201---udp---server_reacc---when_client_is_killed---server_command---after_client_sent_command.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+
+.PHONY: _test-behaviour-base--file_transfer
+_test-behaviour-base--file_transfer:
+	tests/integration/run.sh "03-behaviour-base--file_transfer" \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-mode--local_forward

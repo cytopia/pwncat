@@ -15,6 +15,7 @@
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
 <<<<<<< HEAD
+<<<<<<< HEAD
 <th class="summary summary-precision">6.44% imprecise</th>
 <<<<<<< HEAD
 <th class="summary summary-lines">5283 LOC</th>
@@ -39,6 +40,15 @@
 <td class="summary summary-precision">6.45% imprecise</td>
 <td class="summary summary-lines">5795 LOC</td>
 >>>>>>> Fix signal handling
+=======
+<th class="summary summary-precision">6.52% imprecise</th>
+<th class="summary summary-lines">5796 LOC</th>
+</tr></tfoot>
+<tbody><tr class="summary summary-quality-1">
+<td class="summary summary-filename">bin/pwncat</td>
+<td class="summary summary-precision">6.52% imprecise</td>
+<td class="summary summary-lines">5796 LOC</td>
+>>>>>>> Fix quit behaviour with signalling
 </tr></tbody>
 </table>
 </body>
@@ -5853,7 +5863,11 @@
 <span id="L5793" class="lineno"><a class="lineno" href="#L5793">5793</a></span>
 <span id="L5794" class="lineno"><a class="lineno" href="#L5794">5794</a></span>
 <span id="L5795" class="lineno"><a class="lineno" href="#L5795">5795</a></span>
+<<<<<<< HEAD
 >>>>>>> Fix signal handling
+=======
+<span id="L5796" class="lineno"><a class="lineno" href="#L5796">5796</a></span>
+>>>>>>> Fix quit behaviour with signalling
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -6152,6 +6166,12 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-precise" title="No Anys on this line!">        return self.__transformers</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
+<span class="line-precise" title="No Anys on this line!">    def daemon_thread(self):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: () -&gt; bool</span>
+<span class="line-empty" title="No Anys on this line!">        """`bool`: Determines if the action will be started in a daemon thread."""</span>
+<span class="line-precise" title="No Anys on this line!">        return self.__daemon_thread</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">    @property</span>
 <span class="line-precise" title="No Anys on this line!">    def code(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; Optional[Union[str, bytes, CodeType]]</span>
 <span class="line-empty" title="No Anys on this line!">        """`ast.AST`: custom Python code which provides a `transform(data, pse) -&gt; str` function."""</span>
@@ -6166,6 +6186,7 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-empty" title="No Anys on this line!">        consumer,  # type: Callable[[bytes], None]</span>
 <span class="line-empty" title="No Anys on this line!">        interrupts,  # type: List[Callable[[], None]]</span>
 <span class="line-empty" title="No Anys on this line!">        transformers,  # type: List[Transform]</span>
+<span class="line-empty" title="No Anys on this line!">        daemon_thread,  # type: bool</span>
 <span class="line-empty" title="No Anys on this line!">        code,  # type: Optional[Union[str, bytes, CodeType]]</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
@@ -6173,6 +6194,7 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-precise" title="No Anys on this line!">        self.__consumer = consumer</span>
 <span class="line-precise" title="No Anys on this line!">        self.__interrupts = interrupts</span>
 <span class="line-precise" title="No Anys on this line!">        self.__transformers = transformers</span>
+<span class="line-precise" title="No Anys on this line!">        self.__daemon_thread = daemon_thread</span>
 <span class="line-precise" title="No Anys on this line!">        self.__code = code</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -9362,7 +9384,7 @@ Explicit (x1)">                    port, self.__sock.get_type_name(sock_type), s
 <span class="line-empty" title="No Anys on this line!">        # https://stackoverflow.com/questions/26692284</span>
 <span class="line-empty" title="No Anys on this line!">        # https://docs.python.org/3/library/signal.html#note-on-sigpipe</span>
 <span class="line-precise" title="No Anys on this line!">        self.__screen_lock.acquire()</span>
-<span class="line-precise" title="No Anys on this line!">        print(data)</span>
+<span class="line-precise" title="No Anys on this line!">        print(StringEncoder.decode(data))</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="No Anys on this line!">            sys.stdout.flush()</span>
 <span class="line-precise" title="No Anys on this line!">        except IOError:</span>
@@ -9967,7 +9989,7 @@ Error (x2)">        self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">        self.__log.trace("SIGNAL COMMAND-EOF raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__command_eof = True</span>
-<span class="line-precise" title="No Anys on this line!">        self.raise_terminate()</span>
+<span class="line-precise" title="No Anys on this line!">        self.raise_command_quit()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def raise_command_quit(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
@@ -9987,12 +10009,13 @@ Error (x2)">        self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: igno
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Constructor / Destructor</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def __init__(self, ssig, pse):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (InterruptHandler, PSEStore) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">    def __init__(self, ssig, fast_quit, pse):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (InterruptHandler, bool, PSEStore) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Create a new Runner object.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            ssig (InterruptHandler): Instance of InterruptHandler.</span>
+<span class="line-empty" title="No Anys on this line!">            fast_quit (boo): On `True` do not join threads upon exit, just raise terminate and exit.</span>
 <span class="line-empty" title="No Anys on this line!">            pse (PSEStore): Pwncat Scripting Engine store.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-precise" title="No Anys on this line!">        self.log = logging.getLogger(__name__)</span>
@@ -10015,6 +10038,7 @@ Error (x2)">        self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: igno
 <span class="line-precise" title="No Anys on this line!">        self.__threads = {}  # type: Dict[str, threading.Thread]</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        self.__ssig = ssig</span>
+<span class="line-precise" title="No Anys on this line!">        self.__fast_quit = fast_quit</span>
 <span class="line-precise" title="No Anys on this line!">        self.__pse = pse</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
@@ -10200,8 +10224,7 @@ Explicit (x5)">            thread = threading.Thread(</span>
 <span class="line-empty" title="No Anys on this line!">                ),</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-empty" title="No Anys on this line!">            # Daemon threads are easier to kill</span>
-<span class="line-empty" title="No Anys on this line!">            # FIXME: Only use daemon threads for Port scanner</span>
-<span class="line-precise" title="No Anys on this line!">            thread.daemon = False</span>
+<span class="line-precise" title="No Anys on this line!">            thread.daemon = self.__actions[key].daemon_thread</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # Add delay if threads cannot be started</span>
 <span class="line-precise" title="No Anys on this line!">            delay = 0.0</span>
@@ -10215,10 +10238,16 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">                try:</span>
 <span class="line-empty" title="No Anys on this line!">                    # Start and break the loop upon success to go to the next thread to start</span>
 <span class="line-precise" title="No Anys on this line!">                    thread.start()</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                    self.log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                        "Started thread %s with daemon=%i", key, self.__actions[key].daemon_thread</span>
+<span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-precise" title="No Anys on this line!">                    break</span>
-<span class="line-precise" title="No Anys on this line!">                except (RuntimeError, Exception):  # pylint: disable=broad-except</span>
+<span class="line-precise" title="No Anys on this line!">                except (RuntimeError, Exception) as err:  # pylint: disable=broad-except</span>
 <span class="line-precise" title="No Anys on this line!">                    delay += 0.1</span>
 <span class="line-precise" title="No Anys on this line!">                    time.sleep(delay)  # Give the system some time to release open fd's</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                    self.log.trace("Thread start delaying to %d: %s", delay, err)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            self.__threads[key] = thread</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [2/3] Start available timers in a thread</span>
@@ -10271,86 +10300,67 @@ Explicit (x1)">                kwargs=self.__repeaters[key].kwargs,</span>
 <span class="line-precise" title="No Anys on this line!">        def check_stop():</span>
 <span class="line-empty" title="No Anys on this line!">            # type: () -&gt; bool</span>
 <span class="line-empty" title="No Anys on this line!">            """Stop threads."""</span>
-<span class="line-empty" title="No Anys on this line!">            # FIXME: Use two methods here</span>
-<span class="line-empty" title="No Anys on this line!">            # if non-daemin threads - do join</span>
-<span class="line-empty" title="No Anys on this line!">            # if scanner do not use join!</span>
-<span class="line-empty" title="No Anys on this line!">            # TODO: This is a workaround for using daemon threads.</span>
-<span class="line-empty" title="No Anys on this line!">            # Python &lt; 3.3 is unable to detect Ctrl+c signal during</span>
-<span class="line-empty" title="No Anys on this line!">            # thread.join() operation in a fast loop (Port scan).</span>
-<span class="line-precise" title="No Anys on this line!">            for key in self.__threads:</span>
-<span class="line-precise" title="No Anys on this line!">                if not self.__threads[key].is_alive() or self.__ssig.has_terminate():</span>
-<span class="line-precise" title="No Anys on this line!">                    for interrupt in self.__actions[key].interrupts:</span>
-<span class="line-empty" title="No Anys on this line!">                        # [1/3] Call external interrupters</span>
+<span class="line-empty" title="No Anys on this line!">            # [1/2] Fast shutdown</span>
+<span class="line-empty" title="No Anys on this line!">            # For Python &lt; 3.3 we are unable to detect Ctrl+c signal during thread.join()</span>
+<span class="line-empty" title="No Anys on this line!">            # in a fast loop. Also for port-scan we will have thousands of threads that need</span>
+<span class="line-empty" title="No Anys on this line!">            # to be joined and the signal handler is unable to abort the whole program during that</span>
+<span class="line-empty" title="No Anys on this line!">            # time. Outcome is it would take a few minutes to abort during port scan.</span>
+<span class="line-empty" title="No Anys on this line!">            # The fix is to use a "faster" method to kill the threads.</span>
+<span class="line-empty" title="No Anys on this line!">            # 1. The port scanner threads need to be started in daemon mode</span>
+<span class="line-empty" title="No Anys on this line!">            # 2. the fast_quit param to Runner() must be set to True</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__fast_quit:</span>
+<span class="line-precise" title="No Anys on this line!">                if self.__ssig.has_terminate():</span>
 <span class="line-any" title="Any Types on this line: 
-Error (x2)">                        self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                            "Call INTERRUPT: %s.%s() for %s",</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x6)">                            getattr(interrupt, "__self__").__class__.__name__,</span>
-<span class="line-precise" title="No Anys on this line!">                            interrupt.__name__,</span>
-<span class="line-precise" title="No Anys on this line!">                            self.__threads[key].getName(),</span>
-<span class="line-empty" title="No Anys on this line!">                        )</span>
-<span class="line-precise" title="No Anys on this line!">                        interrupt()</span>
-<span class="line-empty" title="No Anys on this line!">                        # [2/3] All blocking events inside the threads are gone, now join them</span>
-<span class="line-empty" title="No Anys on this line!">                        try:</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">                            self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                                "Joining %s", self.__threads[key].getName()</span>
-<span class="line-empty" title="No Anys on this line!">                            )</span>
-<span class="line-empty" title="No Anys on this line!">                            # NOTE: The thread.join() operating will also block the signal handler</span>
-<span class="line-precise" title="No Anys on this line!">                            self.__threads[key].join()</span>
+Error (x2)">                    self.log.trace("Fast quit - shutting down.")  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                    return True</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">            # [2/2] Normal shutdown for non-daemon threads</span>
+<span class="line-empty" title="No Anys on this line!">            else:</span>
+<span class="line-precise" title="No Anys on this line!">                for key in self.__threads:</span>
+<span class="line-precise" title="No Anys on this line!">                    if not self.__threads[key].is_alive() or self.__ssig.has_terminate():</span>
+<span class="line-precise" title="No Anys on this line!">                        for interrupt in self.__actions[key].interrupts:</span>
+<span class="line-empty" title="No Anys on this line!">                            # [1/3] Call external interrupters</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">                            self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                                "Joined %s", self.__threads[key].getName()</span>
+<span class="line-precise" title="No Anys on this line!">                                "Call INTERRUPT: %s.%s() for %s",</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x6)">                                getattr(interrupt, "__self__").__class__.__name__,</span>
+<span class="line-precise" title="No Anys on this line!">                                interrupt.__name__,</span>
+<span class="line-precise" title="No Anys on this line!">                                self.__threads[key].getName(),</span>
 <span class="line-empty" title="No Anys on this line!">                            )</span>
-<span class="line-precise" title="No Anys on this line!">                        except RuntimeError:</span>
-<span class="line-precise" title="No Anys on this line!">                            pass</span>
-<span class="line-precise" title="No Anys on this line!">                return True</span>
+<span class="line-precise" title="No Anys on this line!">                            interrupt()</span>
+<span class="line-empty" title="No Anys on this line!">                            # [2/3] All blocking events inside the threads are gone, now join them</span>
+<span class="line-empty" title="No Anys on this line!">                            try:</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                                self.log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                                    "Joining %s", self.__threads[key].getName()</span>
+<span class="line-empty" title="No Anys on this line!">                                )</span>
+<span class="line-empty" title="No Anys on this line!">                                # NOTE: The thread.join() operating will also block the signal</span>
+<span class="line-empty" title="No Anys on this line!">                                # handler if we try to join too many threads at once.</span>
+<span class="line-precise" title="No Anys on this line!">                                self.__threads[key].join()</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                                self.log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                                    "Joined %s", self.__threads[key].getName()</span>
+<span class="line-empty" title="No Anys on this line!">                                )</span>
+<span class="line-precise" title="No Anys on this line!">                            except RuntimeError:</span>
+<span class="line-precise" title="No Anys on this line!">                                pass</span>
 <span class="line-empty" title="No Anys on this line!">            # If all threads are done, also stop</span>
 <span class="line-precise" title="No Anys on this line!">            if not all([self.__threads[key].is_alive() for key in self.__threads]):</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                self.log.trace("All threads dead - shutting down.")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                return True</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
-<span class="line-empty" title="No Anys on this line!">            # NOTE: This was for previous non-daemon threads</span>
-<span class="line-empty" title="No Anys on this line!">            # for key in self.__threads:</span>
-<span class="line-empty" title="No Anys on this line!">            #     if not self.__threads[key].is_alive() or force:</span>
-<span class="line-empty" title="No Anys on this line!">            #         # TODO: How are we gonna call the stop signal now?</span>
-<span class="line-empty" title="No Anys on this line!">            #         #  # [1/3] Inform all threads (inside) about a stop signal.</span>
-<span class="line-empty" title="No Anys on this line!">            #         #  # All threads with non-blocking funcs will be able to stop themselves</span>
-<span class="line-empty" title="No Anys on this line!">            #         #  self.log.trace(  # type: ignore</span>
-<span class="line-empty" title="No Anys on this line!">            #         #      "Raise stop signal: StopSignal.stop() for thread [%s]",</span>
-<span class="line-empty" title="No Anys on this line!">            #         #      self.__threads[key].getName(),</span>
-<span class="line-empty" title="No Anys on this line!">            #         #  )</span>
-<span class="line-empty" title="No Anys on this line!">            #         #  self.__actions[key].signal.signal_quit()</span>
-<span class="line-empty" title="No Anys on this line!">            #         # [2/3] Call external interrupters</span>
-<span class="line-empty" title="No Anys on this line!">            #         # These will shutdown all blocking functions inside a thread,</span>
-<span class="line-empty" title="No Anys on this line!">            #         # so that they are actually able to join</span>
-<span class="line-empty" title="No Anys on this line!">            #         for interrupt in self.__actions[key].interrupts:</span>
-<span class="line-empty" title="No Anys on this line!">            #             self.log.trace(  # type: ignore</span>
-<span class="line-empty" title="No Anys on this line!">            #                 "Call INTERRUPT: %s.%s() for %s",</span>
-<span class="line-empty" title="No Anys on this line!">            #                 getattr(interrupt, "__self__").__class__.__name__,</span>
-<span class="line-empty" title="No Anys on this line!">            #                 interrupt.__name__,</span>
-<span class="line-empty" title="No Anys on this line!">            #                 self.__threads[key].getName(),</span>
-<span class="line-empty" title="No Anys on this line!">            #             )</span>
-<span class="line-empty" title="No Anys on this line!">            #             interrupt()</span>
-<span class="line-empty" title="No Anys on this line!">            #         # [3/3] All blocking events inside the threads are gone, now join them</span>
-<span class="line-empty" title="No Anys on this line!">            #         try:</span>
-<span class="line-empty" title="No Anys on this line!">            #             self.log.trace("Joining %s", self.__threads[key].getName())# type: ignore</span>
-<span class="line-empty" title="No Anys on this line!">            #             # NOTE: The thread.join() operating will also block the signal handler</span>
-<span class="line-empty" title="No Anys on this line!">            #             #self.__threads[key].join(timeout=0.1)</span>
-<span class="line-empty" title="No Anys on this line!">            #             self.__threads[key].join()</span>
-<span class="line-empty" title="No Anys on this line!">            #             self.log.trace("Joined %s", self.__threads[key].getName())  # type: ignore</span>
-<span class="line-empty" title="No Anys on this line!">            #         except RuntimeError as err:</span>
-<span class="line-empty" title="No Anys on this line!">            #             print(err)</span>
-<span class="line-empty" title="No Anys on this line!">            #             #pass</span>
-<span class="line-empty" title="No Anys on this line!">            # # If all threads have died or force is requested, then exit</span>
-<span class="line-empty" title="No Anys on this line!">            # if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:</span>
-<span class="line-empty" title="No Anys on this line!">            #     return True</span>
-<span class="line-empty" title="No Anys on this line!">            # return False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        while True:</span>
 <span class="line-precise" title="No Anys on this line!">            if check_stop():</span>
 <span class="line-precise" title="No Anys on this line!">                sys.exit(0)</span>
 <span class="line-empty" title="No Anys on this line!">            # Need a timeout to not skyrocket the CPU</span>
-<span class="line-precise" title="No Anys on this line!">            time.sleep(0.01)</span>
+<span class="line-precise" title="No Anys on this line!">            if sys.version_info &lt; (3, 3):</span>
+<span class="line-empty" title="No Anys on this line!">                # Signal Handler in Python &lt; 3.3 is broken and might not catch on</span>
+<span class="line-empty" title="No Anys on this line!">                # a too small timeout invervall</span>
+<span class="line-unanalyzed" title="No Anys on this line!">                time.sleep(0.5)</span>
+<span class="line-empty" title="No Anys on this line!">            else:</span>
+<span class="line-precise" title="No Anys on this line!">                time.sleep(0.01)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># #################################################################################################</span>
@@ -11968,7 +11978,7 @@ Explicit (x1)">        net_srv = IONetwork(ssig, enc, lhost, [lport], "server", 
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">        net_cli = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-empty" title="No Anys on this line!">        # Create Runner</span>
-<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, PSEStore(ssig, [net_srv, net_cli]))</span>
+<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, False, PSEStore(ssig, [net_srv, net_cli]))</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "TRANSMIT",</span>
 <span class="line-precise" title="No Anys on this line!">            DsRunnerAction(</span>
@@ -11977,6 +11987,7 @@ Explicit (x6)">                DsCallableProducer(net_srv.producer),  # (recv) U
 <span class="line-precise" title="No Anys on this line!">                net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET</span>
 <span class="line-precise" title="No Anys on this line!">                [net_cli.interrupt, net_srv.interrupt],</span>
 <span class="line-precise" title="No Anys on this line!">                transformers,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-precise" title="No Anys on this line!">                None,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
@@ -11988,6 +11999,7 @@ Explicit (x6)">                DsCallableProducer(net_cli.producer),  # (recv) D
 <span class="line-precise" title="No Anys on this line!">                net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER</span>
 <span class="line-precise" title="No Anys on this line!">                [net_cli.interrupt, net_srv.interrupt],</span>
 <span class="line-precise" title="No Anys on this line!">                transformers,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-precise" title="No Anys on this line!">                None,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
@@ -12009,7 +12021,7 @@ Explicit (x1)">        net_cli_l = IONetwork(ssig, enc, lhost, [lport], "client"
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">        net_cli_r = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)</span>
 <span class="line-empty" title="No Anys on this line!">        # Create Runner</span>
-<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, PSEStore(ssig, [net_cli_l, net_cli_r]))</span>
+<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, False, PSEStore(ssig, [net_cli_l, net_cli_r]))</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "TRANSMIT",</span>
 <span class="line-precise" title="No Anys on this line!">            DsRunnerAction(</span>
@@ -12018,6 +12030,7 @@ Explicit (x6)">                DsCallableProducer(net_cli_l.producer),  # (recv)
 <span class="line-precise" title="No Anys on this line!">                net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
 <span class="line-precise" title="No Anys on this line!">                transformers,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-precise" title="No Anys on this line!">                None,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
@@ -12029,6 +12042,7 @@ Explicit (x6)">                DsCallableProducer(net_cli_r.producer),  # (recv)
 <span class="line-precise" title="No Anys on this line!">                net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER</span>
 <span class="line-empty" title="No Anys on this line!">                [],</span>
 <span class="line-precise" title="No Anys on this line!">                transformers,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-precise" title="No Anys on this line!">                None,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
@@ -12040,7 +12054,7 @@ Explicit (x6)">                DsCallableProducer(net_cli_r.producer),  # (recv)
 Explicit (x1)">        print("Scanning {} ports".format(len(ports)))</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">        net = IONetworkScanner(ssig, enc, host, args.banner, cli_opts, sock_opts)</span>
-<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, PSEStore(ssig, [net]))</span>
+<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, True, PSEStore(ssig, [net]))</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x2)">        for port in ports:</span>
 <span class="line-precise" title="No Anys on this line!">            run.add_action(</span>
@@ -12052,6 +12066,7 @@ Explicit (x7)">                    DsCallableProducer(net.producer, port),  # Se
 <span class="line-precise" title="No Anys on this line!">                    net.consumer,  # Output results</span>
 <span class="line-precise" title="No Anys on this line!">                    [net.interrupt],</span>
 <span class="line-empty" title="No Anys on this line!">                    [],</span>
+<span class="line-precise" title="No Anys on this line!">                    True,</span>
 <span class="line-precise" title="No Anys on this line!">                    None,</span>
 <span class="line-empty" title="No Anys on this line!">                ),</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
@@ -12083,15 +12098,16 @@ Explicit (x1)">            trans_send = [TransformHttpPack({"host": host, "reply
 <span class="line-precise" title="No Anys on this line!">            trans_recv = transformers</span>
 <span class="line-precise" title="No Anys on this line!">            trans_send = transformers</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, PSEStore(ssig, [net]))</span>
+<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, False, PSEStore(ssig, [net]))</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>
 <span class="line-precise" title="No Anys on this line!">            DsRunnerAction(</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x6)">                DsCallableProducer(net.producer),  # receive data</span>
 <span class="line-precise" title="No Anys on this line!">                mod.consumer,</span>
-<span class="line-precise" title="No Anys on this line!">                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err</span>
+<span class="line-precise" title="No Anys on this line!">                [net.interrupt],</span>
 <span class="line-precise" title="No Anys on this line!">                trans_recv,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x1)">                code_recv,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
@@ -12102,8 +12118,9 @@ Explicit (x1)">                code_recv,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x6)">                DsCallableProducer(mod.producer),</span>
 <span class="line-precise" title="No Anys on this line!">                net.consumer,  # send data</span>
-<span class="line-precise" title="No Anys on this line!">                [mod.interrupt],  # Externally stop the produer itself</span>
+<span class="line-precise" title="No Anys on this line!">                [mod.interrupt],</span>
 <span class="line-precise" title="No Anys on this line!">                trans_send,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x1)">                code_send,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
@@ -12126,15 +12143,16 @@ Explicit (x1)">            trans_send = [TransformHttpPack({"host": host, "reply
 <span class="line-precise" title="No Anys on this line!">            trans_recv = transformers</span>
 <span class="line-precise" title="No Anys on this line!">            trans_send = transformers</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, PSEStore(ssig, [net]))</span>
+<span class="line-precise" title="No Anys on this line!">        run = Runner(ssig, False, PSEStore(ssig, [net]))</span>
 <span class="line-precise" title="No Anys on this line!">        run.add_action(</span>
 <span class="line-precise" title="No Anys on this line!">            "RECV",</span>
 <span class="line-precise" title="No Anys on this line!">            DsRunnerAction(</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x6)">                DsCallableProducer(net.producer),  # receive data</span>
 <span class="line-precise" title="No Anys on this line!">                mod.consumer,</span>
-<span class="line-precise" title="No Anys on this line!">                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err</span>
+<span class="line-precise" title="No Anys on this line!">                [net.interrupt],</span>
 <span class="line-precise" title="No Anys on this line!">                trans_recv,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x1)">                code_recv,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
@@ -12145,8 +12163,9 @@ Explicit (x1)">                code_recv,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x6)">                DsCallableProducer(mod.producer),</span>
 <span class="line-precise" title="No Anys on this line!">                net.consumer,  # send data</span>
-<span class="line-precise" title="No Anys on this line!">                [net.interrupt, mod.interrupt],  # Externally stop the produer itself</span>
+<span class="line-precise" title="No Anys on this line!">                [mod.interrupt],</span>
 <span class="line-precise" title="No Anys on this line!">                trans_send,</span>
+<span class="line-precise" title="No Anys on this line!">                False,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x1)">                code_send,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>

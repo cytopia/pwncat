@@ -302,6 +302,12 @@ class DsRunnerAction(object):
         return self.__transformers
 
     @property
+    def daemon_thread(self):
+        # type: () -&gt; bool
+        &#34;&#34;&#34;`bool`: Determines if the action will be started in a daemon thread.&#34;&#34;&#34;
+        return self.__daemon_thread
+
+    @property
     def code(self):
         # type: () -&gt; Optional[Union[str, bytes, CodeType]]
         &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data, pse) -&gt; str` function.&#34;&#34;&#34;
@@ -316,6 +322,7 @@ class DsRunnerAction(object):
         consumer,  # type: Callable[[bytes], None]
         interrupts,  # type: List[Callable[[], None]]
         transformers,  # type: List[Transform]
+        daemon_thread,  # type: bool
         code,  # type: Optional[Union[str, bytes, CodeType]]
     ):
         # type: (...) -&gt; None
@@ -323,6 +330,7 @@ class DsRunnerAction(object):
         self.__consumer = consumer
         self.__interrupts = interrupts
         self.__transformers = transformers
+        self.__daemon_thread = daemon_thread
         self.__code = code
 
 
@@ -3332,7 +3340,7 @@ class IONetworkScanner(IO):
         # https://stackoverflow.com/questions/26692284
         # https://docs.python.org/3/library/signal.html#note-on-sigpipe
         self.__screen_lock.acquire()
-        print(data)
+        print(StringEncoder.decode(data))
         try:
             sys.stdout.flush()
         except IOError:
@@ -3879,12 +3887,13 @@ class Runner(object):
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self, ssig, pse):
-        # type: (InterruptHandler, PSEStore) -&gt; None
+    def __init__(self, ssig, fast_quit, pse):
+        # type: (InterruptHandler, bool, PSEStore) -&gt; None
         &#34;&#34;&#34;Create a new Runner object.
 
         Args:
             ssig (InterruptHandler): Instance of InterruptHandler.
+            fast_quit (boo): On `True` do not join threads upon exit, just raise terminate and exit.
             pse (PSEStore): Pwncat Scripting Engine store.
         &#34;&#34;&#34;
         self.log = logging.getLogger(__name__)
@@ -3907,6 +3916,7 @@ class Runner(object):
         self.__threads = {}  # type: Dict[str, threading.Thread]
 
         self.__ssig = ssig
+        self.__fast_quit = fast_quit
         self.__pse = pse
 
     # --------------------------------------------------------------------------
@@ -4071,8 +4081,7 @@ class Runner(object):
                 ),
             )
             # Daemon threads are easier to kill
-            # FIXME: Only use daemon threads for Port scanner
-            thread.daemon = False
+            thread.daemon = self.__actions[key].daemon_thread
 
             # Add delay if threads cannot be started
             delay = 0.0
@@ -4085,10 +4094,14 @@ class Runner(object):
                 try:
                     # Start and break the loop upon success to go to the next thread to start
                     thread.start()
+                    self.log.trace(  # type: ignore
+                        &#34;Started thread %s with daemon=%i&#34;, key, self.__actions[key].daemon_thread
+                    )
                     break
-                except (RuntimeError, Exception):  # pylint: disable=broad-except
+                except (RuntimeError, Exception) as err:  # pylint: disable=broad-except
                     delay += 0.1
                     time.sleep(delay)  # Give the system some time to release open fd&#39;s
+                    self.log.trace(&#34;Thread start delaying to %d: %s&#34;, delay, err)  # type: ignore
             self.__threads[key] = thread
 
         # [2/3] Start available timers in a thread
@@ -4131,81 +4144,66 @@ class Runner(object):
         def check_stop():
             # type: () -&gt; bool
             &#34;&#34;&#34;Stop threads.&#34;&#34;&#34;
-            # FIXME: Use two methods here
-            # if non-daemin threads - do join
-            # if scanner do not use join!
-            # TODO: This is a workaround for using daemon threads.
-            # Python &lt; 3.3 is unable to detect Ctrl+c signal during
-            # thread.join() operation in a fast loop (Port scan).
-            for key in self.__threads:
-                if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
-                    for interrupt in self.__actions[key].interrupts:
-                        # [1/3] Call external interrupters
-                        self.log.trace(  # type: ignore
-                            &#34;Call INTERRUPT: %s.%s() for %s&#34;,
-                            getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
-                            interrupt.__name__,
-                            self.__threads[key].getName(),
-                        )
-                        interrupt()
-                        # [2/3] All blocking events inside the threads are gone, now join them
-                        try:
+            # [1/2] Fast shutdown
+            # For Python &lt; 3.3 we are unable to detect Ctrl+c signal during thread.join()
+            # in a fast loop. Also for port-scan we will have thousands of threads that need
+            # to be joined and the signal handler is unable to abort the whole program during that
+            # time. Outcome is it would take a few minutes to abort during port scan.
+            # The fix is to use a &#34;faster&#34; method to kill the threads.
+            # 1. The port scanner threads need to be started in daemon mode
+            # 2. the fast_quit param to Runner() must be set to True
+            if self.__fast_quit:
+                if self.__ssig.has_terminate():
+                    self.log.trace(&#34;Fast quit - shutting down.&#34;)  # type: ignore
+                    return True
+
+            # [2/2] Normal shutdown for non-daemon threads
+            else:
+                for key in self.__threads:
+                    if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
+                        for interrupt in self.__actions[key].interrupts:
+                            # [1/3] Call external interrupters
                             self.log.trace(  # type: ignore
-                                &#34;Joining %s&#34;, self.__threads[key].getName()
+                                &#34;Call INTERRUPT: %s.%s() for %s&#34;,
+                                getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
+                                interrupt.__name__,
+                                self.__threads[key].getName(),
                             )
-                            # NOTE: The thread.join() operating will also block the signal handler
-                            self.__threads[key].join()
-                            self.log.trace(  # type: ignore
-                                &#34;Joined %s&#34;, self.__threads[key].getName()
-                            )
+<<<<<<< HEAD
                         except RuntimeError:
                             pass
+=======
+                            interrupt()
+                            # [2/3] All blocking events inside the threads are gone, now join them
+                            try:
+                                self.log.trace(  # type: ignore
+                                    &#34;Joining %s&#34;, self.__threads[key].getName()
+                                )
+                                # NOTE: The thread.join() operating will also block the signal
+                                # handler if we try to join too many threads at once.
+                                self.__threads[key].join()
+                                self.log.trace(  # type: ignore
+                                    &#34;Joined %s&#34;, self.__threads[key].getName()
+                                )
+                            except RuntimeError:
+                                pass
+>>>>>>> Fix quit behaviour with signalling
             # If all threads are done, also stop
             if not all([self.__threads[key].is_alive() for key in self.__threads]):
+                self.log.trace(&#34;All threads dead - shutting down.&#34;)  # type: ignore
                 return True
             return False
-            # NOTE: This was for previous non-daemon threads
-            # for key in self.__threads:
-            #     if not self.__threads[key].is_alive() or force:
-            #         # TODO: How are we gonna call the stop signal now?
-            #         #  # [1/3] Inform all threads (inside) about a stop signal.
-            #         #  # All threads with non-blocking funcs will be able to stop themselves
-            #         #  self.log.trace(  # type: ignore
-            #         #      &#34;Raise stop signal: StopSignal.stop() for thread [%s]&#34;,
-            #         #      self.__threads[key].getName(),
-            #         #  )
-            #         #  self.__actions[key].signal.signal_quit()
-            #         # [2/3] Call external interrupters
-            #         # These will shutdown all blocking functions inside a thread,
-            #         # so that they are actually able to join
-            #         for interrupt in self.__actions[key].interrupts:
-            #             self.log.trace(  # type: ignore
-            #                 &#34;Call INTERRUPT: %s.%s() for %s&#34;,
-            #                 getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
-            #                 interrupt.__name__,
-            #                 self.__threads[key].getName(),
-            #             )
-            #             interrupt()
-            #         # [3/3] All blocking events inside the threads are gone, now join them
-            #         try:
-            #             self.log.trace(&#34;Joining %s&#34;, self.__threads[key].getName())# type: ignore
-            #             # NOTE: The thread.join() operating will also block the signal handler
-            #             #self.__threads[key].join(timeout=0.1)
-            #             self.__threads[key].join()
-            #             self.log.trace(&#34;Joined %s&#34;, self.__threads[key].getName())  # type: ignore
-            #         except RuntimeError as err:
-            #             print(err)
-            #             #pass
-            # # If all threads have died or force is requested, then exit
-            # if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
-            #     return True
-            # return False
 
         while True:
             if check_stop():
                 sys.exit(0)
             # Need a timeout to not skyrocket the CPU
-            time.sleep(0.01)
+            if sys.version_info &lt; (3, 3):
+                # Signal Handler in Python &lt; 3.3 is broken and might not catch on
+                # a too small timeout invervall
+                time.sleep(0.5)
+            else:
+                time.sleep(0.01)
 
 
 # #################################################################################################
@@ -5696,7 +5694,7 @@ def main():
         net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner(ssig, PSEStore(ssig, [net_srv, net_cli]))
+        run = Runner(ssig, False, PSEStore(ssig, [net_srv, net_cli]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -5704,6 +5702,7 @@ def main():
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5714,6 +5713,7 @@ def main():
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5731,7 +5731,7 @@ def main():
         net_cli_l = IONetwork(ssig, enc, lhost, [lport], &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         net_cli_r = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner(ssig, PSEStore(ssig, [net_cli_l, net_cli_r]))
+        run = Runner(ssig, False, PSEStore(ssig, [net_cli_l, net_cli_r]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -5739,6 +5739,7 @@ def main():
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5749,6 +5750,7 @@ def main():
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5758,7 +5760,7 @@ def main():
     if mode == &#34;scan&#34;:
         print(&#34;Scanning {} ports&#34;.format(len(ports)))
         net = IONetworkScanner(ssig, enc, host, args.banner, cli_opts, sock_opts)
-        run = Runner(ssig, PSEStore(ssig, [net]))
+        run = Runner(ssig, True, PSEStore(ssig, [net]))
         for port in ports:
             run.add_action(
                 &#34;PORT-{}&#34;.format(port),
@@ -5767,6 +5769,7 @@ def main():
                     net.consumer,  # Output results
                     [net.interrupt],
                     [],
+                    True,
                     None,
                 ),
             )
@@ -5791,14 +5794,15 @@ def main():
             trans_recv = transformers
             trans_send = transformers
 
-        run = Runner(ssig, PSEStore(ssig, [net]))
+        run = Runner(ssig, False, PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
                 DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
-                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
+                [net.interrupt],
                 trans_recv,
+                False,
                 code_recv,
             ),
         )
@@ -5807,8 +5811,9 @@ def main():
             DsRunnerAction(
                 DsCallableProducer(mod.producer),
                 net.consumer,  # send data
-                [mod.interrupt],  # Externally stop the produer itself
+                [mod.interrupt],
                 trans_send,
+                False,
                 code_send,
             ),
         )
@@ -5827,14 +5832,15 @@ def main():
             trans_recv = transformers
             trans_send = transformers
 
-        run = Runner(ssig, PSEStore(ssig, [net]))
+        run = Runner(ssig, False, PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
                 DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
-                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
+                [net.interrupt],
                 trans_recv,
+                False,
                 code_recv,
             ),
         )
@@ -5843,8 +5849,9 @@ def main():
             DsRunnerAction(
                 DsCallableProducer(mod.producer),
                 net.consumer,  # send data
-                [net.interrupt, mod.interrupt],  # Externally stop the produer itself
+                [mod.interrupt],
                 trans_send,
+                False,
                 code_send,
             ),
         )
@@ -6703,7 +6710,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
         net_srv = IONetwork(ssig, enc, lhost, [lport], &#34;server&#34;, srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner(ssig, PSEStore(ssig, [net_srv, net_cli]))
+        run = Runner(ssig, False, PSEStore(ssig, [net_srv, net_cli]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -6711,6 +6718,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -6721,6 +6729,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -6738,7 +6747,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
         net_cli_l = IONetwork(ssig, enc, lhost, [lport], &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         net_cli_r = IONetwork(ssig, enc, host, ports, &#34;client&#34;, srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner(ssig, PSEStore(ssig, [net_cli_l, net_cli_r]))
+        run = Runner(ssig, False, PSEStore(ssig, [net_cli_l, net_cli_r]))
         run.add_action(
             &#34;TRANSMIT&#34;,
             DsRunnerAction(
@@ -6746,6 +6755,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -6756,6 +6766,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -6765,7 +6776,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
     if mode == &#34;scan&#34;:
         print(&#34;Scanning {} ports&#34;.format(len(ports)))
         net = IONetworkScanner(ssig, enc, host, args.banner, cli_opts, sock_opts)
-        run = Runner(ssig, PSEStore(ssig, [net]))
+        run = Runner(ssig, True, PSEStore(ssig, [net]))
         for port in ports:
             run.add_action(
                 &#34;PORT-{}&#34;.format(port),
@@ -6774,6 +6785,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
                     net.consumer,  # Output results
                     [net.interrupt],
                     [],
+                    True,
                     None,
                 ),
             )
@@ -6798,14 +6810,15 @@ The default is to send a null byte sting: &#39;\\0&#39;.
             trans_recv = transformers
             trans_send = transformers
 
-        run = Runner(ssig, PSEStore(ssig, [net]))
+        run = Runner(ssig, False, PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
                 DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
-                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
+                [net.interrupt],
                 trans_recv,
+                False,
                 code_recv,
             ),
         )
@@ -6814,8 +6827,9 @@ The default is to send a null byte sting: &#39;\\0&#39;.
             DsRunnerAction(
                 DsCallableProducer(mod.producer),
                 net.consumer,  # send data
-                [mod.interrupt],  # Externally stop the produer itself
+                [mod.interrupt],
                 trans_send,
+                False,
                 code_send,
             ),
         )
@@ -6834,14 +6848,15 @@ The default is to send a null byte sting: &#39;\\0&#39;.
             trans_recv = transformers
             trans_send = transformers
 
-        run = Runner(ssig, PSEStore(ssig, [net]))
+        run = Runner(ssig, False, PSEStore(ssig, [net]))
         run.add_action(
             &#34;RECV&#34;,
             DsRunnerAction(
                 DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
-                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
+                [net.interrupt],
                 trans_recv,
+                False,
                 code_recv,
             ),
         )
@@ -6850,8 +6865,9 @@ The default is to send a null byte sting: &#39;\\0&#39;.
             DsRunnerAction(
                 DsCallableProducer(mod.producer),
                 net.consumer,  # send data
-                [net.interrupt, mod.interrupt],  # Externally stop the produer itself
+                [mod.interrupt],
                 trans_send,
+                False,
                 code_send,
             ),
         )
@@ -8682,7 +8698,7 @@ def send_on_eof(self):
 </dd>
 <dt id="pwncat.DsRunnerAction"><code class="flex name class">
 <span>class <span class="ident">DsRunnerAction</span></span>
-<span>(</span><span>producer, consumer, interrupts, transformers, code)</span>
+<span>(</span><span>producer, consumer, interrupts, transformers, daemon_thread, code)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for Action functions for the Runner class.</p></div>
@@ -8721,6 +8737,12 @@ def send_on_eof(self):
         return self.__transformers
 
     @property
+    def daemon_thread(self):
+        # type: () -&gt; bool
+        &#34;&#34;&#34;`bool`: Determines if the action will be started in a daemon thread.&#34;&#34;&#34;
+        return self.__daemon_thread
+
+    @property
     def code(self):
         # type: () -&gt; Optional[Union[str, bytes, CodeType]]
         &#34;&#34;&#34;`ast.AST`: custom Python code which provides a `transform(data, pse) -&gt; str` function.&#34;&#34;&#34;
@@ -8735,6 +8757,7 @@ def send_on_eof(self):
         consumer,  # type: Callable[[bytes], None]
         interrupts,  # type: List[Callable[[], None]]
         transformers,  # type: List[Transform]
+        daemon_thread,  # type: bool
         code,  # type: Optional[Union[str, bytes, CodeType]]
     ):
         # type: (...) -&gt; None
@@ -8742,6 +8765,7 @@ def send_on_eof(self):
         self.__consumer = consumer
         self.__interrupts = interrupts
         self.__transformers = transformers
+        self.__daemon_thread = daemon_thread
         self.__code = code</code></pre>
 </details>
 <h3>Instance variables</h3>
@@ -8772,6 +8796,20 @@ def consumer(self):
     # type: () -&gt; Callable[[bytes], None]
     &#34;&#34;&#34;`IO.consumer`: Data consumer function.&#34;&#34;&#34;
     return self.__consumer</code></pre>
+</details>
+</dd>
+<dt id="pwncat.DsRunnerAction.daemon_thread"><code class="name">var <span class="ident">daemon_thread</span></code></dt>
+<dd>
+<div class="desc"><p><code>bool</code>: Determines if the action will be started in a daemon thread.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def daemon_thread(self):
+    # type: () -&gt; bool
+    &#34;&#34;&#34;`bool`: Determines if the action will be started in a daemon thread.&#34;&#34;&#34;
+    return self.__daemon_thread</code></pre>
 </details>
 </dd>
 <dt id="pwncat.DsRunnerAction.interrupts"><code class="name">var <span class="ident">interrupts</span></code></dt>
@@ -10781,7 +10819,7 @@ def producer(self, *args, **kwargs):
         # https://stackoverflow.com/questions/26692284
         # https://docs.python.org/3/library/signal.html#note-on-sigpipe
         self.__screen_lock.acquire()
-        print(data)
+        print(StringEncoder.decode(data))
         try:
             sys.stdout.flush()
         except IOError:
@@ -10836,7 +10874,7 @@ def producer(self, *args, **kwargs):
     # https://stackoverflow.com/questions/26692284
     # https://docs.python.org/3/library/signal.html#note-on-sigpipe
     self.__screen_lock.acquire()
-    print(data)
+    print(StringEncoder.decode(data))
     try:
         sys.stdout.flush()
     except IOError:
@@ -13076,7 +13114,7 @@ def store(self):
 </dd>
 <dt id="pwncat.Runner"><code class="flex name class">
 <span>class <span class="ident">Runner</span></span>
-<span>(</span><span>ssig, pse)</span>
+<span>(</span><span>ssig, fast_quit, pse)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runner class that takes care about putting everything into threads.</p>
@@ -13085,6 +13123,8 @@ def store(self):
 <dl>
 <dt><strong><code>ssig</code></strong> :&ensp;<code><a title="pwncat.InterruptHandler" href="#pwncat.InterruptHandler">InterruptHandler</a></code></dt>
 <dd>Instance of InterruptHandler.</dd>
+<dt><strong><code>fast_quit</code></strong> :&ensp;<code>boo</code></dt>
+<dd>On <code>True</code> do not join threads upon exit, just raise terminate and exit.</dd>
 <dt><strong><code>pse</code></strong> :&ensp;<code><a title="pwncat.PSEStore" href="#pwncat.PSEStore">PSEStore</a></code></dt>
 <dd>Pwncat Scripting Engine store.</dd>
 </dl></div>
@@ -13098,12 +13138,13 @@ def store(self):
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self, ssig, pse):
-        # type: (InterruptHandler, PSEStore) -&gt; None
+    def __init__(self, ssig, fast_quit, pse):
+        # type: (InterruptHandler, bool, PSEStore) -&gt; None
         &#34;&#34;&#34;Create a new Runner object.
 
         Args:
             ssig (InterruptHandler): Instance of InterruptHandler.
+            fast_quit (boo): On `True` do not join threads upon exit, just raise terminate and exit.
             pse (PSEStore): Pwncat Scripting Engine store.
         &#34;&#34;&#34;
         self.log = logging.getLogger(__name__)
@@ -13126,6 +13167,7 @@ def store(self):
         self.__threads = {}  # type: Dict[str, threading.Thread]
 
         self.__ssig = ssig
+        self.__fast_quit = fast_quit
         self.__pse = pse
 
     # --------------------------------------------------------------------------
@@ -13290,8 +13332,7 @@ def store(self):
                 ),
             )
             # Daemon threads are easier to kill
-            # FIXME: Only use daemon threads for Port scanner
-            thread.daemon = False
+            thread.daemon = self.__actions[key].daemon_thread
 
             # Add delay if threads cannot be started
             delay = 0.0
@@ -13304,10 +13345,14 @@ def store(self):
                 try:
                     # Start and break the loop upon success to go to the next thread to start
                     thread.start()
+                    self.log.trace(  # type: ignore
+                        &#34;Started thread %s with daemon=%i&#34;, key, self.__actions[key].daemon_thread
+                    )
                     break
-                except (RuntimeError, Exception):  # pylint: disable=broad-except
+                except (RuntimeError, Exception) as err:  # pylint: disable=broad-except
                     delay += 0.1
                     time.sleep(delay)  # Give the system some time to release open fd&#39;s
+                    self.log.trace(&#34;Thread start delaying to %d: %s&#34;, delay, err)  # type: ignore
             self.__threads[key] = thread
 
         # [2/3] Start available timers in a thread
@@ -13350,81 +13395,66 @@ def store(self):
         def check_stop():
             # type: () -&gt; bool
             &#34;&#34;&#34;Stop threads.&#34;&#34;&#34;
-            # FIXME: Use two methods here
-            # if non-daemin threads - do join
-            # if scanner do not use join!
-            # TODO: This is a workaround for using daemon threads.
-            # Python &lt; 3.3 is unable to detect Ctrl+c signal during
-            # thread.join() operation in a fast loop (Port scan).
-            for key in self.__threads:
-                if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
-                    for interrupt in self.__actions[key].interrupts:
-                        # [1/3] Call external interrupters
-                        self.log.trace(  # type: ignore
-                            &#34;Call INTERRUPT: %s.%s() for %s&#34;,
-                            getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
-                            interrupt.__name__,
-                            self.__threads[key].getName(),
-                        )
-                        interrupt()
-                        # [2/3] All blocking events inside the threads are gone, now join them
-                        try:
+            # [1/2] Fast shutdown
+            # For Python &lt; 3.3 we are unable to detect Ctrl+c signal during thread.join()
+            # in a fast loop. Also for port-scan we will have thousands of threads that need
+            # to be joined and the signal handler is unable to abort the whole program during that
+            # time. Outcome is it would take a few minutes to abort during port scan.
+            # The fix is to use a &#34;faster&#34; method to kill the threads.
+            # 1. The port scanner threads need to be started in daemon mode
+            # 2. the fast_quit param to Runner() must be set to True
+            if self.__fast_quit:
+                if self.__ssig.has_terminate():
+                    self.log.trace(&#34;Fast quit - shutting down.&#34;)  # type: ignore
+                    return True
+
+            # [2/2] Normal shutdown for non-daemon threads
+            else:
+                for key in self.__threads:
+                    if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
+                        for interrupt in self.__actions[key].interrupts:
+                            # [1/3] Call external interrupters
                             self.log.trace(  # type: ignore
-                                &#34;Joining %s&#34;, self.__threads[key].getName()
+                                &#34;Call INTERRUPT: %s.%s() for %s&#34;,
+                                getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
+                                interrupt.__name__,
+                                self.__threads[key].getName(),
                             )
-                            # NOTE: The thread.join() operating will also block the signal handler
-                            self.__threads[key].join()
-                            self.log.trace(  # type: ignore
-                                &#34;Joined %s&#34;, self.__threads[key].getName()
-                            )
+<<<<<<< HEAD
                         except RuntimeError:
                             pass
+=======
+                            interrupt()
+                            # [2/3] All blocking events inside the threads are gone, now join them
+                            try:
+                                self.log.trace(  # type: ignore
+                                    &#34;Joining %s&#34;, self.__threads[key].getName()
+                                )
+                                # NOTE: The thread.join() operating will also block the signal
+                                # handler if we try to join too many threads at once.
+                                self.__threads[key].join()
+                                self.log.trace(  # type: ignore
+                                    &#34;Joined %s&#34;, self.__threads[key].getName()
+                                )
+                            except RuntimeError:
+                                pass
+>>>>>>> Fix quit behaviour with signalling
             # If all threads are done, also stop
             if not all([self.__threads[key].is_alive() for key in self.__threads]):
+                self.log.trace(&#34;All threads dead - shutting down.&#34;)  # type: ignore
                 return True
             return False
-            # NOTE: This was for previous non-daemon threads
-            # for key in self.__threads:
-            #     if not self.__threads[key].is_alive() or force:
-            #         # TODO: How are we gonna call the stop signal now?
-            #         #  # [1/3] Inform all threads (inside) about a stop signal.
-            #         #  # All threads with non-blocking funcs will be able to stop themselves
-            #         #  self.log.trace(  # type: ignore
-            #         #      &#34;Raise stop signal: StopSignal.stop() for thread [%s]&#34;,
-            #         #      self.__threads[key].getName(),
-            #         #  )
-            #         #  self.__actions[key].signal.signal_quit()
-            #         # [2/3] Call external interrupters
-            #         # These will shutdown all blocking functions inside a thread,
-            #         # so that they are actually able to join
-            #         for interrupt in self.__actions[key].interrupts:
-            #             self.log.trace(  # type: ignore
-            #                 &#34;Call INTERRUPT: %s.%s() for %s&#34;,
-            #                 getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
-            #                 interrupt.__name__,
-            #                 self.__threads[key].getName(),
-            #             )
-            #             interrupt()
-            #         # [3/3] All blocking events inside the threads are gone, now join them
-            #         try:
-            #             self.log.trace(&#34;Joining %s&#34;, self.__threads[key].getName())# type: ignore
-            #             # NOTE: The thread.join() operating will also block the signal handler
-            #             #self.__threads[key].join(timeout=0.1)
-            #             self.__threads[key].join()
-            #             self.log.trace(&#34;Joined %s&#34;, self.__threads[key].getName())  # type: ignore
-            #         except RuntimeError as err:
-            #             print(err)
-            #             #pass
-            # # If all threads have died or force is requested, then exit
-            # if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
-            #     return True
-            # return False
 
         while True:
             if check_stop():
                 sys.exit(0)
             # Need a timeout to not skyrocket the CPU
-            time.sleep(0.01)</code></pre>
+            if sys.version_info &lt; (3, 3):
+                # Signal Handler in Python &lt; 3.3 is broken and might not catch on
+                # a too small timeout invervall
+                time.sleep(0.5)
+            else:
+                time.sleep(0.01)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -13647,8 +13677,7 @@ def store(self):
             ),
         )
         # Daemon threads are easier to kill
-        # FIXME: Only use daemon threads for Port scanner
-        thread.daemon = False
+        thread.daemon = self.__actions[key].daemon_thread
 
         # Add delay if threads cannot be started
         delay = 0.0
@@ -13661,10 +13690,14 @@ def store(self):
             try:
                 # Start and break the loop upon success to go to the next thread to start
                 thread.start()
+                self.log.trace(  # type: ignore
+                    &#34;Started thread %s with daemon=%i&#34;, key, self.__actions[key].daemon_thread
+                )
                 break
-            except (RuntimeError, Exception):  # pylint: disable=broad-except
+            except (RuntimeError, Exception) as err:  # pylint: disable=broad-except
                 delay += 0.1
                 time.sleep(delay)  # Give the system some time to release open fd&#39;s
+                self.log.trace(&#34;Thread start delaying to %d: %s&#34;, delay, err)  # type: ignore
         self.__threads[key] = thread
 
     # [2/3] Start available timers in a thread
@@ -13707,81 +13740,66 @@ def store(self):
     def check_stop():
         # type: () -&gt; bool
         &#34;&#34;&#34;Stop threads.&#34;&#34;&#34;
-        # FIXME: Use two methods here
-        # if non-daemin threads - do join
-        # if scanner do not use join!
-        # TODO: This is a workaround for using daemon threads.
-        # Python &lt; 3.3 is unable to detect Ctrl+c signal during
-        # thread.join() operation in a fast loop (Port scan).
-        for key in self.__threads:
-            if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
-                for interrupt in self.__actions[key].interrupts:
-                    # [1/3] Call external interrupters
-                    self.log.trace(  # type: ignore
-                        &#34;Call INTERRUPT: %s.%s() for %s&#34;,
-                        getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
-                        interrupt.__name__,
-                        self.__threads[key].getName(),
-                    )
-                    interrupt()
-                    # [2/3] All blocking events inside the threads are gone, now join them
-                    try:
+        # [1/2] Fast shutdown
+        # For Python &lt; 3.3 we are unable to detect Ctrl+c signal during thread.join()
+        # in a fast loop. Also for port-scan we will have thousands of threads that need
+        # to be joined and the signal handler is unable to abort the whole program during that
+        # time. Outcome is it would take a few minutes to abort during port scan.
+        # The fix is to use a &#34;faster&#34; method to kill the threads.
+        # 1. The port scanner threads need to be started in daemon mode
+        # 2. the fast_quit param to Runner() must be set to True
+        if self.__fast_quit:
+            if self.__ssig.has_terminate():
+                self.log.trace(&#34;Fast quit - shutting down.&#34;)  # type: ignore
+                return True
+
+        # [2/2] Normal shutdown for non-daemon threads
+        else:
+            for key in self.__threads:
+                if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
+                    for interrupt in self.__actions[key].interrupts:
+                        # [1/3] Call external interrupters
                         self.log.trace(  # type: ignore
-                            &#34;Joining %s&#34;, self.__threads[key].getName()
+                            &#34;Call INTERRUPT: %s.%s() for %s&#34;,
+                            getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
+                            interrupt.__name__,
+                            self.__threads[key].getName(),
                         )
-                        # NOTE: The thread.join() operating will also block the signal handler
-                        self.__threads[key].join()
-                        self.log.trace(  # type: ignore
-                            &#34;Joined %s&#34;, self.__threads[key].getName()
-                        )
+<<<<<<< HEAD
                     except RuntimeError:
                         pass
+=======
+                        interrupt()
+                        # [2/3] All blocking events inside the threads are gone, now join them
+                        try:
+                            self.log.trace(  # type: ignore
+                                &#34;Joining %s&#34;, self.__threads[key].getName()
+                            )
+                            # NOTE: The thread.join() operating will also block the signal
+                            # handler if we try to join too many threads at once.
+                            self.__threads[key].join()
+                            self.log.trace(  # type: ignore
+                                &#34;Joined %s&#34;, self.__threads[key].getName()
+                            )
+                        except RuntimeError:
+                            pass
+>>>>>>> Fix quit behaviour with signalling
         # If all threads are done, also stop
         if not all([self.__threads[key].is_alive() for key in self.__threads]):
+            self.log.trace(&#34;All threads dead - shutting down.&#34;)  # type: ignore
             return True
         return False
-        # NOTE: This was for previous non-daemon threads
-        # for key in self.__threads:
-        #     if not self.__threads[key].is_alive() or force:
-        #         # TODO: How are we gonna call the stop signal now?
-        #         #  # [1/3] Inform all threads (inside) about a stop signal.
-        #         #  # All threads with non-blocking funcs will be able to stop themselves
-        #         #  self.log.trace(  # type: ignore
-        #         #      &#34;Raise stop signal: StopSignal.stop() for thread [%s]&#34;,
-        #         #      self.__threads[key].getName(),
-        #         #  )
-        #         #  self.__actions[key].signal.signal_quit()
-        #         # [2/3] Call external interrupters
-        #         # These will shutdown all blocking functions inside a thread,
-        #         # so that they are actually able to join
-        #         for interrupt in self.__actions[key].interrupts:
-        #             self.log.trace(  # type: ignore
-        #                 &#34;Call INTERRUPT: %s.%s() for %s&#34;,
-        #                 getattr(interrupt, &#34;__self__&#34;).__class__.__name__,
-        #                 interrupt.__name__,
-        #                 self.__threads[key].getName(),
-        #             )
-        #             interrupt()
-        #         # [3/3] All blocking events inside the threads are gone, now join them
-        #         try:
-        #             self.log.trace(&#34;Joining %s&#34;, self.__threads[key].getName())# type: ignore
-        #             # NOTE: The thread.join() operating will also block the signal handler
-        #             #self.__threads[key].join(timeout=0.1)
-        #             self.__threads[key].join()
-        #             self.log.trace(&#34;Joined %s&#34;, self.__threads[key].getName())  # type: ignore
-        #         except RuntimeError as err:
-        #             print(err)
-        #             #pass
-        # # If all threads have died or force is requested, then exit
-        # if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
-        #     return True
-        # return False
 
     while True:
         if check_stop():
             sys.exit(0)
         # Need a timeout to not skyrocket the CPU
-        time.sleep(0.01)</code></pre>
+        if sys.version_info &lt; (3, 3):
+            # Signal Handler in Python &lt; 3.3 is broken and might not catch on
+            # a too small timeout invervall
+            time.sleep(0.5)
+        else:
+            time.sleep(0.01)</code></pre>
 </details>
 </dd>
 </dl>
@@ -16338,9 +16356,10 @@ def transform(self, data):
 </li>
 <li>
 <h4><code><a title="pwncat.DsRunnerAction" href="#pwncat.DsRunnerAction">DsRunnerAction</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="pwncat.DsRunnerAction.code" href="#pwncat.DsRunnerAction.code">code</a></code></li>
 <li><code><a title="pwncat.DsRunnerAction.consumer" href="#pwncat.DsRunnerAction.consumer">consumer</a></code></li>
+<li><code><a title="pwncat.DsRunnerAction.daemon_thread" href="#pwncat.DsRunnerAction.daemon_thread">daemon_thread</a></code></li>
 <li><code><a title="pwncat.DsRunnerAction.interrupts" href="#pwncat.DsRunnerAction.interrupts">interrupts</a></code></li>
 <li><code><a title="pwncat.DsRunnerAction.producer" href="#pwncat.DsRunnerAction.producer">producer</a></code></li>
 <li><code><a title="pwncat.DsRunnerAction.transformers" href="#pwncat.DsRunnerAction.transformers">transformers</a></code></li>

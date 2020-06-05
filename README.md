@@ -134,7 +134,7 @@
  </tbody>
 </table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.55%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.48%)</strong></sup><br/>
 > <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
 > <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
@@ -152,7 +152,6 @@ tool that works on older and newer machines (hence Python 2+3 compat). Most impo
 
 
 ## :tada: Install
-
 
 | [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) |
 |:-:|:-:|
@@ -338,31 +337,45 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 Like the original implementation of `netcat`, when using **TCP**, `pwncat`
 (in client and listen mode) will automatically quit, if the network connection has been terminated,
 properly or improperly.
-In case the remote peer does not terminate the connection, or in **UDP** mode, `pwncat` will stay open.
+In case the remote peer does not terminate the connection, or in **UDP** mode, `netcat` and `pwncat` will stay open. The behaviour differs a bit when STDIN is closed.
+
+1. `netcat`: If STDIN is closed, but connection stays open, `netcat` will stay open
+2. `pwncat`: If STDIN is closed, but connection stays open, `pwncat` will close
+
+You can emulate the `netcat` behaviour with `--no-shutdown` command line argument.
 
 Have a look at the following commands to better understand this behaviour:
 
 ```bash
-# [Valid HTTP request] Does not quit, web server keeps connection intact
+# [Valid HTTP request] Quits, web server keeps connection intact, but STDIN is EOF
 printf "GET / HTTP/1.1\n\n" | pwncat www.google.com 80
+
+# [Valid HTTP request] Does not quit, web server keeps connection intact, but STDIN is EOF
+printf "GET / HTTP/1.1\n\n" | pwncat www.google.com 80 --no-shutdown
 ```
 
 ```bash
-# [Invalid HTTP request] Quits, because the web server closes the connection
+# [Invalid HTTP request] Quits, because the web server closes the connection and STDIN is EOF
 printf "GET / \n\n" | pwncat www.google.com 80
 ```
 
 ```bash
 # [TCP]
+# Both instances will quit after successful file transfer.
+pwncat -l 4444 > output.txt
+pwncat localhost 4444 < input.txt
+
+# [TCP]
 # Neither of both, client and server will quit after successful transfer
 # and they will be stuck, waiting for more input or output.
 # When exiting one (e.g.: via Ctrl+c), the other one will quit as well.
-pwncat -l 4444 > output.txt
-pwncat localhost 4444 < input.txt
+pwncat -l 4444 --no-shutdown > output.txt
+pwncat localhost 4444 --no-shutdown < input.txt
 ```
 
+Be advised that it is not reliable to send files via UDP
 ```bash
-# [UDP]
+# [UDP] (--no-shutdown has no effect, as this is the default behaviour in UDP)
 # Neither of both, client and server will quit after successful transfer
 # and they will be stuck, waiting for more input or output.
 # When exiting one (e.g.: via Ctrl+c), the other one will still stay open in UDP mode.
@@ -385,6 +398,26 @@ Documentation will evolve over time.
 
 
 ## :computer: Usage
+
+### Keys
+
+| Behaviour      | ![Alt][Linux] | ![Alt][MacOS] | ![Alt][Windows] |
+|----------------|---------------|---------------|-----------------|
+| Quit (SIGINT)  | <kbd>Ctrl</kbd>+<kbd>c</kbd>  | ? | ? |
+| Quit (SIGQUIT) | <kbd>Ctrl</kbd>+<kbd>\\</kbd> | ? | ? |
+| Quit (SIGQUIT) | <kbd>Ctrl</kbd>+<kbd>4</kbd>  | ? | ? |
+| Quit STDIN<sup>[1]</sup> | <kbd>Ctrl</kbd>+<kbd>d</kbd>  | ? | ? |
+| Send           | <kbd>Ctrl</kbd>+<kbd>j</kbd>  | ? | ? |
+| Send           | <kbd>Ctrl</kbd>+<kbd>m</kbd>  | ? | ? |
+| Send           | <kbd>Enter</kbd>              | ? | ? |
+
+> <sup>[1] Only works when not using `--no-shutdown` and `--keep`. Will then shutdown it's socket for sending, signaling the remote end and EOF on its socket.</sup>
+
+[Linux]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/linux.png "Linux"
+[MacOS]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png "MacOS"
+[Windows]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/windows.png "Windows"
+
+### Command line arguments
 
 Type `pwncat -h` or click below to see all available options.
 
