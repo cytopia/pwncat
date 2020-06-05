@@ -1598,9 +1598,12 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
         &#34;&#34;&#34;
         self.__log.debug(&#34;Waiting for TCP client&#34;)
         while True:
-            ssockets = select.select(sockets, [], [], select_timeout)[
-                0
-            ]  # type: List[socket.socket]
+            try:
+                ssockets = select.select(sockets, [], [], select_timeout)[
+                    0
+                ]  # type: List[socket.socket]
+            except select.error as err:
+                raise socket.error(err)
             if has_quit():
                 raise socket.error(&#34;SOCK-QUIT signal ACK for accept(): raised socket.error()&#34;)
             for sock in ssockets:
@@ -14299,9 +14302,12 @@ def store(self):
         &#34;&#34;&#34;
         self.__log.debug(&#34;Waiting for TCP client&#34;)
         while True:
-            ssockets = select.select(sockets, [], [], select_timeout)[
-                0
-            ]  # type: List[socket.socket]
+            try:
+                ssockets = select.select(sockets, [], [], select_timeout)[
+                    0
+                ]  # type: List[socket.socket]
+            except select.error as err:
+                raise socket.error(err)
             if has_quit():
                 raise socket.error(&#34;SOCK-QUIT signal ACK for accept(): raised socket.error()&#34;)
             for sock in ssockets:
@@ -14647,9 +14653,12 @@ def is_ipv6_address(host):
     &#34;&#34;&#34;
     self.__log.debug(&#34;Waiting for TCP client&#34;)
     while True:
-        ssockets = select.select(sockets, [], [], select_timeout)[
-            0
-        ]  # type: List[socket.socket]
+        try:
+            ssockets = select.select(sockets, [], [], select_timeout)[
+                0
+            ]  # type: List[socket.socket]
+        except select.error as err:
+            raise socket.error(err)
         if has_quit():
             raise socket.error(&#34;SOCK-QUIT signal ACK for accept(): raised socket.error()&#34;)
         for sock in ssockets:

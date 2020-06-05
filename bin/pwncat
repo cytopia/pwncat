@@ -1571,9 +1571,12 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
         """
         self.__log.debug("Waiting for TCP client")
         while True:
-            ssockets = select.select(sockets, [], [], select_timeout)[
-                0
-            ]  # type: List[socket.socket]
+            try:
+                ssockets = select.select(sockets, [], [], select_timeout)[
+                    0
+                ]  # type: List[socket.socket]
+            except select.error as err:
+                raise socket.error(err)
             if has_quit():
                 raise socket.error("SOCK-QUIT signal ACK for accept(): raised socket.error()")
             for sock in ssockets:

@@ -42,13 +42,17 @@
 >>>>>>> Fix signal handling
 =======
 <th class="summary summary-precision">6.52% imprecise</th>
-<th class="summary summary-lines">5796 LOC</th>
+<th class="summary summary-lines">5799 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
 <td class="summary summary-precision">6.52% imprecise</td>
+<<<<<<< HEAD
 <td class="summary summary-lines">5796 LOC</td>
 >>>>>>> Fix quit behaviour with signalling
+=======
+<td class="summary summary-lines">5799 LOC</td>
+>>>>>>> Except on select error
 </tr></tbody>
 </table>
 </body>
@@ -5867,7 +5871,13 @@
 >>>>>>> Fix signal handling
 =======
 <span id="L5796" class="lineno"><a class="lineno" href="#L5796">5796</a></span>
+<<<<<<< HEAD
 >>>>>>> Fix quit behaviour with signalling
+=======
+<span id="L5797" class="lineno"><a class="lineno" href="#L5797">5797</a></span>
+<span id="L5798" class="lineno"><a class="lineno" href="#L5798">5798</a></span>
+<span id="L5799" class="lineno"><a class="lineno" href="#L5799">5799</a></span>
+>>>>>>> Except on select error
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -7547,10 +7557,13 @@ Explicit (x4)">            self.__log.error(msg)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.__log.debug("Waiting for TCP client")</span>
 <span class="line-precise" title="No Anys on this line!">        while True:</span>
+<span class="line-empty" title="No Anys on this line!">            try:</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x10)">            ssockets = select.select(sockets, [], [], select_timeout)[</span>
-<span class="line-precise" title="No Anys on this line!">                0</span>
-<span class="line-empty" title="No Anys on this line!">            ]  # type: List[socket.socket]</span>
+Explicit (x10)">                ssockets = select.select(sockets, [], [], select_timeout)[</span>
+<span class="line-precise" title="No Anys on this line!">                    0</span>
+<span class="line-empty" title="No Anys on this line!">                ]  # type: List[socket.socket]</span>
+<span class="line-precise" title="No Anys on this line!">            except select.error as err:</span>
+<span class="line-precise" title="No Anys on this line!">                raise socket.error(err)</span>
 <span class="line-precise" title="No Anys on this line!">            if has_quit():</span>
 <span class="line-precise" title="No Anys on this line!">                raise socket.error("SOCK-QUIT signal ACK for accept(): raised socket.error()")</span>
 <span class="line-precise" title="No Anys on this line!">            for sock in ssockets:</span>
