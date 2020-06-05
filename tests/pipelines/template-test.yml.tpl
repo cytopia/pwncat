@@ -29,10 +29,6 @@ jobs:
           python-version: __PYTHON_VERSION__
           architecture: __ARCHITECTURE__
 
-      - name: Display Python version
-        shell: bash
-        run: python -c "import sys; print(sys.version)"
-
       - name: "Setup /etc/hosts for Linux"
         shell: bash
         run: |
@@ -52,6 +48,14 @@ jobs:
 __WINDOWS_JOBS__
 __LINUX_JOBS__
 __MACOS_JOBS__
+
+      - name: Display Bash version
+        shell: bash
+        run: bash --version
+
+      - name: Display Python version
+        shell: bash
+        run: python -c "import sys; print(sys.version)"
 
       - name: Resolve localhost
         shell: bash

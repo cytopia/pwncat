@@ -139,6 +139,7 @@ for v in "${VERSION_MATRIX[@]}"; do
 END_HEREDOC
 )"
 		windows_jobs="$( escape_for_sed "${windows_jobs}" )"
+		windows_jobs=""
 	fi
 
 

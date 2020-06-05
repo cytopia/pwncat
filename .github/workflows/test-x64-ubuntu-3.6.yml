@@ -29,10 +29,6 @@ jobs:
           python-version: 3.6
           architecture: x64
 
-      - name: Display Python version
-        shell: bash
-        run: python -c "import sys; print(sys.version)"
-
       - name: "Setup /etc/hosts for Linux"
         shell: bash
         run: |
@@ -52,6 +48,14 @@ jobs:
 
 
 
+
+      - name: Display Bash version
+        shell: bash
+        run: bash --version
+
+      - name: Display Python version
+        shell: bash
+        run: python -c "import sys; print(sys.version)"
 
       - name: Resolve localhost
         shell: bash

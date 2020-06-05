@@ -29,10 +29,6 @@ jobs:
           python-version: 3.8
           architecture: x64
 
-      - name: Display Python version
-        shell: bash
-        run: python -c "import sys; print(sys.version)"
-
       - name: "Setup /etc/hosts for Linux"
         shell: bash
         run: |
@@ -49,13 +45,17 @@ jobs:
             cat /etc/hosts
           fi
 
-      - name: Add bash to the Path
-        run: |
-          echo "::add-path::c:\msys64\mingw32\bin"
-          echo "::add-path::c:\msys64\usr\bin"
 
 
 
+
+      - name: Display Bash version
+        shell: bash
+        run: bash --version
+
+      - name: Display Python version
+        shell: bash
+        run: python -c "import sys; print(sys.version)"
 
       - name: Resolve localhost
         shell: bash
