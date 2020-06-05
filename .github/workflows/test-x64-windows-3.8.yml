@@ -50,9 +50,9 @@ jobs:
           fi
 
       - name: Add bash to the Path
-         run: |
-           echo "::add-path::c:\msys64\mingw32\bin"
-           echo "::add-path::c:\msys64\usr\bin"
+        run: |
+          echo "::add-path::c:\msys64\mingw32\bin"
+          echo "::add-path::c:\msys64\usr\bin"
 
 
 

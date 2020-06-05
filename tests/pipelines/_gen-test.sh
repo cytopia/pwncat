@@ -133,9 +133,9 @@ for v in "${VERSION_MATRIX[@]}"; do
 		macos_jobs=""
 		windows_jobs="$(cat <<-'END_HEREDOC'
       - name: Add bash to the Path
-         run: |
-           echo "::add-path::c:\msys64\mingw32\bin"
-           echo "::add-path::c:\msys64\usr\bin"
+        run: |
+          echo "::add-path::c:\msys64\mingw32\bin"
+          echo "::add-path::c:\msys64\usr\bin"
 END_HEREDOC
 )"
 		windows_jobs="$( escape_for_sed "${windows_jobs}" )"
