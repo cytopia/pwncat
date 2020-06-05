@@ -1685,13 +1685,51 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
     # --------------------------------------------------------------------------
     # Destroy functions
     # --------------------------------------------------------------------------
+    def shutdown_recv(self, sock, name):
+        # type: (socket.socket, str) -> None
+        """Shuts down a socket for receiving data (only allow to send data).
+
+        Args:
+            name (str): Name of the socket used for logging purposes.
+            sock (str): Socket to shutdown for receive.
+        """
+        try:
+            # (SHUT_RD)   0 = Done receiving (disallows receiving)
+            # (SHUT_WR)   1 = Done sending (disallows sending)
+            # (SHUT_RDWR) 2 = Both
+            self.__log.trace("Shutting down %s socket for receiving", name)  # type: ignore
+            sock.shutdown(socket.SHUT_RD)
+        except (OSError, socket.error):
+            # We do not log errors here, as unconnected sockets cannot
+            # be shutdown and we want to throw any socket at this function.
+            pass
+
+    def shutdown_send(self, sock, name):
+        # type: (socket.socket, str) -> None
+        """Shuts down a socket for sending data (only allow to receive data).
+
+        Args:
+            name (str): Name of the socket used for logging purposes.
+            sock (str): Socket to shutdown for send.
+        """
+        try:
+            # (SHUT_RD)   0 = Done receiving (disallows receiving)
+            # (SHUT_WR)   1 = Done sending (disallows sending)
+            # (SHUT_RDWR) 2 = Both
+            self.__log.trace("Shutting down %s socket for sending", name)  # type: ignore
+            sock.shutdown(socket.SHUT_WR)
+        except (OSError, socket.error):
+            # We do not log errors here, as unconnected sockets cannot
+            # be shutdown and we want to throw any socket at this function.
+            pass
+
     def close(self, sock, name):
         # type: (socket.socket, str) -> None
         """Shuts down and closes a socket.
 
         Args:
+            sock (socket.socket): Socket to shutdown and close.
             name (str): Name of the socket used for logging purposes.
-            sock (str): Socket to shutdown and close.
         """
         try:
             # (SHUT_RD)   0 = Done receiving (disallows receiving)
@@ -1791,6 +1829,11 @@ class Net(object):
     # --------------------------------------------------------------------------
     # Public Send / Receive Functions
     # --------------------------------------------------------------------------
+    def send_eof(self):
+        # type: () -> None
+        """Close the active socket for sending. The remote part will get an EOF."""
+        self.__sock.shutdown_send(self.__active["conn"], "conn")
+
     def send(self, data):
         # type: (bytes) -> int
         """Send data through a connected (TCP) or unconnected (UDP) socket.
@@ -2440,7 +2483,7 @@ class TransformSafeword(Transform):
             str: The string as it is without changes
         """
         if StringEncoder.encode(self.__opts.safeword) in data:
-            self.log.trace("TERMINATE signal REQ in TransformSafeword.transform")  # type: ignore
+            self.log.trace("TERMINATE signal RAISED in TransformSafeword.transform")  # type: ignore
             self.__opts.ssig.raise_terminate()
         return data
 
@@ -2765,6 +2808,13 @@ class IONetwork(IO):
                 yield self.__net.receive()
             # [2/3] Non-blocking socket is finished receiving data and allows us to do some action
             except socket.timeout as err:
+                # Check if we close the socket for sending
+                if self.ssig.has_sock_send_eof():
+                    self.log.trace(  # type: ignore
+                        "SOCK-SEND-EOF signal ACK in IONetwork.producer [1]: %s", err
+                    )
+                    self.__net.send_eof()
+
                 # Let's ask the interrupter() function if we should terminate?
                 if not self.ssig.has_sock_quit():
                     continue
@@ -2786,7 +2836,7 @@ class IONetwork(IO):
                 )
                 self.__cleanup()
                 return
-            # [3/3] Upstream is gone (in one way or another)
+            # [3/3] Connection was closed remotely (EOF) or locally (Ctrl+C or similar)
             except (EOFError, AttributeError, socket.error) as err:
                 # Do we have a stop signal?
                 if self.ssig.has_sock_quit():
@@ -2804,10 +2854,8 @@ class IONetwork(IO):
                 if self.__role == "client" and self.__client_reconnect_to_server():
                     continue
                 # Inform everybody that we are quitting
-                self.log.trace("SOCK-QUIT signal REQ in IONetwork.producer")  # type: ignore
-                self.ssig.raise_sock_quit()
-                self.__cleanup()
-                return
+                self.log.trace("SOCK-EOF signal RAISE in IONetwork.producer")  # type: ignore
+                self.ssig.raise_sock_eof()
 
     def consumer(self, data):
         # type: (bytes) -> None
@@ -2820,7 +2868,7 @@ class IONetwork(IO):
     def interrupt(self):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
-        self.log.trace("SOCK-QUIT signal REQ in IONetwork.interrupt")  # type: ignore
+        self.log.trace("SOCK-QUIT signal RAISE in IONetwork.interrupt")  # type: ignore
         self.ssig.raise_sock_quit()
         self.__cleanup()
 
@@ -2853,7 +2901,7 @@ class IONetwork(IO):
             # Don't know how fast the other threads are.
             if self.ssig.has_sock_quit():
                 self.log.trace(  # type: ignore
-                    "QUIT signal ACK in IONetwork.__clienet_reconnect_to_server [1]"
+                    "SOCK-QUIT signal ACK in IONetwork.__clienet_reconnect_to_server [1]"
                 )
                 return False
 
@@ -2865,7 +2913,7 @@ class IONetwork(IO):
             # we will check again here.
             if self.ssig.has_sock_quit():
                 self.log.trace(  # type: ignore
-                    "QUIT signal ACK in IONetwork.__clienet_reconnect_to_server [2]"
+                    "SOCK-QUIT signal ACK in IONetwork.__clienet_reconnect_to_server [2]"
                 )
                 return False
 
@@ -3271,7 +3319,7 @@ class IONetworkScanner(IO):
     def interrupt(self):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
-        self.log.trace("SOCK-QUIT signal REQ in IONetworkScanner.interrupt")  # type: ignore
+        self.log.trace("SOCK-QUIT signal RAISED in IONetworkScanner.interrupt")  # type: ignore
         self.ssig.raise_sock_quit()
 
         # NOTE: Closing up to 65535 sockets (single thread) takes very very long
@@ -3311,7 +3359,6 @@ class IOStdinStdout(IO):
         self.__opts = opts
         self.__py3 = sys.version_info >= (3, 0)  # type: bool
         self.__win = os.name != "posix"  # posix or nt
-        self.__abort = False
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -3330,9 +3377,6 @@ class IOStdinStdout(IO):
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
         # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
-            if self.__abort:
-                self.log.trace("External interrupt signal triggered. Aborting.")  # type: ignore
-                return
             if self.ssig.has_stdin_quit():
                 self.log.trace(  # type: ignore
                     "STDIN-QUIT signal ACK in IOStdinStdout.producer [1]"
@@ -3363,7 +3407,8 @@ class IOStdinStdout(IO):
                 # [send-on-eof] Dump data before quitting
                 if lines and self.__opts.send_on_eof:
                     yield StringEncoder.encode("").join(lines)
-                self.ssig.raise_stdin_quit()
+                self.log.trace("STDIN-EOF signal RAISE in IOStdinStdout.producer")  # type: ignore
+                self.ssig.raise_stdin_eof()
 
     def consumer(self, data):
         # type: (bytes) -> None
@@ -3388,13 +3433,8 @@ class IOStdinStdout(IO):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
         # TODO: Does not work on windows as it has blocking read of stdin
-        self.log.trace("STDIN-QUIT signal REQ in IOStdinStdout.interrupt")  # type: ignore
+        self.log.trace("STDIN-QUIT signal RAISE in IOStdinStdout.interrupt")  # type: ignore
         self.ssig.raise_stdin_quit()
-
-        self.log.trace(  # type: ignore
-            "[IOStdinStdout] setting __abort to True was raised by interrupt() externally"
-        )
-        self.__abort = True
 
     # --------------------------------------------------------------------------
     # Private Functions
@@ -3524,7 +3564,7 @@ class IOCommand(IO):
         assert self.proc.stdout is not None
         while True:
             if self.ssig.has_command_quit():
-                self.log.trace("CMD-QUIT signal ACK IOCommand.producer")  # type: ignore
+                self.log.trace("COMMAND-QUIT signal ACK IOCommand.producer")  # type: ignore
                 self.__cleanup()
                 return
             self.log.trace("Reading command output")  # type: ignore
@@ -3534,10 +3574,9 @@ class IOCommand(IO):
             data = self.proc.stdout.read(1)
             self.log.trace("Command output: %s", repr(data))  # type: ignore
             if not data:
-                self.log.trace("CMD-QUIT signal REQ IOCommand.producer")  # type: ignore
-                self.ssig.raise_command_quit()
-                self.__cleanup()
-                return
+                self.log.trace("COMMAND-EOF signal RAISED IOCommand.producer")  # type: ignore
+                self.ssig.raise_command_eof()
+                continue
             yield data
 
     def consumer(self, data):
@@ -3555,7 +3594,7 @@ class IOCommand(IO):
     def interrupt(self):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
-        self.log.trace("CMD-QUIT signal REQ IOCommand.interrupt")  # type: ignore
+        self.log.trace("COMMAND-QUIT signal RAISED IOCommand.interrupt")  # type: ignore
         self.ssig.raise_command_quit()
         self.__cleanup()
 
@@ -3564,7 +3603,7 @@ class IOCommand(IO):
         """Cleanup function."""
         if not self.__cleaned_up:
             self.log.trace(  # type: ignore
-                "CMD-QUIT-CLEANUP: killing executable: %s with pid %d",
+                "COMMAND-QUIT-CLEANUP: killing executable: %s with pid %d",
                 self.__opts.executable,
                 self.proc.pid,
             )
@@ -3682,10 +3721,17 @@ class InterruptHandler(object):
         self.__keep_open = keep_open
         self.__no_shutdown = no_shutdown
 
+        # Shutdown signals
         self.__terminate = False
+        self.__sock_send_eof = False
         self.__sock_quit = False
         self.__stdin_quit = False
         self.__command_quit = False
+
+        # Producers have received EOF
+        self.__sock_eof = False
+        self.__stdin_eof = False
+        self.__command_eof = False
 
         def handler(signum, frame):  # type: ignore  # pylint: disable=unused-argument
             self.__log.trace("Ctrl+c caught.")  # type: ignore
@@ -3701,6 +3747,11 @@ class InterruptHandler(object):
         # type: () -> bool
         """`bool`: Switch to be checked if pwncat should be terminated."""
         return self.__terminate
+
+    def has_sock_send_eof(self):
+        # type: () -> bool
+        """`bool`: Switch to be checked if the socket connection should be closed for sending."""
+        return self.__sock_send_eof
 
     def has_sock_quit(self):
         # type: () -> bool
@@ -3718,7 +3769,7 @@ class InterruptHandler(object):
         return self.__command_quit
 
     # --------------------------------------------------------------------------
-    # Raise signals
+    # Raise Termination signal
     # --------------------------------------------------------------------------
     def raise_terminate(self):
         # type: () -> None
@@ -3729,6 +3780,22 @@ class InterruptHandler(object):
         self.__stdin_quit = True
         self.__command_quit = True
 
+    # --------------------------------------------------------------------------
+    # Raise Socket signals
+    # --------------------------------------------------------------------------
+    def raise_sock_send_eof(self):
+        # type: () -> None
+        """Signal the application that Socket should be closed for sending."""
+        self.__log.trace("SIGNAL SOCK-CLOSE-SEND raised")  # type: ignore
+        self.__sock_send_eof = True
+
+    def raise_sock_eof(self):
+        # type: () -> None
+        """Signal the application that Socket has received EOF."""
+        self.__log.trace("SIGNAL SOCK-EOF raised")  # type: ignore
+        self.__sock_eof = True
+        self.raise_sock_quit()
+
     def raise_sock_quit(self):
         # type: () -> None
         """Signal the application that Socket should be quit."""
@@ -3736,18 +3803,42 @@ class InterruptHandler(object):
         self.__sock_quit = True
         self.raise_terminate()
 
+    # --------------------------------------------------------------------------
+    # Raise STDIN signals
+    # --------------------------------------------------------------------------
+    def raise_stdin_eof(self):
+        # type: () -> None
+        """Signal the application that STDIN has received EOF."""
+        self.__log.trace("SIGNAL STDIN-EOF raised")  # type: ignore
+        self.__stdin_eof = True
+        self.raise_stdin_quit()
+
     def raise_stdin_quit(self):
         # type: () -> None
         """Signal the application that STDIN should be quit."""
+        self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore
+        self.__stdin_quit = True
+        # If --no-shutdown or -keep-open is specified
+        # pwncat will not invoke shutdown on a socket after seeing EOF on stdin
         if not (self.__no_shutdown or self.__keep_open):
-            self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore
-            self.__stdin_quit = True
-            self.raise_terminate()
+            # No more data from stdin, we can tell the remote side we are done
+            # by closing the socket for sending (they will receive an EOF).
+            self.raise_sock_send_eof()
+
+    # --------------------------------------------------------------------------
+    # Raise COMMAND signals
+    # --------------------------------------------------------------------------
+    def raise_command_eof(self):
+        # type: () -> None
+        """Signal the application that Command has received EOF."""
+        self.__log.trace("SIGNAL COMMAND-EOF raised")  # type: ignore
+        self.__command_eof = True
+        self.raise_command_quit()
 
     def raise_command_quit(self):
         # type: () -> None
         """Signal the application that Command should be quit."""
-        self.__log.trace("SIGNAL CMD-QUIT raised")  # type: ignore
+        self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: ignore
         self.__command_quit = True
         self.raise_terminate()
 
@@ -3953,7 +4044,8 @@ class Runner(object):
                 ),
             )
             # Daemon threads are easier to kill
-            thread.daemon = True
+            # FIXME: Only use daemon threads for Port scanner
+            thread.daemon = False
 
             # Add delay if threads cannot be started
             delay = 0.0
@@ -4012,12 +4104,16 @@ class Runner(object):
         def check_stop():
             # type: () -> bool
             """Stop threads."""
+            # FIXME: Use two methods here
+            # if non-daemin threads - do join
+            # if scanner do not use join!
             # TODO: This is a workaround for using daemon threads.
             # Python < 3.3 is unable to detect Ctrl+c signal during
             # thread.join() operation in a fast loop (Port scan).
-            if self.__ssig.has_terminate():
-                for key in self.__threads:
+            for key in self.__threads:
+                if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
                     for interrupt in self.__actions[key].interrupts:
+                        # [1/3] Call external interrupters
                         self.log.trace(  # type: ignore
                             "Call INTERRUPT: %s.%s() for %s",
                             getattr(interrupt, "__self__").__class__.__name__,
@@ -4025,7 +4121,18 @@ class Runner(object):
                             self.__threads[key].getName(),
                         )
                         interrupt()
-                return True
+                        # [2/3] All blocking events inside the threads are gone, now join them
+                        try:
+                            self.log.trace(  # type: ignore
+                                "Joining %s", self.__threads[key].getName()
+                            )
+                            # NOTE: The thread.join() operating will also block the signal handler
+                            self.__threads[key].join()
+                            self.log.trace(  # type: ignore
+                                "Joined %s", self.__threads[key].getName()
+                            )
+                        except RuntimeError:
+                            pass
             # If all threads are done, also stop
             if not all([self.__threads[key].is_alive() for key in self.__threads]):
                 return True
