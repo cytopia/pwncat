@@ -102,7 +102,8 @@ run_test() {
 # -------------------------------------------------------------------------------------------------
 
 for curr_round in $(seq "${RUNS}"); do
-	run_test "${RHOST} ${RPORT} --no-shutdown -vvvv" "1" "5" "${curr_round}" "${RUNS}"
+	run_test "${RHOST} ${RPORT} --no-shutdown -vvvv" "1" "2" "${curr_round}" "${RUNS}"
+	run_test "${RHOST} ${RPORT} --no-shutdown      " "2" "2" "${curr_round}" "${RUNS}"
 	#run_test "${RHOST} ${RPORT} --no-shutdown -vvv " "2" "5" "${curr_round}" "${RUNS}"
 	#run_test "${RHOST} ${RPORT} --no-shutdown -vv  " "3" "5" "${curr_round}" "${RUNS}"
 	#run_test "${RHOST} ${RPORT} --no-shutdown -v   " "4" "5" "${curr_round}" "${RUNS}"

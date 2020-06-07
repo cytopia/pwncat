@@ -159,24 +159,28 @@ run_test() {
 for curr_round in $(seq "${RUNS}"); do
 	#         server opts            client opts
 	# BIND ON ANY
-	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"  "1" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv --udp-sconnect --udp-sconnect-word"  "2" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "3" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"  "1" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv --udp-sconnect --udp-sconnect-word"  "2" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "3" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv --udp-sconnect --udp-sconnect-word"  "4" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv"  "5" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv --udp-sconnect --udp-sconnect-word"  "4" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv"  "5" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"  "6" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "7" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"  "6" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "7" "16" "${curr_round}" "${RUNS}"
+	# no verbosity
+	run_test "-l ${RPORT} --no-shutdown    -u      " "${RHOST} ${RPORT} --no-shutdown    -u      "  "8" "16" "${curr_round}" "${RUNS}"
 
 	# BIND ON SPECIFIC
-	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"   "8" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv"   "9" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "10" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"   "9" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv"  "10" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "11" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv --udp-sconnect --udp-sconnect-word"  "11" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv"  "12" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv --udp-sconnect --udp-sconnect-word"  "12" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv"  "13" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"  "13" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "14" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown    -u -vvvv"  "14" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv"  "15" "16" "${curr_round}" "${RUNS}"
+	# no verbosity
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u      " "${RHOST} ${RPORT} --no-shutdown    -u      "  "16" "16" "${curr_round}" "${RUNS}"
 done

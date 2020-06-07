@@ -16,6 +16,7 @@
 <th class="summary summary-filename">Total</th>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 <th class="summary summary-precision">6.44% imprecise</th>
 <<<<<<< HEAD
 <th class="summary summary-lines">5283 LOC</th>
@@ -53,6 +54,15 @@
 =======
 <td class="summary summary-lines">5799 LOC</td>
 >>>>>>> Except on select error
+=======
+<th class="summary summary-precision">6.55% imprecise</th>
+<th class="summary summary-lines">5804 LOC</th>
+</tr></tfoot>
+<tbody><tr class="summary summary-quality-1">
+<td class="summary summary-filename">bin/pwncat</td>
+<td class="summary summary-precision">6.55% imprecise</td>
+<td class="summary summary-lines">5804 LOC</td>
+>>>>>>> Fix args/kwargs parsing
 </tr></tbody>
 </table>
 </body>
@@ -5877,7 +5887,15 @@
 <span id="L5797" class="lineno"><a class="lineno" href="#L5797">5797</a></span>
 <span id="L5798" class="lineno"><a class="lineno" href="#L5798">5798</a></span>
 <span id="L5799" class="lineno"><a class="lineno" href="#L5799">5799</a></span>
+<<<<<<< HEAD
 >>>>>>> Except on select error
+=======
+<span id="L5800" class="lineno"><a class="lineno" href="#L5800">5800</a></span>
+<span id="L5801" class="lineno"><a class="lineno" href="#L5801">5801</a></span>
+<span id="L5802" class="lineno"><a class="lineno" href="#L5802">5802</a></span>
+<span id="L5803" class="lineno"><a class="lineno" href="#L5803">5803</a></span>
+<span id="L5804" class="lineno"><a class="lineno" href="#L5804">5804</a></span>
+>>>>>>> Fix args/kwargs parsing
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -6262,8 +6280,8 @@ Explicit (x4)">    def __init__(</span>
 <span class="line-empty" title="No Anys on this line!">        action,  # type: Callable[..., None]</span>
 <span class="line-empty" title="No Anys on this line!">        ssig,  # type: InterruptHandler</span>
 <span class="line-empty" title="No Anys on this line!">        intvl,  # type: int</span>
-<span class="line-empty" title="No Anys on this line!">        *args,  # type: Tuple[Any, ...]</span>
-<span class="line-empty" title="No Anys on this line!">        **kwargs  # type: Dict[str, Any]</span>
+<span class="line-empty" title="No Anys on this line!">        args,  # type: Tuple[Any, ...]</span>
+<span class="line-empty" title="No Anys on this line!">        kwargs,  # type: Dict[str, Any]</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
@@ -6341,8 +6359,8 @@ Explicit (x4)">    def __init__(</span>
 <span class="line-empty" title="No Anys on this line!">        ssig,  # type: InterruptHandler</span>
 <span class="line-empty" title="No Anys on this line!">        repeat,  # type: int</span>
 <span class="line-empty" title="No Anys on this line!">        pause,  # type: float</span>
-<span class="line-empty" title="No Anys on this line!">        *args,  # type: Tuple[Any, ...]</span>
-<span class="line-empty" title="No Anys on this line!">        **kwargs  # type: Dict[str, Any]</span>
+<span class="line-empty" title="No Anys on this line!">        args,  # type: Tuple[Any, ...]</span>
+<span class="line-empty" title="No Anys on this line!">        kwargs,  # type: Dict[str, Any]</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
@@ -9741,8 +9759,11 @@ Error (x2)">                self.log.trace("COMMAND-EOF signal RAISED IOCommand.
 <span class="line-precise" title="No Anys on this line!">        assert self.proc.stdin is not None</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">        self.log.trace("Appending to stdin: %s", repr(data))  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">        self.proc.stdin.write(data)</span>
-<span class="line-precise" title="No Anys on this line!">        self.proc.stdin.flush()</span>
+<span class="line-empty" title="No Anys on this line!">        try:</span>
+<span class="line-precise" title="No Anys on this line!">            self.proc.stdin.write(data)</span>
+<span class="line-precise" title="No Anys on this line!">            self.proc.stdin.flush()</span>
+<span class="line-precise" title="No Anys on this line!">        except BrokenPipeError:</span>
+<span class="line-precise" title="No Anys on this line!">            pass</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def interrupt(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
@@ -10153,7 +10174,7 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 Error (x2)">            self.log.trace("[%s] Producer Stop", name)  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">        def run_timer(name, action, intvl, ssig, args, **kwargs):</span>
+Explicit (x4)">        def run_timer(name, action, intvl, ssig, *args, **kwargs):</span>
 <span class="line-empty" title="No Anys on this line!">            # type: (str, Callable[..., None], int, InterruptHandler, Any, Any) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">            """Timer run function to be thrown into a thread (Execs periodic tasks).</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -10185,7 +10206,7 @@ Explicit (x4)">                    action(*args, **kwargs)</span>
 <span class="line-precise" title="No Anys on this line!">                time.sleep(0.1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">        def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):</span>
+Explicit (x4)">        def run_repeater(name, action, repeat, pause, ssig, *args, **kwargs):</span>
 <span class="line-empty" title="No Anys on this line!">            # type: (str, Callable[..., None], int, float, InterruptHandler, Any, Any) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">            """Repeater run function to be thrown into a thread (Execs periodic tasks).</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -10271,15 +10292,15 @@ Explicit (x5)">            thread = threading.Thread(</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x4)">                target=run_timer,</span>
 <span class="line-precise" title="No Anys on this line!">                name=key,</span>
-<span class="line-empty" title="No Anys on this line!">                args=(</span>
+<span class="line-precise" title="No Anys on this line!">                args=(</span>
 <span class="line-precise" title="No Anys on this line!">                    key,</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">                    self.__timers[key].action,</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__timers[key].intvl,</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__timers[key].ssig,</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x1)">                    self.__timers[key].args,</span>
-<span class="line-empty" title="No Anys on this line!">                ),</span>
+Explicit (x1)">                + self.__timers[key].args,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x1)">                kwargs=self.__timers[key].kwargs,</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
@@ -10294,16 +10315,16 @@ Explicit (x5)">            thread = threading.Thread(</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x4)">                target=run_repeater,</span>
 <span class="line-precise" title="No Anys on this line!">                name=key,</span>
-<span class="line-empty" title="No Anys on this line!">                args=(</span>
+<span class="line-precise" title="No Anys on this line!">                args=(</span>
 <span class="line-precise" title="No Anys on this line!">                    key,</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x2)">                    self.__repeaters[key].action,</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__repeaters[key].repeat,</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__repeaters[key].pause,</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__repeaters[key].ssig,</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x1)">                    self.__repeaters[key].args,</span>
-<span class="line-empty" title="No Anys on this line!">                ),</span>
+Explicit (x1)">                + self.__repeaters[key].args,</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x1)">                kwargs=self.__repeaters[key].kwargs,</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
@@ -12185,17 +12206,21 @@ Explicit (x1)">                code_send,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x5)">        if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">            payload = StringEncoder.encode(args.ping_word)</span>
 <span class="line-precise" title="No Anys on this line!">            run.add_timer(</span>
 <span class="line-precise" title="No Anys on this line!">                "PING-INT",</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x6)">                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data</span>
+Explicit (x5)">                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (payload,), {}),  # send data</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        if args.ping_init:</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">            payload = StringEncoder.encode(args.ping_word)</span>
 <span class="line-precise" title="No Anys on this line!">            run.add_repeater(</span>
 <span class="line-precise" title="No Anys on this line!">                "PING-REP",</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x5)">                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (args.ping_word)),  # send data</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Explicit (x4)">                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (payload,), {}),  # send data</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">        run.run()</span>
 <span class="line-empty" title="No Anys on this line!"></span>

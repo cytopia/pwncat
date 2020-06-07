@@ -134,7 +134,7 @@
  </tbody>
 </table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.48%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.45%)</strong></sup><br/>
 > <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
 > <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 

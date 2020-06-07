@@ -381,8 +381,8 @@ class DsRunnerTimer(object):
         action,  # type: Callable[..., None]
         ssig,  # type: InterruptHandler
         intvl,  # type: int
-        *args,  # type: Tuple[Any, ...]
-        **kwargs  # type: Dict[str, Any]
+        args,  # type: Tuple[Any, ...]
+        kwargs,  # type: Dict[str, Any]
     ):
         # type: (...) -&gt; None
         assert type(intvl) is int, type(intvl)
@@ -448,8 +448,8 @@ class DsRunnerRepeater(object):
         ssig,  # type: InterruptHandler
         repeat,  # type: int
         pause,  # type: float
-        *args,  # type: Tuple[Any, ...]
-        **kwargs  # type: Dict[str, Any]
+        args,  # type: Tuple[Any, ...]
+        kwargs,  # type: Dict[str, Any]
     ):
         # type: (...) -&gt; None
         assert type(repeat) is int, type(repeat)
@@ -3626,8 +3626,11 @@ class IOCommand(IO):
         &#34;&#34;&#34;
         assert self.proc.stdin is not None
         self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))  # type: ignore
-        self.proc.stdin.write(data)
-        self.proc.stdin.flush()
+        try:
+            self.proc.stdin.write(data)
+            self.proc.stdin.flush()
+        except BrokenPipeError:
+            pass
 
     def interrupt(self):
         # type: () -&gt; None
@@ -4011,7 +4014,7 @@ class Runner(object):
                 consumer(data)
             self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
-        def run_timer(name, action, intvl, ssig, args, **kwargs):
+        def run_timer(name, action, intvl, ssig, *args, **kwargs):
             # type: (str, Callable[..., None], int, InterruptHandler, Any, Any) -&gt; None
             &#34;&#34;&#34;Timer run function to be thrown into a thread (Execs periodic tasks).
 
@@ -4038,7 +4041,7 @@ class Runner(object):
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
-        def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
+        def run_repeater(name, action, repeat, pause, ssig, *args, **kwargs):
             # type: (str, Callable[..., None], int, float, InterruptHandler, Any, Any) -&gt; None
             &#34;&#34;&#34;Repeater run function to be thrown into a thread (Execs periodic tasks).
 
@@ -4118,8 +4121,8 @@ class Runner(object):
                     self.__timers[key].action,
                     self.__timers[key].intvl,
                     self.__timers[key].ssig,
-                    self.__timers[key].args,
-                ),
+                )
+                + self.__timers[key].args,
                 kwargs=self.__timers[key].kwargs,
             )
             thread.daemon = False
@@ -4137,8 +4140,8 @@ class Runner(object):
                     self.__repeaters[key].repeat,
                     self.__repeaters[key].pause,
                     self.__repeaters[key].ssig,
-                    self.__repeaters[key].args,
-                ),
+                )
+                + self.__repeaters[key].args,
                 kwargs=self.__repeaters[key].kwargs,
             )
             thread.daemon = False
@@ -5859,14 +5862,16 @@ def main():
             ),
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
+            payload = StringEncoder.encode(args.ping_word)
             run.add_timer(
                 &#34;PING-INT&#34;,
-                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
+                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (payload,), {}),  # send data
             )
         if args.ping_init:
+            payload = StringEncoder.encode(args.ping_word)
             run.add_repeater(
                 &#34;PING-REP&#34;,
-                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (args.ping_word)),  # send data
+                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (payload,), {}),  # send data
             )
         run.run()
 
@@ -6875,14 +6880,16 @@ The default is to send a null byte sting: &#39;\\0&#39;.
             ),
         )
         if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:
+            payload = StringEncoder.encode(args.ping_word)
             run.add_timer(
                 &#34;PING-INT&#34;,
-                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
+                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (payload,), {}),  # send data
             )
         if args.ping_init:
+            payload = StringEncoder.encode(args.ping_word)
             run.add_repeater(
                 &#34;PING-REP&#34;,
-                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (args.ping_word)),  # send data
+                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (payload,), {}),  # send data
             )
         run.run()</code></pre>
 </details>
@@ -8861,7 +8868,7 @@ def transformers(self):
 </dd>
 <dt id="pwncat.DsRunnerRepeater"><code class="flex name class">
 <span>class <span class="ident">DsRunnerRepeater</span></span>
-<span>(</span><span>action, ssig, repeat, pause, *args, **kwargs)</span>
+<span>(</span><span>action, ssig, repeat, pause, args, kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for repeated functions for the Runner class.</p></div>
@@ -8920,8 +8927,8 @@ def transformers(self):
         ssig,  # type: InterruptHandler
         repeat,  # type: int
         pause,  # type: float
-        *args,  # type: Tuple[Any, ...]
-        **kwargs  # type: Dict[str, Any]
+        args,  # type: Tuple[Any, ...]
+        kwargs,  # type: Dict[str, Any]
     ):
         # type: (...) -&gt; None
         assert type(repeat) is int, type(repeat)
@@ -9024,7 +9031,7 @@ def ssig(self):
 </dd>
 <dt id="pwncat.DsRunnerTimer"><code class="flex name class">
 <span>class <span class="ident">DsRunnerTimer</span></span>
-<span>(</span><span>action, ssig, intvl, *args, **kwargs)</span>
+<span>(</span><span>action, ssig, intvl, args, kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A type-safe data structure for Timer functions for the Runner class.</p></div>
@@ -9076,8 +9083,8 @@ def ssig(self):
         action,  # type: Callable[..., None]
         ssig,  # type: InterruptHandler
         intvl,  # type: int
-        *args,  # type: Tuple[Any, ...]
-        **kwargs  # type: Dict[str, Any]
+        args,  # type: Tuple[Any, ...]
+        kwargs,  # type: Dict[str, Any]
     ):
         # type: (...) -&gt; None
         assert type(intvl) is int, type(intvl)
@@ -9937,8 +9944,11 @@ def producer(self, *args, **kwargs):
         &#34;&#34;&#34;
         assert self.proc.stdin is not None
         self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))  # type: ignore
-        self.proc.stdin.write(data)
-        self.proc.stdin.flush()
+        try:
+            self.proc.stdin.write(data)
+            self.proc.stdin.flush()
+        except BrokenPipeError:
+            pass
 
     def interrupt(self):
         # type: () -&gt; None
@@ -9989,8 +9999,11 @@ def producer(self, *args, **kwargs):
     &#34;&#34;&#34;
     assert self.proc.stdin is not None
     self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))  # type: ignore
-    self.proc.stdin.write(data)
-    self.proc.stdin.flush()</code></pre>
+    try:
+        self.proc.stdin.write(data)
+        self.proc.stdin.flush()
+    except BrokenPipeError:
+        pass</code></pre>
 </details>
 </dd>
 <dt id="pwncat.IOCommand.interrupt"><code class="name flex">
@@ -13262,7 +13275,7 @@ def store(self):
                 consumer(data)
             self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
-        def run_timer(name, action, intvl, ssig, args, **kwargs):
+        def run_timer(name, action, intvl, ssig, *args, **kwargs):
             # type: (str, Callable[..., None], int, InterruptHandler, Any, Any) -&gt; None
             &#34;&#34;&#34;Timer run function to be thrown into a thread (Execs periodic tasks).
 
@@ -13289,7 +13302,7 @@ def store(self):
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
-        def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
+        def run_repeater(name, action, repeat, pause, ssig, *args, **kwargs):
             # type: (str, Callable[..., None], int, float, InterruptHandler, Any, Any) -&gt; None
             &#34;&#34;&#34;Repeater run function to be thrown into a thread (Execs periodic tasks).
 
@@ -13369,8 +13382,8 @@ def store(self):
                     self.__timers[key].action,
                     self.__timers[key].intvl,
                     self.__timers[key].ssig,
-                    self.__timers[key].args,
-                ),
+                )
+                + self.__timers[key].args,
                 kwargs=self.__timers[key].kwargs,
             )
             thread.daemon = False
@@ -13388,8 +13401,8 @@ def store(self):
                     self.__repeaters[key].repeat,
                     self.__repeaters[key].pause,
                     self.__repeaters[key].ssig,
-                    self.__repeaters[key].args,
-                ),
+                )
+                + self.__repeaters[key].args,
                 kwargs=self.__repeaters[key].kwargs,
             )
             thread.daemon = False
@@ -13607,7 +13620,7 @@ def store(self):
             consumer(data)
         self.log.trace(&#34;[%s] Producer Stop&#34;, name)  # type: ignore
 
-    def run_timer(name, action, intvl, ssig, args, **kwargs):
+    def run_timer(name, action, intvl, ssig, *args, **kwargs):
         # type: (str, Callable[..., None], int, InterruptHandler, Any, Any) -&gt; None
         &#34;&#34;&#34;Timer run function to be thrown into a thread (Execs periodic tasks).
 
@@ -13634,7 +13647,7 @@ def store(self):
                 time_last = time_now  # Reset previous time
             time.sleep(0.1)
 
-    def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
+    def run_repeater(name, action, repeat, pause, ssig, *args, **kwargs):
         # type: (str, Callable[..., None], int, float, InterruptHandler, Any, Any) -&gt; None
         &#34;&#34;&#34;Repeater run function to be thrown into a thread (Execs periodic tasks).
 
@@ -13714,8 +13727,8 @@ def store(self):
                 self.__timers[key].action,
                 self.__timers[key].intvl,
                 self.__timers[key].ssig,
-                self.__timers[key].args,
-            ),
+            )
+            + self.__timers[key].args,
             kwargs=self.__timers[key].kwargs,
         )
         thread.daemon = False
@@ -13733,8 +13746,8 @@ def store(self):
                 self.__repeaters[key].repeat,
                 self.__repeaters[key].pause,
                 self.__repeaters[key].ssig,
-                self.__repeaters[key].args,
-            ),
+            )
+            + self.__repeaters[key].args,
             kwargs=self.__repeaters[key].kwargs,
         )
         thread.daemon = False
