@@ -187,25 +187,61 @@ _code-mypy:
 # -------------------------------------------------------------------------------------------------
 # Smoke Targets
 # -------------------------------------------------------------------------------------------------
-smoke: _smoke-keep_open-before_send
-smoke: _smoke-keep_open-after_client_send
+smoke: _smoke-keep_open-kill_srv-before_send
+smoke: _smoke-keep_open-kill_srv-send_data
+smoke: _smoke-tcp_port_scan-no_banner
+smoke: _smoke-tcp_port_scan-with_banner
+smoke: _smoke-udp_port_scan-no_banner
+smoke: _smoke-udp_port_scan-with_banner
 
 .PHONY:
-_smoke-keep_open-before_send:
+_smoke-keep_open-kill_srv-before_send:
 	@# It's sometimes a race-condition, so we run it five times
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
 
-_smoke-keep_open-after_client_send:
+_smoke-keep_open-kill_srv-send_data:
 	@# It's sometimes a race-condition, so we run it five times
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+
+_smoke-tcp_port_scan-no_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+
+_smoke-tcp_port_scan-with_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+
+_smoke-udp_port_scan-no_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+
+_smoke-udp_port_scan-with_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
 
 
 # -------------------------------------------------------------------------------------------------
