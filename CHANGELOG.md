@@ -9,6 +9,9 @@
 ### Fixed
 - Fixed freeze in raw mode: #81
 
+### Added
+- Install instructions for ArchLinux
+
 
 ## Release 0.0.22-alpha
 

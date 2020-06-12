@@ -152,9 +152,11 @@ tool that works on older and newer machines (hence Python 2+3 compat). Most impo
 
 
 ## :tada: Install
-```bash
-pip install pwncat
-```
+
+| [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) |
+|:-:|:-:|:-:|:-:|
+| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/python.png)](https://pypi.org/project/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) |
+| `pip install pwncat` | `yaourt -S pwncat` |
 
 
 ## :coffee: TL;DR
