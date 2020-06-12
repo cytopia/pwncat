@@ -132,9 +132,9 @@
    </td>
   </tr>
  </tbody>
-<table>
+</table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.52%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.56%)</strong></sup><br/>
 > <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
 > <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
 
@@ -152,9 +152,11 @@ tool that works on older and newer machines (hence Python 2+3 compat). Most impo
 
 
 ## :tada: Install
-```bash
-pip install pwncat
-```
+
+| [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) |
+|:-:|:-:|:-:|:-:|
+| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/python.png)](https://pypi.org/project/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) |
+| `pip install pwncat` | `yaourt -S pwncat` |
 
 
 ## :coffee: TL;DR
