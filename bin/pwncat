@@ -3481,37 +3481,33 @@ class IOStdinStdout(IO):
         return mode[tty.LFLAG] != (mode[tty.LFLAG] | termios.ICANON)  # type: ignore
 
     def __read_stdin(self):
-        # type: () -> str
+        # type: () -> bytes
         """Returns input from STDIN."""
         # (Windows)
         if self.__win:
+            if self.__py3:
+                return sys.stdin.buffer.read(1)
             # Python 2 on Windows opens sys.stdin in text mode, and
             # binary data that read from it becomes corrupted on \r\n.
             # Setting sys.stdin to binary mode fixes that.
-            if not self.__py3:
-                if hasattr(os, "O_BINARY"):
-                    msvcrt.setmode(  # type: ignore
-                        sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
-                    )
-            return sys.stdin.readline()
+            if hasattr(os, "O_BINARY"):
+                msvcrt.setmode(  # type: ignore
+                    sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
+                )
+            return sys.stdin.readline()  # type: ignore
 
         # (Linux/Mac) Raw mode
         if self.__stdin_israw():
             self.__set_input_timeout()
-            return sys.stdin.read(1)
-            # if self.__py3:
-            #      return sys.stdin.buffer.read(1)  # (bytes)
-            #     return sys.stdin.read(1)
-            # else:
-            #     return sys.stdin.read(1)
+            if self.__py3:
+                return sys.stdin.buffer.read(1)
+            return sys.stdin.read(1)  # type: ignore
 
         # (Linux/Mac) Normal mode
         self.__set_input_timeout()
-        return sys.stdin.readline()
-        # if self.__py3:
-        #     return sys.stdin.buffer.readline()  # (bytes)
-        # else:
-        #     return sys.stdin.readline()
+        if self.__py3:
+            return sys.stdin.buffer.readline()
+        return sys.stdin.readline()  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------

@@ -3508,37 +3508,33 @@ class IOStdinStdout(IO):
         return mode[tty.LFLAG] != (mode[tty.LFLAG] | termios.ICANON)  # type: ignore
 
     def __read_stdin(self):
-        # type: () -&gt; str
+        # type: () -&gt; bytes
         &#34;&#34;&#34;Returns input from STDIN.&#34;&#34;&#34;
         # (Windows)
         if self.__win:
+            if self.__py3:
+                return sys.stdin.buffer.read(1)
             # Python 2 on Windows opens sys.stdin in text mode, and
             # binary data that read from it becomes corrupted on \r\n.
             # Setting sys.stdin to binary mode fixes that.
-            if not self.__py3:
-                if hasattr(os, &#34;O_BINARY&#34;):
-                    msvcrt.setmode(  # type: ignore
-                        sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
-                    )
-            return sys.stdin.readline()
+            if hasattr(os, &#34;O_BINARY&#34;):
+                msvcrt.setmode(  # type: ignore
+                    sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
+                )
+            return sys.stdin.readline()  # type: ignore
 
         # (Linux/Mac) Raw mode
         if self.__stdin_israw():
             self.__set_input_timeout()
-            return sys.stdin.read(1)
-            # if self.__py3:
-            #      return sys.stdin.buffer.read(1)  # (bytes)
-            #     return sys.stdin.read(1)
-            # else:
-            #     return sys.stdin.read(1)
+            if self.__py3:
+                return sys.stdin.buffer.read(1)
+            return sys.stdin.read(1)  # type: ignore
 
         # (Linux/Mac) Normal mode
         self.__set_input_timeout()
-        return sys.stdin.readline()
-        # if self.__py3:
-        #     return sys.stdin.buffer.readline()  # (bytes)
-        # else:
-        #     return sys.stdin.readline()
+        if self.__py3:
+            return sys.stdin.buffer.readline()
+        return sys.stdin.readline()  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
@@ -4175,10 +4171,6 @@ class Runner(object):
                                 interrupt.__name__,
                                 self.__threads[key].getName(),
                             )
-<<<<<<< HEAD
-                        except RuntimeError:
-                            pass
-=======
                             interrupt()
                             # [2/3] All blocking events inside the threads are gone, now join them
                             try:
@@ -4193,7 +4185,6 @@ class Runner(object):
                                 )
                             except RuntimeError:
                                 pass
->>>>>>> Fix quit behaviour with signalling
             # If all threads are done, also stop
             if not all([self.__threads[key].is_alive() for key in self.__threads]):
                 self.log.trace(&#34;All threads dead - shutting down.&#34;)  # type: ignore
@@ -11193,33 +11184,33 @@ callback that writes to stdout.</p>
         return mode[tty.LFLAG] != (mode[tty.LFLAG] | termios.ICANON)  # type: ignore
 
     def __read_stdin(self):
-        # type: () -&gt; str
+        # type: () -&gt; bytes
         &#34;&#34;&#34;Returns input from STDIN.&#34;&#34;&#34;
         # (Windows)
         if self.__win:
+            if self.__py3:
+                return sys.stdin.buffer.read(1)
             # Python 2 on Windows opens sys.stdin in text mode, and
             # binary data that read from it becomes corrupted on \r\n.
             # Setting sys.stdin to binary mode fixes that.
-            if not self.__py3:
-                if hasattr(os, &#34;O_BINARY&#34;):
-                    msvcrt.setmode(  # type: ignore
-                        sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
-                    )
-            return sys.stdin.readline()
+            if hasattr(os, &#34;O_BINARY&#34;):
+                msvcrt.setmode(  # type: ignore
+                    sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
+                )
+            return sys.stdin.readline()  # type: ignore
 
         # (Linux/Mac) Raw mode
         if self.__stdin_israw():
             self.__set_input_timeout()
-            return sys.stdin.read(1)
-            # if self.__py3:
-            #      return sys.stdin.buffer.read(1)  # (bytes)
-            #     return sys.stdin.read(1)
-            # else:
-            #     return sys.stdin.read(1)
+            if self.__py3:
+                return sys.stdin.buffer.read(1)
+            return sys.stdin.read(1)  # type: ignore
 
         # (Linux/Mac) Normal mode
         self.__set_input_timeout()
-        return sys.stdin.readline()</code></pre>
+        if self.__py3:
+            return sys.stdin.buffer.readline()
+        return sys.stdin.readline()  # type: ignore</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -13436,10 +13427,6 @@ def store(self):
                                 interrupt.__name__,
                                 self.__threads[key].getName(),
                             )
-<<<<<<< HEAD
-                        except RuntimeError:
-                            pass
-=======
                             interrupt()
                             # [2/3] All blocking events inside the threads are gone, now join them
                             try:
@@ -13454,7 +13441,6 @@ def store(self):
                                 )
                             except RuntimeError:
                                 pass
->>>>>>> Fix quit behaviour with signalling
             # If all threads are done, also stop
             if not all([self.__threads[key].is_alive() for key in self.__threads]):
                 self.log.trace(&#34;All threads dead - shutting down.&#34;)  # type: ignore
@@ -13781,10 +13767,6 @@ def store(self):
                             interrupt.__name__,
                             self.__threads[key].getName(),
                         )
-<<<<<<< HEAD
-                    except RuntimeError:
-                        pass
-=======
                         interrupt()
                         # [2/3] All blocking events inside the threads are gone, now join them
                         try:
@@ -13799,7 +13781,6 @@ def store(self):
                             )
                         except RuntimeError:
                             pass
->>>>>>> Fix quit behaviour with signalling
         # If all threads are done, also stop
         if not all([self.__threads[key].is_alive() for key in self.__threads]):
             self.log.trace(&#34;All threads dead - shutting down.&#34;)  # type: ignore
