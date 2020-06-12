@@ -407,9 +407,9 @@ Documentation will evolve over time.
 | Quit (SIGQUIT) | <kbd>Ctrl</kbd>+<kbd>\\</kbd> | ? | ? |
 | Quit (SIGQUIT) | <kbd>Ctrl</kbd>+<kbd>4</kbd>  | ? | ? |
 | Quit STDIN<sup>[1]</sup> | <kbd>Ctrl</kbd>+<kbd>d</kbd>  | ? | ? |
-| Send           | <kbd>Ctrl</kbd>+<kbd>j</kbd>  | ? | ? |
-| Send           | <kbd>Ctrl</kbd>+<kbd>m</kbd>  | ? | ? |
-| Send           | <kbd>Enter</kbd>              | ? | ? |
+| Send (NL)      | <kbd>Ctrl</kbd>+<kbd>j</kbd>  | ? | ? |
+| Send (EOL)     | <kbd>Ctrl</kbd>+<kbd>m</kbd>  | ? | ? |
+| Send (EOL)     | <kbd>Enter</kbd>              | ? | ? |
 
 > <sup>[1] Only works when not using `--no-shutdown` and `--keep`. Will then shutdown it's socket for sending, signaling the remote end and EOF on its socket.</sup>
 
