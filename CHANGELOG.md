@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.23-alpha
+
+### Fixed
+- Fixed freeze in raw mode: #81
+
+
 ## Release 0.0.22-alpha
 
 ### Added

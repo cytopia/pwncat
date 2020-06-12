@@ -74,8 +74,20 @@ import sys
 import threading
 import time
 
+# Available since Python 3.3
 try:
     import ipaddress
+except ImportError:
+    pass
+# Posix terminal
+try:
+    import tty
+    import termios
+except ImportError:
+    pass
+# Windows
+try:
+    import msvcrt
 except ImportError:
     pass
 
@@ -115,7 +127,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.22-alpha"
+VERSION = "0.0.23-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -3047,6 +3059,8 @@ class IOStdinStdout(IO):
         """
         super(IOStdinStdout, self).__init__(ssig)
         self.__opts = opts
+        self.__py3 = sys.version_info >= (3, 0)  # type: bool
+        self.__win = os.name != "posix"  # posix or nt
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -3066,10 +3080,7 @@ class IOStdinStdout(IO):
                 self.log.trace("Stop signal acknowledged for reading STDIN-1")  # type: ignore
                 return
             try:
-                # TODO: select() does not work for windows on stdin/stdout
-                if os.name != "nt":
-                    self.__set_input_timeout()
-                line = sys.stdin.readline()
+                data = self.__read_stdin()
             except EOFError:
                 # When using select() with timeout, we don't have any input
                 # at this point and simply continue the loop or quit if
@@ -3078,10 +3089,10 @@ class IOStdinStdout(IO):
                     self.log.trace("Stop signal acknowledged for reading STDIN-2")  # type: ignore
                     return
                 continue
-            if line:
-                self.log.debug("Received %d bytes from STDIN", len(line))
-                self.log.trace("Received: %s", repr(line))  # type: ignore
-                yield line
+            if data:
+                self.log.debug("Received %d bytes from STDIN", len(data))
+                self.log.trace("Received: %s", repr(data))  # type: ignore
+                yield data
             # EOF or <Ctrl>+<d>
             else:
                 # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
@@ -3125,6 +3136,60 @@ class IOStdinStdout(IO):
         # xlist: wait for an exceptional condition
         if not select.select([sys.stdin], [], [], self.__opts.input_timeout)[0]:
             raise EOFError("timed out")
+
+    def __stdin_israw(self):
+        # type: () -> bool
+        """Check if the terminal (STDIN) is set to raw mode."""
+        # Non-posix systems (e.g. Windows) do not have a raw mode
+        if self.__win:
+            return False
+
+        fild = sys.stdin.fileno()
+        try:
+            mode = termios.tcgetattr(fild)
+        except termios.error:
+            # Not a TTY
+            return False
+
+        # ICANON
+        # https://linux.die.net/man/3/termios
+        # The setting of the ICANON canon flag in c_lflag determines whether
+        # the terminal is operating in canonical mode (ICANON set) or
+        # noncanonical (raw) mode (ICANON unset). By default, ICANON set.
+        return mode[tty.LFLAG] != (mode[tty.LFLAG] | termios.ICANON)  # type: ignore
+
+    def __read_stdin(self):
+        # type: () -> str
+        """Returns input from STDIN."""
+        # (Windows)
+        if self.__win:
+            # Python 2 on Windows opens sys.stdin in text mode, and
+            # binary data that read from it becomes corrupted on \r\n.
+            # Setting sys.stdin to binary mode fixes that.
+            if not self.__py3:
+                if hasattr(os, "O_BINARY"):
+                    msvcrt.setmode(  # type: ignore
+                        sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
+                    )
+            return sys.stdin.readline()
+
+        # (Linux/Mac) Raw mode
+        if self.__stdin_israw():
+            self.__set_input_timeout()
+            return sys.stdin.read(1)
+            # if self.__py3:
+            #      return sys.stdin.buffer.read(1)  # (bytes)
+            #     return sys.stdin.read(1)
+            # else:
+            #     return sys.stdin.read(1)
+
+        # (Linux/Mac) Normal mode
+        self.__set_input_timeout()
+        return sys.stdin.readline()
+        # if self.__py3:
+        #     return sys.stdin.buffer.readline()  # (bytes)
+        # else:
+        #     return sys.stdin.readline()
 
 
 # -------------------------------------------------------------------------------------------------
@@ -3199,7 +3264,10 @@ class IOCommand(IO):
                 self.log.trace("Stop signal acknowledged in Command")  # type: ignore
                 return
             self.log.trace("Reading command output")  # type: ignore
-            data = self.proc.stdout.readline()  # Much better performance than self.proc.read(1)
+            # Byte-wise reading is required to make it work for remote ends being in raw mode
+            # However, the performance of self.proc.stdout.readline() is way faster.
+            # To improve performance we will get rid of all other logging calls here.
+            data = self.proc.stdout.read(1)
             self.log.trace("Command output: %s", repr(data))  # type: ignore
             if not data:
                 self.log.trace("Command output was empty. Exiting loop.")  # type: ignore
