@@ -154,7 +154,7 @@ if os.environ.get(&#34;MYPY_CHECK&#34;, False):
 
 APPNAME = &#34;pwncat&#34;
 APPREPO = &#34;https://github.com/cytopia/pwncat&#34;
-VERSION = &#34;0.0.23-alpha&#34;
+VERSION = &#34;0.0.24-alpha&#34;
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -3831,7 +3831,9 @@ class CNC(object):
         self.print_info(&#34;Creating tmpfile:&#34;, False, True)
         for response in self.__frecv():
             if response:
-                tmpfile = response.rstrip()
+                # The response could be something like this: &#39;/tmp/abcd\n$·&#39;
+                # So we need to ensure to some garbage from the right.
+                tmpfile = response.rstrip().rstrip(&#34;$&#34;).rstrip()
                 self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
                 return tmpfile
 
@@ -3879,7 +3881,9 @@ class CNC(object):
                 self.remote_command(&#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python))
                 for response in self.__frecv():
                     reg = re.search(r&#34;^([.0-9]+)&#34;, response)
-                    if response.rstrip() == python.rstrip():
+                    # The response could be something like this: &#39;/usr/bin/python\n$·&#39;
+                    # So we need to ensure to some garbage from the right.
+                    if response.rstrip().rstrip(&#34;$&#34;).rstrip() == python.rstrip():
                         self.print_info(&#34;Potential path: {}&#34;.format(python))
                         command = []
                         command.append(&#34;{} -c &#39;&#34;.format(python))
@@ -6911,7 +6915,9 @@ def type_tos(value):
         self.print_info(&#34;Creating tmpfile:&#34;, False, True)
         for response in self.__frecv():
             if response:
-                tmpfile = response.rstrip()
+                # The response could be something like this: &#39;/tmp/abcd\n$·&#39;
+                # So we need to ensure to some garbage from the right.
+                tmpfile = response.rstrip().rstrip(&#34;$&#34;).rstrip()
                 self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
                 return tmpfile
 
@@ -6959,7 +6965,9 @@ def type_tos(value):
                 self.remote_command(&#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python))
                 for response in self.__frecv():
                     reg = re.search(r&#34;^([.0-9]+)&#34;, response)
-                    if response.rstrip() == python.rstrip():
+                    # The response could be something like this: &#39;/usr/bin/python\n$·&#39;
+                    # So we need to ensure to some garbage from the right.
+                    if response.rstrip().rstrip(&#34;$&#34;).rstrip() == python.rstrip():
                         self.print_info(&#34;Potential path: {}&#34;.format(python))
                         command = []
                         command.append(&#34;{} -c &#39;&#34;.format(python))
@@ -7117,7 +7125,9 @@ def python(self):
     self.print_info(&#34;Creating tmpfile:&#34;, False, True)
     for response in self.__frecv():
         if response:
-            tmpfile = response.rstrip()
+            # The response could be something like this: &#39;/tmp/abcd\n$·&#39;
+            # So we need to ensure to some garbage from the right.
+            tmpfile = response.rstrip().rstrip(&#34;$&#34;).rstrip()
             self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
             return tmpfile
 

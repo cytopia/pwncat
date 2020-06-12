@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.0.24-alpha
+
+### Fixed
+- Fixed non-detectable Python binaries in self-inject mode if remote appends '$' chars: #83
+
+
 ## Release 0.0.23-alpha
 
 ### Fixed

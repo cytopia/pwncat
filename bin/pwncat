@@ -127,7 +127,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.23-alpha"
+VERSION = "0.0.24-alpha"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.1
@@ -3804,7 +3804,9 @@ class CNC(object):
         self.print_info("Creating tmpfile:", False, True)
         for response in self.__frecv():
             if response:
-                tmpfile = response.rstrip()
+                # The response could be something like this: '/tmp/abcd\n$·'
+                # So we need to ensure to some garbage from the right.
+                tmpfile = response.rstrip().rstrip("$").rstrip()
                 self.print_info("Creating tmpfile: {}".format(tmpfile), True, True)
                 return tmpfile
 
@@ -3852,7 +3854,9 @@ class CNC(object):
                 self.remote_command("test -f {p} && echo {p} || echo;".format(p=python))
                 for response in self.__frecv():
                     reg = re.search(r"^([.0-9]+)", response)
-                    if response.rstrip() == python.rstrip():
+                    # The response could be something like this: '/usr/bin/python\n$·'
+                    # So we need to ensure to some garbage from the right.
+                    if response.rstrip().rstrip("$").rstrip() == python.rstrip():
                         self.print_info("Potential path: {}".format(python))
                         command = []
                         command.append("{} -c '".format(python))

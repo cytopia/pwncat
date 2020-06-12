@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.44% imprecise</th>
-<th class="summary summary-lines">5283 LOC</th>
+<th class="summary summary-precision">6.43% imprecise</th>
+<th class="summary summary-lines">5287 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.44% imprecise</td>
-<td class="summary summary-lines">5283 LOC</td>
+<td class="summary summary-precision">6.43% imprecise</td>
+<td class="summary summary-lines">5287 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -5318,6 +5318,10 @@
 <span id="L5281" class="lineno"><a class="lineno" href="#L5281">5281</a></span>
 <span id="L5282" class="lineno"><a class="lineno" href="#L5282">5282</a></span>
 <span id="L5283" class="lineno"><a class="lineno" href="#L5283">5283</a></span>
+<span id="L5284" class="lineno"><a class="lineno" href="#L5284">5284</a></span>
+<span id="L5285" class="lineno"><a class="lineno" href="#L5285">5285</a></span>
+<span id="L5286" class="lineno"><a class="lineno" href="#L5286">5286</a></span>
+<span id="L5287" class="lineno"><a class="lineno" href="#L5287">5287</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -5448,7 +5452,7 @@
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.23-alpha"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.0.24-alpha"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.1</span>
@@ -9367,7 +9371,9 @@ Error (x2)">                    self.log.trace("Joining %s", self.__threads[key]
 <span class="line-precise" title="No Anys on this line!">        self.print_info("Creating tmpfile:", False, True)</span>
 <span class="line-precise" title="No Anys on this line!">        for response in self.__frecv():</span>
 <span class="line-precise" title="No Anys on this line!">            if response:</span>
-<span class="line-precise" title="No Anys on this line!">                tmpfile = response.rstrip()</span>
+<span class="line-empty" title="No Anys on this line!">                # The response could be something like this: '/tmp/abcd\n$·'</span>
+<span class="line-empty" title="No Anys on this line!">                # So we need to ensure to some garbage from the right.</span>
+<span class="line-precise" title="No Anys on this line!">                tmpfile = response.rstrip().rstrip("$").rstrip()</span>
 <span class="line-precise" title="No Anys on this line!">                self.print_info("Creating tmpfile: {}".format(tmpfile), True, True)</span>
 <span class="line-precise" title="No Anys on this line!">                return tmpfile</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -9415,7 +9421,9 @@ Error (x2)">                    self.log.trace("Joining %s", self.__threads[key]
 <span class="line-precise" title="No Anys on this line!">                self.remote_command("test -f {p} &amp;&amp; echo {p} || echo;".format(p=python))</span>
 <span class="line-precise" title="No Anys on this line!">                for response in self.__frecv():</span>
 <span class="line-precise" title="No Anys on this line!">                    reg = re.search(r"^([.0-9]+)", response)</span>
-<span class="line-precise" title="No Anys on this line!">                    if response.rstrip() == python.rstrip():</span>
+<span class="line-empty" title="No Anys on this line!">                    # The response could be something like this: '/usr/bin/python\n$·'</span>
+<span class="line-empty" title="No Anys on this line!">                    # So we need to ensure to some garbage from the right.</span>
+<span class="line-precise" title="No Anys on this line!">                    if response.rstrip().rstrip("$").rstrip() == python.rstrip():</span>
 <span class="line-precise" title="No Anys on this line!">                        self.print_info("Potential path: {}".format(python))</span>
 <span class="line-precise" title="No Anys on this line!">                        command = []</span>
 <span class="line-precise" title="No Anys on this line!">                        command.append("{} -c '".format(python))</span>
