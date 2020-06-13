@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.53% imprecise</th>
-<th class="summary summary-lines">5847 LOC</th>
+<th class="summary summary-precision">6.40% imprecise</th>
+<th class="summary summary-lines">5861 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.53% imprecise</td>
-<td class="summary summary-lines">5847 LOC</td>
+<td class="summary summary-precision">6.40% imprecise</td>
+<td class="summary summary-lines">5861 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -5882,6 +5882,20 @@
 <span id="L5845" class="lineno"><a class="lineno" href="#L5845">5845</a></span>
 <span id="L5846" class="lineno"><a class="lineno" href="#L5846">5846</a></span>
 <span id="L5847" class="lineno"><a class="lineno" href="#L5847">5847</a></span>
+<span id="L5848" class="lineno"><a class="lineno" href="#L5848">5848</a></span>
+<span id="L5849" class="lineno"><a class="lineno" href="#L5849">5849</a></span>
+<span id="L5850" class="lineno"><a class="lineno" href="#L5850">5850</a></span>
+<span id="L5851" class="lineno"><a class="lineno" href="#L5851">5851</a></span>
+<span id="L5852" class="lineno"><a class="lineno" href="#L5852">5852</a></span>
+<span id="L5853" class="lineno"><a class="lineno" href="#L5853">5853</a></span>
+<span id="L5854" class="lineno"><a class="lineno" href="#L5854">5854</a></span>
+<span id="L5855" class="lineno"><a class="lineno" href="#L5855">5855</a></span>
+<span id="L5856" class="lineno"><a class="lineno" href="#L5856">5856</a></span>
+<span id="L5857" class="lineno"><a class="lineno" href="#L5857">5857</a></span>
+<span id="L5858" class="lineno"><a class="lineno" href="#L5858">5858</a></span>
+<span id="L5859" class="lineno"><a class="lineno" href="#L5859">5859</a></span>
+<span id="L5860" class="lineno"><a class="lineno" href="#L5860">5860</a></span>
+<span id="L5861" class="lineno"><a class="lineno" href="#L5861">5861</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -7410,13 +7424,14 @@ Explicit (x4)">            self.__log.debug(msg)</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Create functions</span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
-<span class="line-precise" title="No Anys on this line!">    def create_socket(self, family, sock_type, ip_tos_name=None):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (Union[socket.AddressFamily, int], int, Optional[str]) -&gt; socket.socket</span>
+<span class="line-precise" title="No Anys on this line!">    def create_socket(self, family, sock_type, reuse_addr, ip_tos_name=None):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (Union[socket.AddressFamily, int], int, bool, Optional[str]) -&gt; socket.socket</span>
 <span class="line-empty" title="No Anys on this line!">        """Create TCP or UDP socket.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            family (socket.family): The address family for which to create the socket for.</span>
 <span class="line-empty" title="No Anys on this line!">            sock_type (int): The socket type: socket.SOCK_DGRAM or socket.SOCK_STREAM</span>
+<span class="line-empty" title="No Anys on this line!">            reuse_addr (bool): Set SO_REUSEADDR on the socket.</span>
 <span class="line-empty" title="No Anys on this line!">            ip_tos_name (str): Optional IP type of service value to apply to socket</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        Returns:</span>
@@ -7465,7 +7480,8 @@ Explicit (x4)">                self.__log.debug(</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait</span>
 <span class="line-empty" title="No Anys on this line!">        # we instruct it to reuse the address anyway.</span>
-<span class="line-precise" title="No Anys on this line!">        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)</span>
+<span class="line-precise" title="No Anys on this line!">        if reuse_addr:</span>
+<span class="line-precise" title="No Anys on this line!">            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # If requested, set IP Type of Service value for current socket</span>
 <span class="line-precise" title="No Anys on this line!">        if ip_tos_name is not None:</span>
@@ -8066,6 +8082,7 @@ Error (x2)">        self.__log.trace("Received: %s", repr(data))  # type: ignore
 <span class="line-precise" title="No Anys on this line!">                    "conn": self.__sock.create_socket(</span>
 <span class="line-precise" title="No Anys on this line!">                        family,</span>
 <span class="line-precise" title="No Anys on this line!">                        socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,</span>
+<span class="line-precise" title="No Anys on this line!">                        True,</span>
 <span class="line-precise" title="No Anys on this line!">                        self.__options.ip_tos,</span>
 <span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-empty" title="No Anys on this line!">                }</span>
@@ -8173,6 +8190,7 @@ Explicit (x4)">            self.__log.info("[%s] %s", self.__sock.get_family_nam
 <span class="line-precise" title="No Anys on this line!">                    "sock": self.__sock.create_socket(</span>
 <span class="line-precise" title="No Anys on this line!">                        family,</span>
 <span class="line-precise" title="No Anys on this line!">                        socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,</span>
+<span class="line-precise" title="No Anys on this line!">                        True,</span>
 <span class="line-precise" title="No Anys on this line!">                        self.__options.ip_tos,</span>
 <span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-empty" title="No Anys on this line!">                }</span>
@@ -9225,8 +9243,8 @@ Error (x2)">                self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                raise socket.error("quit")</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
 <span class="line-precise" title="No Anys on this line!">                if self.__sock_opts.udp:</span>
-<span class="line-precise" title="No Anys on this line!">                    return self.__sock.create_socket(family, socket.SOCK_DGRAM)</span>
-<span class="line-precise" title="No Anys on this line!">                return self.__sock.create_socket(family, socket.SOCK_STREAM)</span>
+<span class="line-precise" title="No Anys on this line!">                    return self.__sock.create_socket(family, socket.SOCK_DGRAM, False)</span>
+<span class="line-precise" title="No Anys on this line!">                return self.__sock.create_socket(family, socket.SOCK_STREAM, False)</span>
 <span class="line-precise" title="No Anys on this line!">            except socket.error:</span>
 <span class="line-precise" title="No Anys on this line!">                delay += 0.1</span>
 <span class="line-precise" title="No Anys on this line!">                time.sleep(delay)  # This can be bigger to give the system some time to release fd's</span>
@@ -9855,9 +9873,11 @@ Explicit (x1)">        self.__store = None</span>
 <span class="line-any" title="No Anys on this line!">        def handler(signum, frame):  # type: ignore  # pylint: disable=unused-argument</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.__log.trace("Ctrl+c caught.")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">            # logging.shutdown()</span>
 <span class="line-precise" title="No Anys on this line!">            self.raise_terminate()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Handle Ctrl+C</span>
+<span class="line-empty" title="No Anys on this line!">        # signal.signal(signal.SIGTERM, handler)</span>
 <span class="line-precise" title="Any Types on this line: 
 Unannotated (x3)">        signal.signal(signal.SIGINT, handler)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -9908,23 +9928,20 @@ Error (x2)">        self.__log.trace("SIGNAL TERMINATE raised")  # type: ignore<
 <span class="line-precise" title="No Anys on this line!">    def raise_sock_send_eof(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Signal the application that Socket should be closed for sending."""</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">        self.__log.trace("SIGNAL SOCK-CLOSE-SEND raised")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">        # self.__log.trace("SIGNAL SOCK-CLOSE-SEND raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__sock_send_eof = True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def raise_sock_eof(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Signal the application that Socket has received EOF."""</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">        self.__log.trace("SIGNAL SOCK-EOF raised")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">        # self.__log.trace("SIGNAL SOCK-EOF raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__sock_eof = True</span>
 <span class="line-precise" title="No Anys on this line!">        self.raise_sock_quit()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def raise_sock_quit(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Signal the application that Socket should be quit."""</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">        self.__log.trace("SIGNAL SOCK-QUIT raised")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">        # self.__log.trace("SIGNAL SOCK-QUIT raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__sock_quit = True</span>
 <span class="line-precise" title="No Anys on this line!">        self.raise_terminate()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -9934,16 +9951,14 @@ Error (x2)">        self.__log.trace("SIGNAL SOCK-QUIT raised")  # type: ignore<
 <span class="line-precise" title="No Anys on this line!">    def raise_stdin_eof(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Signal the application that STDIN has received EOF."""</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">        self.__log.trace("SIGNAL STDIN-EOF raised")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">        # self.__log.trace("SIGNAL STDIN-EOF raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__stdin_eof = True</span>
 <span class="line-precise" title="No Anys on this line!">        self.raise_stdin_quit()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def raise_stdin_quit(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Signal the application that STDIN should be quit."""</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">        self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">        # self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__stdin_quit = True</span>
 <span class="line-empty" title="No Anys on this line!">        # If --no-shutdown or -keep-open is specified</span>
 <span class="line-empty" title="No Anys on this line!">        # pwncat will not invoke shutdown on a socket after seeing EOF on stdin</span>
@@ -9958,16 +9973,14 @@ Error (x2)">        self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore
 <span class="line-precise" title="No Anys on this line!">    def raise_command_eof(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Signal the application that Command has received EOF."""</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">        self.__log.trace("SIGNAL COMMAND-EOF raised")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">        # self.__log.trace("SIGNAL COMMAND-EOF raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__command_eof = True</span>
 <span class="line-precise" title="No Anys on this line!">        self.raise_command_quit()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def raise_command_quit(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Signal the application that Command should be quit."""</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">        self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">        # self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        self.__command_quit = True</span>
 <span class="line-precise" title="No Anys on this line!">        self.raise_terminate()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -10208,22 +10221,24 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-precise" title="No Anys on this line!">                    break</span>
 <span class="line-empty" title="No Anys on this line!">                try:</span>
+<span class="line-empty" title="No Anys on this line!">                    # Do not call any logging functions in here as it will</span>
+<span class="line-empty" title="No Anys on this line!">                    # cause a deadlock for Python2</span>
 <span class="line-empty" title="No Anys on this line!">                    # Start and break the loop upon success to go to the next thread to start</span>
 <span class="line-precise" title="No Anys on this line!">                    thread.start()</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">                    self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                        "Started thread %s with daemon=%i", key, self.__actions[key].daemon_thread</span>
-<span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-precise" title="No Anys on this line!">                    break</span>
-<span class="line-precise" title="No Anys on this line!">                except (RuntimeError, Exception) as err:  # pylint: disable=broad-except</span>
+<span class="line-precise" title="No Anys on this line!">                except (RuntimeError, Exception):  # pylint: disable=broad-except</span>
 <span class="line-precise" title="No Anys on this line!">                    delay += 0.1</span>
 <span class="line-precise" title="No Anys on this line!">                    time.sleep(delay)  # Give the system some time to release open fd's</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">                    self.log.trace("Thread start delaying to %d: %s", delay, err)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            self.__threads[key] = thread</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [2/3] Start available timers in a thread</span>
 <span class="line-precise" title="No Anys on this line!">        for key in self.__timers:</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__ssig.has_terminate():</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                self.log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                    "TERMINATE signal ACK for Runner.run [2]: [%s]", key</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
+<span class="line-precise" title="No Anys on this line!">                break</span>
 <span class="line-empty" title="No Anys on this line!">            # Create Thread object</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x5)">            thread = threading.Thread(</span>
@@ -10247,6 +10262,12 @@ Explicit (x1)">                kwargs=self.__timers[key].kwargs,</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [3/3] Start available repeaters in a thread</span>
 <span class="line-precise" title="No Anys on this line!">        for key in self.__repeaters:</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__ssig.has_terminate():</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                self.log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                    "TERMINATE signal ACK for Runner.run [3]: [%s]", key</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
+<span class="line-precise" title="No Anys on this line!">                break</span>
 <span class="line-empty" title="No Anys on this line!">            # Create Thread object</span>
 <span class="line-imprecise" title="Any Types on this line: 
 Explicit (x5)">            thread = threading.Thread(</span>
@@ -10317,7 +10338,7 @@ Error (x2)">                                self.log.trace(  # type: ignore</spa
 <span class="line-precise" title="No Anys on this line!">                            except RuntimeError:</span>
 <span class="line-precise" title="No Anys on this line!">                                pass</span>
 <span class="line-empty" title="No Anys on this line!">            # If all threads are done, also stop</span>
-<span class="line-precise" title="No Anys on this line!">            if not all([self.__threads[key].is_alive() for key in self.__threads]):</span>
+<span class="line-precise" title="No Anys on this line!">            if all([not self.__threads[key].is_alive() for key in self.__threads]):</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">                self.log.trace("All threads dead - shutting down.")  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                return True</span>

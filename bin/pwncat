@@ -1438,13 +1438,14 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
     # --------------------------------------------------------------------------
     # Create functions
     # --------------------------------------------------------------------------
-    def create_socket(self, family, sock_type, ip_tos_name=None):
-        # type: (Union[socket.AddressFamily, int], int, Optional[str]) -> socket.socket
+    def create_socket(self, family, sock_type, reuse_addr, ip_tos_name=None):
+        # type: (Union[socket.AddressFamily, int], int, bool, Optional[str]) -> socket.socket
         """Create TCP or UDP socket.
 
         Args:
             family (socket.family): The address family for which to create the socket for.
             sock_type (int): The socket type: socket.SOCK_DGRAM or socket.SOCK_STREAM
+            reuse_addr (bool): Set SO_REUSEADDR on the socket.
             ip_tos_name (str): Optional IP type of service value to apply to socket
 
         Returns:
@@ -1488,7 +1489,8 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
 
         # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if reuse_addr:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # If requested, set IP Type of Service value for current socket
         if ip_tos_name is not None:
@@ -2049,6 +2051,7 @@ class Net(object):
                     "conn": self.__sock.create_socket(
                         family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
+                        True,
                         self.__options.ip_tos,
                     )
                 }
@@ -2153,6 +2156,7 @@ class Net(object):
                     "sock": self.__sock.create_socket(
                         family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
+                        True,
                         self.__options.ip_tos,
                     )
                 }
@@ -3160,8 +3164,8 @@ class IONetworkScanner(IO):
                 raise socket.error("quit")
             try:
                 if self.__sock_opts.udp:
-                    return self.__sock.create_socket(family, socket.SOCK_DGRAM)
-                return self.__sock.create_socket(family, socket.SOCK_STREAM)
+                    return self.__sock.create_socket(family, socket.SOCK_DGRAM, False)
+                return self.__sock.create_socket(family, socket.SOCK_STREAM, False)
             except socket.error:
                 delay += 0.1
                 time.sleep(delay)  # This can be bigger to give the system some time to release fd's
@@ -3745,9 +3749,11 @@ class InterruptHandler(object):
 
         def handler(signum, frame):  # type: ignore  # pylint: disable=unused-argument
             self.__log.trace("Ctrl+c caught.")  # type: ignore
+            # logging.shutdown()
             self.raise_terminate()
 
         # Handle Ctrl+C
+        # signal.signal(signal.SIGTERM, handler)
         signal.signal(signal.SIGINT, handler)
 
     # --------------------------------------------------------------------------
@@ -3796,20 +3802,20 @@ class InterruptHandler(object):
     def raise_sock_send_eof(self):
         # type: () -> None
         """Signal the application that Socket should be closed for sending."""
-        self.__log.trace("SIGNAL SOCK-CLOSE-SEND raised")  # type: ignore
+        # self.__log.trace("SIGNAL SOCK-CLOSE-SEND raised")  # type: ignore
         self.__sock_send_eof = True
 
     def raise_sock_eof(self):
         # type: () -> None
         """Signal the application that Socket has received EOF."""
-        self.__log.trace("SIGNAL SOCK-EOF raised")  # type: ignore
+        # self.__log.trace("SIGNAL SOCK-EOF raised")  # type: ignore
         self.__sock_eof = True
         self.raise_sock_quit()
 
     def raise_sock_quit(self):
         # type: () -> None
         """Signal the application that Socket should be quit."""
-        self.__log.trace("SIGNAL SOCK-QUIT raised")  # type: ignore
+        # self.__log.trace("SIGNAL SOCK-QUIT raised")  # type: ignore
         self.__sock_quit = True
         self.raise_terminate()
 
@@ -3819,14 +3825,14 @@ class InterruptHandler(object):
     def raise_stdin_eof(self):
         # type: () -> None
         """Signal the application that STDIN has received EOF."""
-        self.__log.trace("SIGNAL STDIN-EOF raised")  # type: ignore
+        # self.__log.trace("SIGNAL STDIN-EOF raised")  # type: ignore
         self.__stdin_eof = True
         self.raise_stdin_quit()
 
     def raise_stdin_quit(self):
         # type: () -> None
         """Signal the application that STDIN should be quit."""
-        self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore
+        # self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore
         self.__stdin_quit = True
         # If --no-shutdown or -keep-open is specified
         # pwncat will not invoke shutdown on a socket after seeing EOF on stdin
@@ -3841,14 +3847,14 @@ class InterruptHandler(object):
     def raise_command_eof(self):
         # type: () -> None
         """Signal the application that Command has received EOF."""
-        self.__log.trace("SIGNAL COMMAND-EOF raised")  # type: ignore
+        # self.__log.trace("SIGNAL COMMAND-EOF raised")  # type: ignore
         self.__command_eof = True
         self.raise_command_quit()
 
     def raise_command_quit(self):
         # type: () -> None
         """Signal the application that Command should be quit."""
-        self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: ignore
+        # self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: ignore
         self.__command_quit = True
         self.raise_terminate()
 
@@ -4067,20 +4073,23 @@ class Runner(object):
                     )
                     break
                 try:
+                    # Do not call any logging functions in here as it will
+                    # cause a deadlock for Python2
                     # Start and break the loop upon success to go to the next thread to start
                     thread.start()
-                    self.log.trace(  # type: ignore
-                        "Started thread %s with daemon=%i", key, self.__actions[key].daemon_thread
-                    )
                     break
-                except (RuntimeError, Exception) as err:  # pylint: disable=broad-except
+                except (RuntimeError, Exception):  # pylint: disable=broad-except
                     delay += 0.1
                     time.sleep(delay)  # Give the system some time to release open fd's
-                    self.log.trace("Thread start delaying to %d: %s", delay, err)  # type: ignore
             self.__threads[key] = thread
 
         # [2/3] Start available timers in a thread
         for key in self.__timers:
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for Runner.run [2]: [%s]", key
+                )
+                break
             # Create Thread object
             thread = threading.Thread(
                 target=run_timer,
@@ -4099,6 +4108,11 @@ class Runner(object):
 
         # [3/3] Start available repeaters in a thread
         for key in self.__repeaters:
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for Runner.run [3]: [%s]", key
+                )
+                break
             # Create Thread object
             thread = threading.Thread(
                 target=run_repeater,
@@ -4159,7 +4173,7 @@ class Runner(object):
                             except RuntimeError:
                                 pass
             # If all threads are done, also stop
-            if not all([self.__threads[key].is_alive() for key in self.__threads]):
+            if all([not self.__threads[key].is_alive() for key in self.__threads]):
                 self.log.trace("All threads dead - shutting down.")  # type: ignore
                 return True
             return False
