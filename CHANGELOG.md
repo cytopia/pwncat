@@ -12,6 +12,7 @@
 - Fixed shutdown handling for port scanner
 - Fixed false positives for port scanner
 - FIxed sending binary data from stdin
+- Fixed self-inject mode if remote sends greetings or prefixes: #83
 
 ### Added
 - Implemented signal handler to distribute shutdown signals across threads
