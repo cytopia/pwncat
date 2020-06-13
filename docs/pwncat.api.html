@@ -3569,6 +3569,12 @@ class IOCommand(IO):
         # Did we already run cleanup
         self.__cleaned_up = False
 
+        # If we receive only one byte at a time, the remote end is most likely
+        # in raw mode and we will also start sending one byte at a time.
+        # This will be determined in the consumer and action is taken in
+        # the producer.
+        self.__remote_is_raw = False
+
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
@@ -3609,7 +3615,10 @@ class IOCommand(IO):
             # Byte-wise reading is required to make it work for remote ends being in raw mode
             # However, the performance of self.proc.stdout.readline() is way faster.
             # To improve performance we will get rid of all other logging calls here.
-            data = self.proc.stdout.read(1)
+            if self.__remote_is_raw:
+                data = self.proc.stdout.read(1)
+            else:
+                data = self.proc.stdout.readline()
             self.log.trace(&#34;Command output: %s&#34;, repr(data))  # type: ignore
             if not data:
                 self.log.trace(&#34;COMMAND-EOF signal RAISED IOCommand.producer&#34;)  # type: ignore
@@ -3624,6 +3633,13 @@ class IOCommand(IO):
         Args:
             data (str): Command to execute.
         &#34;&#34;&#34;
+        # If we only receive one byte at a time, also tell the consumer
+        # to send one byte at a time immediately and not to wait for a full line.
+        if len(data) == 1:
+            self.__remote_is_raw = True
+        else:
+            self.__remote_is_raw = False
+
         assert self.proc.stdin is not None
         self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))  # type: ignore
         try:
@@ -9892,6 +9908,12 @@ def producer(self, *args, **kwargs):
         # Did we already run cleanup
         self.__cleaned_up = False
 
+        # If we receive only one byte at a time, the remote end is most likely
+        # in raw mode and we will also start sending one byte at a time.
+        # This will be determined in the consumer and action is taken in
+        # the producer.
+        self.__remote_is_raw = False
+
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
@@ -9932,7 +9954,10 @@ def producer(self, *args, **kwargs):
             # Byte-wise reading is required to make it work for remote ends being in raw mode
             # However, the performance of self.proc.stdout.readline() is way faster.
             # To improve performance we will get rid of all other logging calls here.
-            data = self.proc.stdout.read(1)
+            if self.__remote_is_raw:
+                data = self.proc.stdout.read(1)
+            else:
+                data = self.proc.stdout.readline()
             self.log.trace(&#34;Command output: %s&#34;, repr(data))  # type: ignore
             if not data:
                 self.log.trace(&#34;COMMAND-EOF signal RAISED IOCommand.producer&#34;)  # type: ignore
@@ -9947,6 +9972,13 @@ def producer(self, *args, **kwargs):
         Args:
             data (str): Command to execute.
         &#34;&#34;&#34;
+        # If we only receive one byte at a time, also tell the consumer
+        # to send one byte at a time immediately and not to wait for a full line.
+        if len(data) == 1:
+            self.__remote_is_raw = True
+        else:
+            self.__remote_is_raw = False
+
         assert self.proc.stdin is not None
         self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))  # type: ignore
         try:
@@ -10002,6 +10034,13 @@ def producer(self, *args, **kwargs):
     Args:
         data (str): Command to execute.
     &#34;&#34;&#34;
+    # If we only receive one byte at a time, also tell the consumer
+    # to send one byte at a time immediately and not to wait for a full line.
+    if len(data) == 1:
+        self.__remote_is_raw = True
+    else:
+        self.__remote_is_raw = False
+
     assert self.proc.stdin is not None
     self.log.trace(&#34;Appending to stdin: %s&#34;, repr(data))  # type: ignore
     try:
@@ -10059,7 +10098,10 @@ def producer(self, *args, **kwargs):
         # Byte-wise reading is required to make it work for remote ends being in raw mode
         # However, the performance of self.proc.stdout.readline() is way faster.
         # To improve performance we will get rid of all other logging calls here.
-        data = self.proc.stdout.read(1)
+        if self.__remote_is_raw:
+            data = self.proc.stdout.read(1)
+        else:
+            data = self.proc.stdout.readline()
         self.log.trace(&#34;Command output: %s&#34;, repr(data))  # type: ignore
         if not data:
             self.log.trace(&#34;COMMAND-EOF signal RAISED IOCommand.producer&#34;)  # type: ignore

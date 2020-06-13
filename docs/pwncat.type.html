@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.40% imprecise</th>
-<th class="summary summary-lines">5861 LOC</th>
+<th class="summary summary-precision">6.38% imprecise</th>
+<th class="summary summary-lines">5877 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.40% imprecise</td>
-<td class="summary summary-lines">5861 LOC</td>
+<td class="summary summary-precision">6.38% imprecise</td>
+<td class="summary summary-lines">5877 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -5896,6 +5896,22 @@
 <span id="L5859" class="lineno"><a class="lineno" href="#L5859">5859</a></span>
 <span id="L5860" class="lineno"><a class="lineno" href="#L5860">5860</a></span>
 <span id="L5861" class="lineno"><a class="lineno" href="#L5861">5861</a></span>
+<span id="L5862" class="lineno"><a class="lineno" href="#L5862">5862</a></span>
+<span id="L5863" class="lineno"><a class="lineno" href="#L5863">5863</a></span>
+<span id="L5864" class="lineno"><a class="lineno" href="#L5864">5864</a></span>
+<span id="L5865" class="lineno"><a class="lineno" href="#L5865">5865</a></span>
+<span id="L5866" class="lineno"><a class="lineno" href="#L5866">5866</a></span>
+<span id="L5867" class="lineno"><a class="lineno" href="#L5867">5867</a></span>
+<span id="L5868" class="lineno"><a class="lineno" href="#L5868">5868</a></span>
+<span id="L5869" class="lineno"><a class="lineno" href="#L5869">5869</a></span>
+<span id="L5870" class="lineno"><a class="lineno" href="#L5870">5870</a></span>
+<span id="L5871" class="lineno"><a class="lineno" href="#L5871">5871</a></span>
+<span id="L5872" class="lineno"><a class="lineno" href="#L5872">5872</a></span>
+<span id="L5873" class="lineno"><a class="lineno" href="#L5873">5873</a></span>
+<span id="L5874" class="lineno"><a class="lineno" href="#L5874">5874</a></span>
+<span id="L5875" class="lineno"><a class="lineno" href="#L5875">5875</a></span>
+<span id="L5876" class="lineno"><a class="lineno" href="#L5876">5876</a></span>
+<span id="L5877" class="lineno"><a class="lineno" href="#L5877">5877</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -9648,6 +9664,12 @@ Explicit (x4)">        self.log.debug("Setting '%s' as executable", self.__opts.
 <span class="line-empty" title="No Anys on this line!">        # Did we already run cleanup</span>
 <span class="line-precise" title="No Anys on this line!">        self.__cleaned_up = False</span>
 <span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">        # If we receive only one byte at a time, the remote end is most likely</span>
+<span class="line-empty" title="No Anys on this line!">        # in raw mode and we will also start sending one byte at a time.</span>
+<span class="line-empty" title="No Anys on this line!">        # This will be determined in the consumer and action is taken in</span>
+<span class="line-empty" title="No Anys on this line!">        # the producer.</span>
+<span class="line-precise" title="No Anys on this line!">        self.__remote_is_raw = False</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Open executable to wait for commands</span>
 <span class="line-precise" title="No Anys on this line!">        env = os.environ.copy()</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
@@ -9695,7 +9717,10 @@ Error (x2)">            self.log.trace("Reading command output")  # type: ignore
 <span class="line-empty" title="No Anys on this line!">            # Byte-wise reading is required to make it work for remote ends being in raw mode</span>
 <span class="line-empty" title="No Anys on this line!">            # However, the performance of self.proc.stdout.readline() is way faster.</span>
 <span class="line-empty" title="No Anys on this line!">            # To improve performance we will get rid of all other logging calls here.</span>
-<span class="line-precise" title="No Anys on this line!">            data = self.proc.stdout.read(1)</span>
+<span class="line-precise" title="No Anys on this line!">            if self.__remote_is_raw:</span>
+<span class="line-precise" title="No Anys on this line!">                data = self.proc.stdout.read(1)</span>
+<span class="line-empty" title="No Anys on this line!">            else:</span>
+<span class="line-precise" title="No Anys on this line!">                data = self.proc.stdout.readline()</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.log.trace("Command output: %s", repr(data))  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            if not data:</span>
@@ -9712,6 +9737,13 @@ Error (x2)">                self.log.trace("COMMAND-EOF signal RAISED IOCommand.
 <span class="line-empty" title="No Anys on this line!">        Args:</span>
 <span class="line-empty" title="No Anys on this line!">            data (str): Command to execute.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-empty" title="No Anys on this line!">        # If we only receive one byte at a time, also tell the consumer</span>
+<span class="line-empty" title="No Anys on this line!">        # to send one byte at a time immediately and not to wait for a full line.</span>
+<span class="line-precise" title="No Anys on this line!">        if len(data) == 1:</span>
+<span class="line-precise" title="No Anys on this line!">            self.__remote_is_raw = True</span>
+<span class="line-empty" title="No Anys on this line!">        else:</span>
+<span class="line-precise" title="No Anys on this line!">            self.__remote_is_raw = False</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        assert self.proc.stdin is not None</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">        self.log.trace("Appending to stdin: %s", repr(data))  # type: ignore</span>
