@@ -1736,7 +1736,7 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
             # be shutdown and we want to throw any socket at this function.
             pass
 
-    def close(self, sock, name):
+    def close(self, sock, name):  # pylint: disable=unused-argument,no-self-use
         # type: (socket.socket, str) -> None
         """Shuts down and closes a socket.
 
@@ -1744,21 +1744,26 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
             sock (socket.socket): Socket to shutdown and close.
             name (str): Name of the socket used for logging purposes.
         """
+        # NOTE: Logging is removed here as this is too much overhead when using
+        # the port scanner (it will have thousands of threads and too many
+        # calls to the logger which will cause issues with its shutdown
+        # and a massive performance degrade as well.
         try:
             # (SHUT_RD)   0 = Done receiving (disallows receiving)
             # (SHUT_WR)   1 = Done sending (disallows sending)
             # (SHUT_RDWR) 2 = Both
-            self.__log.trace("Shutting down %s socket", name)  # type: ignore
+            # self.__log.trace("Shutting down %s socket", name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
         except (OSError, socket.error):
             # We do not log errors here, as unconnected sockets cannot
             # be shutdown and we want to throw any socket at this function.
             pass
         try:
-            self.__log.trace("Closing %s socket", name)  # type: ignore
+            # self.__log.trace("Closing %s socket", name)  # type: ignore
             sock.close()
-        except (OSError, socket.error) as error:
-            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
+        except (OSError, socket.error):
+            pass
+            # self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
 
 
 class Net(object):

@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.22% imprecise</th>
-<th class="summary summary-lines">6058 LOC</th>
+<th class="summary summary-precision">6.17% imprecise</th>
+<th class="summary summary-lines">6063 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.22% imprecise</td>
-<td class="summary summary-lines">6058 LOC</td>
+<td class="summary summary-precision">6.17% imprecise</td>
+<td class="summary summary-lines">6063 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6093,6 +6093,11 @@
 <span id="L6056" class="lineno"><a class="lineno" href="#L6056">6056</a></span>
 <span id="L6057" class="lineno"><a class="lineno" href="#L6057">6057</a></span>
 <span id="L6058" class="lineno"><a class="lineno" href="#L6058">6058</a></span>
+<span id="L6059" class="lineno"><a class="lineno" href="#L6059">6059</a></span>
+<span id="L6060" class="lineno"><a class="lineno" href="#L6060">6060</a></span>
+<span id="L6061" class="lineno"><a class="lineno" href="#L6061">6061</a></span>
+<span id="L6062" class="lineno"><a class="lineno" href="#L6062">6062</a></span>
+<span id="L6063" class="lineno"><a class="lineno" href="#L6063">6063</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -7945,7 +7950,7 @@ Error (x2)">            self.__log.trace("Shutting down %s socket for sending", 
 <span class="line-empty" title="No Anys on this line!">            # be shutdown and we want to throw any socket at this function.</span>
 <span class="line-precise" title="No Anys on this line!">            pass</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">    def close(self, sock, name):</span>
+<span class="line-precise" title="No Anys on this line!">    def close(self, sock, name):  # pylint: disable=unused-argument,no-self-use</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (socket.socket, str) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Shuts down and closes a socket.</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -7953,24 +7958,26 @@ Error (x2)">            self.__log.trace("Shutting down %s socket for sending", 
 <span class="line-empty" title="No Anys on this line!">            sock (socket.socket): Socket to shutdown and close.</span>
 <span class="line-empty" title="No Anys on this line!">            name (str): Name of the socket used for logging purposes.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-empty" title="No Anys on this line!">        # NOTE: Logging is removed here as this is too much overhead when using</span>
+<span class="line-empty" title="No Anys on this line!">        # the port scanner (it will have thousands of threads and too many</span>
+<span class="line-empty" title="No Anys on this line!">        # calls to the logger which will cause issues with its shutdown</span>
+<span class="line-empty" title="No Anys on this line!">        # and a massive performance degrade as well.</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-empty" title="No Anys on this line!">            # (SHUT_RD)   0 = Done receiving (disallows receiving)</span>
 <span class="line-empty" title="No Anys on this line!">            # (SHUT_WR)   1 = Done sending (disallows sending)</span>
 <span class="line-empty" title="No Anys on this line!">            # (SHUT_RDWR) 2 = Both</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">            self.__log.trace("Shutting down %s socket", name)  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">            # self.__log.trace("Shutting down %s socket", name)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            sock.shutdown(socket.SHUT_RDWR)</span>
 <span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error):</span>
 <span class="line-empty" title="No Anys on this line!">            # We do not log errors here, as unconnected sockets cannot</span>
 <span class="line-empty" title="No Anys on this line!">            # be shutdown and we want to throw any socket at this function.</span>
 <span class="line-precise" title="No Anys on this line!">            pass</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">            self.__log.trace("Closing %s socket", name)  # type: ignore</span>
+<span class="line-empty" title="No Anys on this line!">            # self.__log.trace("Closing %s socket", name)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            sock.close()</span>
-<span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
-<span class="line-any" title="Any Types on this line: 
-Error (x2)">            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error):</span>
+<span class="line-precise" title="No Anys on this line!">            pass</span>
+<span class="line-empty" title="No Anys on this line!">            # self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">class Net(object):</span>
