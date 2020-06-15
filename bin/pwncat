@@ -4302,30 +4302,25 @@ class CNC(object):
 
         # Values will by dynamically adjusted to find good balance between
         # reliability and speed.
-        self.__recv_timeout = 0.5
+        self.__recv_timeout = 0.3
         self.__recv_retries = 3
 
-        # [1/4]
-        # TODO: Lock stdin until we have initialized
-
-        # [2/4] Check if there is data to be received first (e.g.: greeting)
+        # [1/3] Check if there is data to be received first (e.g.: greeting)
         self.print_info("Checking if remote sends greeting...")
-        greeting = self.flush_receive()
+        greeting = self.send_recv(None, False, False)
         if greeting:
             self.print_raw(b"".join(greeting))
             # Fix newlines if we had greetings
             if greeting[-1].rstrip(b"\n") == greeting[-1]:
                 self.print_raw(b"\n")
 
-        # [3/4] Check if the remote sends a prefix with every reply
+        # [2/3] Check if the remote sends a prefix with every reply
         self.__set_remote_prefix()
 
-        # [4/4] Find potential Python versions
+        # [3/3] Find potential Python versions
         if not self.__set_remote_python_path():
             self.print_info("No Python has been found. Aborting and handing over to current shell.")
-            self.flush_receive()
             raise FileNotFoundError()
-        self.flush_receive()
 
     # --------------------------------------------------------------------------
     # Print Functions
@@ -4403,15 +4398,22 @@ class CNC(object):
         Raises:
             socket.error:   Except here when unconnected or connection was forcibly closed.
         """
-        return self.send_recv(None, False)
+        self.print_info("Flushing receive buffer (this can take some time) ...")
 
-    def send_recv(self, data, strip_prefix=True):
-        # type: (Optional[bytes], bool) -> List[bytes]
+        self.send(b"\n")
+        data = self.send_recv(None, False, False)
+
+        self.print_info("Flushing receive buffer done.")
+        return data
+
+    def send_recv(self, data, strip_prefix=True, strip_echo=False):
+        # type: (Optional[bytes], bool, bool) -> List[bytes]
         """Send data through a connected (TCP) or unconnected (UDP) socket and receive all replies.
 
         Args:
             data (None|bytes): The data to send. If None, will skip sending.
             strip_prefix (bool): Strip remote prefix from received data?
+            strip_echo (bool): Also remove 'data' from output if server has echo'ed it?
 
         Returns:
             List[bytes]: Returns a list of bytes of received data.
@@ -4419,11 +4421,11 @@ class CNC(object):
         Raises:
             socket.error:   Except here when unconnected or connection was forcibly closed.
         """
-        # [1/3] Send
+        # [1/4] Send
         if data is not None:
             self.__net.net.send(data)
 
-        # [2/3] Receive actual reply
+        # [2/4] Receive actual reply
         responses = []
         curr_retry = 0
 
@@ -4449,17 +4451,39 @@ class CNC(object):
                     # Reset the retry counter for next line to read
                     curr_retry = 0
 
-        # [3/3] Remove remote ends prefix (if it sends something like it)
+        # [3/4] Remove remote ends prefix (if it sends something like it)
         # We iterate reversed of responses and check if the new line prefix(es)
         # are present at the end.
         # This is because the prefix(es) is always received last.
         if self.__remote_prefix and strip_prefix:
-            for idx, item in enumerate(self.__remote_prefix):
-                rev_idx = (idx + 1) * -1
-                # Remove prefix part from right (and strip whitesspace)
-                responses[rev_idx] = responses[rev_idx].rstrip(self.__remote_prefix[rev_idx])
-                responses[rev_idx] = responses[rev_idx].rstrip()
+            # Do it as many times as we have prefixes
+            for _ in range(len(self.__remote_prefix)):
+                for prefix in list(reversed(self.__remote_prefix)):
+                    for idx, item in enumerate(responses):
+                        if prefix == responses[idx]:
+                            del responses[idx]
+                        elif prefix.rstrip() == responses[idx]:
+                            del responses[idx]
+                        elif prefix == responses[idx].rstrip():
+                            del responses[idx]
+                        elif prefix.rstrip() == responses[idx].rstrip():
+                            del responses[idx]
+                        elif prefix in responses[idx]:
+                            responses[idx] = responses[idx].rstrip(prefix)
+                            responses[idx] = responses[idx].rstrip()
+                            responses[idx] = responses[idx].rstrip(prefix)
 
+            # Ensure empty elements are removed
+            responses = [item for item in responses if item]
+
+        # [4/4] Some server also echo back what we've send, so if we did send something
+        # we need to strip this off as well
+        if data is not None and strip_echo:
+            for idx, item in enumerate(responses):
+                if data in responses[idx]:
+                    del responses[idx]
+                elif data.rstrip() in responses[idx]:
+                    del responses[idx]
                 # Ensure empty elements are removed
                 responses = [item for item in responses if item]
 
@@ -4477,14 +4501,12 @@ class CNC(object):
             command (str): The command to execute on the remote end.
             output (bool): Receive output from command?
         """
-        # TODO: determine remote host line feeds and set accordingly.
-        # TODO: handle exception
         command = command.rstrip("\r\n")
         command = command.rstrip("\r")
         command = command.rstrip("\n")
         command = command + "\n"
         if output:
-            return self.send_recv(StringEncoder.encode(command))
+            return self.send_recv(StringEncoder.encode(command), True, True)
         self.send(StringEncoder.encode(command))
         return None
 
@@ -4495,6 +4517,9 @@ class CNC(object):
         Returns:
             str or None: Returns path on success or None on error.
         """
+        self.flush_receive()
+        self.print_info("Creating tmpfile:", False, True)
+
         command = []
         command.append("{} -c '".format(self.__remote_python))
         command.append("import tempfile;")
@@ -4504,17 +4529,65 @@ class CNC(object):
         else:
             command.append("print f;")
         command.append("'")
-
-        self.print_info("Creating tmpfile:", False, True)
         response = self.remote_command("".join(command), True)
 
+        # All good
         if response is not None and len(response) == 1:
             tmpfile = StringEncoder.decode(response[0]).rstrip()
-            self.print_info("Creating tmpfile: {}".format(tmpfile), True, True)
+            self.print_info("Creating tmpfile: {}".format(repr(tmpfile)), True, True)
             return tmpfile
 
-        self.print_info("Failed to create tmpfile", True, True)
+        # Something went wrong with stripping prefix from server, we need to manually
+        # check if creation was successful.
+        if response is not None and len(response) > 1:
+            # A bit fuzzy, but we try a few times
+            for _ in range(5):
+                self.print_info("Creating tmpfile: Unsure - checking otherwise", True, True)
+                for candidate in response:
+                    tmpfile = StringEncoder.decode(candidate.rstrip())
+                    # Skip candidates which are most likely not a file path
+                    badchars = ['"', "'", "[", "]", "(", ")", ":", ";", ","]
+                    skip = False
+                    for char in badchars:
+                        if char in tmpfile:
+                            skip = True
+                            break
+                    if skip:
+                        continue
+                    if self.remote_file_exists(tmpfile):
+                        self.print_info("Creating tmpfile: {}".format(repr(tmpfile)), True, True)
+                        return tmpfile
+
+        self.print_info("Creating tmpfile: Failed", True, True)
+        self.print_info("Response: {}".format(repr(response)))
         return None
+
+    def remote_file_exists(self, remote_path):
+        # type: (str) -> bool
+        """Ensure given remote path exists as a file on remote end.
+
+        Args:
+            remote_path (str): Path of file to check.
+
+        Returns:
+            bool: Returns `True` on success and `False` on failure.
+        """
+        self.flush_receive()
+
+        unique_string = "pwncatfileiisfound"
+        response = self.remote_command(
+            "test -f {} && echo '{}'".format(remote_path, unique_string), True
+        )
+        if response is not None:
+            for candidate in response:
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
+        response = self.flush_receive()
+        if response is not None:
+            for candidate in response:
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
+        return False
 
     def upload(self, lpath, rpath):
         # type: (str, str) -> bool
@@ -4533,7 +4606,7 @@ class CNC(object):
         rpath_b64 = self.create_remote_tmpfile()
         if rpath_b64 is None:
             return False
-        if not self.__upload_file_base_64_encoded(lpath, rpath_b64):
+        if not self.__upload_file_base_64_encoded(lpath, rpath_b64, True):
             return False
         if not self.__remote_base64_decode(rpath_b64, rpath):
             return False
@@ -4549,10 +4622,16 @@ class CNC(object):
         self.print_info("Checking if remote sends prefix to every request...")
         prefix = self.send_recv(b"\n")
         if prefix:
-            self.print_info("Remote prefix:")
-            self.print_raw(StringEncoder.encode(repr(prefix)))
+            for line in prefix:
+                # Append single parts
+                for part in line.split(b" "):
+                    if part:
+                        self.__remote_prefix.append(part)
+                # Append full parts
+                self.__remote_prefix.append(line)
+            self.print_info("Remote prefix ({} lines):".format(len(self.__remote_prefix)))
+            self.print_raw(StringEncoder.encode(repr(self.__remote_prefix)))
             self.print_raw(b"\n")
-            self.__remote_prefix = prefix
         else:
             self.print_info("Remote does not send prefix")
 
@@ -4573,29 +4652,29 @@ class CNC(object):
                     "test -f {p} && echo {p} || echo;".format(p=python), True
                 )
                 if rpath_lines is not None and rpath_lines:
-                    # We expect a length of one
-                    if len(rpath_lines) > 1:
-                        self.__log.error("Response was more than one line: %s", repr(rpath_lines))
+                    # Reset current round
+                    path_found = False
 
-                    remote_path = rpath_lines[0]
+                    # We expect a length of one, but we handle errors as well.
+                    for rpath_line in rpath_lines:
+                        if StringEncoder.decode(rpath_line).rstrip() == python:
+                            path_found = True
+                            break
+                    if not path_found:
+                        continue
+
                     # Potential python candidate
-                    if StringEncoder.rstrip(remote_path) == StringEncoder.encode(python):
-                        self.print_info("Potential path: {}".format(python))
-                        command = []
-                        command.append("{} -c '".format(python))
-                        command.append("from __future__ import print_function;")
-                        command.append("import sys;")
-                        command.append("v=sys.version_info;")
-                        command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')
-                        rversion_lines = self.remote_command("".join(command), True)
+                    self.print_info("Potential path: {}".format(python))
+                    command = []
+                    command.append("{} -c '".format(python))
+                    command.append("from __future__ import print_function;")
+                    command.append("import sys;")
+                    command.append("v=sys.version_info;")
+                    command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')
+                    rversion_lines = self.remote_command("".join(command), True)
 
-                        if rversion_lines is not None and rversion_lines:
-                            # We expect a length of one
-                            if len(rversion_lines) > 1:
-                                self.__log.error(
-                                    "Response was more than one line: %s", repr(rversion_lines)
-                                )
-                            remote_version = rversion_lines[0]
+                    if rversion_lines is not None and rversion_lines:
+                        for remote_version in rversion_lines:
                             match = re.search(b"^([.0-9]+)", remote_version)
                             # Potential version candidate
                             if match:
@@ -4616,35 +4695,49 @@ class CNC(object):
                                 return True
         return False
 
-    def __upload_file_base_64_encoded(self, lpath, rpath):
-        # type: (str, str) -> bool
+    def __upload_file_base_64_encoded(self, lpath, rpath, at_once=False):
+        # type: (str, str, bool) -> bool
         """Upload a local file to a base64 encoded remote file.
 
         Args:
             lpath (str): Local path of the file.
             rpath (str): Remote path, where to upload the base64 encoded file.
+            at_once (bool): Send all data at once.
 
         Returns:
             bool: Returns `True` on success and `False` on failure.
         """
         first = True
+        data = []  # type: List[str]
+
         with open(lpath, "r") as fhandle:
             lines = fhandle.readlines()
             count = len(lines)
             curr = 1
             for line in lines:
-                self.print_info(
-                    "Uploading: {} -> {} ({}/{})".format(lpath, rpath, curr, count), False, True
-                )
+                if not at_once:
+                    self.print_info(
+                        "Uploading: {} -> {} ({}/{})".format(lpath, rpath, curr, count), False, True
+                    )
                 b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
-                    self.remote_command('echo "{}" > {}'.format(b64, rpath), False)
+                    if at_once:
+                        data.append('echo "{}" > {}'.format(b64, rpath))
+                    else:
+                        self.remote_command('echo "{}" > {}'.format(b64, rpath), False)
                     first = False
                 else:
-                    self.remote_command('echo "{}" >> {}'.format(b64, rpath), False)
+                    if at_once:
+                        data.append('echo "{}" >> {}'.format(b64, rpath))
+                    else:
+                        self.remote_command('echo "{}" >> {}'.format(b64, rpath), False)
                 curr += 1
-        self.flush_receive()
+
         self.print_info()
+        if at_once:
+            self.print_info("Uploading: {} -> {} ({}/{})".format(lpath, rpath, 1, 1))
+            self.remote_command(";".join(data), False)
+
         # TODO: md5 check if this is legit
         return True
 
@@ -4673,7 +4766,6 @@ class CNC(object):
 
         self.print_info("Decoding: {} -> {}".format(rpath_source, rpath_target))
         self.remote_command("".join(command), False)
-        self.flush_receive()
         # TODO: validate via md5
         return True
 
@@ -4700,11 +4792,18 @@ class CNCAutoDeploy(CNC):
         local_path = os.path.abspath(__file__)
         remote_path = self.create_remote_tmpfile()
         if remote_path is None:
+            self.print_info("Unable to create tmpfile. Aborting and handing over to current shell.")
             return
         if not self.upload(local_path, remote_path):
+            self.print_info("Unable to upload file. Aborting and handing over to current shell.")
             return
-        # TODO: Ensure pwncat stays running
         self.__start_pwncat(remote_path, cmd, host, ports)
+
+        # We need to wait some time for slow severs
+        time.sleep(1)
+        self.flush_receive()
+
+        self.print_info("Done. Handing over to current shell.")
         return
 
     def __start_pwncat(self, remote_path, binary, host, ports):
