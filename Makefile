@@ -263,6 +263,7 @@ test: _test-options--keep_open
 test: _test-options--reconn
 test: _test-options--ping_intvl
 test: _test-options--ping_word
+test: _test-cnc--inject_shell
 
 .PHONY: _test-behaviour-quit--client
 #_test-behaviour-quit--client:
@@ -450,6 +451,11 @@ _test-options--ping_intvl:
 .PHONY: _test-options--ping_word
 _test-options--ping_word:
 	tests/integration/run.sh "26-options---ping_word" \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+
+.PHONY: _test-cnc--inject_shell
+_test-cnc--inject_shell:
+	tests/integration/run.sh "30-cnc---self_inject/" \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 

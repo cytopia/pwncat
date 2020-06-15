@@ -81,6 +81,14 @@ __MACOS_JOBS__
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
 
+      - name: "[CNC] Inject shell"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make _test-cnc--inject_shell
+        env:
+          RETRIES: 5
+
       - name: "[BEHAVIOUR] Client quits correctly 000"
         shell: bash
         run: |
