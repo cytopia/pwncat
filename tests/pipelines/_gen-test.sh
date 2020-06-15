@@ -143,11 +143,12 @@ END_HEREDOC
 	fi
 
 
-	if [ "${os}" == "ubuntu" ]; then
-		os="${os}-16.04"
-	else
-		os="${os}-latest"
-	fi
+	os="${os}-latest"
+	#if [ "${os}" == "ubuntu" ]; then
+	#	os="${os}-16.04"
+	#else
+	#	os="${os}-latest"
+	#fi
 
 	retry_func_crlf="${RETRY_FUNCTION}"
 	# Disable comments for specific combinations

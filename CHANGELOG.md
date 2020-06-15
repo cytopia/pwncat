@@ -19,6 +19,8 @@
 - Feature: `--no-shutdown` to copy the behaviour of OpenBSD netcat to keep stdin open after EOF
 - Feature: `--http`
 - Feature: `send-on-eof`
+- CI: Integration tests for inject shell
+- CI: Integration tests for different file transfer modes
 
 ### Changed
 - Changed behaviour to close after EOF on stdin (can be reverted via `--no-shutdown`)

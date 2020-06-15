@@ -29,6 +29,12 @@ jobs:
           python-version: __PYTHON_VERSION__
           architecture: __ARCHITECTURE__
 
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          ini-values: max_execution_time=300
+
       - name: "Setup /etc/hosts for Linux"
         shell: bash
         run: |
@@ -55,7 +61,17 @@ __MACOS_JOBS__
 
       - name: Display Python version
         shell: bash
-        run: python -c "import sys; print(sys.version)"
+        run: |
+          python -c "import sys; print(sys.version)"
+          whereis python || true
+          which python || true
+
+      - name: Display PHP version
+        shell: bash
+        run: |
+          php --version
+          whereis php || true
+          which php || true
 
       - name: Resolve localhost
         shell: bash
