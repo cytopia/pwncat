@@ -96,12 +96,19 @@ __MACOS_JOBS__
       # ------------------------------------------------------------
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
-
-      - name: "[CNC] Inject shell"
+      - name: "[CNC] Inject shell: pwncat as rev shell"
         shell: bash
         run: |
 __RETRY_FUNCTION__
-          retry make _test-cnc--inject_shell
+          retry make __test-cnc--inject_shell_pwncat
+        env:
+          RETRIES: 5
+
+      - name: "[CNC] Inject shell: php as rev shell"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell_php
         env:
           RETRIES: 5
 
