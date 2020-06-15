@@ -4571,7 +4571,7 @@ class CNC(object):
             for _ in range(5):
                 self.print_info(&#34;Creating tmpfile: Unsure - checking otherwise&#34;, True, True)
                 for candidate in response:
-                    tmpfile = StringEncoder.decode(candidate.rstrip())
+                    tmpfile = StringEncoder.decode(candidate).rstrip()
                     # Skip candidates which are most likely not a file path
                     badchars = [&#39;&#34;&#39;, &#34;&#39;&#34;, &#34;[&#34;, &#34;]&#34;, &#34;(&#34;, &#34;)&#34;, &#34;:&#34;, &#34;;&#34;, &#34;,&#34;]
                     skip = False
@@ -4601,17 +4601,22 @@ class CNC(object):
         &#34;&#34;&#34;
         self.flush_receive()
 
-        unique_string = &#34;pwncatfileiisfound&#34;
+        # String should be short as an unstable remote might send small chunks
+        unique_string = &#34;_pwncat_&#34;
         response = self.remote_command(
             &#34;test -f {} &amp;&amp; echo &#39;{}&#39;&#34;.format(remote_path, unique_string), True
         )
         if response is not None:
             for candidate in response:
+                if StringEncoder.decode(candidate) == unique_string:
+                    return True
                 if StringEncoder.decode(candidate).rstrip() == unique_string:
                     return True
         response = self.flush_receive()
         if response is not None:
             for candidate in response:
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
                 if StringEncoder.decode(candidate).rstrip() == unique_string:
                     return True
         return False
@@ -8017,7 +8022,7 @@ def type_tos(value):
             for _ in range(5):
                 self.print_info(&#34;Creating tmpfile: Unsure - checking otherwise&#34;, True, True)
                 for candidate in response:
-                    tmpfile = StringEncoder.decode(candidate.rstrip())
+                    tmpfile = StringEncoder.decode(candidate).rstrip()
                     # Skip candidates which are most likely not a file path
                     badchars = [&#39;&#34;&#39;, &#34;&#39;&#34;, &#34;[&#34;, &#34;]&#34;, &#34;(&#34;, &#34;)&#34;, &#34;:&#34;, &#34;;&#34;, &#34;,&#34;]
                     skip = False
@@ -8047,17 +8052,22 @@ def type_tos(value):
         &#34;&#34;&#34;
         self.flush_receive()
 
-        unique_string = &#34;pwncatfileiisfound&#34;
+        # String should be short as an unstable remote might send small chunks
+        unique_string = &#34;_pwncat_&#34;
         response = self.remote_command(
             &#34;test -f {} &amp;&amp; echo &#39;{}&#39;&#34;.format(remote_path, unique_string), True
         )
         if response is not None:
             for candidate in response:
+                if StringEncoder.decode(candidate) == unique_string:
+                    return True
                 if StringEncoder.decode(candidate).rstrip() == unique_string:
                     return True
         response = self.flush_receive()
         if response is not None:
             for candidate in response:
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
                 if StringEncoder.decode(candidate).rstrip() == unique_string:
                     return True
         return False
@@ -8327,7 +8337,7 @@ def remote_python(self):
         for _ in range(5):
             self.print_info(&#34;Creating tmpfile: Unsure - checking otherwise&#34;, True, True)
             for candidate in response:
-                tmpfile = StringEncoder.decode(candidate.rstrip())
+                tmpfile = StringEncoder.decode(candidate).rstrip()
                 # Skip candidates which are most likely not a file path
                 badchars = [&#39;&#34;&#39;, &#34;&#39;&#34;, &#34;[&#34;, &#34;]&#34;, &#34;(&#34;, &#34;)&#34;, &#34;:&#34;, &#34;;&#34;, &#34;,&#34;]
                 skip = False
@@ -8528,17 +8538,22 @@ def remote_python(self):
     &#34;&#34;&#34;
     self.flush_receive()
 
-    unique_string = &#34;pwncatfileiisfound&#34;
+    # String should be short as an unstable remote might send small chunks
+    unique_string = &#34;_pwncat_&#34;
     response = self.remote_command(
         &#34;test -f {} &amp;&amp; echo &#39;{}&#39;&#34;.format(remote_path, unique_string), True
     )
     if response is not None:
         for candidate in response:
+            if StringEncoder.decode(candidate) == unique_string:
+                return True
             if StringEncoder.decode(candidate).rstrip() == unique_string:
                 return True
     response = self.flush_receive()
     if response is not None:
         for candidate in response:
+            if StringEncoder.decode(candidate).rstrip() == unique_string:
+                return True
             if StringEncoder.decode(candidate).rstrip() == unique_string:
                 return True
     return False</code></pre>

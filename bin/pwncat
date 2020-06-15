@@ -4544,7 +4544,7 @@ class CNC(object):
             for _ in range(5):
                 self.print_info("Creating tmpfile: Unsure - checking otherwise", True, True)
                 for candidate in response:
-                    tmpfile = StringEncoder.decode(candidate.rstrip())
+                    tmpfile = StringEncoder.decode(candidate).rstrip()
                     # Skip candidates which are most likely not a file path
                     badchars = ['"', "'", "[", "]", "(", ")", ":", ";", ","]
                     skip = False
@@ -4574,17 +4574,22 @@ class CNC(object):
         """
         self.flush_receive()
 
-        unique_string = "pwncatfileiisfound"
+        # String should be short as an unstable remote might send small chunks
+        unique_string = "_pwncat_"
         response = self.remote_command(
             "test -f {} && echo '{}'".format(remote_path, unique_string), True
         )
         if response is not None:
             for candidate in response:
+                if StringEncoder.decode(candidate) == unique_string:
+                    return True
                 if StringEncoder.decode(candidate).rstrip() == unique_string:
                     return True
         response = self.flush_receive()
         if response is not None:
             for candidate in response:
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
                 if StringEncoder.decode(candidate).rstrip() == unique_string:
                     return True
         return False

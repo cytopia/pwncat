@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.04% imprecise</th>
-<th class="summary summary-lines">6162 LOC</th>
+<th class="summary summary-precision">6.03% imprecise</th>
+<th class="summary summary-lines">6167 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.04% imprecise</td>
-<td class="summary summary-lines">6162 LOC</td>
+<td class="summary summary-precision">6.03% imprecise</td>
+<td class="summary summary-lines">6167 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6197,6 +6197,11 @@
 <span id="L6160" class="lineno"><a class="lineno" href="#L6160">6160</a></span>
 <span id="L6161" class="lineno"><a class="lineno" href="#L6161">6161</a></span>
 <span id="L6162" class="lineno"><a class="lineno" href="#L6162">6162</a></span>
+<span id="L6163" class="lineno"><a class="lineno" href="#L6163">6163</a></span>
+<span id="L6164" class="lineno"><a class="lineno" href="#L6164">6164</a></span>
+<span id="L6165" class="lineno"><a class="lineno" href="#L6165">6165</a></span>
+<span id="L6166" class="lineno"><a class="lineno" href="#L6166">6166</a></span>
+<span id="L6167" class="lineno"><a class="lineno" href="#L6167">6167</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -11009,7 +11014,7 @@ Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</s
 <span class="line-precise" title="No Anys on this line!">            for _ in range(5):</span>
 <span class="line-precise" title="No Anys on this line!">                self.print_info("Creating tmpfile: Unsure - checking otherwise", True, True)</span>
 <span class="line-precise" title="No Anys on this line!">                for candidate in response:</span>
-<span class="line-precise" title="No Anys on this line!">                    tmpfile = StringEncoder.decode(candidate.rstrip())</span>
+<span class="line-precise" title="No Anys on this line!">                    tmpfile = StringEncoder.decode(candidate).rstrip()</span>
 <span class="line-empty" title="No Anys on this line!">                    # Skip candidates which are most likely not a file path</span>
 <span class="line-precise" title="No Anys on this line!">                    badchars = ['"', "'", "[", "]", "(", ")", ":", ";", ","]</span>
 <span class="line-precise" title="No Anys on this line!">                    skip = False</span>
@@ -11039,17 +11044,22 @@ Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</s
 <span class="line-empty" title="No Anys on this line!">        """</span>
 <span class="line-precise" title="No Anys on this line!">        self.flush_receive()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">        unique_string = "pwncatfileiisfound"</span>
+<span class="line-empty" title="No Anys on this line!">        # String should be short as an unstable remote might send small chunks</span>
+<span class="line-precise" title="No Anys on this line!">        unique_string = "_pwncat_"</span>
 <span class="line-precise" title="No Anys on this line!">        response = self.remote_command(</span>
 <span class="line-precise" title="No Anys on this line!">            "test -f {} &amp;&amp; echo '{}'".format(remote_path, unique_string), True</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        if response is not None:</span>
 <span class="line-precise" title="No Anys on this line!">            for candidate in response:</span>
+<span class="line-precise" title="No Anys on this line!">                if StringEncoder.decode(candidate) == unique_string:</span>
+<span class="line-precise" title="No Anys on this line!">                    return True</span>
 <span class="line-precise" title="No Anys on this line!">                if StringEncoder.decode(candidate).rstrip() == unique_string:</span>
 <span class="line-precise" title="No Anys on this line!">                    return True</span>
 <span class="line-precise" title="No Anys on this line!">        response = self.flush_receive()</span>
 <span class="line-precise" title="No Anys on this line!">        if response is not None:</span>
 <span class="line-precise" title="No Anys on this line!">            for candidate in response:</span>
+<span class="line-precise" title="No Anys on this line!">                if StringEncoder.decode(candidate).rstrip() == unique_string:</span>
+<span class="line-precise" title="No Anys on this line!">                    return True</span>
 <span class="line-precise" title="No Anys on this line!">                if StringEncoder.decode(candidate).rstrip() == unique_string:</span>
 <span class="line-precise" title="No Anys on this line!">                    return True</span>
 <span class="line-precise" title="No Anys on this line!">        return False</span>
