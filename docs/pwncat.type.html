@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.08% imprecise</th>
-<th class="summary summary-lines">6281 LOC</th>
+<th class="summary summary-precision">6.07% imprecise</th>
+<th class="summary summary-lines">6292 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.08% imprecise</td>
-<td class="summary summary-lines">6281 LOC</td>
+<td class="summary summary-precision">6.07% imprecise</td>
+<td class="summary summary-lines">6292 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6316,6 +6316,17 @@
 <span id="L6279" class="lineno"><a class="lineno" href="#L6279">6279</a></span>
 <span id="L6280" class="lineno"><a class="lineno" href="#L6280">6280</a></span>
 <span id="L6281" class="lineno"><a class="lineno" href="#L6281">6281</a></span>
+<span id="L6282" class="lineno"><a class="lineno" href="#L6282">6282</a></span>
+<span id="L6283" class="lineno"><a class="lineno" href="#L6283">6283</a></span>
+<span id="L6284" class="lineno"><a class="lineno" href="#L6284">6284</a></span>
+<span id="L6285" class="lineno"><a class="lineno" href="#L6285">6285</a></span>
+<span id="L6286" class="lineno"><a class="lineno" href="#L6286">6286</a></span>
+<span id="L6287" class="lineno"><a class="lineno" href="#L6287">6287</a></span>
+<span id="L6288" class="lineno"><a class="lineno" href="#L6288">6288</a></span>
+<span id="L6289" class="lineno"><a class="lineno" href="#L6289">6289</a></span>
+<span id="L6290" class="lineno"><a class="lineno" href="#L6290">6290</a></span>
+<span id="L6291" class="lineno"><a class="lineno" href="#L6291">6291</a></span>
+<span id="L6292" class="lineno"><a class="lineno" href="#L6292">6292</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -10136,9 +10147,22 @@ Error (x2)">            self.log.trace("Reading command output")  # type: ignore
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">            self.log.trace("Command output: %s", repr(data))  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">            if not data:</span>
+<span class="line-empty" title="No Anys on this line!">                # This usually happens when sending a semicolon only to /bin/[ba]sh</span>
+<span class="line-empty" title="No Anys on this line!">                # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;'</span>
+<span class="line-empty" title="No Anys on this line!">                # Afterwards the shell is corrupt and gone so we will restart it here.</span>
 <span class="line-any" title="Any Types on this line: 
-Error (x2)">                self.log.trace("COMMAND-EOF signal RAISED IOCommand.producer")  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                self.ssig.raise_command_eof()</span>
+Explicit (x4)">                self.log.warning("COMMAND-EOF restarting: %s", self.__opts.executable)</span>
+<span class="line-precise" title="Any Types on this line: 
+Omitted Generics (x18)
+Explicit (x19)">                self.proc = Popen(</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__opts.executable,</span>
+<span class="line-precise" title="No Anys on this line!">                    stdin=PIPE,</span>
+<span class="line-precise" title="No Anys on this line!">                    stdout=PIPE,</span>
+<span class="line-precise" title="No Anys on this line!">                    stderr=STDOUT,</span>
+<span class="line-precise" title="No Anys on this line!">                    bufsize=self.__opts.bufsize,</span>
+<span class="line-precise" title="No Anys on this line!">                    shell=False,</span>
+<span class="line-precise" title="No Anys on this line!">                    env=os.environ.copy(),</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
 <span class="line-precise" title="No Anys on this line!">                continue</span>
 <span class="line-precise" title="No Anys on this line!">            yield data</span>
 <span class="line-empty" title="No Anys on this line!"></span>

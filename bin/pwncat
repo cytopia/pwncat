@@ -3605,8 +3605,19 @@ class IOCommand(IO):
                 data = self.proc.stdout.readline()
             self.log.trace("Command output: %s", repr(data))  # type: ignore
             if not data:
-                self.log.trace("COMMAND-EOF signal RAISED IOCommand.producer")  # type: ignore
-                self.ssig.raise_command_eof()
+                # This usually happens when sending a semicolon only to /bin/[ba]sh
+                # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;'
+                # Afterwards the shell is corrupt and gone so we will restart it here.
+                self.log.warning("COMMAND-EOF restarting: %s", self.__opts.executable)
+                self.proc = Popen(
+                    self.__opts.executable,
+                    stdin=PIPE,
+                    stdout=PIPE,
+                    stderr=STDOUT,
+                    bufsize=self.__opts.bufsize,
+                    shell=False,
+                    env=os.environ.copy(),
+                )
                 continue
             yield data
 
