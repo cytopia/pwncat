@@ -15,7 +15,7 @@ source "${SOURCEPATH}"
 # SETTINGS
 # -------------------------------------------------------------------------------------------------
 WAIT_STARTUP=7
-WAIT_SHUTDOWN=15
+WAIT_SHUTDOWN=20
 NAME1="scanner"
 
 # -------------------------------------------------------------------------------------------------
@@ -141,4 +141,3 @@ run "docker-compose logs"
 run "docker-compose ps"
 run "docker-compose kill  || true 2>/dev/null"
 run "docker-compose rm -f || true 2>/dev/null"
-run "sleep ${WAIT_SHUTDOWN}"
