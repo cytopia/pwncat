@@ -15,12 +15,12 @@
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
 <th class="summary summary-precision">6.08% imprecise</th>
-<th class="summary summary-lines">6279 LOC</th>
+<th class="summary summary-lines">6281 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
 <td class="summary summary-precision">6.08% imprecise</td>
-<td class="summary summary-lines">6279 LOC</td>
+<td class="summary summary-lines">6281 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6314,6 +6314,8 @@
 <span id="L6277" class="lineno"><a class="lineno" href="#L6277">6277</a></span>
 <span id="L6278" class="lineno"><a class="lineno" href="#L6278">6278</a></span>
 <span id="L6279" class="lineno"><a class="lineno" href="#L6279">6279</a></span>
+<span id="L6280" class="lineno"><a class="lineno" href="#L6280">6280</a></span>
+<span id="L6281" class="lineno"><a class="lineno" href="#L6281">6281</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -10994,10 +10996,11 @@ Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</s
 <span class="line-precise" title="No Anys on this line!">        self.print_info("Flushing receive buffer (this can take some time) ...")</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        self.send(b"\n")</span>
-<span class="line-precise" title="No Anys on this line!">        data = self.send_recv(None, False, False)</span>
+<span class="line-precise" title="No Anys on this line!">        data1 = self.send_recv(None, False, False)</span>
+<span class="line-precise" title="No Anys on this line!">        data2 = self.send_recv(None, False, False)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        self.print_info("Flushing receive buffer done.")</span>
-<span class="line-precise" title="No Anys on this line!">        return data</span>
+<span class="line-precise" title="No Anys on this line!">        return data1 + data2</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def send_recv(self, data, strip_suffix=True, strip_echo=False):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (Optional[bytes], bool, bool) -&gt; List[bytes]</span>
@@ -11178,7 +11181,7 @@ Explicit (x4)">            self.__log.debug("Remove suffix after  (3): %s", repr
 <span class="line-precise" title="No Anys on this line!">                for candidate in response:</span>
 <span class="line-precise" title="No Anys on this line!">                    tmpfile = StringEncoder.decode(candidate).rstrip()</span>
 <span class="line-empty" title="No Anys on this line!">                    # Skip candidates which are most likely not a file path</span>
-<span class="line-precise" title="No Anys on this line!">                    badchars = ['"', "'", "[", "]", "(", ")", ":", ";", ","]</span>
+<span class="line-precise" title="No Anys on this line!">                    badchars = ["[", "]", "(", ")", ";", ","]</span>
 <span class="line-precise" title="No Anys on this line!">                    skip = False</span>
 <span class="line-precise" title="No Anys on this line!">                    for char in badchars:</span>
 <span class="line-precise" title="No Anys on this line!">                        if char in tmpfile:</span>
@@ -11241,15 +11244,13 @@ Explicit (x4)">            self.__log.debug("Remove suffix after  (3): %s", repr
 <span class="line-precise" title="No Anys on this line!">        assert self.__remote_py3 is not None</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        rpath_b64 = self.create_remote_tmpfile()</span>
+<span class="line-precise" title="No Anys on this line!">        self.flush_receive()</span>
 <span class="line-precise" title="No Anys on this line!">        if rpath_b64 is None:</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
 <span class="line-precise" title="No Anys on this line!">        if not self.__upload_file_base_64_encoded(lpath, rpath_b64, True):</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
-<span class="line-precise" title="No Anys on this line!">        self.flush_receive()</span>
 <span class="line-precise" title="No Anys on this line!">        if not self.__remote_base64_decode(rpath_b64, rpath):</span>
-<span class="line-precise" title="No Anys on this line!">            self.flush_receive()</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
-<span class="line-precise" title="No Anys on this line!">        self.flush_receive()</span>
 <span class="line-precise" title="No Anys on this line!">        return True</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
@@ -11422,20 +11423,20 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">                b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))</span>
 <span class="line-precise" title="No Anys on this line!">                if first:</span>
 <span class="line-precise" title="No Anys on this line!">                    if at_once:</span>
-<span class="line-precise" title="No Anys on this line!">                        data.append('echo "{}" &gt; {}'.format(b64, rpath))</span>
+<span class="line-precise" title="No Anys on this line!">                        data.append('echo "{}" &gt; "{}";'.format(b64, rpath))</span>
 <span class="line-empty" title="No Anys on this line!">                    else:</span>
-<span class="line-precise" title="No Anys on this line!">                        self.remote_command('echo "{}" &gt; {}'.format(b64, rpath), False)</span>
+<span class="line-precise" title="No Anys on this line!">                        self.remote_command('echo "{}" &gt; "{}";'.format(b64, rpath), False)</span>
 <span class="line-precise" title="No Anys on this line!">                    first = False</span>
 <span class="line-empty" title="No Anys on this line!">                else:</span>
 <span class="line-precise" title="No Anys on this line!">                    if at_once:</span>
-<span class="line-precise" title="No Anys on this line!">                        data.append('echo "{}" &gt;&gt; {}'.format(b64, rpath))</span>
+<span class="line-precise" title="No Anys on this line!">                        data.append('echo "{}" &gt;&gt; "{}";'.format(b64, rpath))</span>
 <span class="line-empty" title="No Anys on this line!">                    else:</span>
-<span class="line-precise" title="No Anys on this line!">                        self.remote_command('echo "{}" &gt;&gt; {}'.format(b64, rpath), False)</span>
+<span class="line-precise" title="No Anys on this line!">                        self.remote_command('echo "{}" &gt;&gt; "{}";'.format(b64, rpath), False)</span>
 <span class="line-precise" title="No Anys on this line!">                curr += 1</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        if at_once:</span>
 <span class="line-precise" title="No Anys on this line!">            self.print_info("Uploading: {} -&gt; {} ({}/{})".format(lpath, rpath, 1, 1))</span>
-<span class="line-precise" title="No Anys on this line!">            self.remote_command(";".join(data), False)</span>
+<span class="line-precise" title="No Anys on this line!">            self.remote_command("".join(data), False)</span>
 <span class="line-empty" title="No Anys on this line!">        else:</span>
 <span class="line-precise" title="No Anys on this line!">            self.print_info()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -11453,6 +11454,8 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-empty" title="No Anys on this line!">        Returns:</span>
 <span class="line-empty" title="No Anys on this line!">            bool: Returns `True` on success or `False` on failure.</span>
 <span class="line-empty" title="No Anys on this line!">        """</span>
+<span class="line-precise" title="No Anys on this line!">        self.flush_receive()</span>
+<span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        command = []</span>
 <span class="line-precise" title="No Anys on this line!">        command.append("{} -c 'import base64;".format(self.__remote_python))</span>
 <span class="line-precise" title="No Anys on this line!">        command.append('f=open("{}", "r");'.format(rpath_source))</span>
@@ -11463,7 +11466,7 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-empty" title="No Anys on this line!">        else:</span>
 <span class="line-precise" title="No Anys on this line!">            command.append('print "".join([base64.b64decode(l) for l in lines]);\'')</span>
-<span class="line-precise" title="No Anys on this line!">        command.append("&gt; {}".format(rpath_target))</span>
+<span class="line-precise" title="No Anys on this line!">        command.append('&gt; "{}";'.format(rpath_target))</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        self.print_info("Decoding: {} -&gt; {}".format(rpath_source, rpath_target))</span>
 <span class="line-precise" title="No Anys on this line!">        self.remote_command("".join(command), False)</span>
@@ -11492,18 +11495,19 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        local_path = os.path.abspath(__file__)</span>
 <span class="line-precise" title="No Anys on this line!">        remote_path = self.create_remote_tmpfile()</span>
+<span class="line-precise" title="No Anys on this line!">        remote_stdout = self.create_remote_tmpfile()</span>
+<span class="line-precise" title="No Anys on this line!">        remote_stderr = self.create_remote_tmpfile()</span>
 <span class="line-precise" title="No Anys on this line!">        if remote_path is None:</span>
 <span class="line-precise" title="No Anys on this line!">            self.print_info("Unable to create tmpfile. Aborting and handing over to current shell.")</span>
 <span class="line-empty" title="No Anys on this line!">            return</span>
 <span class="line-precise" title="No Anys on this line!">        if not self.upload(local_path, remote_path):</span>
 <span class="line-precise" title="No Anys on this line!">            self.print_info("Unable to upload file. Aborting and handing over to current shell.")</span>
 <span class="line-empty" title="No Anys on this line!">            return</span>
-<span class="line-precise" title="No Anys on this line!">        stdout = self.create_remote_tmpfile()</span>
-<span class="line-precise" title="No Anys on this line!">        stderr = self.create_remote_tmpfile()</span>
-<span class="line-precise" title="No Anys on this line!">        self.__start_pwncat(remote_path, cmd, host, ports, stdout, stderr)</span>
+<span class="line-precise" title="No Anys on this line!">        self.__start_pwncat(remote_path, cmd, host, ports, remote_stdout, remote_stderr)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # We need to wait some time for slow severs</span>
-<span class="line-precise" title="No Anys on this line!">        time.sleep(1)</span>
+<span class="line-precise" title="No Anys on this line!">        self.print_info("Waiting for socket")</span>
+<span class="line-precise" title="No Anys on this line!">        time.sleep(2)</span>
 <span class="line-precise" title="No Anys on this line!">        self.flush_receive()</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        self.print_info("Done. Handing over to current shell.")</span>

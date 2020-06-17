@@ -4412,10 +4412,11 @@ class CNC(object):
         self.print_info("Flushing receive buffer (this can take some time) ...")
 
         self.send(b"\n")
-        data = self.send_recv(None, False, False)
+        data1 = self.send_recv(None, False, False)
+        data2 = self.send_recv(None, False, False)
 
         self.print_info("Flushing receive buffer done.")
-        return data
+        return data1 + data2
 
     def send_recv(self, data, strip_suffix=True, strip_echo=False):
         # type: (Optional[bytes], bool, bool) -> List[bytes]
@@ -4588,7 +4589,7 @@ class CNC(object):
                 for candidate in response:
                     tmpfile = StringEncoder.decode(candidate).rstrip()
                     # Skip candidates which are most likely not a file path
-                    badchars = ['"', "'", "[", "]", "(", ")", ":", ";", ","]
+                    badchars = ["[", "]", "(", ")", ";", ","]
                     skip = False
                     for char in badchars:
                         if char in tmpfile:
@@ -4651,15 +4652,13 @@ class CNC(object):
         assert self.__remote_py3 is not None
 
         rpath_b64 = self.create_remote_tmpfile()
+        self.flush_receive()
         if rpath_b64 is None:
             return False
         if not self.__upload_file_base_64_encoded(lpath, rpath_b64, True):
             return False
-        self.flush_receive()
         if not self.__remote_base64_decode(rpath_b64, rpath):
-            self.flush_receive()
             return False
-        self.flush_receive()
         return True
 
     # --------------------------------------------------------------------------
@@ -4829,20 +4828,20 @@ class CNC(object):
                 b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
                     if at_once:
-                        data.append('echo "{}" > {}'.format(b64, rpath))
+                        data.append('echo "{}" > "{}";'.format(b64, rpath))
                     else:
-                        self.remote_command('echo "{}" > {}'.format(b64, rpath), False)
+                        self.remote_command('echo "{}" > "{}";'.format(b64, rpath), False)
                     first = False
                 else:
                     if at_once:
-                        data.append('echo "{}" >> {}'.format(b64, rpath))
+                        data.append('echo "{}" >> "{}";'.format(b64, rpath))
                     else:
-                        self.remote_command('echo "{}" >> {}'.format(b64, rpath), False)
+                        self.remote_command('echo "{}" >> "{}";'.format(b64, rpath), False)
                 curr += 1
 
         if at_once:
             self.print_info("Uploading: {} -> {} ({}/{})".format(lpath, rpath, 1, 1))
-            self.remote_command(";".join(data), False)
+            self.remote_command("".join(data), False)
         else:
             self.print_info()
 
@@ -4860,6 +4859,8 @@ class CNC(object):
         Returns:
             bool: Returns `True` on success or `False` on failure.
         """
+        self.flush_receive()
+
         command = []
         command.append("{} -c 'import base64;".format(self.__remote_python))
         command.append('f=open("{}", "r");'.format(rpath_source))
@@ -4870,7 +4871,7 @@ class CNC(object):
             )
         else:
             command.append('print "".join([base64.b64decode(l) for l in lines]);\'')
-        command.append("> {}".format(rpath_target))
+        command.append('> "{}";'.format(rpath_target))
 
         self.print_info("Decoding: {} -> {}".format(rpath_source, rpath_target))
         self.remote_command("".join(command), False)
@@ -4899,18 +4900,19 @@ class CNCAutoDeploy(CNC):
 
         local_path = os.path.abspath(__file__)
         remote_path = self.create_remote_tmpfile()
+        remote_stdout = self.create_remote_tmpfile()
+        remote_stderr = self.create_remote_tmpfile()
         if remote_path is None:
             self.print_info("Unable to create tmpfile. Aborting and handing over to current shell.")
             return
         if not self.upload(local_path, remote_path):
             self.print_info("Unable to upload file. Aborting and handing over to current shell.")
             return
-        stdout = self.create_remote_tmpfile()
-        stderr = self.create_remote_tmpfile()
-        self.__start_pwncat(remote_path, cmd, host, ports, stdout, stderr)
+        self.__start_pwncat(remote_path, cmd, host, ports, remote_stdout, remote_stderr)
 
         # We need to wait some time for slow severs
-        time.sleep(1)
+        self.print_info("Waiting for socket")
+        time.sleep(2)
         self.flush_receive()
 
         self.print_info("Done. Handing over to current shell.")

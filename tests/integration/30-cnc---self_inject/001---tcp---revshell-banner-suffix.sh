@@ -122,7 +122,7 @@ run_test() {
 			print_file "PwncatInjectListener] - [/dev/stdout" "${srv_stdout}"
 			print_file "RevShell] - [/dev/stderr" "${cli_stderr}"
 			print_file "RevShell] - [/dev/stdout" "${cli_stdout}"
-			FILES="$(grep 'tmpfile:' "${srv_stdout}" | sed 's/.*tmpfile: //g' | awk -F"'" '{print $2}' | sed 's/://g')"
+			FILES="$(grep 'tmpfile:' "${srv_stdout}" | sed 's/.*tmpfile: //g' | awk -F"'" '{print $2}')"
 			echo "${FILES}"| while read -r line; do
 				echo "${line}"
 				print_file "Remote tmpfile" "${line}" || true
