@@ -3592,7 +3592,7 @@ class IOCommand(IO):
         assert self.proc.stdout is not None
         while True:
             if self.ssig.has_command_quit():
-                self.log.trace("COMMAND-QUIT signal ACK IOCommand.producer")  # type: ignore
+                self.log.trace("COMMAND-QUIT signal ACK IOCommand.producer (1)")  # type: ignore
                 self.__cleanup()
                 return
             self.log.trace("Reading command output")  # type: ignore
@@ -3605,6 +3605,10 @@ class IOCommand(IO):
                 data = self.proc.stdout.readline()
             self.log.trace("Command output: %s", repr(data))  # type: ignore
             if not data:
+                if self.ssig.has_command_quit():
+                    self.log.trace("COMMAND-QUIT signal ACK IOCommand.producer (2)")  # type: ignore
+                    self.__cleanup()
+                    return
                 # This usually happens when sending a semicolon only to /bin/[ba]sh
                 # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;'
                 # Afterwards the shell is corrupt and gone so we will restart it here.
@@ -4481,7 +4485,30 @@ class CNC(object):
         # 3. response cloud be single characters per element
         # But we want to make sure that we always get one line per element,
         # so we normalize it
-        self.__log.debug("Normalize recv before: %s", repr(responses))
+
+        # First: Join lines which do not have line endings
+        self.__log.debug("Normalize recv before (1): %s", repr(responses))
+        normalized = []
+        has_eol = True
+        for line in responses:
+            if has_eol:
+                normalized.append(line)
+            else:
+                normalized[-1] = normalized[-1] + line
+            # Determine what to do next iteration
+            if line.endswith(b"\r\n"):
+                has_eol = True
+            elif line.endswith(b"\n"):
+                has_eol = True
+            elif line.endswith(b"\r"):
+                has_eol = True
+            else:
+                has_eol = False
+        responses = normalized
+        self.__log.debug("Normalize recv after  (1): %s", repr(responses))
+
+        # Second: Separate lines which have line endings
+        self.__log.debug("Normalize recv before (2): %s", repr(responses))
         normalized = []
         for line in responses:
             line = line.rstrip(b"\r\n")
@@ -4502,7 +4529,7 @@ class CNC(object):
             else:
                 normalized.append(line)
         responses = normalized
-        self.__log.debug("Normalize recv after:  %s", repr(responses))
+        self.__log.debug("Normalize recv after  (2): %s", repr(responses))
 
         # [3/4] Remove remote ends suffix (if it sends something like it)
         # We iterate reversed of responses and check if the new line suffix(es)
@@ -4622,7 +4649,7 @@ class CNC(object):
         # String should be short as an unstable remote might send small chunks
         unique_string = "_pwncat_"
         response = self.remote_command(
-            "test -f {} && echo '{}'".format(remote_path, unique_string), True
+            'test -f "{}" && echo "{}"'.format(remote_path, unique_string), True
         )
         if response is not None:
             for candidate in response:
