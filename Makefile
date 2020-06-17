@@ -455,13 +455,13 @@ _test-options--ping_word:
 
 .PHONY: _test-cnc--inject_shell
 _test-cnc--inject_shell:
-_test-cnc--inject_shell: __test-cnc--inject_shell_pwncat
-_test-cnc--inject_shell: __test-cnc--inject_shell_php
-__test-cnc--inject_shell_pwncat:
+_test-cnc--inject_shell: __test-cnc--inject_shell-pwncat
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshell-banner-suffix
+__test-cnc--inject_shell-pwncat:
 	$(INTPATH)30-cnc---self_inject/000---tcp---pwncat_as_rev_shell.sh \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
-__test-cnc--inject_shell_php:
-	$(INTPATH)30-cnc---self_inject/001---tcp---php_as_rev_shell.sh \
+__test-cnc--inject_shell-revshell-banner-suffix:
+	$(INTPATH)30-cnc---self_inject/001---tcp---revshell-banner-suffix.sh \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 

