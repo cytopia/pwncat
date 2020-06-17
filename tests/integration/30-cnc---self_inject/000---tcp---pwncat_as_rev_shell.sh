@@ -113,6 +113,10 @@ run_test() {
 			print_file "PwncatInjectListener] - [/dev/stdout" "${srv_stdout}"
 			print_file "RevShell] - [/dev/stderr" "${cli_stderr}"
 			print_file "RevShell] - [/dev/stdout" "${cli_stdout}"
+			FILES="$(grep 'tmpfile:' tmpfile | sed 's/.*tmpfile: //g' | awk -F"'" '{print $2}' | sed 's/://g')"
+			echo "${FILES}"| while read -r line; do
+				print_file "Remote tmpfile" "${line}"
+			done
 			print_error "Inject shell is not running"
 			run "ps"
 			run "ps -a" || true
@@ -130,34 +134,34 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# TEST: Client shut down automatically
 	# --------------------------------------------------------------------------------
-	print_h2 "(4/9) Test: Client shut down automatically"
+	print_h2 "(4/9) Test: RevShell shut down automatically"
 
 	# [CLIENT] Manually stop the Client
-	test_case_instance_is_stopped "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
+	test_case_instance_is_stopped "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
 
 	# [CLIENT] Ensure Client still has no errors
-	test_case_instance_has_no_errors "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "(Connection refused)|(actively refused)|(timed out)"
+	test_case_instance_has_no_errors "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "(Connection refused)|(actively refused)|(timed out)"
 
 
 	# --------------------------------------------------------------------------------
 	# TEST: Server shut down automatically
 	# --------------------------------------------------------------------------------
-	print_h2 "(5/9) Test: Server shut down automatically"
+	print_h2 "(5/9) Test: PwncatInjectListener shut down automatically"
 
 	# [SERVER] Ensure Server has quit automatically
-	test_case_instance_is_stopped "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	test_case_instance_is_stopped "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 	# [SERVER] Ensure Server still has no errors
-	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "Client" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
+	test_case_instance_has_no_errors "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
 
 
 	# --------------------------------------------------------------------------------
 	# START: SERVER
 	# --------------------------------------------------------------------------------
-	print_h2 "(6/9) Start: Server"
+	print_h2 "(6/9) Start: FinalListener"
 
 	# Start Server
-	print_info "Start Server"
+	print_info "Start FinalListener"
 	# shellcheck disable=SC2086
 	if ! srv_pid="$( run_bg "printf ${data}" "${PYTHON}" "${BINARY}" -l ${RPORT} -vvvv "${srv2_stdout}" "${srv2_stderr}" )"; then
 		printf ""
@@ -167,22 +171,25 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# DATA TRANSFER
 	# --------------------------------------------------------------------------------
-	print_h2 "(7/9) Transfer: Server -> Client -> Server"
+	print_h2 "(7/9) Transfer: FinalListener -> Pwncat -> FinalListener"
 
 	# [CLIENT -> SERVER -> CLIENT]
-	wait_for_data_transferred "" "${expect}" "${expect_or}" "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
+	wait_for_data_transferred "" "${expect}" "${expect_or}" "FinalListener" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
 
 
 	# --------------------------------------------------------------------------------
 	# TEST: Server shut down automatically
 	# --------------------------------------------------------------------------------
-	print_h2 "(8/9) Test: Server shut down automatically"
+	print_h2 "(8/9) Test: FinalListener shut down automatically"
+
+	# Give some time for shutdown
+	run "sleep 5"
 
 	# [SERVER] Ensure Server has quit automatically
-	test_case_instance_is_stopped "Server" "${srv_pid}" "${srv2_stdout}" "${srv_stderr}"
+	test_case_instance_is_stopped "FinalListener" "${srv_pid}" "${srv2_stdout}" "${srv_stderr}"
 
 	# [SERVER] Ensure Server has no errors
-	test_case_instance_has_no_errors "Server" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
+	test_case_instance_has_no_errors "FinalListener" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
 
 
 	# --------------------------------------------------------------------------------
@@ -190,7 +197,9 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(9/9) Cleanup"
 
-	run "ps auxw | grep -v grep | grep reconn-wait | awk '{print \$2}' | xargs kill"
+	run "ps auxw | grep -v grep | grep reconn-wait | awk '{print \$2}' | xargs kill" || true
+
+	print_file "PwncatInjectListener] - [/dev/stdout" "${srv_stdout}"
 }
 
 
