@@ -13,6 +13,7 @@
 - Fixed false positives for port scanner
 - FIxed sending binary data from stdin
 - Fixed self-inject mode if remote sends greetings or prefixes: #83
+- Fixed remote command to respawn if it crashes due to bad user input
 
 ### Added
 - Implemented signal handler to distribute shutdown signals across threads

@@ -3635,7 +3635,7 @@ class IOCommand(IO):
                 # This usually happens when sending a semicolon only to /bin/[ba]sh
                 # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;&#39;
                 # Afterwards the shell is corrupt and gone so we will restart it here.
-                self.log.warning(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
+                self.log.error(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
                 self.proc = Popen(
                     self.__opts.executable,
                     stdin=PIPE,
@@ -4626,15 +4626,6 @@ class CNC(object):
                 self.print_info(&#34;Creating tmpfile: Unsure - checking otherwise&#34;, True, True)
                 for candidate in response:
                     tmpfile = StringEncoder.decode(candidate).rstrip()
-                    # Skip candidates which are most likely not a file path
-                    badchars = [&#34;[&#34;, &#34;]&#34;, &#34;(&#34;, &#34;)&#34;, &#34;;&#34;, &#34;,&#34;]
-                    skip = False
-                    for char in badchars:
-                        if char in tmpfile:
-                            skip = True
-                            break
-                    if skip:
-                        continue
                     if self.remote_file_exists(tmpfile):
                         self.print_info(&#34;Creating tmpfile: {}&#34;.format(repr(tmpfile)), True, True)
                         return tmpfile
@@ -4810,7 +4801,7 @@ class CNC(object):
                 python = path + &#34;/&#34; + name
                 self.print_info(&#34;Probing for: {}&#34;.format(python))
                 rpath_lines = self.remote_command(
-                    &#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python), True
+                    &#34;test -f {p} &amp;&amp; echo {p} || echo&#34;.format(p=python), True
                 )
                 if rpath_lines is not None and rpath_lines:
                     # Reset current round
@@ -4866,20 +4857,20 @@ class CNC(object):
                 b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
                     if at_once:
-                        data.append(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;;&#39;.format(b64, rpath))
+                        data.append(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;&#39;.format(b64, rpath))
                     else:
-                        self.remote_command(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;;&#39;.format(b64, rpath), False)
+                        self.remote_command(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;&#39;.format(b64, rpath), False)
                     first = False
                 else:
                     if at_once:
-                        data.append(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;;&#39;.format(b64, rpath))
+                        data.append(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;&#39;.format(b64, rpath))
                     else:
-                        self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;;&#39;.format(b64, rpath), False)
+                        self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;&#39;.format(b64, rpath), False)
                 curr += 1
 
         if at_once:
             self.print_info(&#34;Uploading: {} -&gt; {} ({}/{})&#34;.format(lpath, rpath, 1, 1))
-            self.remote_command(&#34;&#34;.join(data), False)
+            self.remote_command(&#34;\n&#34;.join(data), False)
         else:
             self.print_info()
 
@@ -4909,7 +4900,7 @@ class CNC(object):
             )
         else:
             command.append(&#39;print &#34;&#34;.join([base64.b64decode(l) for l in lines]);\&#39;&#39;)
-        command.append(&#39;&gt; &#34;{}&#34;;&#39;.format(rpath_target))
+        command.append(&#39;&gt; &#34;{}&#34;&#39;.format(rpath_target))
 
         self.print_info(&#34;Decoding: {} -&gt; {}&#34;.format(rpath_source, rpath_target))
         self.remote_command(&#34;&#34;.join(command), False)
@@ -8184,15 +8175,6 @@ def type_tos(value):
                 self.print_info(&#34;Creating tmpfile: Unsure - checking otherwise&#34;, True, True)
                 for candidate in response:
                     tmpfile = StringEncoder.decode(candidate).rstrip()
-                    # Skip candidates which are most likely not a file path
-                    badchars = [&#34;[&#34;, &#34;]&#34;, &#34;(&#34;, &#34;)&#34;, &#34;;&#34;, &#34;,&#34;]
-                    skip = False
-                    for char in badchars:
-                        if char in tmpfile:
-                            skip = True
-                            break
-                    if skip:
-                        continue
                     if self.remote_file_exists(tmpfile):
                         self.print_info(&#34;Creating tmpfile: {}&#34;.format(repr(tmpfile)), True, True)
                         return tmpfile
@@ -8368,7 +8350,7 @@ def type_tos(value):
                 python = path + &#34;/&#34; + name
                 self.print_info(&#34;Probing for: {}&#34;.format(python))
                 rpath_lines = self.remote_command(
-                    &#34;test -f {p} &amp;&amp; echo {p} || echo;&#34;.format(p=python), True
+                    &#34;test -f {p} &amp;&amp; echo {p} || echo&#34;.format(p=python), True
                 )
                 if rpath_lines is not None and rpath_lines:
                     # Reset current round
@@ -8424,20 +8406,20 @@ def type_tos(value):
                 b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
                     if at_once:
-                        data.append(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;;&#39;.format(b64, rpath))
+                        data.append(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;&#39;.format(b64, rpath))
                     else:
-                        self.remote_command(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;;&#39;.format(b64, rpath), False)
+                        self.remote_command(&#39;echo &#34;{}&#34; &gt; &#34;{}&#34;&#39;.format(b64, rpath), False)
                     first = False
                 else:
                     if at_once:
-                        data.append(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;;&#39;.format(b64, rpath))
+                        data.append(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;&#39;.format(b64, rpath))
                     else:
-                        self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;;&#39;.format(b64, rpath), False)
+                        self.remote_command(&#39;echo &#34;{}&#34; &gt;&gt; &#34;{}&#34;&#39;.format(b64, rpath), False)
                 curr += 1
 
         if at_once:
             self.print_info(&#34;Uploading: {} -&gt; {} ({}/{})&#34;.format(lpath, rpath, 1, 1))
-            self.remote_command(&#34;&#34;.join(data), False)
+            self.remote_command(&#34;\n&#34;.join(data), False)
         else:
             self.print_info()
 
@@ -8467,7 +8449,7 @@ def type_tos(value):
             )
         else:
             command.append(&#39;print &#34;&#34;.join([base64.b64decode(l) for l in lines]);\&#39;&#39;)
-        command.append(&#39;&gt; &#34;{}&#34;;&#39;.format(rpath_target))
+        command.append(&#39;&gt; &#34;{}&#34;&#39;.format(rpath_target))
 
         self.print_info(&#34;Decoding: {} -&gt; {}&#34;.format(rpath_source, rpath_target))
         self.remote_command(&#34;&#34;.join(command), False)
@@ -8560,15 +8542,6 @@ def remote_python(self):
             self.print_info(&#34;Creating tmpfile: Unsure - checking otherwise&#34;, True, True)
             for candidate in response:
                 tmpfile = StringEncoder.decode(candidate).rstrip()
-                # Skip candidates which are most likely not a file path
-                badchars = [&#34;[&#34;, &#34;]&#34;, &#34;(&#34;, &#34;)&#34;, &#34;;&#34;, &#34;,&#34;]
-                skip = False
-                for char in badchars:
-                    if char in tmpfile:
-                        skip = True
-                        break
-                if skip:
-                    continue
                 if self.remote_file_exists(tmpfile):
                     self.print_info(&#34;Creating tmpfile: {}&#34;.format(repr(tmpfile)), True, True)
                     return tmpfile
@@ -11129,7 +11102,7 @@ def producer(self, *args, **kwargs):
                 # This usually happens when sending a semicolon only to /bin/[ba]sh
                 # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;&#39;
                 # Afterwards the shell is corrupt and gone so we will restart it here.
-                self.log.warning(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
+                self.log.error(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
                 self.proc = Popen(
                     self.__opts.executable,
                     stdin=PIPE,
@@ -11284,7 +11257,7 @@ def producer(self, *args, **kwargs):
             # This usually happens when sending a semicolon only to /bin/[ba]sh
             # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;&#39;
             # Afterwards the shell is corrupt and gone so we will restart it here.
-            self.log.warning(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
+            self.log.error(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
             self.proc = Popen(
                 self.__opts.executable,
                 stdin=PIPE,

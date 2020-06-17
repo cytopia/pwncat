@@ -3608,7 +3608,7 @@ class IOCommand(IO):
                 # This usually happens when sending a semicolon only to /bin/[ba]sh
                 # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;'
                 # Afterwards the shell is corrupt and gone so we will restart it here.
-                self.log.warning("COMMAND-EOF restarting: %s", self.__opts.executable)
+                self.log.error("COMMAND-EOF restarting: %s", self.__opts.executable)
                 self.proc = Popen(
                     self.__opts.executable,
                     stdin=PIPE,
@@ -4599,15 +4599,6 @@ class CNC(object):
                 self.print_info("Creating tmpfile: Unsure - checking otherwise", True, True)
                 for candidate in response:
                     tmpfile = StringEncoder.decode(candidate).rstrip()
-                    # Skip candidates which are most likely not a file path
-                    badchars = ["[", "]", "(", ")", ";", ","]
-                    skip = False
-                    for char in badchars:
-                        if char in tmpfile:
-                            skip = True
-                            break
-                    if skip:
-                        continue
                     if self.remote_file_exists(tmpfile):
                         self.print_info("Creating tmpfile: {}".format(repr(tmpfile)), True, True)
                         return tmpfile
@@ -4783,7 +4774,7 @@ class CNC(object):
                 python = path + "/" + name
                 self.print_info("Probing for: {}".format(python))
                 rpath_lines = self.remote_command(
-                    "test -f {p} && echo {p} || echo;".format(p=python), True
+                    "test -f {p} && echo {p} || echo".format(p=python), True
                 )
                 if rpath_lines is not None and rpath_lines:
                     # Reset current round
@@ -4839,20 +4830,20 @@ class CNC(object):
                 b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
                     if at_once:
-                        data.append('echo "{}" > "{}";'.format(b64, rpath))
+                        data.append('echo "{}" > "{}"'.format(b64, rpath))
                     else:
-                        self.remote_command('echo "{}" > "{}";'.format(b64, rpath), False)
+                        self.remote_command('echo "{}" > "{}"'.format(b64, rpath), False)
                     first = False
                 else:
                     if at_once:
-                        data.append('echo "{}" >> "{}";'.format(b64, rpath))
+                        data.append('echo "{}" >> "{}"'.format(b64, rpath))
                     else:
-                        self.remote_command('echo "{}" >> "{}";'.format(b64, rpath), False)
+                        self.remote_command('echo "{}" >> "{}"'.format(b64, rpath), False)
                 curr += 1
 
         if at_once:
             self.print_info("Uploading: {} -> {} ({}/{})".format(lpath, rpath, 1, 1))
-            self.remote_command("".join(data), False)
+            self.remote_command("\n".join(data), False)
         else:
             self.print_info()
 
@@ -4882,7 +4873,7 @@ class CNC(object):
             )
         else:
             command.append('print "".join([base64.b64decode(l) for l in lines]);\'')
-        command.append('> "{}";'.format(rpath_target))
+        command.append('> "{}"'.format(rpath_target))
 
         self.print_info("Decoding: {} -> {}".format(rpath_source, rpath_target))
         self.remote_command("".join(command), False)
