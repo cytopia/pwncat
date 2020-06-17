@@ -587,6 +587,7 @@ run_bg() {
 		return 1
 	fi
 
+	>&2 printf "PID: ${pid}\\n"
 	>&2 printf "${clr_ok}%s${clr_rst}\\n" "[OK]"
 	echo "${pid}"
 	print_test_datetime
@@ -943,6 +944,7 @@ test_case_instance_is_stopped() {
 	fi
 	print_file "${name} STDERR" "${file_stderr}"
 	print_file "${name} STDOUT" "${file_stdout}"
+	run "ps -ef" || true
 	print_error "[${name} Error] ${name} is not stopped"
 
 	# cleanup
