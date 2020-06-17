@@ -24,6 +24,7 @@
 
 ### Changed
 - Changed behaviour to close after EOF on stdin (can be reverted via `--no-shutdown`)
+- Added faster method to validate remote files in CNC mode
 
 
 ## Release 0.0.23-alpha

@@ -4226,13 +4226,19 @@ class Runner(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [9/11 Command & Control]: (1/2) CNC
+# [9/11 Command & Control]: (1/3) CNC Exception classes
+# -------------------------------------------------------------------------------------------------
+class CNCPythonNotFound(BaseException):
+    """CNC Exception handler."""
+
+
+# -------------------------------------------------------------------------------------------------
+# [9/11 Command & Control]: (2/3) CNC
 # -------------------------------------------------------------------------------------------------
 class CNC(object):
     """Command and Control base class."""
 
     __PYTHON_PATHS = [
-        "/bin",
         "/usr/bin",
         "/usr/local/bin",
         "/usr/local/python/bin",
@@ -4243,6 +4249,7 @@ class CNC(object):
         "/usr/local/python3.6/bin",
         "/usr/local/python3.7/bin",
         "/usr/local/python3.8/bin",
+        "/bin",
         "/opt/bin",
         "/opt/python/bin",
         "/opt/python2/bin",
@@ -4255,9 +4262,9 @@ class CNC(object):
     ]
 
     __PYTHON_NAMES = [
+        "python3",
         "python",
         "python2",
-        "python3",
         "python2.7",
         "python3.5",
         "python3.6",
@@ -4293,12 +4300,16 @@ class CNC(object):
             network (IONetwork): Instance of IONetwork
 
         Raises:
-            FileNotFoundError: if remote Python binary path is not found.
+            CNCPythonNotFound: if remote Python binary path is not found.
         """
         self.__net = network
         self.__log = logging.getLogger(__name__)
         self.__py3 = sys.version_info >= (3, 0)  # type: bool
+
+        # Along with the response the server might prefix/suffix data
+        # such as a PS1 prompt (which might be send first or last with a newline)
         self.__remote_prefix = []  # type: List[bytes]
+        self.__remote_suffix = []  # type: List[bytes]
 
         # Values will by dynamically adjusted to find good balance between
         # reliability and speed.
@@ -4309,10 +4320,7 @@ class CNC(object):
         self.print_info("Checking if remote sends greeting...")
         greeting = self.send_recv(None, False, False)
         if greeting:
-            self.print_raw(b"".join(greeting))
-            # Fix newlines if we had greetings
-            if greeting[-1].rstrip(b"\n") == greeting[-1]:
-                self.print_raw(b"\n")
+            self.print_raw(b"\n".join(greeting), True)
 
         # [2/3] Check if the remote sends a prefix with every reply
         self.__set_remote_prefix()
@@ -4320,7 +4328,7 @@ class CNC(object):
         # [3/3] Find potential Python versions
         if not self.__set_remote_python_path():
             self.print_info("No Python has been found. Aborting and handing over to current shell.")
-            raise FileNotFoundError()
+            raise CNCPythonNotFound()
 
     # --------------------------------------------------------------------------
     # Print Functions
@@ -4347,21 +4355,24 @@ class CNC(object):
             print("{}{}".format(prefix, message), end=end)
             sys.stdout.flush()
 
-    def print_raw(self, message):
-        # type: (bytes) -> None
+    def print_raw(self, message, newline):
+        # type: (bytes, bool) -> None
         """Print a message to the local screen without color/prefix.
 
         Args:
             message (bytes): The message to print.
+            newline (bool): Add a newline?
         """
         if self.__py3:
-            sys.stdout.buffer.write(message)
+            end = b"\n" if newline else b""
+            sys.stdout.buffer.write(b"".join([message, end]))
         else:
-            # For issues with flush (when using tail -F or equal) see links below:
-            # https://stackoverflow.com/questions/26692284
-            # https://docs.python.org/3/library/signal.html#note-on-sigpipe
-            print(message, end="")
+            end = "\n" if newline else ""  # type: ignore
+            print(message, end=end)  # type: ignore
 
+        # For issues with flush (when using tail -F or equal) see links below:
+        # https://stackoverflow.com/questions/26692284
+        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
         try:
             sys.stdout.flush()
         except IOError:
@@ -4406,13 +4417,13 @@ class CNC(object):
         self.print_info("Flushing receive buffer done.")
         return data
 
-    def send_recv(self, data, strip_prefix=True, strip_echo=False):
+    def send_recv(self, data, strip_suffix=True, strip_echo=False):
         # type: (Optional[bytes], bool, bool) -> List[bytes]
         """Send data through a connected (TCP) or unconnected (UDP) socket and receive all replies.
 
         Args:
             data (None|bytes): The data to send. If None, will skip sending.
-            strip_prefix (bool): Strip remote prefix from received data?
+            strip_suffix (bool): Strip remote suffix from received data?
             strip_echo (bool): Also remove 'data' from output if server has echo'ed it?
 
         Returns:
@@ -4439,42 +4450,73 @@ class CNC(object):
             else:
                 if response:
                     responses.append(response)
-
                     # If retries were necessary, we will increase the time-out.
                     if curr_retry > 0:
                         self.__recv_timeout += self.__recv_timeout / 2
-
                     # If ne retries were necessary, we can descrease the timeout a bit
                     if curr_retry == 0:
                         self.__recv_timeout -= self.__recv_timeout / 2
-
                     # Reset the retry counter for next line to read
                     curr_retry = 0
 
-        # [3/4] Remove remote ends prefix (if it sends something like it)
-        # We iterate reversed of responses and check if the new line prefix(es)
+        # Return if already empty
+        if not responses:
+            return responses
+
+        # Response could be in one of the below listed formats:
+        # 1. response could be one line per element
+        # 2. reposnse could be multiple lines per element
+        # 3. response cloud be single characters per element
+        # But we want to make sure that we always get one line per element,
+        # so we normalize it
+        self.__log.debug("Normalize recv before: %s", repr(responses))
+        normalized = []
+        for line in responses:
+            line = line.rstrip(b"\r\n")
+            line = line.rstrip(b"\n")
+            line = line.rstrip(b"\r")
+            line = line.lstrip(b"\r\n")
+            line = line.lstrip(b"\n")
+            line = line.lstrip(b"\r")
+            if b"\r\n" in line:
+                for newline in line.split(b"\r\n"):
+                    normalized.append(newline)
+            elif b"\n" in line:
+                for newline in line.split(b"\n"):
+                    normalized.append(newline)
+            elif b"\r" in line:
+                for newline in line.split(b"\r"):
+                    normalized.append(newline)
+            else:
+                normalized.append(line)
+        responses = normalized
+        self.__log.debug("Normalize recv after:  %s", repr(responses))
+
+        # [3/4] Remove remote ends suffix (if it sends something like it)
+        # We iterate reversed of responses and check if the new line suffix(es)
         # are present at the end.
-        # This is because the prefix(es) is always received last.
-        if self.__remote_prefix and strip_prefix:
-            # Do it as many times as we have prefixes
-            for _ in range(len(self.__remote_prefix)):
-                for prefix in list(reversed(self.__remote_prefix)):
-                    for idx, item in enumerate(responses):
-                        if prefix == responses[idx]:
-                            del responses[idx]
-                        elif prefix.rstrip() == responses[idx]:
-                            del responses[idx]
-                        elif prefix == responses[idx].rstrip():
-                            del responses[idx]
-                        elif prefix.rstrip() == responses[idx].rstrip():
-                            del responses[idx]
-                        elif prefix in responses[idx]:
-                            responses[idx] = responses[idx].rstrip(prefix)
-                            responses[idx] = responses[idx].rstrip()
-                            responses[idx] = responses[idx].rstrip(prefix)
+        # This is because the suffix(es) is always received last.
+        if self.__remote_suffix and strip_suffix:
+            # If multiple suffix lines are send we will first strip x-1 suffix lines
+            if len(self.__remote_suffix) > 1:
+                lines_to_strip = len(self.__remote_suffix) - 1
+                self.__log.debug("Remove suffix before (1): %s", repr(responses))
+                responses = responses[:-lines_to_strip]
+                self.__log.debug("Remove suffix after  (1): %s", repr(responses))
+
+            # Return if already empty
+            if not responses:
+                return responses
+
+            # Clean up the last response line with first suffix line
+            self.__log.debug("Remove suffix before (2): %s", repr(responses))
+            responses[-1] = responses[-1].rstrip(self.__remote_suffix[0])
+            self.__log.debug("Remove suffix after  (2): %s", repr(responses))
 
             # Ensure empty elements are removed
+            self.__log.debug("Remove suffix before (3): %s", repr(responses))
             responses = [item for item in responses if item]
+            self.__log.debug("Remove suffix after  (3): %s", repr(responses))
 
         # [4/4] Some server also echo back what we've send, so if we did send something
         # we need to strip this off as well
@@ -4524,7 +4566,7 @@ class CNC(object):
         command.append("{} -c '".format(self.__remote_python))
         command.append("import tempfile;")
         command.append("h,f=tempfile.mkstemp();")
-        if self.__py3:
+        if self.__remote_py3:
             command.append("print(f);")
         else:
             command.append("print f;")
@@ -4606,15 +4648,18 @@ class CNC(object):
             bool: Returns `True` on success and `False` on failure.
         """
         assert self.__remote_python is not None
-        assert self.__py3 is not None
+        assert self.__remote_py3 is not None
 
         rpath_b64 = self.create_remote_tmpfile()
         if rpath_b64 is None:
             return False
         if not self.__upload_file_base_64_encoded(lpath, rpath_b64, True):
             return False
+        self.flush_receive()
         if not self.__remote_base64_decode(rpath_b64, rpath):
+            self.flush_receive()
             return False
+        self.flush_receive()
         return True
 
     # --------------------------------------------------------------------------
@@ -4624,21 +4669,73 @@ class CNC(object):
         # type: () -> None
         """Determines if the remote always sends a specific prefix with its other data."""
         self.__remote_prefix = []
-        self.print_info("Checking if remote sends prefix to every request...")
-        prefix = self.send_recv(b"\n")
-        if prefix:
-            for line in prefix:
-                # Append single parts
-                for part in line.split(b" "):
-                    if part:
-                        self.__remote_prefix.append(part)
-                # Append full parts
-                self.__remote_prefix.append(line)
+        self.__remote_suffix = []
+
+        has_suffix = False
+
+        self.print_info("Checking if remote sends prefix/suffix to every request...")
+        response = self.send_recv(b'echo "__pwn__"\n')
+        expected = b"__pwn__"
+
+        if response:
+            for line in response:
+                # If the line begins with our expected response, all data after that
+                # is a suffix that the server might be sending.
+                if re.match(expected, line):
+                    has_suffix = True
+                    # If bytes are still left after our response, add it
+                    if line.replace(expected, b"", 1):
+                        self.__remote_suffix.append(line.replace(expected, b"", 1))
+                    continue
+                if has_suffix:
+                    self.__remote_suffix.append(line)
+
+        # Ensure empty elements are removed
+        self.__log.debug("Set suffix before: %s", repr(self.__remote_suffix))
+        self.__remote_suffix = [item for item in self.__remote_suffix if item]
+        self.__log.debug("Set suffix after:  %s", repr(self.__remote_suffix))
+
+        if self.__remote_prefix:
             self.print_info("Remote prefix ({} lines):".format(len(self.__remote_prefix)))
-            self.print_raw(StringEncoder.encode(repr(self.__remote_prefix)))
-            self.print_raw(b"\n")
+            for line in self.__remote_prefix:
+                self.print_raw(repr(line).encode(), True)
         else:
             self.print_info("Remote does not send prefix")
+        if self.__remote_suffix:
+            self.print_info("Remote suffix ({} lines):".format(len(self.__remote_suffix)))
+            for line in self.__remote_suffix:
+                self.print_raw(repr(line).encode(), True)
+        else:
+            self.print_info("Remote does not send suffix")
+
+    def __get_remote_python_version(self, path):
+        # type: (str) -> Optional[str]
+        """Get remote Python version by path.
+
+        Args:
+            path (str): Path to potential python binary.
+
+        Returns:
+            Optional[str]: Python version string or None if not found.
+        """
+        command = []
+        command.append("{} -c '".format(path))
+        command.append("from __future__ import print_function;")
+        command.append("import sys;")
+        command.append("v=sys.version_info;")
+        command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')
+
+        response = self.remote_command("".join(command), True)
+
+        if response is not None and response:
+            for line in response:
+                match = re.search(b"^([.0-9]+)", line)
+                # Potential version candidate
+                if match:
+                    version = StringEncoder.decode(match.group(1))
+                    if version[0] in ["2", "3"]:
+                        return version
+        return None
 
     def __set_remote_python_path(self):
         # type: () -> bool
@@ -4648,6 +4745,28 @@ class CNC(object):
             bool: Returns `True` on success and `False` on failure.
         """
         # TODO: Make windows compatible
+        # [1/2] 'which' method
+        for name in self.__PYTHON_NAMES:
+            self.print_info("Probing for: which {}".format(name))
+            response = self.remote_command("which {};".format(name), True)
+            if response is not None and response:
+                for line in response:
+                    path = StringEncoder.decode(line)
+                    self.print_info("Potential path: {}".format(path))
+                    version = self.__get_remote_python_version(path)
+                    if version is None:
+                        continue
+
+                    if version[0] == "2":
+                        self.__remote_py3 = False
+                    if version[0] == "3":
+                        self.__remote_py3 = True
+                    self.print_info("Found valid Python{} version: {}".format(version[0], version))
+                    self.__remote_python = path
+                    return True
+
+        # TODO: Make windows compatible
+        # [2/2] Absolute path method
         for path in self.__PYTHON_PATHS:
             for name in self.__PYTHON_NAMES:
 
@@ -4670,34 +4789,17 @@ class CNC(object):
 
                     # Potential python candidate
                     self.print_info("Potential path: {}".format(python))
-                    command = []
-                    command.append("{} -c '".format(python))
-                    command.append("from __future__ import print_function;")
-                    command.append("import sys;")
-                    command.append("v=sys.version_info;")
-                    command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')
-                    rversion_lines = self.remote_command("".join(command), True)
+                    version = self.__get_remote_python_version(python)
+                    if version is None:
+                        continue
 
-                    if rversion_lines is not None and rversion_lines:
-                        for remote_version in rversion_lines:
-                            match = re.search(b"^([.0-9]+)", remote_version)
-                            # Potential version candidate
-                            if match:
-                                version = StringEncoder.decode(match.group(1))
-                                if version[0] == "2":
-                                    self.__remote_py3 = False
-                                elif version[0] == "3":
-                                    self.__remote_py3 = True
-                                else:
-                                    self.print_info(
-                                        "Could not determine major version: {}".format(version)
-                                    )
-                                    continue
-                                self.print_info(
-                                    "Found valid Python{} version: {}".format(version[0], version)
-                                )
-                                self.__remote_python = python
-                                return True
+                    if version[0] == "2":
+                        self.__remote_py3 = False
+                    if version[0] == "3":
+                        self.__remote_py3 = True
+                    self.print_info("Found valid Python{} version: {}".format(version[0], version))
+                    self.__remote_python = python
+                    return True
         return False
 
     def __upload_file_base_64_encoded(self, lpath, rpath, at_once=False):
@@ -4738,10 +4840,11 @@ class CNC(object):
                         self.remote_command('echo "{}" >> {}'.format(b64, rpath), False)
                 curr += 1
 
-        self.print_info()
         if at_once:
             self.print_info("Uploading: {} -> {} ({}/{})".format(lpath, rpath, 1, 1))
             self.remote_command(";".join(data), False)
+        else:
+            self.print_info()
 
         # TODO: md5 check if this is legit
         return True
@@ -4776,7 +4879,7 @@ class CNC(object):
 
 
 # -------------------------------------------------------------------------------------------------
-# [9/11 Command & Control]: (1/2) CNCAutoDeploy
+# [9/11 Command & Control]: (3/3) CNCAutoDeploy
 # -------------------------------------------------------------------------------------------------
 class CNCAutoDeploy(CNC):
     """Command&Control pwncat auto deployment class."""
@@ -4791,7 +4894,7 @@ class CNCAutoDeploy(CNC):
         # type: (...) -> None
         try:
             super(CNCAutoDeploy, self).__init__(network)
-        except FileNotFoundError:
+        except CNCPythonNotFound:
             return
 
         local_path = os.path.abspath(__file__)
