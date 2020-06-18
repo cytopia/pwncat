@@ -105,7 +105,7 @@ __MACOS_JOBS__
 __RETRY_FUNCTION__
           retry make __test-cnc--inject_shell-pwncat
         env:
-          RETRIES: 5
+          RETRIES: 2
 
       - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte)"
         shell: bash
@@ -113,7 +113,7 @@ __RETRY_FUNCTION__
 __RETRY_FUNCTION__
           retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
         env:
-          RETRIES: 5
+          RETRIES: 2
 
       - name: "[CNC] Inject shell: revshell with banner and suffix (single byte)"
         shell: bash
@@ -121,7 +121,7 @@ __RETRY_FUNCTION__
 __RETRY_FUNCTION__
           retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
         env:
-          RETRIES: 5
+          RETRIES: 2
 
       - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte) - delayed"
         shell: bash
@@ -129,7 +129,7 @@ __RETRY_FUNCTION__
 __RETRY_FUNCTION__
           retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
         env:
-          RETRIES: 5
+          RETRIES: 2
 
       - name: "[CNC] Inject shell: revshell with banner and suffix (single byte) - delayed"
         shell: bash
@@ -137,7 +137,7 @@ __RETRY_FUNCTION__
 __RETRY_FUNCTION__
           retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
         env:
-          RETRIES: 5
+          RETRIES: 2
 
       - name: "[BEHAVIOUR] Client quits correctly 000"
         shell: bash
