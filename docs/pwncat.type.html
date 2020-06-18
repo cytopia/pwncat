@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.10% imprecise</th>
-<th class="summary summary-lines">6310 LOC</th>
+<th class="summary summary-precision">6.14% imprecise</th>
+<th class="summary summary-lines">6351 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.10% imprecise</td>
-<td class="summary summary-lines">6310 LOC</td>
+<td class="summary summary-precision">6.14% imprecise</td>
+<td class="summary summary-lines">6351 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6345,6 +6345,47 @@
 <span id="L6308" class="lineno"><a class="lineno" href="#L6308">6308</a></span>
 <span id="L6309" class="lineno"><a class="lineno" href="#L6309">6309</a></span>
 <span id="L6310" class="lineno"><a class="lineno" href="#L6310">6310</a></span>
+<span id="L6311" class="lineno"><a class="lineno" href="#L6311">6311</a></span>
+<span id="L6312" class="lineno"><a class="lineno" href="#L6312">6312</a></span>
+<span id="L6313" class="lineno"><a class="lineno" href="#L6313">6313</a></span>
+<span id="L6314" class="lineno"><a class="lineno" href="#L6314">6314</a></span>
+<span id="L6315" class="lineno"><a class="lineno" href="#L6315">6315</a></span>
+<span id="L6316" class="lineno"><a class="lineno" href="#L6316">6316</a></span>
+<span id="L6317" class="lineno"><a class="lineno" href="#L6317">6317</a></span>
+<span id="L6318" class="lineno"><a class="lineno" href="#L6318">6318</a></span>
+<span id="L6319" class="lineno"><a class="lineno" href="#L6319">6319</a></span>
+<span id="L6320" class="lineno"><a class="lineno" href="#L6320">6320</a></span>
+<span id="L6321" class="lineno"><a class="lineno" href="#L6321">6321</a></span>
+<span id="L6322" class="lineno"><a class="lineno" href="#L6322">6322</a></span>
+<span id="L6323" class="lineno"><a class="lineno" href="#L6323">6323</a></span>
+<span id="L6324" class="lineno"><a class="lineno" href="#L6324">6324</a></span>
+<span id="L6325" class="lineno"><a class="lineno" href="#L6325">6325</a></span>
+<span id="L6326" class="lineno"><a class="lineno" href="#L6326">6326</a></span>
+<span id="L6327" class="lineno"><a class="lineno" href="#L6327">6327</a></span>
+<span id="L6328" class="lineno"><a class="lineno" href="#L6328">6328</a></span>
+<span id="L6329" class="lineno"><a class="lineno" href="#L6329">6329</a></span>
+<span id="L6330" class="lineno"><a class="lineno" href="#L6330">6330</a></span>
+<span id="L6331" class="lineno"><a class="lineno" href="#L6331">6331</a></span>
+<span id="L6332" class="lineno"><a class="lineno" href="#L6332">6332</a></span>
+<span id="L6333" class="lineno"><a class="lineno" href="#L6333">6333</a></span>
+<span id="L6334" class="lineno"><a class="lineno" href="#L6334">6334</a></span>
+<span id="L6335" class="lineno"><a class="lineno" href="#L6335">6335</a></span>
+<span id="L6336" class="lineno"><a class="lineno" href="#L6336">6336</a></span>
+<span id="L6337" class="lineno"><a class="lineno" href="#L6337">6337</a></span>
+<span id="L6338" class="lineno"><a class="lineno" href="#L6338">6338</a></span>
+<span id="L6339" class="lineno"><a class="lineno" href="#L6339">6339</a></span>
+<span id="L6340" class="lineno"><a class="lineno" href="#L6340">6340</a></span>
+<span id="L6341" class="lineno"><a class="lineno" href="#L6341">6341</a></span>
+<span id="L6342" class="lineno"><a class="lineno" href="#L6342">6342</a></span>
+<span id="L6343" class="lineno"><a class="lineno" href="#L6343">6343</a></span>
+<span id="L6344" class="lineno"><a class="lineno" href="#L6344">6344</a></span>
+<span id="L6345" class="lineno"><a class="lineno" href="#L6345">6345</a></span>
+<span id="L6346" class="lineno"><a class="lineno" href="#L6346">6346</a></span>
+<span id="L6347" class="lineno"><a class="lineno" href="#L6347">6347</a></span>
+<span id="L6348" class="lineno"><a class="lineno" href="#L6348">6348</a></span>
+<span id="L6349" class="lineno"><a class="lineno" href="#L6349">6349</a></span>
+<span id="L6350" class="lineno"><a class="lineno" href="#L6350">6350</a></span>
+<span id="L6351" class="lineno"><a class="lineno" href="#L6351">6351</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -9925,6 +9966,13 @@ Error (x2)">        self.log.trace("SOCK-QUIT signal RAISED in IONetworkScanner.
 <span class="line-precise" title="No Anys on this line!">        self.__opts = opts</span>
 <span class="line-precise" title="No Anys on this line!">        self.__py3 = sys.version_info &gt;= (3, 0)  # type: bool</span>
 <span class="line-precise" title="No Anys on this line!">        self.__win = os.name != "posix"  # posix or nt</span>
+<span class="line-precise" title="No Anys on this line!">        self.__stdout_isatty = sys.stdout.isatty()</span>
+<span class="line-precise" title="No Anys on this line!">        self.__stdin_isatty = sys.stdin.isatty()</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">        self.log.debug("STDOUT isatty: %s", self.__stdout_isatty)</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)">        self.log.debug("STDIN  isatty: %s", self.__stdin_isatty)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!">    # Public Functions</span>
@@ -10941,10 +10989,11 @@ Error (x2)">                self.log.trace("All threads dead - shutting down.") 
 <span class="line-precise" title="No Anys on this line!">        self.__remote_prefix = []  # type: List[bytes]</span>
 <span class="line-precise" title="No Anys on this line!">        self.__remote_suffix = []  # type: List[bytes]</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-empty" title="No Anys on this line!">        # Values will by dynamically adjusted to find good balance between</span>
-<span class="line-empty" title="No Anys on this line!">        # reliability and speed.</span>
+<span class="line-empty" title="No Anys on this line!">        # Receive timeout value will be adjusted dynamically depending on the</span>
+<span class="line-empty" title="No Anys on this line!">        # speed of the server. We'll start high to allow for slow servers.</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout = 0.3</span>
-<span class="line-precise" title="No Anys on this line!">        self.__recv_retries = 3</span>
+<span class="line-precise" title="No Anys on this line!">        self.__recv_rounds = 5</span>
+<span class="line-precise" title="No Anys on this line!">        self.__recv_times = []  # type: List[float]</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [1/3] Check if there is data to be received first (e.g.: greeting)</span>
 <span class="line-precise" title="No Anys on this line!">        self.print_info("Checking if remote sends greeting...")</span>
@@ -11070,26 +11119,64 @@ Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</s
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [2/4] Receive actual reply</span>
 <span class="line-precise" title="No Anys on this line!">        responses = []</span>
-<span class="line-precise" title="No Anys on this line!">        curr_retry = 0</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-precise" title="No Anys on this line!">        while curr_retry &lt; self.__recv_retries:</span>
+<span class="line-empty" title="No Anys on this line!">        # Setup timer and current receive round</span>
+<span class="line-precise" title="No Anys on this line!">        time_start = datetime.now()</span>
+<span class="line-precise" title="No Anys on this line!">        curr_round = 0</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">        while curr_round &lt; self.__recv_rounds:</span>
 <span class="line-empty" title="No Anys on this line!">            try:</span>
 <span class="line-precise" title="No Anys on this line!">                response = self.__net.net.receive()</span>
 <span class="line-precise" title="No Anys on this line!">            except socket.timeout:</span>
-<span class="line-precise" title="No Anys on this line!">                curr_retry += 1</span>
 <span class="line-precise" title="No Anys on this line!">                time.sleep(self.__recv_timeout)</span>
+<span class="line-precise" title="No Anys on this line!">                time_step = datetime.now()</span>
+<span class="line-precise" title="No Anys on this line!">                time_diff = time_step - time_start</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                self.__log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                    "Timeout: Receive timed out after %f sec in %d/%d rounds",</span>
+<span class="line-precise" title="No Anys on this line!">                    time_diff.total_seconds(),</span>
+<span class="line-precise" title="No Anys on this line!">                    curr_round + 1,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__recv_rounds,</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
+<span class="line-precise" title="No Anys on this line!">                curr_round += 1</span>
 <span class="line-empty" title="No Anys on this line!">            # On successful read, we can determine to adjust timings.</span>
 <span class="line-empty" title="No Anys on this line!">            else:</span>
+<span class="line-precise" title="No Anys on this line!">                time_end = datetime.now()</span>
+<span class="line-precise" title="No Anys on this line!">                time_diff = time_end - time_start</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-precise" title="No Anys on this line!">                self.__recv_times.append(time_diff.total_seconds())</span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                self.__log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                    "Timeout: Receive took %f sec (avg: %f) to receive in %d/%d rounds",</span>
+<span class="line-precise" title="No Anys on this line!">                    time_diff.total_seconds(),</span>
+<span class="line-precise" title="No Anys on this line!">                    sum(self.__recv_times) / len(self.__recv_times),</span>
+<span class="line-precise" title="No Anys on this line!">                    curr_round + 1,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__recv_rounds,</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">                # Retries were required</span>
+<span class="line-precise" title="No Anys on this line!">                prev_recv_timeout = self.__recv_timeout</span>
+<span class="line-precise" title="No Anys on this line!">                if curr_round &gt; 1:</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__recv_timeout += time_diff.total_seconds()</span>
+<span class="line-empty" title="No Anys on this line!">                # No retries requred</span>
+<span class="line-empty" title="No Anys on this line!">                else:</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__recv_timeout = time_diff.total_seconds() / 2</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-any" title="Any Types on this line: 
+Error (x2)">                self.__log.trace(  # type: ignore</span>
+<span class="line-precise" title="No Anys on this line!">                    "Timeout: Previous recv timeout: %f sec -&gt; new recv timeout: %f sec",</span>
+<span class="line-precise" title="No Anys on this line!">                    prev_recv_timeout,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__recv_timeout,</span>
+<span class="line-empty" title="No Anys on this line!">                )</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">                # Add response</span>
 <span class="line-precise" title="No Anys on this line!">                if response:</span>
 <span class="line-precise" title="No Anys on this line!">                    responses.append(response)</span>
-<span class="line-empty" title="No Anys on this line!">                    # If retries were necessary, we will increase the time-out.</span>
-<span class="line-precise" title="No Anys on this line!">                    if curr_retry &gt; 0:</span>
-<span class="line-precise" title="No Anys on this line!">                        self.__recv_timeout += self.__recv_timeout / 2</span>
-<span class="line-empty" title="No Anys on this line!">                    # If ne retries were necessary, we can descrease the timeout a bit</span>
-<span class="line-precise" title="No Anys on this line!">                    if curr_retry == 0:</span>
-<span class="line-precise" title="No Anys on this line!">                        self.__recv_timeout -= self.__recv_timeout / 2</span>
-<span class="line-empty" title="No Anys on this line!">                    # Reset the retry counter for next line to read</span>
-<span class="line-precise" title="No Anys on this line!">                    curr_retry = 0</span>
+<span class="line-empty" title="No Anys on this line!"></span>
+<span class="line-empty" title="No Anys on this line!">                # Reset the start time and round</span>
+<span class="line-precise" title="No Anys on this line!">                time_start = datetime.now()</span>
+<span class="line-precise" title="No Anys on this line!">                curr_round = 0</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # Return if already empty</span>
 <span class="line-precise" title="No Anys on this line!">        if not responses:</span>

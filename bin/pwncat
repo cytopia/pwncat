@@ -4331,10 +4331,11 @@ class CNC(object):
         self.__remote_prefix = []  # type: List[bytes]
         self.__remote_suffix = []  # type: List[bytes]
 
-        # Values will by dynamically adjusted to find good balance between
-        # reliability and speed.
+        # Receive timeout value will be adjusted dynamically depending on the
+        # speed of the server. We'll start high to allow for slow servers.
         self.__recv_timeout = 0.3
-        self.__recv_retries = 3
+        self.__recv_rounds = 5
+        self.__recv_times = []  # type: List[float]
 
         # [1/3] Check if there is data to be received first (e.g.: greeting)
         self.print_info("Checking if remote sends greeting...")
@@ -4459,26 +4460,61 @@ class CNC(object):
 
         # [2/4] Receive actual reply
         responses = []
-        curr_retry = 0
 
-        while curr_retry < self.__recv_retries:
+        # Setup timer and current receive round
+        time_start = datetime.now()
+        curr_round = 0
+
+        while curr_round < self.__recv_rounds:
             try:
                 response = self.__net.net.receive()
             except socket.timeout:
-                curr_retry += 1
                 time.sleep(self.__recv_timeout)
+                time_step = datetime.now()
+                time_diff = time_step - time_start
+
+                self.__log.trace(  # type: ignore
+                    "Timeout: Receive timed out after %f sec in %d/%d rounds",
+                    time_diff.total_seconds(),
+                    curr_round + 1,
+                    self.__recv_rounds,
+                )
+                curr_round += 1
             # On successful read, we can determine to adjust timings.
             else:
+                time_end = datetime.now()
+                time_diff = time_end - time_start
+
+                self.__recv_times.append(time_diff.total_seconds())
+                self.__log.trace(  # type: ignore
+                    "Timeout: Receive took %f sec (avg: %f) to receive in %d/%d rounds",
+                    time_diff.total_seconds(),
+                    sum(self.__recv_times) / len(self.__recv_times),
+                    curr_round + 1,
+                    self.__recv_rounds,
+                )
+
+                # Retries were required
+                prev_recv_timeout = self.__recv_timeout
+                if curr_round > 1:
+                    self.__recv_timeout += time_diff.total_seconds()
+                # No retries requred
+                else:
+                    self.__recv_timeout = time_diff.total_seconds() / 2
+
+                self.__log.trace(  # type: ignore
+                    "Timeout: Previous recv timeout: %f sec -> new recv timeout: %f sec",
+                    prev_recv_timeout,
+                    self.__recv_timeout,
+                )
+
+                # Add response
                 if response:
                     responses.append(response)
-                    # If retries were necessary, we will increase the time-out.
-                    if curr_retry > 0:
-                        self.__recv_timeout += self.__recv_timeout / 2
-                    # If ne retries were necessary, we can descrease the timeout a bit
-                    if curr_retry == 0:
-                        self.__recv_timeout -= self.__recv_timeout / 2
-                    # Reset the retry counter for next line to read
-                    curr_retry = 0
+
+                # Reset the start time and round
+                time_start = datetime.now()
+                curr_round = 0
 
         # Return if already empty
         if not responses:
