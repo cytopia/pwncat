@@ -3385,6 +3385,11 @@ class IOStdinStdout(IO):
         self.__opts = opts
         self.__py3 = sys.version_info >= (3, 0)  # type: bool
         self.__win = os.name != "posix"  # posix or nt
+        self.__stdout_isatty = sys.stdout.isatty()
+        self.__stdin_isatty = sys.stdin.isatty()
+
+        self.log.debug("STDOUT isatty: %s", self.__stdout_isatty)
+        self.log.debug("STDIN  isatty: %s", self.__stdin_isatty)
 
     # --------------------------------------------------------------------------
     # Public Functions
