@@ -99,6 +99,56 @@ jobs:
       # ------------------------------------------------------------
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte)"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-cnc--inject_shell-revshelll-multi_btye-banner-suffix
+        env:
+          RETRIES: 5
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte)"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-cnc--inject_shell-revshelll-single_btye-banner-suffix
+        env:
+          RETRIES: 5
+
       - name: "[CNC] Inject shell: pwncat as rev shell"
         shell: bash
         run: |
@@ -121,31 +171,6 @@ jobs:
           }
 
           retry make __test-cnc--inject_shell-pwncat
-        env:
-          RETRIES: 5
-
-      - name: "[CNC] Inject shell: revshell with banner and suffix"
-        shell: bash
-        run: |
-          retry() {
-            _make=${1}
-            _target=${2}
-            _host=${3:-localhost}
-            _port=${4:-4444}
-            _wait=${5:-5}
-            _runs=${6:-1}
-            for n in $(seq ${RETRIES}); do
-              _port=$(( _port + n ))
-              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
-              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
-                return 0;
-              fi;
-              sleep 10;
-            done;
-            return 1;
-          }
-
-          retry make __test-cnc--inject_shell-revshell-banner-suffix
         env:
           RETRIES: 5
 

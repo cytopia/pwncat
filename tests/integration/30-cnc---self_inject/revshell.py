@@ -89,7 +89,7 @@ class IONetwork(object):
                 print("Network Received: {}".format(repr(data)))
             yield data
 
-    def send(self, data, prefix1=None, prefix2=None, suffix1=None, suffix2=None):
+    def send(self, data, send_one_byte, prefix1=None, prefix2=None, suffix1=None, suffix2=None):
         """Network send."""
         # Do we send a prefix before all command output?
         if prefix1 is not None:
@@ -99,8 +99,12 @@ class IONetwork(object):
 
         size = len(data)
         sent = 0
-        while sent < size:
-            sent += self.sock.send(data)
+        if send_one_byte:
+            for char in data:
+                sent += self.sock.send(char)
+        else:
+            while sent < size:
+                sent += self.sock.send(data)
 
         # Do we send a suffx after all command output?
         if suffix1 is not None:
@@ -114,11 +118,12 @@ def main(argv):
     """Main entrypoint."""
     host = argv[1]
     port = int(argv[2])
-    banner = argv[3] if len(argv) > 3 and argv[3] else None
-    prefix1 = argv[4] if len(argv) > 4 and argv[4] else None
-    prefix2 = argv[5] if len(argv) > 5 and argv[5] else None
-    suffix1 = argv[6] if len(argv) > 6 and argv[6] else None
-    suffix2 = argv[7] if len(argv) > 7 and argv[7] else None
+    send_one_byte = True if len(argv) > 3 and argv[3] == "1" else False
+    banner = argv[4] if len(argv) > 4 and argv[4] else None
+    prefix1 = argv[5] if len(argv) > 5 and argv[5] else None
+    prefix2 = argv[6] if len(argv) > 6 and argv[6] else None
+    suffix1 = argv[7] if len(argv) > 7 and argv[7] else None
+    suffix2 = argv[8] if len(argv) > 8 and argv[8] else None
 
     print("Connecting to {}:{}".format(host, port))
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -205,7 +210,7 @@ def main(argv):
                 # Fetch all items and send them at once
                 while not q.empty():
                     data.append(q.get())
-                network.send(b"".join(data), prefix1, prefix2, suffix1, suffix2)
+                network.send(b"".join(data), send_one_byte, prefix1, prefix2, suffix1, suffix2)
                 data = []
                 # flush
         oldsize = newsize

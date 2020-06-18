@@ -25,6 +25,7 @@ PYTHON="python${5:-}"
 PYVER="$( "${PYTHON}" -V 2>&1 | head -1 || true )"
 
 
+ONE_BYTE="0"
 BANNER="banner\n"
 PREFIX1=""
 PREFIX2=""
@@ -94,7 +95,7 @@ run_test() {
 	# Start Client
 	print_info "Start RevShell"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "" "${PYTHON}" ${SCRIPTPATH}/revshell.py ${RHOST} ${RPORT} "${BANNER}" "${PREFIX1}" "${PREFIX2}" "${SUFFIX1}" "${SUFFIX2}" "${cli_stdout}" "${cli_stderr}" )"; then
+	if ! cli_pid="$( run_bg "" "${PYTHON}" ${SCRIPTPATH}/revshell.py ${RHOST} ${RPORT} "${ONE_BYTE}" "${BANNER}" "${PREFIX1}" "${PREFIX2}" "${SUFFIX1}" "${SUFFIX2}" "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
 	fi
 
