@@ -111,7 +111,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(3/8) Test: Inject shell is running"
 	CURR=0
-	TRIES=180  # This needs to be very long as we're receiving single bytes with delay.
+	TRIES=600  # This needs to be very long as we're receiving single bytes with delay.
 	# shellcheck disable=SC2009
 	while [ "$(ps auxw | grep -v grep | grep reconn-wait | awk '{print $2}' | wc -l)" -ne "1" ]; do
 		printf "."

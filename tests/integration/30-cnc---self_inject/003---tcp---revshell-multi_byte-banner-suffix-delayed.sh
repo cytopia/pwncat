@@ -111,7 +111,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(3/8) Test: Inject shell is running"
 	CURR=0
-	TRIES=80
+	TRIES=600
 	# shellcheck disable=SC2009
 	while [ "$(ps auxw | grep -v grep | grep reconn-wait | awk '{print $2}' | wc -l)" -ne "1" ]; do
 		printf "."
