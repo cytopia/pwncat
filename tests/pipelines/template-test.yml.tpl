@@ -99,6 +99,14 @@ __MACOS_JOBS__
       # ------------------------------------------------------------
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
+      - name: "[CNC] Inject shell: pwncat as rev shell"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-pwncat
+        env:
+          RETRIES: 5
+
       - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte)"
         shell: bash
         run: |
@@ -128,14 +136,6 @@ __RETRY_FUNCTION__
         run: |
 __RETRY_FUNCTION__
           retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
-        env:
-          RETRIES: 5
-
-      - name: "[CNC] Inject shell: pwncat as rev shell"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-pwncat
         env:
           RETRIES: 5
 
