@@ -25,6 +25,15 @@ PYTHON="python${5:-}"
 PYVER="$( "${PYTHON}" -V 2>&1 | head -1 || true )"
 
 
+ONE_BYTE="1"
+SEND_DELAY="0.1"
+BANNER="banner\n"
+PREFIX1=""
+PREFIX2=""
+SUFFIX1="[0] cytopia at hostname in ~/tmp/pwncat (☿ pwncat.git release-0.1.0+)\n"
+SUFFIX2="tmux:>bash> "
+
+
 # -------------------------------------------------------------------------------------------------
 # TEST FUNCTIONS
 # -------------------------------------------------------------------------------------------------
@@ -60,7 +69,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# START: SERVER
 	# --------------------------------------------------------------------------------
-	print_h2 "(1/9) Start: PwncatInjectListener"
+	print_h2 "(1/8) Start: PwncatInjectListener"
 
 	# Start Server
 	print_info "Start PwncatInjectListener"
@@ -82,12 +91,12 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# START: CLIENT
 	# --------------------------------------------------------------------------------
-	print_h2 "(2/9) Start: RevShell"
+	print_h2 "(2/8) Start: RevShell"
 
 	# Start Client
 	print_info "Start RevShell"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "" "${PYTHON}" "${BINARY}" ${cli_opts} "${cli_stdout}" "${cli_stderr}" )"; then
+	if ! cli_pid="$( run_bg "" "${PYTHON}" ${SCRIPTPATH}/revshell.py ${RHOST} ${RPORT} "${ONE_BYTE}" "${SEND_DELAY}" "${BANNER}" "${PREFIX1}" "${PREFIX2}" "${SUFFIX1}" "${SUFFIX2}" "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
 	fi
 
@@ -100,9 +109,9 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# TEST: Inject shell is running
 	# --------------------------------------------------------------------------------
-	print_h2 "(3/9) Test: Inject shell is running"
+	print_h2 "(3/8) Test: Inject shell is running"
 	CURR=0
-	TRIES=80
+	TRIES=180  # This needs to be very long as we're receiving single bytes with delay.
 	# shellcheck disable=SC2009
 	while [ "$(ps auxw | grep -v grep | grep reconn-wait | awk '{print $2}' | wc -l)" -ne "1" ]; do
 		printf "."
@@ -135,41 +144,18 @@ run_test() {
 
 
 	# --------------------------------------------------------------------------------
-	# TEST: Client shut down automatically
+	# STOP: INSTANCES
 	# --------------------------------------------------------------------------------
-	print_h2 "(4/9) Test: RevShell shut down automatically"
+	print_h2 "(4/8) Stop: Instances"
 
-	## Give some time for shutdown
-	#run "sleep 10"
-
-	## [CLIENT] Manually stop the Client
-	#test_case_instance_is_stopped "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}"
-
-	## [CLIENT] Ensure Client still has no errors
-	#test_case_instance_has_no_errors "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}" "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "(Connection refused)|(actively refused)|(timed out)"
-	run "kill ${cli_pid}" || true
-
-
-	# --------------------------------------------------------------------------------
-	# TEST: Server shut down automatically
-	# --------------------------------------------------------------------------------
-	print_h2 "(5/9) Test: PwncatInjectListener shut down automatically"
-
-	## Give some time for shutdown
-	#run "sleep 10"
-
-	## [SERVER] Ensure Server has quit automatically
-	#test_case_instance_is_stopped "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
-
-	## [SERVER] Ensure Server still has no errors
-	#test_case_instance_has_no_errors "PwncatInjectListener" "${srv_pid}" "${srv_stdout}" "${srv_stderr}" "RevShell" "${cli_pid}" "${cli_stdout}" "${cli_stderr}"
-	run "kill ${srv_pid}" || true
+	run "kill -9 ${cli_pid} || true"
+	run "kill ${srv_pid} || true"
 
 
 	# --------------------------------------------------------------------------------
 	# START: SERVER
 	# --------------------------------------------------------------------------------
-	print_h2 "(6/9) Start: FinalListener"
+	print_h2 "(6/8) Start: FinalListener"
 
 	# Start Server
 	run "sleep 5"
@@ -183,7 +169,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# DATA TRANSFER
 	# --------------------------------------------------------------------------------
-	print_h2 "(7/9) Transfer: FinalListener -> Pwncat -> FinalListener"
+	print_h2 "(7/8) Transfer: FinalListener -> Pwncat -> FinalListener"
 
 	# [CLIENT -> SERVER -> CLIENT]
 	wait_for_data_transferred "" "${expect}" "${expect_or}" "FinalListener" "${srv_pid}" "${srv2_stdout}" "${srv2_stderr}"
@@ -192,10 +178,10 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# TEST: Server shut down automatically
 	# --------------------------------------------------------------------------------
-	print_h2 "(8/9) Test: FinalListener shut down automatically"
+	print_h2 "(8/8) Test: FinalListener shut down automatically"
 
 	## Give some time for shutdown
-	#run "sleep 10"
+	#run "sleep 5"
 
 	## [SERVER] Ensure Server has quit automatically
 	#test_case_instance_is_stopped "FinalListener" "${srv_pid}" "${srv2_stdout}" "${srv_stderr}"
@@ -208,7 +194,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	# CLEANUP
 	# --------------------------------------------------------------------------------
-	print_h2 "(9/9) Cleanup"
+	print_h2 "(8/8) Cleanup"
 
 	run "ps auxw | grep -v grep | grep reconn-wait | awk '{print \$2}' | xargs kill" || true
 

@@ -26,6 +26,7 @@ PYVER="$( "${PYTHON}" -V 2>&1 | head -1 || true )"
 
 
 ONE_BYTE="0"
+SEND_DELAY="0"
 BANNER="banner\n"
 PREFIX1=""
 PREFIX2=""
@@ -95,7 +96,7 @@ run_test() {
 	# Start Client
 	print_info "Start RevShell"
 	# shellcheck disable=SC2086
-	if ! cli_pid="$( run_bg "" "${PYTHON}" ${SCRIPTPATH}/revshell.py ${RHOST} ${RPORT} "${ONE_BYTE}" "${BANNER}" "${PREFIX1}" "${PREFIX2}" "${SUFFIX1}" "${SUFFIX2}" "${cli_stdout}" "${cli_stderr}" )"; then
+	if ! cli_pid="$( run_bg "" "${PYTHON}" ${SCRIPTPATH}/revshell.py ${RHOST} ${RPORT} "${ONE_BYTE}" "${SEND_DELAY}" "${BANNER}" "${PREFIX1}" "${PREFIX2}" "${SUFFIX1}" "${SUFFIX2}" "${cli_stdout}" "${cli_stderr}" )"; then
 		printf ""
 	fi
 
@@ -110,7 +111,7 @@ run_test() {
 	# --------------------------------------------------------------------------------
 	print_h2 "(3/8) Test: Inject shell is running"
 	CURR=0
-	TRIES=60
+	TRIES=80
 	# shellcheck disable=SC2009
 	while [ "$(ps auxw | grep -v grep | grep reconn-wait | awk '{print $2}' | wc -l)" -ne "1" ]; do
 		printf "."
@@ -197,6 +198,7 @@ run_test() {
 
 	run "ps auxw | grep -v grep | grep reconn-wait | awk '{print \$2}' | xargs kill" || true
 
+	print_file "PwncatInjectListener] - [/dev/stderr" "${srv_stderr}"
 	print_file "PwncatInjectListener] - [/dev/stdout" "${srv_stdout}"
 }
 

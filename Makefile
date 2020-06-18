@@ -456,17 +456,26 @@ _test-options--ping_word:
 .PHONY: _test-cnc--inject_shell
 _test-cnc--inject_shell:
 _test-cnc--inject_shell: __test-cnc--inject_shell-pwncat
-_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-multi_btye-banner-suffix
-_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-single_btye-banner-suffix
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
 __test-cnc--inject_shell-pwncat:
 	$(INTPATH)30-cnc---self_inject/000---tcp---pwncat_as_rev_shell.sh \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
-__test-cnc--inject_shell-revshelll-multi_btye-banner-suffix:
-	$(INTPATH)30-cnc---self_inject/001---tcp---revshell-multi_btye-banner-suffix.sh \
+__test-cnc--inject_shell-revshelll-multi_byte-banner-suffix:
+	$(INTPATH)30-cnc---self_inject/001---tcp---revshell-multi_byte-banner-suffix.sh \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
-__test-cnc--inject_shell-revshelll-single_btye-banner-suffix:
-	$(INTPATH)30-cnc---self_inject/002---tcp---revshell-single_btye-banner-suffix.sh \
+__test-cnc--inject_shell-revshelll-single_byte-banner-suffix:
+	$(INTPATH)30-cnc---self_inject/002---tcp---revshell-single_byte-banner-suffix.sh \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed:
+	$(INTPATH)30-cnc---self_inject/003---tcp---revshell-multi_byte-banner-suffix-delayed.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed:
+	$(INTPATH)30-cnc---self_inject/004---tcp---revshell-single_byte-banner-suffix-delayed.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+
 
 
 # -------------------------------------------------------------------------------------------------

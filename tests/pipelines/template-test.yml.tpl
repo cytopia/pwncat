@@ -103,7 +103,7 @@ __MACOS_JOBS__
         shell: bash
         run: |
 __RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-revshelll-multi_btye-banner-suffix
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
         env:
           RETRIES: 5
 
@@ -111,7 +111,23 @@ __RETRY_FUNCTION__
         shell: bash
         run: |
 __RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-revshelll-single_btye-banner-suffix
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
+        env:
+          RETRIES: 5
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte) - delayed"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
+        env:
+          RETRIES: 5
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte) - delayed"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
         env:
           RETRIES: 5
 

