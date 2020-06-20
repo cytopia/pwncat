@@ -266,9 +266,6 @@ test: _test-options--ping_word
 test: _test-cnc--inject_shell
 
 .PHONY: _test-behaviour-quit--client
-#_test-behaviour-quit--client:
-#	tests/integration/run.sh "01-behaviour-quit--client" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 _test-behaviour-quit--client: __test-behaviour-quit--client-000
 _test-behaviour-quit--client: __test-behaviour-quit--client-001
 _test-behaviour-quit--client: __test-behaviour-quit--client-002
@@ -315,9 +312,6 @@ __test-behaviour-quit--client-201:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-behaviour-quit--server
-#_test-behaviour-quit--server:
-#	tests/integration/run.sh "02-behaviour-quit--server" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 _test-behaviour-quit--server: __test-behaviour-quit--server-000
 _test-behaviour-quit--server: __test-behaviour-quit--server-001
 _test-behaviour-quit--server: __test-behaviour-quit--server-002
@@ -364,8 +358,13 @@ __test-behaviour-quit--server-201:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-behaviour-base--file_transfer
-_test-behaviour-base--file_transfer:
-	tests/integration/run.sh "03-behaviour-base--file_transfer" \
+_test-behaviour-base--file_transfer: __test-behaviour-base--file_transfer-send_normal
+_test-behaviour-base--file_transfer: __test-behaviour-base--file_transfer-send_on_eof
+__test-behaviour-base--file_transfer-send_normal:
+	$(INTPATH)03-behaviour-base--file_transfer/000---tcp---client_sends-normal.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-base--file_transfer-send_on_eof:
+	$(INTPATH)03-behaviour-base--file_transfer/001---tcp---client_sends-on_eof.sh \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-mode--local_forward
@@ -389,10 +388,6 @@ _test-options--crlf:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--keep_open
-#_test-options--keep_open:
-#	tests/integration/run.sh "22-options---keep_open" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
-_test-options--keep_open:
 _test-options--keep_open: __test-options--keep_open-000
 _test-options--keep_open: __test-options--keep_open-001
 _test-options--keep_open: __test-options--keep_open-002
@@ -427,9 +422,6 @@ __test-options--keep_open-202:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--reconn
-#_test-options--reconn:
-#	tests/integration/run.sh "23-options---reconn" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 _test-options--reconn: __test-options--reconn-000
 _test-options--reconn: __test-options--reconn-001
 _test-options--reconn: __test-options--reconn-002
@@ -454,7 +446,6 @@ _test-options--ping_word:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-cnc--inject_shell
-_test-cnc--inject_shell:
 _test-cnc--inject_shell: __test-cnc--inject_shell-pwncat
 _test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
 _test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-single_byte-banner-suffix

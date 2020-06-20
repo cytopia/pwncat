@@ -97,7 +97,26 @@ __MACOS_JOBS__
 
 
       # ------------------------------------------------------------
-      # Tests: Behaviour (Client)
+      # Tests: Behaviour (File Transfer)
+      # ------------------------------------------------------------
+      - name: "[BEHAVIOUR] File Transfer: send normal"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-behaviour-base--file_transfer-send_normal
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] File Transfer: send on eof"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-behaviour-base--file_transfer-send_on_eof
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: CNC Self-inject
       # ------------------------------------------------------------
       - name: "[CNC] Inject shell: pwncat as rev shell"
         shell: bash
@@ -139,6 +158,9 @@ __RETRY_FUNCTION__
         env:
           RETRIES: 2
 
+      # ------------------------------------------------------------
+      # Tests: Behaviour (Client)
+      # ------------------------------------------------------------
       - name: "[BEHAVIOUR] Client quits correctly 000"
         shell: bash
         run: |
@@ -316,18 +338,6 @@ __RETRY_FUNCTION__
         run: |
 __RETRY_FUNCTION__
           retry make __test-behaviour-quit--server-201
-        env:
-          RETRIES: 5
-
-      # ------------------------------------------------------------
-      # Tests: Behaviour (File Transfer)
-      # ------------------------------------------------------------
-
-      - name: "[BEHAVIOUR] File Transfer"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make _test-behaviour-base--file_transfer
         env:
           RETRIES: 5
 
