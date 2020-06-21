@@ -116,6 +116,7 @@ _lint-docs:
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory docs
 	git diff --quiet -- $(DOCPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
+	git diff --quiet -- $(PWD)/README.md || { echo "Build Changes"; git diff | cat; git status; false; }
 
 .PHONY: _lint-man
 _lint-man:
@@ -475,6 +476,7 @@ __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed:
 docs: _docs-man
 docs: _docs-api
 docs: _docs-mypy_type_coverage
+docs: _docs-version_readme
 
 .PHONY: _docs-man
 _docs-man: $(BINPATH)$(BINNAME)
@@ -521,6 +523,11 @@ _docs-mypy_type_coverage:
 		&& percent=$$(grep "% imprecise" docs/pwncat.type.html | grep "th" | grep -Eo "[.0-9]+") \
 		&& coverage=$$(echo "100 - $${percent}" | bc) \
 		&& sed -i "s/fully typed: \([.0-9]*\)/fully typed: $${coverage}/g" README.md'
+
+_docs-version_readme:
+	VERSION="$$( grep -E '^VERSION = ' bin/pwncat | awk -F'"' '{print $$2}' )" \
+		&& echo "$${VERSION}" \
+		&& sed -i'' "s/^Current version is.*/Current version is: **$${VERSION}**/g" ${PWD}/README.md
 
 
 # -------------------------------------------------------------------------------------------------

@@ -32,15 +32,13 @@
 > #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
 > &nbsp;
 
-| :warning: Warning: it is currently in feature-incomplete alpha state. Expect bugs and options to change. ([Roadmap](https://github.com/cytopia/pwncat/issues/2)) |
-|---|
 
 <table border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:none;">
  <thead>
   <tr valign="top" border="0" cellpadding="0" cellspacing="0" style="border:none;">
    <th border="0" cellpadding="0" cellspacing="0" style="border:none;">Code Style</td>
    <th border="0" cellpadding="0" cellspacing="0" style="border:none;"></td>
-   <th border="0" cellpadding="0" cellspacing="0" style="border:none;">Integration Tests</td>
+   <th border="0" cellpadding="0" cellspacing="0" style="border:none;">Integration Tests <sup><small>[2]</small></sup></td>
   </tr>
  </thead>
  <tbody>
@@ -83,9 +81,9 @@
      <thead>
       <tr>
        <th><sub>Python</sub><sup>OS</sup></th>
-       <th>Linux <sup><small>[2]</small></sup></th>
+       <th>Linux</th>
        <th>MacOS</th>
-       <th>Windows <sup><small>[3]</small></sup></th>
+       <th>Windows</th>
       </tr>
      </thead>
      <tbody>
@@ -139,8 +137,8 @@
 </table>
 
 > <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.84%)</strong></sup><br/>
-> <sup>[2] Linux builds are currently only failing, due to loss of IPv6 support: <a href="https://github.com/actions/virtual-environments/issues/929">Issue</a></sup><br/>
-> <sup>[3] Windows builds are currently only failing, because they are simply stuck on GitHub actions: <a href="https://github.com/actions/virtual-environments/issues/917">Issue</a></sup>
+> <sup>[2] <strong>Failing builds do not indicate broken functionality.</strong> Integration tests run for multiple hours and break sporadically for various different reasons (network timeouts, unknown cancellations of GitHub Actions, etc): <a href="https://github.com/actions/virtual-environments/issues/736">#735</a>, <a href="https://github.com/actions/virtual-environments/issues/841">#841</a></sup><br/>
+> <sup></sup>
 
 
 #### Motivation
@@ -156,6 +154,8 @@ tool that works on older and newer machines (hence Python 2+3 compat). Most impo
 
 
 ## :tada: Install
+
+Current version is: **0.1.0**
 
 | [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) |
 |:-:|:-:|:-:|
@@ -1368,19 +1368,19 @@ You can even mix `pwncat` with `netcat`, `ncat` or similar tools.
   <tr>
    <td>Logo</td>
    <td><a href="https://github.com/maifz">maifz</a></td>
-   <td><a href="art/logo.png"><img src="art/logo.png" style="height:128px;" height="128" /></a></td>
+   <td><a href="art/logo.png"><img src="art/logo.png" style="height:128px;" height="128" alt="pwncat logo" title="pwncat logo" /></a></td>
    <td><a href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a></td>
   </tr>
   <tr>
    <td>Banner 1</td>
    <td><a href="https://github.com/maifz">maifz</a></td>
-   <td><a href="art/banner-1.png"><img src="art/banner-1.png" style="height:128px;" height="128" /></a></td>
+   <td><a href="art/banner-1.png"><img src="art/banner-1.png" style="height:128px;" height="128" alt="pwncat banner" title="pwncat banner"  /></a></td>
    <td><a href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a></td>
   </tr>
   <tr>
    <td>Banner 2</td>
    <td><a href="https://github.com/maifz">maifz</a></td>
-   <td><a href="art/banner-2.png"><img src="art/banner-2.png" style="height:128px;" height="128" /></a></td>
+   <td><a href="art/banner-2.png"><img src="art/banner-2.png" style="height:128px;" height="128" alt="pwncat banner" title="pwncat banner" /></a></td>
    <td><a href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a></td>
   </tr>
  </tbody>

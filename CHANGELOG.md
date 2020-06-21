@@ -11,7 +11,7 @@
 - Fixed calculation for socket bytes sent
 - Fixed shutdown handling for port scanner
 - Fixed false positives for port scanner
-- FIxed sending binary data from stdin
+- Fixed sending binary data from stdin
 - Fixed self-inject mode if remote sends greetings or prefixes: #83
 - Fixed remote command to respawn if it crashes due to bad user input
 
@@ -22,6 +22,7 @@
 - Feature: `send-on-eof`
 - CI: Integration tests for inject shell
 - CI: Integration tests for different file transfer modes
+- Added artwork
 
 ### Changed
 - Changed behaviour to close after EOF on stdin (can be reverted via `--no-shutdown`)
