@@ -3417,7 +3417,7 @@ class IOStdinStdout(IO):
 
         self.log.debug(&#34;STDOUT isatty: %s&#34;, self.__stdout_isatty)
         self.log.debug(&#34;STDIN  isatty: %s&#34;, self.__stdin_isatty)
-        self.log.debug(&#34;STDIN  mode:   %s&#34;, os.name)
+        self.log.debug(&#34;STDIN  posix:  %s (%s)&#34;, str(self.__win), os.name)
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -12512,7 +12512,7 @@ callback that writes to stdout.</p>
 
         self.log.debug(&#34;STDOUT isatty: %s&#34;, self.__stdout_isatty)
         self.log.debug(&#34;STDIN  isatty: %s&#34;, self.__stdin_isatty)
-        self.log.debug(&#34;STDIN  mode:   %s&#34;, os.name)
+        self.log.debug(&#34;STDIN  posix:  %s (%s)&#34;, str(self.__win), os.name)
 
     # --------------------------------------------------------------------------
     # Public Functions

@@ -3390,7 +3390,7 @@ class IOStdinStdout(IO):
 
         self.log.debug("STDOUT isatty: %s", self.__stdout_isatty)
         self.log.debug("STDIN  isatty: %s", self.__stdin_isatty)
-        self.log.debug("STDIN  mode:   %s", os.name)
+        self.log.debug("STDIN  posix:  %s (%s)", str(self.__win), os.name)
 
     # --------------------------------------------------------------------------
     # Public Functions
