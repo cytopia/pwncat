@@ -308,7 +308,7 @@ pwncat -R 10.0.0.1:4444 everythingcli.org 3306 -u
 | UDP                 | ✔        | ✔      | ✔     | ✔     |
 | SCTP                | :x:      | :x:    | ✔     | ✔     |
 | SSL                 | :x:      | :x:    | ✔     | ✔     |
-| HTTP                | *        | :x:    | :x:   | :x:   |
+| HTTP                | ✔        | :x:    | :x:   | :x:   |
 | HTTPS               | *        | :x:    | :x:   | :x:   |
 |                     |          |        |       |       |
 | Telnet negotiation  | :x:      | ✔      | ✔     | :x:   |
@@ -407,13 +407,13 @@ Documentation will evolve over time.
 
 | Behaviour      | ![Alt][Linux] | ![Alt][MacOS] | ![Alt][Windows] |
 |----------------|---------------|---------------|-----------------|
-| Quit (SIGINT)  | <kbd>Ctrl</kbd>+<kbd>c</kbd>  | ? | ? |
+| Quit (SIGINT)  | <kbd>Ctrl</kbd>+<kbd>c</kbd>  | <kbd>Ctrl</kbd>+<kbd>c</kbd> | <kbd>Ctrl</kbd>+<kbd>c</kbd> |
 | Quit (SIGQUIT) | <kbd>Ctrl</kbd>+<kbd>\\</kbd> | ? | ? |
 | Quit (SIGQUIT) | <kbd>Ctrl</kbd>+<kbd>4</kbd>  | ? | ? |
-| Quit STDIN<sup>[1]</sup> | <kbd>Ctrl</kbd>+<kbd>d</kbd>  | ? | ? |
+| Quit STDIN<sup>[1]</sup> | <kbd>Ctrl</kbd>+<kbd>d</kbd>  | <kbd>Ctrl</kbd>+<kbd>d</kbd> | <kbd>Ctrl</kbd>+<kbd>z</kbd> and <kbd>Ctrl</kbd>+<kbd>Enter</kbd> |
 | Send (NL)      | <kbd>Ctrl</kbd>+<kbd>j</kbd>  | ? | ? |
 | Send (EOL)     | <kbd>Ctrl</kbd>+<kbd>m</kbd>  | ? | ? |
-| Send (EOL)     | <kbd>Enter</kbd>              | ? | ? |
+| Send (EOL)     | <kbd>Enter</kbd>              | <kbd>Enter</kbd> | <kbd>Enter</kbd> |
 
 > <sup>[1] Only works when not using `--no-shutdown` and `--keep`. Will then shutdown it's socket for sending, signaling the remote end and EOF on its socket.</sup>
 
