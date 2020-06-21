@@ -1,0 +1,15 @@
+---
+version: "3.3"
+
+services:
+  ###
+  ### (1) [UDP] [-z]
+  ### SIGINT (Ctrl+c)
+  ###
+  scanner:
+    image: python:${PYTHON_VERSION}-alpine
+    hostname: server
+    command: python${PYTHON_VERSION} /usr/bin/pwncat -z -u -vvvv localhost 1-65535
+    restart: "no"
+    volumes:
+      - ../../../bin/pwncat:/usr/bin/pwncat

@@ -29,9 +29,11 @@ jobs:
           python-version: __PYTHON_VERSION__
           architecture: __ARCHITECTURE__
 
-      - name: Display Python version
-        shell: bash
-        run: python -c "import sys; print(sys.version)"
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          ini-values: max_execution_time=300
 
       - name: "Setup /etc/hosts for Linux"
         shell: bash
@@ -48,6 +50,31 @@ jobs:
             echo "\$ cat /etc/hosts"
             cat /etc/hosts
           fi
+
+__WINDOWS_JOBS__
+__LINUX_JOBS__
+__MACOS_JOBS__
+
+      - name: Display Bash version
+        shell: bash
+        run: |
+          bash --version
+          whereis bash || true
+          which bash || true
+
+      - name: Display Python version
+        shell: bash
+        run: |
+          python -c "import sys; print(sys.version)"
+          whereis python || true
+          which python || true
+
+      - name: Display PHP version
+        shell: bash
+        run: |
+          php --version
+          whereis php || true
+          which php || true
 
       - name: Resolve localhost
         shell: bash
@@ -72,7 +99,6 @@ jobs:
       # ------------------------------------------------------------
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
-
       - name: "[BEHAVIOUR] Client quits correctly 000"
         shell: bash
         run: |
@@ -408,3 +434,65 @@ __RETRY_FUNCTION__
           retry make _test-options--ping_word
         env:
           RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Behaviour (File Transfer)
+      # ------------------------------------------------------------
+      - name: "[BEHAVIOUR] File Transfer: send normal"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-behaviour-base--file_transfer-send_normal
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] File Transfer: send on eof"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-behaviour-base--file_transfer-send_on_eof
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: CNC Self-inject
+      # ------------------------------------------------------------
+      - name: "[CNC] Inject shell: pwncat as rev shell"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-pwncat
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte)"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte)"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte) - delayed"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte) - delayed"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
+        env:
+          RETRIES: 2

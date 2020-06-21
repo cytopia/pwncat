@@ -1,0 +1,27 @@
+---
+version: "3.3"
+
+services:
+  ###
+  ### (1) [TCP] [--keep-open]
+  ### SIGINT (Ctrl+c) on Server (Client sends data)
+  ###
+  server:
+    image: python:${PYTHON_VERSION}-alpine
+    hostname: server
+    command: python${PYTHON_VERSION} /usr/bin/pwncat --no-shutdown -vvvvv -l 4444 --keep-open
+    restart: "no"
+    volumes:
+      - ../../../bin/pwncat:/usr/bin/pwncat
+  client:
+    image: python:${PYTHON_VERSION}-alpine
+    hostname: client
+    command: /start.sh "server" "4444"
+    restart: "no"
+    volumes:
+      - ../../../bin/pwncat:/usr/bin/pwncat
+      - ./data/start_client_send.sh:/start.sh
+    environment:
+      PYTHON_VERSION: ${PYTHON_VERSION}
+    depends_on:
+      - server

@@ -136,24 +136,28 @@ run_test() {
 for curr_round in $(seq "${RUNS}"); do
 	#         server opts            client opts
 	# BIND ON ANY
-	run_test "-l ${RPORT}    -vvvv" "${RHOST} ${RPORT}    -vvvv"  "1" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT}    -vvvv" "${RHOST} ${RPORT} -4 -vvvv"  "2" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT}    -vvvv" "${RHOST} ${RPORT} -6 -vvvv"  "3" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -vvvv" "${RHOST} ${RPORT} --no-shutdown    -vvvv"  "1" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -vvvv"  "2" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -vvvv"  "3" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -4 -vvvv" "${RHOST} ${RPORT}    -vvvv"  "4" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -4 -vvvv"  "5" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -4 -vvvv" "${RHOST} ${RPORT} --no-shutdown    -vvvv"  "4" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -4 -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -vvvv"  "5" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -6 -vvvv" "${RHOST} ${RPORT}    -vvvv"  "6" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -6 -vvvv"  "7" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -6 -vvvv" "${RHOST} ${RPORT} --no-shutdown    -vvvv"  "6" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -6 -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -vvvv"  "7" "16" "${curr_round}" "${RUNS}"
+	# no verbosity
+	run_test "-l ${RPORT} --no-shutdown         " "${RHOST} ${RPORT} --no-shutdown         "  "8" "16" "${curr_round}" "${RUNS}"
 
 	# BIND ON SPECIFIC
-	run_test "-l ${RHOST} ${RPORT}    -vvvv" "${RHOST} ${RPORT}    -vvvv"   "8" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT}    -vvvv" "${RHOST} ${RPORT} -4 -vvvv"   "9" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT}    -vvvv" "${RHOST} ${RPORT} -6 -vvvv"  "10" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -vvvv" "${RHOST} ${RPORT} --no-shutdown    -vvvv"   "9" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -vvvv"  "10" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -vvvv"  "11" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RHOST} ${RPORT} -4 -vvvv" "${RHOST} ${RPORT}    -vvvv"  "11" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} -4 -vvvv" "${RHOST} ${RPORT} -4 -vvvv"  "12" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -vvvv" "${RHOST} ${RPORT} --no-shutdown    -vvvv"  "12" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -vvvv" "${RHOST} ${RPORT} --no-shutdown -4 -vvvv"  "13" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RHOST} ${RPORT} -6 -vvvv" "${RHOST} ${RPORT}    -vvvv"  "13" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} -6 -vvvv" "${RHOST} ${RPORT} -6 -vvvv"  "14" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -vvvv" "${RHOST} ${RPORT} --no-shutdown    -vvvv"  "14" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -vvvv" "${RHOST} ${RPORT} --no-shutdown -6 -vvvv"  "15" "16" "${curr_round}" "${RUNS}"
+	# no verbosity
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown         " "${RHOST} ${RPORT} --no-shutdown         "  "16" "16" "${curr_round}" "${RUNS}"
 done

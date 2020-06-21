@@ -29,9 +29,11 @@ jobs:
           python-version: pypy2
           architecture: x64
 
-      - name: Display Python version
-        shell: bash
-        run: python -c "import sys; print(sys.version)"
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          ini-values: max_execution_time=300
 
       - name: "Setup /etc/hosts for Linux"
         shell: bash
@@ -48,6 +50,31 @@ jobs:
             echo "\$ cat /etc/hosts"
             cat /etc/hosts
           fi
+
+
+
+
+
+      - name: Display Bash version
+        shell: bash
+        run: |
+          bash --version
+          whereis bash || true
+          which bash || true
+
+      - name: Display Python version
+        shell: bash
+        run: |
+          python -c "import sys; print(sys.version)"
+          whereis python || true
+          which python || true
+
+      - name: Display PHP version
+        shell: bash
+        run: |
+          php --version
+          whereis php || true
+          which php || true
 
       - name: Resolve localhost
         shell: bash
@@ -72,7 +99,6 @@ jobs:
       # ------------------------------------------------------------
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
-
       - name: "[BEHAVIOUR] Client quits correctly 000"
         shell: bash
         run: |
@@ -1071,3 +1097,184 @@ jobs:
           retry make _test-options--ping_word
         env:
           RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Behaviour (File Transfer)
+      # ------------------------------------------------------------
+      - name: "[BEHAVIOUR] File Transfer: send normal"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-base--file_transfer-send_normal
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] File Transfer: send on eof"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-behaviour-base--file_transfer-send_on_eof
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: CNC Self-inject
+      # ------------------------------------------------------------
+      - name: "[CNC] Inject shell: pwncat as rev shell"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-cnc--inject_shell-pwncat
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte)"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte)"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte) - delayed"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte) - delayed"
+        shell: bash
+        run: |
+          retry() {
+            _make=${1}
+            _target=${2}
+            _host=${3:-localhost}
+            _port=${4:-4444}
+            _wait=${5:-5}
+            _runs=${6:-1}
+            for n in $(seq ${RETRIES}); do
+              _port=$(( _port + n ))
+              echo "[${n}/${RETRIES}] make ${_target} ${_host} ${_port} ${_wait} ${_runs}";
+              if "${_make}" "${_target}" "TEST_PWNCAT_HOST=${_host}" "TEST_PWNCAT_PORT=${_port}" "TEST_PWNCAT_WAIT=${_wait}" "TEST_PWNCAT_RUNS=${_runs}"; then
+                return 0;
+              fi;
+              sleep 10;
+            done;
+            return 1;
+          }
+
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
+        env:
+          RETRIES: 2

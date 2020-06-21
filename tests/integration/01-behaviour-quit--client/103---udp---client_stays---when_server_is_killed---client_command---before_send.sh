@@ -149,24 +149,28 @@ run_test() {
 for curr_round in $(seq "${RUNS}"); do
 	#         server opts            client opts
 	# BIND ON ANY
-	run_test "-l ${RPORT}    -u -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -u -vvvv"  "1" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -u -vvvv --udp-sconnect --udp-sconnect-word"  "2" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -u -vvvv"  "3" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u -vvvv"  "1" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -4 -u -vvvv --udp-sconnect --udp-sconnect-word"  "2" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -6 -u -vvvv"  "3" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -u -vvvv --udp-sconnect --udp-sconnect-word"  "4" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -u -vvvv"  "5" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u -vvvv --udp-sconnect --udp-sconnect-word"  "4" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -4 -u -vvvv"  "5" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RPORT} -6 -u -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -u -vvvv"  "6" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RPORT} -6 -u -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -u -vvvv"  "7" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u -vvvv"  "6" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -6 -u -vvvv"  "7" "16" "${curr_round}" "${RUNS}"
+	# no verbosity
+	run_test "-l ${RPORT} --no-shutdown    -u      " "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u      "  "8" "16" "${curr_round}" "${RUNS}"
 
 	# BIND ON SPECIFIC
-	run_test "-l ${RHOST} ${RPORT}    -u -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -u -vvvv"   "8" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -u -vvvv"   "9" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT}    -u -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -u -vvvv"  "10" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u -vvvv"   "9" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -4 -u -vvvv"  "10" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -6 -u -vvvv"  "11" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RHOST} ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -u -vvvv --udp-sconnect --udp-sconnect-word"  "11" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} -4 -u -vvvv" "${RHOST} ${RPORT} -4 -e /bin/sh -u -vvvv"  "12" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u -vvvv --udp-sconnect --udp-sconnect-word"  "12" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -4 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -4 -u -vvvv"  "13" "16" "${curr_round}" "${RUNS}"
 
-	run_test "-l ${RHOST} ${RPORT} -6 -u -vvvv" "${RHOST} ${RPORT}    -e /bin/sh -u -vvvv"  "13" "14" "${curr_round}" "${RUNS}"
-	run_test "-l ${RHOST} ${RPORT} -6 -u -vvvv" "${RHOST} ${RPORT} -6 -e /bin/sh -u -vvvv"  "14" "14" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u -vvvv"  "14" "16" "${curr_round}" "${RUNS}"
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown -6 -u -vvvv" "${RHOST} ${RPORT} --no-shutdown -e /bin/sh -6 -u -vvvv"  "15" "16" "${curr_round}" "${RUNS}"
+	# no verbosity
+	run_test "-l ${RHOST} ${RPORT} --no-shutdown    -u      " "${RHOST} ${RPORT} --no-shutdown -e /bin/sh    -u      "  "16" "16" "${curr_round}" "${RUNS}"
 done

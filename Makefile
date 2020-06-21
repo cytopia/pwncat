@@ -20,8 +20,8 @@ DOCPATH = docs/
 INTPATH = tests/integration/
 BINNAME = pwncat
 
-FL_VERSION = 0.3
-FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/,.mypy_cache/
+FL_VERSION = 0.4
+FL_IGNORES = .git/,.github/,$(BINNAME).egg-info,docs/$(BINNAME).api.html,docs/,data/,.mypy_cache/,rtfm/venv,rtfm/_build
 
 UID := $(shell id -u)
 GID := $(shell id -g)
@@ -107,6 +107,7 @@ _lint-files:
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-trailing-space --text --ignore '$(FL_IGNORES)' --path .
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-utf8 --text --ignore '$(FL_IGNORES)' --path .
 	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) file-utf8-bom --text --ignore '$(FL_IGNORES)' --path .
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/file-lint:$(FL_VERSION) git-conflicts --text --ignore '$(FL_IGNORES)' --path .
 
 .PHONY: _lint-docs
 _lint-docs:
@@ -115,6 +116,7 @@ _lint-docs:
 	@echo "# -------------------------------------------------------------------- #"
 	@$(MAKE) --no-print-directory docs
 	git diff --quiet -- $(DOCPATH) || { echo "Build Changes"; git diff | cat; git status; false; }
+	git diff --quiet -- $(PWD)/README.md || { echo "Build Changes"; git diff | cat; git status; false; }
 
 .PHONY: _lint-man
 _lint-man:
@@ -187,25 +189,61 @@ _code-mypy:
 # -------------------------------------------------------------------------------------------------
 # Smoke Targets
 # -------------------------------------------------------------------------------------------------
-smoke: _smoke-keep_open-before_send
-smoke: _smoke-keep_open-after_client_send
+smoke: _smoke-keep_open-kill_srv-before_send
+smoke: _smoke-keep_open-kill_srv-send_data
+smoke: _smoke-tcp_port_scan-no_banner
+smoke: _smoke-tcp_port_scan-with_banner
+smoke: _smoke-udp_port_scan-no_banner
+smoke: _smoke-udp_port_scan-with_banner
 
 .PHONY:
-_smoke-keep_open-before_send:
+_smoke-keep_open-kill_srv-before_send:
 	@# It's sometimes a race-condition, so we run it five times
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_1" "client_1" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "200---tcp---keep_open---kill_server---no_send" "$(PYTHON_VERSION)"
 
-_smoke-keep_open-after_client_send:
+_smoke-keep_open-kill_srv-send_data:
 	@# It's sometimes a race-condition, so we run it five times
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
-	tests/smoke/run.sh "200---tcp---keep_open" "server_2" "client_2" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "201---tcp---keep_open---kill_server---send_data" "$(PYTHON_VERSION)"
+
+_smoke-tcp_port_scan-no_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "300---tcp---port_scan---no_banner" "$(PYTHON_VERSION)"
+
+_smoke-tcp_port_scan-with_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "301---tcp---port_scan---with_banner" "$(PYTHON_VERSION)"
+
+_smoke-udp_port_scan-no_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "302---udp---port_scan---no_banner" "$(PYTHON_VERSION)"
+
+_smoke-udp_port_scan-with_banner:
+	@# It's sometimes a race-condition, so we run it five times
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
+	tests/smoke/run.sh "303---udp---port_scan---with_banner" "$(PYTHON_VERSION)"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -217,6 +255,7 @@ TEST_PWNCAT_WAIT=2
 TEST_PWNCAT_RUNS=1
 test: _test-behaviour-quit--client
 test: _test-behaviour-quit--server
+test: _test-behaviour-base--file_transfer
 test: _test-mode--local_forward
 test: _test-mode--remote_forward
 test: _test-options--nodns
@@ -225,11 +264,9 @@ test: _test-options--keep_open
 test: _test-options--reconn
 test: _test-options--ping_intvl
 test: _test-options--ping_word
+test: _test-cnc--inject_shell
 
 .PHONY: _test-behaviour-quit--client
-#_test-behaviour-quit--client:
-#	tests/integration/run.sh "01-behaviour-quit--client" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 _test-behaviour-quit--client: __test-behaviour-quit--client-000
 _test-behaviour-quit--client: __test-behaviour-quit--client-001
 _test-behaviour-quit--client: __test-behaviour-quit--client-002
@@ -276,9 +313,6 @@ __test-behaviour-quit--client-201:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-behaviour-quit--server
-#_test-behaviour-quit--server:
-#	tests/integration/run.sh "02-behaviour-quit--server" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 _test-behaviour-quit--server: __test-behaviour-quit--server-000
 _test-behaviour-quit--server: __test-behaviour-quit--server-001
 _test-behaviour-quit--server: __test-behaviour-quit--server-002
@@ -324,6 +358,16 @@ __test-behaviour-quit--server-201:
 	$(INTPATH)02-behaviour-quit--server/201---udp---server_reacc---when_client_is_killed---server_command---after_client_sent_command.sh \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
+.PHONY: _test-behaviour-base--file_transfer
+_test-behaviour-base--file_transfer: __test-behaviour-base--file_transfer-send_normal
+_test-behaviour-base--file_transfer: __test-behaviour-base--file_transfer-send_on_eof
+__test-behaviour-base--file_transfer-send_normal:
+	$(INTPATH)03-behaviour-base--file_transfer/000---tcp---client_sends-normal.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-behaviour-base--file_transfer-send_on_eof:
+	$(INTPATH)03-behaviour-base--file_transfer/001---tcp---client_sends-on_eof.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+
 .PHONY: _test-mode--local_forward
 _test-mode--local_forward:
 	tests/integration/run.sh "10-mode---local_forward" \
@@ -345,10 +389,6 @@ _test-options--crlf:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--keep_open
-#_test-options--keep_open:
-#	tests/integration/run.sh "22-options---keep_open" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
-_test-options--keep_open:
 _test-options--keep_open: __test-options--keep_open-000
 _test-options--keep_open: __test-options--keep_open-001
 _test-options--keep_open: __test-options--keep_open-002
@@ -383,9 +423,6 @@ __test-options--keep_open-202:
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
 .PHONY: _test-options--reconn
-#_test-options--reconn:
-#	tests/integration/run.sh "23-options---reconn" \
-#		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)"
 _test-options--reconn: __test-options--reconn-000
 _test-options--reconn: __test-options--reconn-001
 _test-options--reconn: __test-options--reconn-002
@@ -409,6 +446,29 @@ _test-options--ping_word:
 	tests/integration/run.sh "26-options---ping_word" \
 		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
 
+.PHONY: _test-cnc--inject_shell
+_test-cnc--inject_shell: __test-cnc--inject_shell-pwncat
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
+_test-cnc--inject_shell: __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
+__test-cnc--inject_shell-pwncat:
+	$(INTPATH)30-cnc---self_inject/000---tcp---pwncat_as_rev_shell.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-cnc--inject_shell-revshelll-multi_byte-banner-suffix:
+	$(INTPATH)30-cnc---self_inject/001---tcp---revshell-multi_byte-banner-suffix.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-cnc--inject_shell-revshelll-single_byte-banner-suffix:
+	$(INTPATH)30-cnc---self_inject/002---tcp---revshell-single_byte-banner-suffix.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed:
+	$(INTPATH)30-cnc---self_inject/003---tcp---revshell-multi_byte-banner-suffix-delayed.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+__test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed:
+	$(INTPATH)30-cnc---self_inject/004---tcp---revshell-single_byte-banner-suffix-delayed.sh \
+		"$(TEST_PWNCAT_HOST)" "$(TEST_PWNCAT_PORT)" "$(TEST_PWNCAT_WAIT)" "$(TEST_PWNCAT_RUNS)" "$(TEST_PYTHON_VERSION)"
+
+
 
 # -------------------------------------------------------------------------------------------------
 # Documentation
@@ -416,6 +476,7 @@ _test-options--ping_word:
 docs: _docs-man
 docs: _docs-api
 docs: _docs-mypy_type_coverage
+docs: _docs-version_readme
 
 .PHONY: _docs-man
 _docs-man: $(BINPATH)$(BINNAME)
@@ -462,6 +523,11 @@ _docs-mypy_type_coverage:
 		&& percent=$$(grep "% imprecise" docs/pwncat.type.html | grep "th" | grep -Eo "[.0-9]+") \
 		&& coverage=$$(echo "100 - $${percent}" | bc) \
 		&& sed -i "s/fully typed: \([.0-9]*\)/fully typed: $${coverage}/g" README.md'
+
+_docs-version_readme:
+	VERSION="$$( grep -E '^VERSION = ' bin/pwncat | awk -F'"' '{print $$2}' )" \
+		&& echo "$${VERSION}" \
+		&& sed -i'' "s/^Current version is.*/Current version is: **$${VERSION}**/g" ${PWD}/README.md
 
 
 # -------------------------------------------------------------------------------------------------

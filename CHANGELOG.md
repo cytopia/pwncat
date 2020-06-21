@@ -4,6 +4,31 @@
 ## Unreleased
 
 
+## Release 0.1.0
+
+### Fixes
+- Fixed UTF-8 char conversion for Python3
+- Fixed calculation for socket bytes sent
+- Fixed shutdown handling for port scanner
+- Fixed false positives for port scanner
+- Fixed sending binary data from stdin
+- Fixed self-inject mode if remote sends greetings or prefixes: #83
+- Fixed remote command to respawn if it crashes due to bad user input
+
+### Added
+- Implemented signal handler to distribute shutdown signals across threads
+- Feature: `--no-shutdown` to copy the behaviour of OpenBSD netcat to keep stdin open after EOF
+- Feature: `--http`
+- Feature: `send-on-eof`
+- CI: Integration tests for inject shell
+- CI: Integration tests for different file transfer modes
+- Added artwork
+
+### Changed
+- Changed behaviour to close after EOF on stdin (can be reverted via `--no-shutdown`)
+- Added faster method to validate remote files in CNC mode
+
+
 ## Release 0.0.23-alpha
 
 ### Fixed

