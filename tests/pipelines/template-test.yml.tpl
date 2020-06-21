@@ -97,68 +97,6 @@ __MACOS_JOBS__
 
 
       # ------------------------------------------------------------
-      # Tests: Behaviour (File Transfer)
-      # ------------------------------------------------------------
-      - name: "[BEHAVIOUR] File Transfer: send normal"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-behaviour-base--file_transfer-send_normal
-        env:
-          RETRIES: 5
-
-      - name: "[BEHAVIOUR] File Transfer: send on eof"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-behaviour-base--file_transfer-send_on_eof
-        env:
-          RETRIES: 5
-
-      # ------------------------------------------------------------
-      # Tests: CNC Self-inject
-      # ------------------------------------------------------------
-      - name: "[CNC] Inject shell: pwncat as rev shell"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-pwncat
-        env:
-          RETRIES: 2
-
-      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte)"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
-        env:
-          RETRIES: 2
-
-      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte)"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
-        env:
-          RETRIES: 2
-
-      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte) - delayed"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
-        env:
-          RETRIES: 2
-
-      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte) - delayed"
-        shell: bash
-        run: |
-__RETRY_FUNCTION__
-          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
-        env:
-          RETRIES: 2
-
-      # ------------------------------------------------------------
       # Tests: Behaviour (Client)
       # ------------------------------------------------------------
       - name: "[BEHAVIOUR] Client quits correctly 000"
@@ -496,3 +434,65 @@ __RETRY_FUNCTION__
           retry make _test-options--ping_word
         env:
           RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: Behaviour (File Transfer)
+      # ------------------------------------------------------------
+      - name: "[BEHAVIOUR] File Transfer: send normal"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-behaviour-base--file_transfer-send_normal
+        env:
+          RETRIES: 5
+
+      - name: "[BEHAVIOUR] File Transfer: send on eof"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-behaviour-base--file_transfer-send_on_eof
+        env:
+          RETRIES: 5
+
+      # ------------------------------------------------------------
+      # Tests: CNC Self-inject
+      # ------------------------------------------------------------
+      - name: "[CNC] Inject shell: pwncat as rev shell"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-pwncat
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte)"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte)"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (multi byte) - delayed"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-multi_byte-banner-suffix-delayed
+        env:
+          RETRIES: 2
+
+      - name: "[CNC] Inject shell: revshell with banner and suffix (single byte) - delayed"
+        shell: bash
+        run: |
+__RETRY_FUNCTION__
+          retry make __test-cnc--inject_shell-revshelll-single_byte-banner-suffix-delayed
+        env:
+          RETRIES: 2
