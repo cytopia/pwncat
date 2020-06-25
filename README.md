@@ -160,7 +160,7 @@ Current version is: **0.1.0**
 | [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [MacOS](https://formulae.brew.sh/formula/pwncat#default) |
 |:-:|:-:|:-:|:-:|
 | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/python.png)](https://pypi.org/project/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png)](https://www.blackarch.org/tools.html) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png)](https://formulae.brew.sh/formula/pwncat#default) |
-| `pip install pwncat` | `yaourt -S pwncat` | `pacman -S pwncat` | `brew install pwncat` |
+| `pip install pwncat` | `yay -S pwncat` | `pacman -S pwncat` | `brew install pwncat` |
 
 
 ## :coffee: TL;DR
