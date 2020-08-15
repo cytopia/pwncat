@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.16% imprecise</th>
-<th class="summary summary-lines">6352 LOC</th>
+<th class="summary summary-precision">6.19% imprecise</th>
+<th class="summary summary-lines">6363 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.16% imprecise</td>
-<td class="summary summary-lines">6352 LOC</td>
+<td class="summary summary-precision">6.19% imprecise</td>
+<td class="summary summary-lines">6363 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6387,6 +6387,17 @@
 <span id="L6350" class="lineno"><a class="lineno" href="#L6350">6350</a></span>
 <span id="L6351" class="lineno"><a class="lineno" href="#L6351">6351</a></span>
 <span id="L6352" class="lineno"><a class="lineno" href="#L6352">6352</a></span>
+<span id="L6353" class="lineno"><a class="lineno" href="#L6353">6353</a></span>
+<span id="L6354" class="lineno"><a class="lineno" href="#L6354">6354</a></span>
+<span id="L6355" class="lineno"><a class="lineno" href="#L6355">6355</a></span>
+<span id="L6356" class="lineno"><a class="lineno" href="#L6356">6356</a></span>
+<span id="L6357" class="lineno"><a class="lineno" href="#L6357">6357</a></span>
+<span id="L6358" class="lineno"><a class="lineno" href="#L6358">6358</a></span>
+<span id="L6359" class="lineno"><a class="lineno" href="#L6359">6359</a></span>
+<span id="L6360" class="lineno"><a class="lineno" href="#L6360">6360</a></span>
+<span id="L6361" class="lineno"><a class="lineno" href="#L6361">6361</a></span>
+<span id="L6362" class="lineno"><a class="lineno" href="#L6362">6362</a></span>
+<span id="L6363" class="lineno"><a class="lineno" href="#L6363">6363</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -11874,7 +11885,9 @@ Explicit (x2)">        fhandle = open(value, mode="r")</span>
 <span class="line-precise" title="No Anys on this line!">    def type_local(value):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
 <span class="line-empty" title="No Anys on this line!">        """Check argument for valid -L/--local value."""</span>
-<span class="line-precise" title="No Anys on this line!">        match = re.search(r"^(.+:)?([0-9]+)$", value)</span>
+<span class="line-precise" title="No Anys on this line!">        match = re.search(r"^\[(.+)]:([0-9]+)$", value)</span>
+<span class="line-precise" title="No Anys on this line!">        if match is None:</span>
+<span class="line-precise" title="No Anys on this line!">            match = re.search(r"^(.+:)?([0-9]+)$", value)</span>
 <span class="line-precise" title="No Anys on this line!">        if match is None or len(match.groups()) != 2:</span>
 <span class="line-precise" title="No Anys on this line!">            raise argparse.ArgumentTypeError("%s is not a valid '[addr:]port' format." % value)</span>
 <span class="line-precise" title="No Anys on this line!">        if not ArgValidator.is_valid_port(int(match.group(2))):</span>
@@ -11888,7 +11901,9 @@ Explicit (x2)">        fhandle = open(value, mode="r")</span>
 <span class="line-precise" title="No Anys on this line!">    def type_remote(value):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
 <span class="line-empty" title="No Anys on this line!">        """Check argument for valid -R/--remote value."""</span>
-<span class="line-precise" title="No Anys on this line!">        match = re.search(r"(.+):(.+)", value)</span>
+<span class="line-precise" title="No Anys on this line!">        match = re.search(r"\[(.+)]:(.+)", value)</span>
+<span class="line-precise" title="No Anys on this line!">        if match is None:</span>
+<span class="line-precise" title="No Anys on this line!">            match = re.search(r"(.+):(.+)", value)</span>
 <span class="line-precise" title="No Anys on this line!">        if match is None or len(match.groups()) != 2:</span>
 <span class="line-precise" title="No Anys on this line!">            raise argparse.ArgumentTypeError("%s is not a valid 'addr:port' format." % value)</span>
 <span class="line-precise" title="No Anys on this line!">        if not ArgValidator.is_valid_port(int(match.group(2))):</span>
@@ -11899,10 +11914,12 @@ Explicit (x2)">        fhandle = open(value, mode="r")</span>
 <span class="line-precise" title="No Anys on this line!">    def type_self_inject(value):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
 <span class="line-empty" title="No Anys on this line!">        """Check argument for valid --self-inject value."""</span>
-<span class="line-precise" title="No Anys on this line!">        opts = value.split(":")</span>
-<span class="line-precise" title="No Anys on this line!">        if len(opts) != 3:</span>
+<span class="line-precise" title="No Anys on this line!">        match = re.search(r"^(.+):\[(.+)]:(.+)$", value)</span>
+<span class="line-precise" title="No Anys on this line!">        if match is None:</span>
+<span class="line-precise" title="No Anys on this line!">            match = re.search(r"^(.+):(.+):(.+)$", value)</span>
+<span class="line-precise" title="No Anys on this line!">        if match is None or len(match.groups()) != 3:</span>
 <span class="line-precise" title="No Anys on this line!">            raise argparse.ArgumentTypeError("%s is not a valid cmd:host:port[s] pattern." % value)</span>
-<span class="line-precise" title="No Anys on this line!">        if not ArgValidator.is_valid_port_list(opts[-1]):</span>
+<span class="line-precise" title="No Anys on this line!">        if not ArgValidator.is_valid_port_list(match.group(3)):</span>
 <span class="line-precise" title="No Anys on this line!">            raise argparse.ArgumentTypeError("%s is an invalid port definition." % value)</span>
 <span class="line-precise" title="No Anys on this line!">        return value</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -12955,13 +12972,16 @@ Explicit (x1)">        mod = IOStdinStdout(ssig, DsIOStdinStdout(enc, TIMEOUT_RE
 <span class="line-precise" title="No Anys on this line!">    if mode == "local":</span>
 <span class="line-precise" title="No Anys on this line!">        srv_opts.keep_open = True</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">        lhost = args.local.split(":")[0]</span>
+Explicit (x5)">        match = re.search(r"^\[(.+)]:([0-9]+)$", args.local) or re.search(</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">        lport = int(args.local.split(":")[1])</span>
+Explicit (x1)">            r"^(.+)?:([0-9]+)$", args.local</span>
+<span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">        if not lhost:</span>
+Explicit (x5)
+Error (x1)">        lhost = match.group(1)  # type: ignore</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">            lhost = None</span>
+Explicit (x4)
+Error (x1)">        lport = int(match.group(2))  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">        # Create listen and client instances</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        net_srv = IONetwork(ssig, enc, lhost, [lport], "server", srv_opts, cli_opts, sock_opts)</span>
@@ -13002,9 +13022,13 @@ Explicit (x6)">                DsCallableProducer(net_cli.producer),  # (recv) D
 <span class="line-precise" title="No Anys on this line!">        cli_opts.reconn = -1</span>
 <span class="line-precise" title="No Anys on this line!">        cli_opts.reconn_wait = 0.1</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">        lhost = args.remote.split(":")[0]</span>
+Explicit (x6)">        match = re.search(r"\[(.+)]:(.+)", args.remote) or re.search(r"(.+):(.+)", args.remote)</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">        lport = int(args.remote.split(":")[1])</span>
+Explicit (x5)
+Error (x1)">        lhost = match.group(1)  # type: ignore</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x4)
+Error (x1)">        lport = int(match.group(2))  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">        # Create local and remote client</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        net_cli_l = IONetwork(ssig, enc, lhost, [lport], "client", srv_opts, cli_opts, sock_opts)</span>
@@ -13073,7 +13097,13 @@ Explicit (x4)">            ssig, enc, host, ports + args.rebind_robin, "server",
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        if args.self_inject:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x6)">            cnc_cmd, cnc_host, cnc_port = args.self_inject.split(":")</span>
+Explicit (x5)">            match = re.search(r"^(.+):\[(.+)]:(.+)$", args.self_inject) or re.search(</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x1)">                r"^(.+):(.+):(.+)$", args.self_inject</span>
+<span class="line-empty" title="No Anys on this line!">            )</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x7)
+Error (x1)">            cnc_cmd, cnc_host, cnc_port = match.groups()  # type: ignore</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">            cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)</span>
 <span class="line-any" title="Any Types on this line: 

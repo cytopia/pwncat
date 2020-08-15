@@ -5195,7 +5195,9 @@ class ArgValidator(object):
     def type_local(value):
         # type: (str) -> str
         """Check argument for valid -L/--local value."""
-        match = re.search(r"^(.+:)?([0-9]+)$", value)
+        match = re.search(r"^\[(.+)]:([0-9]+)$", value)
+        if match is None:
+            match = re.search(r"^(.+:)?([0-9]+)$", value)
         if match is None or len(match.groups()) != 2:
             raise argparse.ArgumentTypeError("%s is not a valid '[addr:]port' format." % value)
         if not ArgValidator.is_valid_port(int(match.group(2))):
@@ -5209,7 +5211,9 @@ class ArgValidator(object):
     def type_remote(value):
         # type: (str) -> str
         """Check argument for valid -R/--remote value."""
-        match = re.search(r"(.+):(.+)", value)
+        match = re.search(r"\[(.+)]:(.+)", value)
+        if match is None:
+            match = re.search(r"(.+):(.+)", value)
         if match is None or len(match.groups()) != 2:
             raise argparse.ArgumentTypeError("%s is not a valid 'addr:port' format." % value)
         if not ArgValidator.is_valid_port(int(match.group(2))):
@@ -5220,10 +5224,12 @@ class ArgValidator(object):
     def type_self_inject(value):
         # type: (str) -> str
         """Check argument for valid --self-inject value."""
-        opts = value.split(":")
-        if len(opts) != 3:
+        match = re.search(r"^(.+):\[(.+)]:(.+)$", value)
+        if match is None:
+            match = re.search(r"^(.+):(.+):(.+)$", value)
+        if match is None or len(match.groups()) != 3:
             raise argparse.ArgumentTypeError("%s is not a valid cmd:host:port[s] pattern." % value)
-        if not ArgValidator.is_valid_port_list(opts[-1]):
+        if not ArgValidator.is_valid_port_list(match.group(3)):
             raise argparse.ArgumentTypeError("%s is an invalid port definition." % value)
         return value
 
@@ -6161,10 +6167,11 @@ def main():
     # -> listen locally and forward traffic to remote (connect)
     if mode == "local":
         srv_opts.keep_open = True
-        lhost = args.local.split(":")[0]
-        lport = int(args.local.split(":")[1])
-        if not lhost:
-            lhost = None
+        match = re.search(r"^\[(.+)]:([0-9]+)$", args.local) or re.search(
+            r"^(.+)?:([0-9]+)$", args.local
+        )
+        lhost = match.group(1)  # type: ignore
+        lport = int(match.group(2))  # type: ignore
         # Create listen and client instances
         net_srv = IONetwork(ssig, enc, lhost, [lport], "server", srv_opts, cli_opts, sock_opts)
         net_cli = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)
@@ -6200,8 +6207,9 @@ def main():
         # TODO: Make the listen address optional!
         cli_opts.reconn = -1
         cli_opts.reconn_wait = 0.1
-        lhost = args.remote.split(":")[0]
-        lport = int(args.remote.split(":")[1])
+        match = re.search(r"\[(.+)]:(.+)", args.remote) or re.search(r"(.+):(.+)", args.remote)
+        lhost = match.group(1)  # type: ignore
+        lport = int(match.group(2))  # type: ignore
         # Create local and remote client
         net_cli_l = IONetwork(ssig, enc, lhost, [lport], "client", srv_opts, cli_opts, sock_opts)
         net_cli_r = IONetwork(ssig, enc, host, ports, "client", srv_opts, cli_opts, sock_opts)
@@ -6258,7 +6266,10 @@ def main():
         # Run blocking auto-deploy.
         # This will hand over to normal listening server on success or failure
         if args.self_inject:
-            cnc_cmd, cnc_host, cnc_port = args.self_inject.split(":")
+            match = re.search(r"^(.+):\[(.+)]:(.+)$", args.self_inject) or re.search(
+                r"^(.+):(.+):(.+)$", args.self_inject
+            )
+            cnc_cmd, cnc_host, cnc_port = match.groups()  # type: ignore
             cnc_ports = ArgValidator.get_port_list_from_string(cnc_port)
             CNCAutoDeploy(net, cnc_cmd, cnc_host, cnc_ports)
 
