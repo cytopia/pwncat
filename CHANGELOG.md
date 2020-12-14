@@ -3,6 +3,9 @@
 
 ## Unreleased
 
+### Added
+- Feature: Be able to specify IPv6 address for `--self-inject`/`-R`/`-L` (by surrounding the address with `[]`): #88
+
 
 ## Release 0.1.0
 
