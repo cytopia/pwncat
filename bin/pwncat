@@ -1677,13 +1677,20 @@ class Sock(_Singleton("SingletonMeta", (object,), {})):  # type: ignore
 
         except (OSError, socket.error) as error:
             msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(
-                addr, port, sock.family, sock_family_name, sock_type_name, error,
+                addr,
+                port,
+                sock.family,
+                sock_family_name,
+                sock_type_name,
+                error,
             )
             raise socket.error(msg)
 
         local = sock.getsockname()
         self.__log.debug(
-            "Connected from %s:%d", local[0], local[1],
+            "Connected from %s:%d",
+            local[0],
+            local[1],
         )
         self.__log.info(
             "Connected to %s:%d (family %d/%s, %s)",
@@ -3255,9 +3262,7 @@ class IONetworkScanner(IO):
 
             # [1/7] Check for termination request
             if self.__ssig.has_terminate():
-                self.log.trace(  # type: ignore
-                    "TERMINATE signal ACK for IONetworkScanner.producer"
-                )
+                self.log.trace("TERMINATE signal ACK for IONetworkScanner.producer")  # type: ignore
                 return
 
             addr = self.__targets[family]
@@ -3316,7 +3321,9 @@ class IONetworkScanner(IO):
                 yield self.__enc.encode(msg)
             if banner is None and succ_banner:
                 msg = "[+] {:>5}/{} open   ({})".format(
-                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),
+                    port,
+                    self.__sock.get_type_name(sock_type),
+                    self.__sock.get_family_name(family),
                 )
                 yield self.__enc.encode(msg)
 
@@ -3513,7 +3520,8 @@ class IOStdinStdout(IO):
             # Setting sys.stdin to binary mode fixes that.
             if hasattr(os, "O_BINARY"):
                 msvcrt.setmode(  # type: ignore
-                    sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member
+                    sys.stdin.fileno(),
+                    os.O_BINARY,  # pylint: disable=no-member
                 )
             return sys.stdin.read()  # type: ignore
 
@@ -4093,9 +4101,7 @@ class Runner(object):
         # [1/3] Start available action in a thread
         for key in self.__actions:
             if self.__ssig.has_terminate():
-                self.log.trace(  # type: ignore
-                    "TERMINATE signal ACK for Runner.run [1]: [%s]", key
-                )
+                self.log.trace("TERMINATE signal ACK for Runner.run [1]: [%s]", key)  # type: ignore
                 break
             # Create Thread object
             thread = threading.Thread(
@@ -4134,9 +4140,7 @@ class Runner(object):
         # [2/3] Start available timers in a thread
         for key in self.__timers:
             if self.__ssig.has_terminate():
-                self.log.trace(  # type: ignore
-                    "TERMINATE signal ACK for Runner.run [2]: [%s]", key
-                )
+                self.log.trace("TERMINATE signal ACK for Runner.run [2]: [%s]", key)  # type: ignore
                 break
             # Create Thread object
             thread = threading.Thread(
@@ -4157,9 +4161,7 @@ class Runner(object):
         # [3/3] Start available repeaters in a thread
         for key in self.__repeaters:
             if self.__ssig.has_terminate():
-                self.log.trace(  # type: ignore
-                    "TERMINATE signal ACK for Runner.run [3]: [%s]", key
-                )
+                self.log.trace("TERMINATE signal ACK for Runner.run [3]: [%s]", key)  # type: ignore
                 break
             # Create Thread object
             thread = threading.Thread(
@@ -5283,7 +5285,8 @@ def _args_check_mutually_exclusive(parser, args):
     if args.ipv4 and args.ipv6:
         parser.print_usage()
         print(
-            "%s: error: -4 and -6 are mutually exclusive" % (APPNAME), file=sys.stderr,
+            "%s: error: -4 and -6 are mutually exclusive" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -5326,13 +5329,15 @@ def _args_check_mutually_exclusive(parser, args):
     if args.keep_open and (args.udp):
         parser.print_usage()
         print(
-            "%s: error: --keep-open mutually excl. with -u/--udp" % (APPNAME), file=sys.stderr,
+            "%s: error: --keep-open mutually excl. with -u/--udp" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
     if args.keep_open and not args.listen:
         parser.print_usage()
         print(
-            "%s: error: --keep-open only works with -l/--listen" % (APPNAME), file=sys.stderr,
+            "%s: error: --keep-open only works with -l/--listen" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -5340,7 +5345,8 @@ def _args_check_mutually_exclusive(parser, args):
     if args.reconn != 0 and not connect_mode:
         parser.print_usage()
         print(
-            "%s: error: --reconn only works in connect mode" % (APPNAME), file=sys.stderr,
+            "%s: error: --reconn only works in connect mode" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -5357,7 +5363,8 @@ def _args_check_mutually_exclusive(parser, args):
     if args.udp_sconnect and not connect_mode:
         parser.print_usage()
         print(
-            "%s: error: --udp-sconnect only works in connect mode" % (APPNAME), file=sys.stderr,
+            "%s: error: --udp-sconnect only works in connect mode" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -6017,7 +6024,8 @@ The default is to send a null byte sting: '\\0'.
     if not args.zero and len(args.port) > 1:
         parser.print_usage()
         print(
-            "%s: error: Only Zero-I/O mode supports multiple ports" % (APPNAME), file=sys.stderr,
+            "%s: error: Only Zero-I/O mode supports multiple ports" % (APPNAME),
+            file=sys.stderr,
         )
         sys.exit(1)
 
