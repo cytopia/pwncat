@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.1.1
+
+### Fixes
+- Fixes: pwncat will re-accept during local portforwarding if the client quits (previously pwncat shutdown)
+
+
 ## Release 0.1.0
 
 ### Fixes

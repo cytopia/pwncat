@@ -128,7 +128,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.05
@@ -6160,6 +6160,9 @@ def main():
     # Run local port-forward
     # -> listen locally and forward traffic to remote (connect)
     if mode == "local":
+        # Enure to re-connect forever during local port forward
+        cli_opts.reconn = -1
+        cli_opts.reconn_wait = 0.0
         srv_opts.keep_open = True
         lhost = args.local.split(":")[0]
         lport = int(args.local.split(":")[1])
@@ -6198,8 +6201,9 @@ def main():
     # -> connect to client, connect to target and proxy traffic in between.
     if mode == "remote":
         # TODO: Make the listen address optional!
+        # Enure to re-connect forever during remote port forward
         cli_opts.reconn = -1
-        cli_opts.reconn_wait = 0.1
+        cli_opts.reconn_wait = 0.0
         lhost = args.remote.split(":")[0]
         lport = int(args.remote.split(":")[1])
         # Create local and remote client
