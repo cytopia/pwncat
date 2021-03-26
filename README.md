@@ -136,7 +136,7 @@
  </tbody>
 </table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.99%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.00%)</strong></sup><br/>
 > <sup>[2] <strong>Failing builds do not indicate broken functionality.</strong> Integration tests run for multiple hours and break sporadically for various different reasons (network timeouts, unknown cancellations of GitHub Actions, etc): <a href="https://github.com/actions/virtual-environments/issues/736">#735</a>, <a href="https://github.com/actions/virtual-environments/issues/841">#841</a></sup><br/>
 > <sup></sup>
 
@@ -155,7 +155,7 @@ tool that works on older and newer machines (hence Python 2+3 compat). Most impo
 
 ## :tada: Install
 
-Current version is: **0.1.0**
+Current version is: **0.1.1**
 
 | [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [MacOS](https://formulae.brew.sh/formula/pwncat#default) |
 |:-:|:-:|:-:|:-:|
