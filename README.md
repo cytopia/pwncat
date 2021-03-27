@@ -1400,6 +1400,7 @@ Below is a list of sec tools and docs I am maintaining.
 | **[pwncat]**         | Pivoting             | Python 2+3 | Cross-platform netcat on steroids |
 | **[badchars]**       | Reverse Engineering  | Python 2+3 | Badchar generator |
 | **[fuzza]**          | Reverse Engineering  | Python 2+3 | TCP fuzzing tool |
+| **[docker-dvwa]**    | Playground           | PHP        | DVWA with local priv esc challenges |
 
 [offsec]: https://github.com/cytopia/offsec
 [header-fuzz]: https://github.com/cytopia/header-fuzz
@@ -1408,6 +1409,7 @@ Below is a list of sec tools and docs I am maintaining.
 [pwncat]: https://github.com/cytopia/pwncat
 [badchars]: https://github.com/cytopia/badchars
 [fuzza]: https://github.com/cytopia/fuzza
+[docker-dvwa]: https://github.com/cytopia/docker-dvwa
 
 
 ## :octocat: Contributing
