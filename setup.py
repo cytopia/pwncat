@@ -22,7 +22,7 @@ setup(
         # https://pypi.org/classifiers/
         #
         # How mature is this project
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         # Indicate who your project is intended for
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
