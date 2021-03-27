@@ -157,10 +157,20 @@ tool that works on older and newer machines (hence Python 2+3 compat). Most impo
 
 Current version is: **0.1.1**
 
-| [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [MacOS](https://formulae.brew.sh/formula/pwncat#default) |
-|:-:|:-:|:-:|:-:|
-| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/python.png)](https://pypi.org/project/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png)](https://www.blackarch.org/tools.html) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png)](https://formulae.brew.sh/formula/pwncat#default) |
-| `pip install pwncat` | `yay -S pwncat` | `pacman -S pwncat` | `brew install pwncat` |
+#### Generic
+
+| [Pip](https://pypi.org/project/pwncat/) |
+|:-:|
+| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/python.png)](https://pypi.org/project/pwncat/) |
+| `pip install pwncat` |
+
+
+#### OS specific
+
+| [MacOS](https://formulae.brew.sh/formula/pwncat#default) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [Fedora](https://src.fedoraproject.org/rpms/pwncat) | [Kali Linux](https://gitlab.com/kalilinux/packages/pwncat) |
+|:-:|:-:|:-:|:-:|:-:|
+| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png)](https://formulae.brew.sh/formula/pwncat#default) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png)](https://www.blackarch.org/tools.html) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/fedora.png)](https://src.fedoraproject.org/rpms/pwncat) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/kali.png)](https://gitlab.com/kalilinux/packages/pwncat) |
+| `brew install pwncat` | `yay -S pwncat` | `pacman -S pwncat` | `yum install pwncat` | `apt install pwncat` |
 
 
 ## :coffee: TL;DR
