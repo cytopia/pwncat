@@ -167,10 +167,38 @@ Current version is: **0.1.1**
 
 #### OS specific
 
-| [MacOS](https://formulae.brew.sh/formula/pwncat#default) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [CentOS](https://pkgs.org/download/pwncat) | [Fedora](https://src.fedoraproject.org/rpms/pwncat) | [Kali Linux](https://gitlab.com/kalilinux/packages/pwncat) |
-|:-:|:-:|:-:|:-:|:-:|:-:|
-| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png)](https://formulae.brew.sh/formula/pwncat#default) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png)](https://www.blackarch.org/tools.html) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/centos.png)](https://pkgs.org/download/pwncat) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/fedora.png)](https://src.fedoraproject.org/rpms/pwncat) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/kali.png)](https://gitlab.com/kalilinux/packages/pwncat) |
-| `brew install pwncat` | `yay -S pwncat` | `pacman -S pwncat` | `yum install pwncat` | `yum install pwncat` | `apt install pwncat` |
+| **[MacOS][mac_lnk]**        | **[Arch Linux][arch_lnk]** | **[BlackArch][barch_lnk]**   | **[CentOS][centos_lnk]**    |
+|:---------------------------:|:--------------------------:|:----------------------------:|:---------------------------:|
+| [![mac_img]][mac_lnk]       | [![arch_img]][arch_lnk]    | [![barch_img]][barch_lnk]    | [![centos_img]][centos_lnk] |
+| `brew install pwncat`       | `yay -S pwncat`            | `pacman -S pwncat`           | `yum install pwncat`        |
+| **[Fedora][fedora_lnk]**    | **[Kali Linux][kali_lnk]** |  **[Parrot OS][parrot_lnk]** | **[Pentoo][pentoo_lnk]**    |
+| [![fedora_img]][fedora_lnk] | [![kali_img]][kali_lnk]    | [![parrot_img]][parrot_lnk]  | [![pentoo_img]][pentoo_lnk] |
+|  `dnf install pwncat`       | `apt install pwncat`       | `apt install pwncat`         | `net-analyzer/pwncat`       |
+
+[mac_lnk]: https://formulae.brew.sh/formula/pwncat#default
+[mac_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png
+
+[arch_lnk]: https://aur.archlinux.org/packages/pwncat/
+[arch_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png
+
+[barch_lnk]: https://www.blackarch.org/tools.html
+[barch_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png
+
+[centos_lnk]: https://pkgs.org/download/pwncat
+[centos_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/centos.png
+
+[fedora_lnk]: https://src.fedoraproject.org/rpms/pwncat
+[fedora_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/fedora.png
+
+[kali_lnk]: https://gitlab.com/kalilinux/packages/pwncat
+[kali_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/kali.png
+
+[parrot_lnk]: https://repology.org/project/pwncat/versions
+[parrot_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/parrot.png
+
+[pentoo_lnk]: https://repology.org/project/pwncat/versions
+[pentoo_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/pentoo.png
+
 
 
 ## :coffee: TL;DR
