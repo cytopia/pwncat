@@ -146,9 +146,11 @@ code: _code-mypy
 
 .PHONY: _code-pycodestyle
 _code-pycodestyle:
-	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Check pycodestyle"
-	@echo "# -------------------------------------------------------------------- #"
+	@V="$$( docker run --rm cytopia/pycodestyle --version | head -1 )"; \
+	echo "# -------------------------------------------------------------------- #"; \
+	echo "# Check pycodestyle: $${V}"; \
+	echo "# -------------------------------------------------------------------- #"
+	@#
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pycodestyle sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
@@ -156,9 +158,11 @@ _code-pycodestyle:
 
 .PHONY: _code-pydocstyle
 _code-pydocstyle:
-	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Check pycodestyle"
-	@echo "# -------------------------------------------------------------------- #"
+	@V="$$( docker run --rm cytopia/pydocstyle --version | head -1 )"; \
+	echo "# -------------------------------------------------------------------- #"; \
+	echo "# Check pydocstyle: $${V}"; \
+	echo "# -------------------------------------------------------------------- #"
+	@#
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pydocstyle sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
@@ -166,24 +170,39 @@ _code-pydocstyle:
 
 .PHONY: _code-pylint
 _code-pylint:
-	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Check pylint"
-	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/pylint --rcfile=setup.cfg $(BINPATH)$(BINNAME)
+	@V="$$( docker run --rm cytopia/pylint --version | head -1 )"; \
+	echo "# -------------------------------------------------------------------- #"; \
+	echo "# Check pylint: $${V}"; \
+	echo "# -------------------------------------------------------------------- #"
+	@#
+	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pylint sh -c ' \
+		mkdir -p /tmp \
+		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
+		&& pylint --rcfile=setup.cfg /tmp/$(BINNAME).py'
 
 .PHONY: _code-black
 _code-black:
-	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Check Python Black"
-	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/black -l 100 --check --diff $(BINPATH)$(BINNAME)
+	@V="$$( docker run --rm cytopia/black --version | head -1 )"; \
+	echo "# -------------------------------------------------------------------- #"; \
+	echo "# Check Python Black: $${V}"; \
+	echo "# -------------------------------------------------------------------- #"
+	@#
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data --entrypoint= cytopia/black sh -c ' \
+		mkdir -p /tmp \
+		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
+		&& black -l 100 --check --diff /tmp/$(BINNAME).py'
 
 .PHONY: _code-mypy
 _code-mypy:
-	@echo "# -------------------------------------------------------------------- #"
-	@echo "# Check mypy"
-	@echo "# -------------------------------------------------------------------- #"
-	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data cytopia/mypy --config-file setup.cfg $(BINPATH)$(BINNAME)
+	@V="$$( docker run --rm cytopia/mypy --version | head -1 )"; \
+	echo "# -------------------------------------------------------------------- #"; \
+	echo "# Check Mypy: $${V}"; \
+	echo "# -------------------------------------------------------------------- #"
+	@#
+	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data --entrypoint= cytopia/mypy sh -c ' \
+		mkdir -p /tmp \
+		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
+		&& mypy --config-file setup.cfg /tmp/$(BINNAME).py'
 
 
 # -------------------------------------------------------------------------------------------------

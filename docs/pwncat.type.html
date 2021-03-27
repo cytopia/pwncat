@@ -14,13 +14,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.16% imprecise</th>
-<th class="summary summary-lines">6352 LOC</th>
+<th class="summary summary-precision">6.00% imprecise</th>
+<th class="summary summary-lines">6364 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.16% imprecise</td>
-<td class="summary summary-lines">6352 LOC</td>
+<td class="summary summary-precision">6.00% imprecise</td>
+<td class="summary summary-lines">6364 LOC</td>
 </tr></tbody>
 </table>
 </body>
@@ -6387,6 +6387,18 @@
 <span id="L6350" class="lineno"><a class="lineno" href="#L6350">6350</a></span>
 <span id="L6351" class="lineno"><a class="lineno" href="#L6351">6351</a></span>
 <span id="L6352" class="lineno"><a class="lineno" href="#L6352">6352</a></span>
+<span id="L6353" class="lineno"><a class="lineno" href="#L6353">6353</a></span>
+<span id="L6354" class="lineno"><a class="lineno" href="#L6354">6354</a></span>
+<span id="L6355" class="lineno"><a class="lineno" href="#L6355">6355</a></span>
+<span id="L6356" class="lineno"><a class="lineno" href="#L6356">6356</a></span>
+<span id="L6357" class="lineno"><a class="lineno" href="#L6357">6357</a></span>
+<span id="L6358" class="lineno"><a class="lineno" href="#L6358">6358</a></span>
+<span id="L6359" class="lineno"><a class="lineno" href="#L6359">6359</a></span>
+<span id="L6360" class="lineno"><a class="lineno" href="#L6360">6360</a></span>
+<span id="L6361" class="lineno"><a class="lineno" href="#L6361">6361</a></span>
+<span id="L6362" class="lineno"><a class="lineno" href="#L6362">6362</a></span>
+<span id="L6363" class="lineno"><a class="lineno" href="#L6363">6363</a></span>
+<span id="L6364" class="lineno"><a class="lineno" href="#L6364">6364</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -6518,7 +6530,7 @@
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.1.0"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.1.1"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.05</span>
@@ -7897,10 +7909,8 @@ Explicit (x4)">                self.__log.debug("Resolving IPv4 host not require
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [4/4] Resolve</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x3)">            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x4)">            addr = str(infos[0][4][0])</span>
+<span class="line-precise" title="No Anys on this line!">            infos = socket.getaddrinfo(host, port, family, socktype, proto, flags)</span>
+<span class="line-precise" title="No Anys on this line!">            addr = str(infos[0][4][0])</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">            self.__log.debug("Resolved %s host: %s", self.get_family_name(family), addr)</span>
 <span class="line-precise" title="No Anys on this line!">            return addr</span>
@@ -8141,11 +8151,9 @@ Explicit (x4)">            self.__log.debug(</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # Ensure to use connect() protocol independent</span>
+<span class="line-precise" title="No Anys on this line!">            info = socket.getaddrinfo(addr, port, sock.family, sock.type, sock.proto)</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x3)">            info = socket.getaddrinfo(addr, port, sock.family, sock.type, sock.proto)</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Omitted Generics (x1)
-Explicit (x3)">            sock.connect(info[0][4])</span>
+Omitted Generics (x1)">            sock.connect(info[0][4])</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # UDP stateful connect</span>
 <span class="line-empty" title="No Anys on this line!">            # A UDP client doesn't know if the connect() was successful, so the trick</span>
@@ -8176,14 +8184,21 @@ Explicit (x4)">                self.__log.debug(</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        except (OSError, socket.error) as error:</span>
 <span class="line-precise" title="No Anys on this line!">            msg = "Connecting to {}:{} (family {}/{}, {}) failed: {}".format(</span>
-<span class="line-precise" title="No Anys on this line!">                addr, port, sock.family, sock_family_name, sock_type_name, error,</span>
+<span class="line-precise" title="No Anys on this line!">                addr,</span>
+<span class="line-precise" title="No Anys on this line!">                port,</span>
+<span class="line-precise" title="No Anys on this line!">                sock.family,</span>
+<span class="line-precise" title="No Anys on this line!">                sock_family_name,</span>
+<span class="line-precise" title="No Anys on this line!">                sock_type_name,</span>
+<span class="line-precise" title="No Anys on this line!">                error,</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">            raise socket.error(msg)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        local = sock.getsockname()</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.__log.debug(</span>
-<span class="line-precise" title="No Anys on this line!">            "Connected from %s:%d", local[0], local[1],</span>
+<span class="line-precise" title="No Anys on this line!">            "Connected from %s:%d",</span>
+<span class="line-precise" title="No Anys on this line!">            local[0],</span>
+<span class="line-precise" title="No Anys on this line!">            local[1],</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">        self.__log.info(</span>
@@ -9828,9 +9843,7 @@ Explicit (x3)">        port = args[0]</span>
 <span class="line-empty" title="No Anys on this line!">            # [1/7] Check for termination request</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__ssig.has_terminate():</span>
 <span class="line-any" title="Any Types on this line: 
-Error (x2)">                self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                    "TERMINATE signal ACK for IONetworkScanner.producer"</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
+Error (x2)">                self.log.trace("TERMINATE signal ACK for IONetworkScanner.producer")  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!">                return</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">            addr = self.__targets[family]</span>
@@ -9896,7 +9909,9 @@ Explicit (x1)">                    port,</span>
 <span class="line-precise" title="No Anys on this line!">            if banner is None and succ_banner:</span>
 <span class="line-precise" title="No Anys on this line!">                msg = "[+] {:&gt;5}/{} open   ({})".format(</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x1)">                    port, self.__sock.get_type_name(sock_type), self.__sock.get_family_name(family),</span>
+Explicit (x1)">                    port,</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__sock.get_type_name(sock_type),</span>
+<span class="line-precise" title="No Anys on this line!">                    self.__sock.get_family_name(family),</span>
 <span class="line-empty" title="No Anys on this line!">                )</span>
 <span class="line-precise" title="No Anys on this line!">                yield self.__enc.encode(msg)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -9917,8 +9932,7 @@ Explicit (x1)">                    port, self.__sock.get_type_name(sock_type), s
 <span class="line-precise" title="No Anys on this line!">        except IOError:</span>
 <span class="line-empty" title="No Anys on this line!">            # Python flushes standard streams on exit; redirect remaining output</span>
 <span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another broken pipe at shutdown</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
+<span class="line-precise" title="No Anys on this line!">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
 <span class="line-precise" title="No Anys on this line!">            os.dup2(devnull, sys.stdout.fileno())</span>
 <span class="line-empty" title="No Anys on this line!">        finally:</span>
 <span class="line-precise" title="No Anys on this line!">            self.__screen_lock.release()</span>
@@ -10049,8 +10063,7 @@ Error (x2)">                self.log.trace("STDIN-EOF signal RAISE in IOStdinStd
 <span class="line-precise" title="No Anys on this line!">        except IOError:</span>
 <span class="line-empty" title="No Anys on this line!">            # Python flushes standard streams on exit; redirect remaining output</span>
 <span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another broken pipe at shutdown</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
+<span class="line-precise" title="No Anys on this line!">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
 <span class="line-precise" title="No Anys on this line!">            os.dup2(devnull, sys.stdout.fileno())</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def interrupt(self):</span>
@@ -10109,7 +10122,8 @@ Explicit (x10)">        if not select.select([sys.stdin], [], [], self.__opts.in
 Explicit (x1)">            if hasattr(os, "O_BINARY"):</span>
 <span class="line-any" title="Any Types on this line: 
 Error (x2)">                msvcrt.setmode(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                    sys.stdin.fileno(), os.O_BINARY,  # pylint: disable=no-member</span>
+<span class="line-precise" title="No Anys on this line!">                    sys.stdin.fileno(),</span>
+<span class="line-precise" title="No Anys on this line!">                    os.O_BINARY,  # pylint: disable=no-member</span>
 <span class="line-empty" title="No Anys on this line!">                )</span>
 <span class="line-precise" title="No Anys on this line!">            return sys.stdin.read()  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -10166,7 +10180,6 @@ Explicit (x4)">        self.log.debug("Setting '%s' as executable", self.__opts.
 <span class="line-precise" title="No Anys on this line!">        env = os.environ.copy()</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="Any Types on this line: 
-Omitted Generics (x18)
 Explicit (x19)">            self.proc = Popen(</span>
 <span class="line-precise" title="No Anys on this line!">                self.__opts.executable,</span>
 <span class="line-precise" title="No Anys on this line!">                stdin=PIPE,</span>
@@ -10227,7 +10240,6 @@ Error (x2)">                    self.log.trace("COMMAND-QUIT signal ACK IOComman
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                self.log.error("COMMAND-EOF restarting: %s", self.__opts.executable)</span>
 <span class="line-precise" title="Any Types on this line: 
-Omitted Generics (x18)
 Explicit (x19)">                self.proc = Popen(</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__opts.executable,</span>
 <span class="line-precise" title="No Anys on this line!">                    stdin=PIPE,</span>
@@ -10733,9 +10745,7 @@ Explicit (x4)">                action(*args, **kwargs)</span>
 <span class="line-precise" title="No Anys on this line!">        for key in self.__actions:</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__ssig.has_terminate():</span>
 <span class="line-any" title="Any Types on this line: 
-Error (x2)">                self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                    "TERMINATE signal ACK for Runner.run [1]: [%s]", key</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
+Error (x2)">                self.log.trace("TERMINATE signal ACK for Runner.run [1]: [%s]", key)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                break</span>
 <span class="line-empty" title="No Anys on this line!">            # Create Thread object</span>
 <span class="line-imprecise" title="Any Types on this line: 
@@ -10777,9 +10787,7 @@ Error (x2)">                    self.log.trace(  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">        for key in self.__timers:</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__ssig.has_terminate():</span>
 <span class="line-any" title="Any Types on this line: 
-Error (x2)">                self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                    "TERMINATE signal ACK for Runner.run [2]: [%s]", key</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
+Error (x2)">                self.log.trace("TERMINATE signal ACK for Runner.run [2]: [%s]", key)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                break</span>
 <span class="line-empty" title="No Anys on this line!">            # Create Thread object</span>
 <span class="line-imprecise" title="Any Types on this line: 
@@ -10806,9 +10814,7 @@ Explicit (x1)">                kwargs=self.__timers[key].kwargs,</span>
 <span class="line-precise" title="No Anys on this line!">        for key in self.__repeaters:</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__ssig.has_terminate():</span>
 <span class="line-any" title="Any Types on this line: 
-Error (x2)">                self.log.trace(  # type: ignore</span>
-<span class="line-precise" title="No Anys on this line!">                    "TERMINATE signal ACK for Runner.run [3]: [%s]", key</span>
-<span class="line-empty" title="No Anys on this line!">                )</span>
+Error (x2)">                self.log.trace("TERMINATE signal ACK for Runner.run [3]: [%s]", key)  # type: ignore</span>
 <span class="line-precise" title="No Anys on this line!">                break</span>
 <span class="line-empty" title="No Anys on this line!">            # Create Thread object</span>
 <span class="line-imprecise" title="Any Types on this line: 
@@ -11060,8 +11066,7 @@ Error (x2)">                self.log.trace("All threads dead - shutting down.") 
 <span class="line-precise" title="No Anys on this line!">        except IOError:</span>
 <span class="line-empty" title="No Anys on this line!">            # Python flushes standard streams on exit; redirect remaining output</span>
 <span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another broken pipe at shutdown</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Omitted Generics (x1)">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
+<span class="line-precise" title="No Anys on this line!">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
 <span class="line-precise" title="No Anys on this line!">            os.dup2(devnull, sys.stdout.fileno())</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>
@@ -11563,8 +11568,8 @@ Explicit (x4)">        self.__log.debug("Set suffix after:  %s", repr(self.__rem
 <span class="line-precise" title="No Anys on this line!">        first = True</span>
 <span class="line-precise" title="No Anys on this line!">        data = []  # type: List[str]</span>
 <span class="line-empty" title="No Anys on this line!"></span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
+<span class="line-precise" title="Any Types on this line: 
+Explicit (x1)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">            lines = fhandle.readlines()</span>
 <span class="line-precise" title="No Anys on this line!">            count = len(lines)</span>
 <span class="line-precise" title="No Anys on this line!">            curr = 1</span>
@@ -11824,11 +11829,10 @@ Explicit (x2)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">    def type_file_content(value):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (str) -&gt; str</span>
 <span class="line-empty" title="No Anys on this line!">        """Check argument for valid file content (file must exist and be readable)."""</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Omitted Generics (x1)">        if not os.path.isfile(value):</span>
+<span class="line-precise" title="No Anys on this line!">        if not os.path.isfile(value):</span>
 <span class="line-precise" title="No Anys on this line!">            raise argparse.ArgumentTypeError("File not found: %s" % value)</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Explicit (x2)">        fhandle = open(value, mode="r")</span>
+<span class="line-precise" title="Any Types on this line: 
+Explicit (x1)">        fhandle = open(value, mode="r")</span>
 <span class="line-precise" title="No Anys on this line!">        script = fhandle.read()</span>
 <span class="line-precise" title="No Anys on this line!">        fhandle.close()</span>
 <span class="line-precise" title="No Anys on this line!">        return script</span>
@@ -11969,7 +11973,8 @@ Explicit (x7)">    if args.cmd and (args.local or args.remote or args.zero):</sp
 Explicit (x3)">    if args.ipv4 and args.ipv6:</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: -4 and -6 are mutually exclusive" % (APPNAME), file=sys.stderr,</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: -4 and -6 are mutually exclusive" % (APPNAME),</span>
+<span class="line-precise" title="No Anys on this line!">            file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -12017,14 +12022,16 @@ Explicit (x7)">    if args.https and (args.http or args.udp or args.zero):</span
 Explicit (x3)">    if args.keep_open and (args.udp):</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: --keep-open mutually excl. with -u/--udp" % (APPNAME), file=sys.stderr,</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: --keep-open mutually excl. with -u/--udp" % (APPNAME),</span>
+<span class="line-precise" title="No Anys on this line!">            file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x3)">    if args.keep_open and not args.listen:</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: --keep-open only works with -l/--listen" % (APPNAME), file=sys.stderr,</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: --keep-open only works with -l/--listen" % (APPNAME),</span>
+<span class="line-precise" title="No Anys on this line!">            file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -12033,7 +12040,8 @@ Explicit (x3)">    if args.keep_open and not args.listen:</span>
 Explicit (x3)">    if args.reconn != 0 and not connect_mode:</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: --reconn only works in connect mode" % (APPNAME), file=sys.stderr,</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: --reconn only works in connect mode" % (APPNAME),</span>
+<span class="line-precise" title="No Anys on this line!">            file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -12052,7 +12060,8 @@ Explicit (x5)">    if args.ping_init is not False and (args.listen or args.local
 Explicit (x2)">    if args.udp_sconnect and not connect_mode:</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: --udp-sconnect only works in connect mode" % (APPNAME), file=sys.stderr,</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: --udp-sconnect only works in connect mode" % (APPNAME),</span>
+<span class="line-precise" title="No Anys on this line!">            file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -12766,7 +12775,8 @@ Explicit (x3)">    misc.add_argument(</span>
 Explicit (x2)">    if not args.zero and len(args.port) &gt; 1:</span>
 <span class="line-precise" title="No Anys on this line!">        parser.print_usage()</span>
 <span class="line-precise" title="No Anys on this line!">        print(</span>
-<span class="line-precise" title="No Anys on this line!">            "%s: error: Only Zero-I/O mode supports multiple ports" % (APPNAME), file=sys.stderr,</span>
+<span class="line-precise" title="No Anys on this line!">            "%s: error: Only Zero-I/O mode supports multiple ports" % (APPNAME),</span>
+<span class="line-precise" title="No Anys on this line!">            file=sys.stderr,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-precise" title="No Anys on this line!">        sys.exit(1)</span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -12953,6 +12963,9 @@ Explicit (x1)">        mod = IOStdinStdout(ssig, DsIOStdinStdout(enc, TIMEOUT_RE
 <span class="line-empty" title="No Anys on this line!">    # Run local port-forward</span>
 <span class="line-empty" title="No Anys on this line!">    # -&gt; listen locally and forward traffic to remote (connect)</span>
 <span class="line-precise" title="No Anys on this line!">    if mode == "local":</span>
+<span class="line-empty" title="No Anys on this line!">        # Enure to re-connect forever during local port forward</span>
+<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn = -1</span>
+<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn_wait = 0.0</span>
 <span class="line-precise" title="No Anys on this line!">        srv_opts.keep_open = True</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x5)">        lhost = args.local.split(":")[0]</span>
@@ -12999,8 +13012,9 @@ Explicit (x6)">                DsCallableProducer(net_cli.producer),  # (recv) D
 <span class="line-empty" title="No Anys on this line!">    # -&gt; connect to client, connect to target and proxy traffic in between.</span>
 <span class="line-precise" title="No Anys on this line!">    if mode == "remote":</span>
 <span class="line-empty" title="No Anys on this line!">        # TODO: Make the listen address optional!</span>
+<span class="line-empty" title="No Anys on this line!">        # Enure to re-connect forever during remote port forward</span>
 <span class="line-precise" title="No Anys on this line!">        cli_opts.reconn = -1</span>
-<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn_wait = 0.1</span>
+<span class="line-precise" title="No Anys on this line!">        cli_opts.reconn_wait = 0.0</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x5)">        lhost = args.remote.split(":")[0]</span>
 <span class="line-any" title="Any Types on this line: 

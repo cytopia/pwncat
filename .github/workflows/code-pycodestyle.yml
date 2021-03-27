@@ -23,7 +23,7 @@ jobs:
     name: "[ ${{ matrix.target }} ]"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
 
       - name: "${{ matrix.target }}"
         run: |

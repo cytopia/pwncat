@@ -136,7 +136,7 @@
  </tbody>
 </table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.84%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.00%)</strong></sup><br/>
 > <sup>[2] <strong>Failing builds do not indicate broken functionality.</strong> Integration tests run for multiple hours and break sporadically for various different reasons (network timeouts, unknown cancellations of GitHub Actions, etc): <a href="https://github.com/actions/virtual-environments/issues/736">#735</a>, <a href="https://github.com/actions/virtual-environments/issues/841">#841</a></sup><br/>
 > <sup></sup>
 
@@ -155,12 +155,50 @@ tool that works on older and newer machines (hence Python 2+3 compat). Most impo
 
 ## :tada: Install
 
-Current version is: **0.1.0**
+Current version is: **0.1.1**
 
-| [Pip](https://pypi.org/project/pwncat/) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [MacOS](https://formulae.brew.sh/formula/pwncat#default) |
-|:-:|:-:|:-:|:-:|
-| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/python.png)](https://pypi.org/project/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png)](https://www.blackarch.org/tools.html) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png)](https://formulae.brew.sh/formula/pwncat#default) |
-| `pip install pwncat` | `yay -S pwncat` | `pacman -S pwncat` | `brew install pwncat` |
+#### Generic
+
+| [Pip](https://pypi.org/project/pwncat/) |
+|:-:|
+| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/python.png)](https://pypi.org/project/pwncat/) |
+| `pip install pwncat` |
+
+
+#### OS specific
+
+| **[MacOS][mac_lnk]**        | **[Arch Linux][arch_lnk]** | **[BlackArch][barch_lnk]**   | **[CentOS][centos_lnk]**    |
+|:---------------------------:|:--------------------------:|:----------------------------:|:---------------------------:|
+| [![mac_img]][mac_lnk]       | [![arch_img]][arch_lnk]    | [![barch_img]][barch_lnk]    | [![centos_img]][centos_lnk] |
+| `brew install pwncat`       | `yay -S pwncat`            | `pacman -S pwncat`           | `yum install pwncat`        |
+| **[Fedora][fedora_lnk]**    | **[Kali Linux][kali_lnk]** |  **[Parrot OS][parrot_lnk]** | **[Pentoo][pentoo_lnk]**    |
+| [![fedora_img]][fedora_lnk] | [![kali_img]][kali_lnk]    | [![parrot_img]][parrot_lnk]  | [![pentoo_img]][pentoo_lnk] |
+|  `dnf install pwncat`       | `apt install pwncat`       | `apt install pwncat`         | `net-analyzer/pwncat`       |
+
+[mac_lnk]: https://formulae.brew.sh/formula/pwncat#default
+[mac_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png
+
+[arch_lnk]: https://aur.archlinux.org/packages/pwncat/
+[arch_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png
+
+[barch_lnk]: https://www.blackarch.org/tools.html
+[barch_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png
+
+[centos_lnk]: https://pkgs.org/download/pwncat
+[centos_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/centos.png
+
+[fedora_lnk]: https://src.fedoraproject.org/rpms/pwncat
+[fedora_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/fedora.png
+
+[kali_lnk]: https://gitlab.com/kalilinux/packages/pwncat
+[kali_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/kali.png
+
+[parrot_lnk]: https://repology.org/project/pwncat/versions
+[parrot_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/parrot.png
+
+[pentoo_lnk]: https://repology.org/project/pwncat/versions
+[pentoo_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/pentoo.png
+
 
 
 ## :coffee: TL;DR
@@ -1400,6 +1438,7 @@ Below is a list of sec tools and docs I am maintaining.
 | **[pwncat]**         | Pivoting             | Python 2+3 | Cross-platform netcat on steroids |
 | **[badchars]**       | Reverse Engineering  | Python 2+3 | Badchar generator |
 | **[fuzza]**          | Reverse Engineering  | Python 2+3 | TCP fuzzing tool |
+| **[docker-dvwa]**    | Playground           | PHP        | DVWA with local priv esc challenges |
 
 [offsec]: https://github.com/cytopia/offsec
 [header-fuzz]: https://github.com/cytopia/header-fuzz
@@ -1408,6 +1447,7 @@ Below is a list of sec tools and docs I am maintaining.
 [pwncat]: https://github.com/cytopia/pwncat
 [badchars]: https://github.com/cytopia/badchars
 [fuzza]: https://github.com/cytopia/fuzza
+[docker-dvwa]: https://github.com/cytopia/docker-dvwa
 
 
 ## :octocat: Contributing

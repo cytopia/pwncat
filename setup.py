@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pwncat",
-    version="0.1.0",
+    version="0.1.1",
     description="Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell and port forwarding magic - and its  fully scriptable with Python (PSE).",
     license="MIT",
     long_description=long_description,
@@ -22,7 +22,7 @@ setup(
         # https://pypi.org/classifiers/
         #
         # How mature is this project
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         # Indicate who your project is intended for
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
