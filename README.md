@@ -167,10 +167,10 @@ Current version is: **0.1.1**
 
 #### OS specific
 
-| [MacOS](https://formulae.brew.sh/formula/pwncat#default) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [Fedora](https://src.fedoraproject.org/rpms/pwncat) | [Kali Linux](https://gitlab.com/kalilinux/packages/pwncat) |
-|:-:|:-:|:-:|:-:|:-:|
-| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png)](https://formulae.brew.sh/formula/pwncat#default) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png)](https://www.blackarch.org/tools.html) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/fedora.png)](https://src.fedoraproject.org/rpms/pwncat) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/kali.png)](https://gitlab.com/kalilinux/packages/pwncat) |
-| `brew install pwncat` | `yay -S pwncat` | `pacman -S pwncat` | `yum install pwncat` | `apt install pwncat` |
+| [MacOS](https://formulae.brew.sh/formula/pwncat#default) | [ArchLinux](https://aur.archlinux.org/packages/pwncat/) | [BlackArch](https://www.blackarch.org/tools.html) | [CentOS](https://pkgs.org/download/pwncat) | [Fedora](https://src.fedoraproject.org/rpms/pwncat) | [Kali Linux](https://gitlab.com/kalilinux/packages/pwncat) |
+|:-:|:-:|:-:|:-:|:-:|:-:|
+| [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png)](https://formulae.brew.sh/formula/pwncat#default) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/archlinux.png)](https://aur.archlinux.org/packages/pwncat/) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/blackarch.png)](https://www.blackarch.org/tools.html) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/centos.png)](https://pkgs.org/download/pwncat) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/fedora.png)](https://src.fedoraproject.org/rpms/pwncat) | [![](https://raw.githubusercontent.com/cytopia/icons/master/64x64/kali.png)](https://gitlab.com/kalilinux/packages/pwncat) |
+| `brew install pwncat` | `yay -S pwncat` | `pacman -S pwncat` | `yum install pwncat` | `yum install pwncat` | `apt install pwncat` |
 
 
 ## :coffee: TL;DR
