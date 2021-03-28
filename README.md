@@ -167,13 +167,18 @@ Current version is: **0.1.1**
 
 #### OS specific
 
-| **[MacOS][mac_lnk]**        | **[Arch Linux][arch_lnk]** | **[BlackArch][barch_lnk]**   | **[CentOS][centos_lnk]**    |
-|:---------------------------:|:--------------------------:|:----------------------------:|:---------------------------:|
-| [![mac_img]][mac_lnk]       | [![arch_img]][arch_lnk]    | [![barch_img]][barch_lnk]    | [![centos_img]][centos_lnk] |
-| `brew install pwncat`       | `yay -S pwncat`            | `pacman -S pwncat`           | `yum install pwncat`        |
-| **[Fedora][fedora_lnk]**    | **[Kali Linux][kali_lnk]** |  **[Parrot OS][parrot_lnk]** | **[Pentoo][pentoo_lnk]**    |
-| [![fedora_img]][fedora_lnk] | [![kali_img]][kali_lnk]    | [![parrot_img]][parrot_lnk]  | [![pentoo_img]][pentoo_lnk] |
-|  `dnf install pwncat`       | `apt install pwncat`       | `apt install pwncat`         | `net-analyzer/pwncat`       |
+| **[MacOS][mac_lnk]**         | **[Arch Linux][arch_lnk]** | **[BlackArch][barch_lnk]**                   | **[CentOS][centos_lnk]**<sup>[1]</sup>    |
+|:----------------------------:|:--------------------------:|:--------------------------------------------:|:----------------------------:|
+| [![mac_img]][mac_lnk]        | [![arch_img]][arch_lnk]    | [![barch_img]][barch_lnk]                    | [![centos_img]][centos_lnk]  |
+| `brew install pwncat`        | `yay -S pwncat`            | `pacman -S pwncat`                           | `yum install pwncat`         |
+| **[Fedora][fedora_lnk]**     | **[Kali Linux][kali_lnk]** | **[Oracle Linux][oracle_lnk]<sup>[1]</sup>** |  **[Parrot OS][parrot_lnk]** |
+| [![fedora_img]][fedora_lnk]  | [![kali_img]][kali_lnk]    | [![oracle_img]][oracle_lnk]                  | [![parrot_img]][parrot_lnk]  |
+|  `dnf install pwncat`        | `apt install pwncat`       | `yum install pwncat`                         | `apt install pwncat`         |
+| **[Pentoo][pentoo_lnk]**     |
+| [![pentoo_img]][pentoo_lnk]  |
+|  `net-analyzer/pwncat`       |
+
+> <sup>[1]: Epel repository</sup>
 
 [mac_lnk]: https://formulae.brew.sh/formula/pwncat#default
 [mac_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/osx.png
@@ -192,6 +197,9 @@ Current version is: **0.1.1**
 
 [kali_lnk]: https://gitlab.com/kalilinux/packages/pwncat
 [kali_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/kali.png
+
+[oracle_lnk]: https://yum.oracle.com/repo/OracleLinux/OL8/developer/EPEL/x86_64/index.html
+[oracle_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/oracle-linux.png
 
 [parrot_lnk]: https://repology.org/project/pwncat/versions
 [parrot_img]: https://raw.githubusercontent.com/cytopia/icons/master/64x64/parrot.png
