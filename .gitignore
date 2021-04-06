@@ -20,6 +20,12 @@ share/pkg/brew
 share/pkg/nixos
 share/pkg/pentoo
 
+# rtd
+share/doc/_build/
+share/doc/make.bat
+share/doc/linkcheck
+share/doc/venv
+
 
 # --------------------------------------------------------------------------------------------------
 # Tests
