@@ -14,6 +14,12 @@ pwncat.egg-info/
 build/
 dist/
 
+# Ignore custom package builds
+share/pkg/blackarch
+share/pkg/brew
+share/pkg/nixos
+share/pkg/pentoo
+
 
 # --------------------------------------------------------------------------------------------------
 # Tests
