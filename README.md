@@ -17,6 +17,7 @@
 # pwncat
 
 [![](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Documentation Status](https://readthedocs.org/projects/pwn-cat/badge/?version=latest)](https://docs.pwncat.org/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/pwncat)](https://pypi.org/project/pwncat/)
 [![PyPI - Status](https://img.shields.io/pypi/status/pwncat)](https://pypi.org/project/pwncat/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pwncat)](https://pypi.org/project/pwncat/)

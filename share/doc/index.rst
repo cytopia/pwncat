@@ -18,6 +18,20 @@ Contents
 ========
 
 .. toctree::
-     :maxdepth: 3
+   :maxdepth: 3
 
-     installation
+   installation
+   usage
+
+.. toctree::
+   :caption: Features
+   :maxdepth: 2
+
+   pse
+
+.. toctree::
+   :caption: Code
+   :maxdepth: 2
+
+   code/api
+   code/coverage
