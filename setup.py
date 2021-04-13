@@ -13,11 +13,16 @@ setup(
     long_description_content_type="text/markdown",
     author="cytopia",
     author_email="cytopia@everythingcli.org",
-    url="https://github.com/cytopia/pwncat",
+    url="https://pwncat.org/",
     install_requires=[],
     scripts=[
         "bin/pwncat"
     ],
+    project_urls={
+        'Source Code': 'https://github.com/cytopia/pwncat',
+        'Documentation': 'https://docs.pwncat.org/',
+        'Bug Tracker': 'https://github.com/cytopia/pwncat/issues',
+    },
     classifiers=[
         # https://pypi.org/classifiers/
         #
