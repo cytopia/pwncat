@@ -505,7 +505,16 @@ _docs-man: $(BINPATH)$(BINNAME)
 		&& chown $${UID}:$${GID} $(MANPATH)$(BINNAME).1'
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add groff \
-		&& cat $(MANPATH)$(BINNAME).1 | groff -mandoc -Thtml | sed "s/.*CreationDate:.*//g" > $(DOCPATH)$(BINNAME).man.html \
+		&& cat $(MANPATH)$(BINNAME).1 \
+			| groff -mandoc -Thtml \
+			| sed "s/.*CreationDate:.*//g" \
+			| sed "s|<title>.*|<title>pwncat(1) - man page</title>|g" \
+			| sed "s|<head>|<head>\n<meta name=\"author\" content=\"cytopia\">|g" \
+			| sed "s|<head>|<head>\n<meta name=\"description\" content=\"pwncat - netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python (PSE)\">|g" \
+			| sed "s|<head>|<head>\n<meta name=\"keywords\" content=\"pwncat, reverse shell, bind shell, exploit, exploitation, proxy, port forwarding, self-inject\">|g" \
+			| sed "s|<h1.*|<h1 align=\"center\">PWNCAT: man page</h1>|g" \
+			| sed "s|pwncat</p>|a sophisticated bind and reverse shell handler with many features as well as a drop-in replacement or compatible complement to netcat, ncat or socat.</p>|g" \
+			> $(DOCPATH)$(BINNAME).man.html \
 		&& chown $${UID}:$${GID} $(DOCPATH)$(BINNAME).man.html'
 
 .PHONY: _docs-api
@@ -525,14 +534,34 @@ _docs-mypy_type_coverage:
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data -w /data -e UID=$(UID) -e GID=${GID} --entrypoint= cytopia/mypy sh -c ' \
 		mypy --config-file setup.cfg --html-report tmp $(BINPATH)$(BINNAME) \
 		&& cp -f tmp/mypy-html.css docs/css/mypy.css \
-		&& cat tmp/index.html \
-			| sed "s|mypy-html.css|css/mypy.css|g" \
-			| sed "s|<a.*</a>|bin/pwncat|g" \
-			> docs/pwncat.type.html \
+		\
 		&& cat tmp/html/bin/pwncat.html \
-			| sed "s|../../mypy-html.css|mypy.css|g" \
+			| grep -B 100000 "<body>" \
+			> tmp/part.html-head \
+		&& cat tmp/index.html \
+			| grep -A 100000 "<h1>" \
+			| grep -B 100000 "</table>" \
+			> tmp/part.html-coverage-table.html \
+		&& cat tmp/html/bin/pwncat.html \
+			| grep -A 100000 "<body>" \
+			| sed "s|<body>||g" \
 			| sed "s|__main__|pwncat|g" \
+			> tmp/part.html-content \
+		\
+		&& echo "<!DOCTYPE html>" \
+			> docs/pwncat.type.html \
+		&& cat tmp/part.html-head \
+			| sed "s|<html>|<html lang=\"en\">|g" \
+			| sed "s|../../mypy-html.css|css/mypy.css|g" \
+			| sed "s|<head>|<head>\n<title>pwncat - Type Coverage</title>|g" \
 			>> docs/pwncat.type.html \
+		&& cat tmp/part.html-coverage-table.html \
+			| sed "s|<a.*</a>|bin/pwncat|g" \
+			| sed "s|<h1>.*|<h1>pwncat - Type Coverage</h1>|g" \
+			>> docs/pwncat.type.html \
+		&& cat tmp/part.html-content \
+			>> docs/pwncat.type.html \
+		\
 		&& chown $${UID}:$${GID} docs/pwncat.type.html \
 		&& chown $${UID}:$${GID} docs/css/mypy.css \
 		&& rm -r tmp/'

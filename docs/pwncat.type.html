@@ -1,10 +1,12 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+<title>pwncat - Type Coverage</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="css/mypy.css">
 </head>
 <body>
-<h1>Mypy Type Check Coverage Summary</h1>
+<h1>pwncat - Type Coverage</h1>
 <table class="summary">
 <caption>Summary from index</caption>
 <thead><tr class="summary">
@@ -14,23 +16,16 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.00% imprecise</th>
+<th class="summary summary-precision">6.03% imprecise</th>
 <th class="summary summary-lines">6364 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.00% imprecise</td>
+<td class="summary summary-precision">6.03% imprecise</td>
 <td class="summary summary-lines">6364 LOC</td>
 </tr></tbody>
 </table>
-</body>
-</html>
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" type="text/css" href="mypy.css">
-</head>
-<body>
+
 <h2>pwncat</h2>
 <table>
 <caption>bin/pwncat</caption>
@@ -10096,7 +10091,8 @@ Explicit (x10)">        if not select.select([sys.stdin], [], [], self.__opts.in
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">        fild = sys.stdin.fileno()</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
-<span class="line-precise" title="No Anys on this line!">            mode = termios.tcgetattr(fild)</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Explicit (x3)">            mode = termios.tcgetattr(fild)</span>
 <span class="line-precise" title="No Anys on this line!">        except termios.error:</span>
 <span class="line-empty" title="No Anys on this line!">            # Not a TTY</span>
 <span class="line-precise" title="No Anys on this line!">            return False</span>
@@ -10106,7 +10102,8 @@ Explicit (x10)">        if not select.select([sys.stdin], [], [], self.__opts.in
 <span class="line-empty" title="No Anys on this line!">        # The setting of the ICANON canon flag in c_lflag determines whether</span>
 <span class="line-empty" title="No Anys on this line!">        # the terminal is operating in canonical mode (ICANON set) or</span>
 <span class="line-empty" title="No Anys on this line!">        # noncanonical (raw) mode (ICANON unset). By default, ICANON set.</span>
-<span class="line-precise" title="No Anys on this line!">        return mode[tty.LFLAG] != (mode[tty.LFLAG] | termios.ICANON)  # type: ignore</span>
+<span class="line-any" title="Any Types on this line: 
+Explicit (x6)">        return mode[tty.LFLAG] != (mode[tty.LFLAG] | termios.ICANON)  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def __read_stdin(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; bytes</span>
@@ -12072,7 +12069,8 @@ Explicit (x2)">    if args.udp_sconnect and not connect_mode:</span>
 <span class="line-precise" title="No Anys on this line!">def get_args():</span>
 <span class="line-empty" title="No Anys on this line!">    # type: () -&gt; argparse.Namespace</span>
 <span class="line-empty" title="No Anys on this line!">    """Retrieve command line arguments."""</span>
-<span class="line-precise" title="No Anys on this line!">    parser = argparse.ArgumentParser(</span>
+<span class="line-precise" title="Any Types on this line: 
+Explicit (x1)">    parser = argparse.ArgumentParser(</span>
 <span class="line-precise" title="No Anys on this line!">        formatter_class=argparse.RawTextHelpFormatter,</span>
 <span class="line-precise" title="No Anys on this line!">        add_help=False,</span>
 <span class="line-precise" title="No Anys on this line!">        usage="""%(prog)s [options] hostname port</span>
