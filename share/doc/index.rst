@@ -24,6 +24,13 @@ Contents
    usage
 
 .. toctree::
+   :caption: Usage
+   :maxdepth: 2
+
+   usage/reverse-shell
+   usage/bind-shell
+
+.. toctree::
    :caption: Features
    :maxdepth: 2
 

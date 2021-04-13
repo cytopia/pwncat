@@ -137,7 +137,7 @@
  </tbody>
 </table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 94.00%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.97%)</strong></sup><br/>
 > <sup>[2] <strong>Failing builds do not indicate broken functionality.</strong> Integration tests run for multiple hours and break sporadically for various different reasons (network timeouts, unknown cancellations of GitHub Actions, etc): <a href="https://github.com/actions/virtual-environments/issues/736">#735</a>, <a href="https://github.com/actions/virtual-environments/issues/841">#841</a></sup><br/>
 > <sup></sup>
 
