@@ -29,6 +29,8 @@ Contents
 
    usage/reverse-shell
    usage/bind-shell
+   usage/local-port-forwarding
+   usage/remote-port-forwarding
 
 .. toctree::
    :caption: Features
