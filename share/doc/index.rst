@@ -24,7 +24,7 @@ Contents
    usage
 
 .. toctree::
-   :caption: Usage
+   :caption: Basic Usage
    :maxdepth: 2
 
    usage/reverse-shell
@@ -45,3 +45,9 @@ Contents
 
    code/api
    code/coverage
+
+.. toctree::
+   :caption: FAQ
+   :maxdepth: 2
+
+   faq
