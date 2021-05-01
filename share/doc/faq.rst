@@ -13,7 +13,7 @@ General
 
 How to install pwncat?
 ----------------------
-   ``pwncat`` is available in most Linux distributions (e.g. Kali Linux), on MacOS and via pip.
+   `pwncat <https://github.com/cytopia/pwncat>`_ is available on most Linux distributions (e.g. Kali Linux), on MacOS via `homebrew <https://formulae.brew.sh/formula/pwncat>`_ and via `pip <https://pypi.org/project/pwncat/>`_.
    See :doc:`installation` for detailed instructions.
 
 
@@ -39,7 +39,7 @@ Terminology
 
 What is pwncat?
 ---------------
-   ``pwncat`` is a sophisticated bind and reverse shell handler with many features as well as a drop-in replacement or compatible complement to netcat , ncat or socat.
+   `pwncat <https://github.com/cytopia/pwncat>`_ is a sophisticated bind and reverse shell handler with many features as well as a drop-in replacement or compatible complement to netcat , ncat or socat.
 
    It comes with a Python Scripting Engine (PSE) that allows you to manipulate incoming and outgoing traffic to your needs. This can reach from wrapping current TCP/UDP traffic into higher protocols such as HTTP, FTP, Telnet, etc or even go to encrypting and decrypting your traffic.
 
