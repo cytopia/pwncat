@@ -26,9 +26,9 @@ copyright = u'2020, cytopia'
 author = u'cytopia'
 
 # The short X.Y version
-version = u'0.1.1'
+#version = u'0.1.1'
 # The full version, including alpha/beta/rc tags
-release = u'0.1.1'
+#release = u'0.1.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -134,7 +134,7 @@ html_theme_options = {
     'canonical_url': '',
     'analytics_id': '',
     'logo_only': False,
-    'display_version': True,
+    'display_version': False,
     'prev_next_buttons_location': 'bottom',
     #'style_external_links': True,
     #'vcs_pageview_mode': '',
