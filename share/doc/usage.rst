@@ -3,7 +3,7 @@ Usage
 *****
 
 
-.. code-block:: bash
+.. code-block:: console
 
    usage: pwncat [options] hostname port
           pwncat [options] -l [hostname] port

@@ -31,6 +31,7 @@ Contents
    usage/bind-shell
    usage/local-port-forwarding
    usage/remote-port-forwarding
+   usage/send-receive-files
 
 .. toctree::
    :caption: Features
