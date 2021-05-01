@@ -65,6 +65,8 @@
    </a>
 
 
+.. _installation:
+
 ************
 Installation
 ************
@@ -78,7 +80,7 @@ Installation
 Generic Installation
 ====================
 
-``pwncat`` can be installed easily via ``pip`` on **BSD**, **Linux**, **MacOS** or **Windows**.
+``pwncat`` can be installed easily via `pip <https://pypi.org/project/pwncat/>`_ on **BSD**, **Linux**, **MacOS** or **Windows**.
 
 
 .. list-table::
@@ -163,7 +165,13 @@ MacOS
 Windows
 -------
 
-There is currently no specific package for Windows. If you want to package it, please contact me.
+There is currently no package for Windows, so you are adviced to install it via `pip <https://pypi.org/project/pwncat/>`_. If you want to package it, please contact me.
+
+
+\*BSD
+-----
+
+There is currently no package for \*BSD, so you are adviced to install it via `pip <https://pypi.org/project/pwncat/>`_. If you want to package it, please contact me.
 
 
 
