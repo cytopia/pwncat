@@ -7,7 +7,7 @@ pwncat documentation
 ..
   |img_banner|
 
-pwncat is a fully compatible netcat fork written in Python with many more aggressive network features on top.
+`pwncat <https://github.com/cytopia/pwncat>`_ is a fully compatible netcat fork written in Python with many more aggressive network features on top.
 
 It comes with a **Python Scripting Engine** (PSE) that allows you to manipulate incoming and outgoing traffic to your needs. This can reach from wrapping current TCP/UDP traffic into higher protocols such as HTTP, FTP, Telnet, etc or even go to encrypting and decrypting your traffic.
 
@@ -47,7 +47,7 @@ Contents
    code/coverage
 
 .. toctree::
-   :caption: FAQ
+   :caption: Misc
    :maxdepth: 2
 
    faq

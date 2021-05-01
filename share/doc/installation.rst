@@ -1,3 +1,9 @@
+.. |img_lnk_logo_github| raw:: html
+
+   <a title="pwncat GitHub" target="_blank" href="https://github.com/cytopia/pwncat">
+     <img src="https://raw.githubusercontent.com/cytopia/icons/master/64x64/github.png" />
+   </a>
+
 .. |img_lnk_logo_pip| raw:: html
 
    <a title="Install pwncat on BSD, Linux, MacOS or Windows with Python Pip" target="_blank" href="https://pypi.org/project/pwncat/">
@@ -80,17 +86,20 @@ Installation
 Generic Installation
 ====================
 
-``pwncat`` can be installed easily via `pip <https://pypi.org/project/pwncat/>`_ on **BSD**, **Linux**, **MacOS** or **Windows**.
+`pwncat <https://github.com/cytopia/pwncat>`_ can be installed easily via `pip <https://pypi.org/project/pwncat/>`_ or from `GitHub <https://github.com/cytopia/pwncat>`_ on **BSD**, **Linux**, **MacOS** or **Windows**.
 
 
 .. list-table::
-   :widths: 25
+   :widths: 25 25
    :header-rows: 1
    :class: install
 
    * - Pip
+     - GitHub
    * - |img_lnk_logo_pip|
+     - |img_lnk_logo_github|
    * - ``pip install pwncat``
+     - `cytopia/pwncat <https://github.com/cytopia/pwncat>`_
 
 
 Specific Installation
@@ -165,13 +174,13 @@ MacOS
 Windows
 -------
 
-There is currently no package for Windows, so you are adviced to install it via `pip <https://pypi.org/project/pwncat/>`_. If you want to package it, please contact me.
+There is currently no package for Windows, so you are adviced to install it via `pip <https://pypi.org/project/pwncat/>`_ or `GitHub <https://github.com/cytopia/pwncat>`_. If you want to package it, please contact me.
 
 
 \*BSD
 -----
 
-There is currently no package for \*BSD, so you are adviced to install it via `pip <https://pypi.org/project/pwncat/>`_. If you want to package it, please contact me.
+There is currently no package for \*BSD, so you are adviced to install it via `pip <https://pypi.org/project/pwncat/>`_ or `GitHub <https://github.com/cytopia/pwncat>`_. If you want to package it, please contact me.
 
 
 
