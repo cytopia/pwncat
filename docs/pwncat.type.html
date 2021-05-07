@@ -16,13 +16,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.03% imprecise</th>
-<th class="summary summary-lines">6364 LOC</th>
+<th class="summary summary-precision">6.04% imprecise</th>
+<th class="summary summary-lines">6361 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.03% imprecise</td>
-<td class="summary summary-lines">6364 LOC</td>
+<td class="summary summary-precision">6.04% imprecise</td>
+<td class="summary summary-lines">6361 LOC</td>
 </tr></tbody>
 </table>
 
@@ -6391,9 +6391,6 @@
 <span id="L6359" class="lineno"><a class="lineno" href="#L6359">6359</a></span>
 <span id="L6360" class="lineno"><a class="lineno" href="#L6360">6360</a></span>
 <span id="L6361" class="lineno"><a class="lineno" href="#L6361">6361</a></span>
-<span id="L6362" class="lineno"><a class="lineno" href="#L6362">6362</a></span>
-<span id="L6363" class="lineno"><a class="lineno" href="#L6363">6363</a></span>
-<span id="L6364" class="lineno"><a class="lineno" href="#L6364">6364</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -9920,17 +9917,15 @@ Explicit (x1)">                    port,</span>
 <span class="line-empty" title="No Anys on this line!">        # For issues with flush (when using tail -F or equal) see links below:</span>
 <span class="line-empty" title="No Anys on this line!">        # https://stackoverflow.com/questions/26692284</span>
 <span class="line-empty" title="No Anys on this line!">        # https://docs.python.org/3/library/signal.html#note-on-sigpipe</span>
-<span class="line-precise" title="No Anys on this line!">        self.__screen_lock.acquire()</span>
-<span class="line-precise" title="No Anys on this line!">        print(StringEncoder.decode(data))</span>
-<span class="line-empty" title="No Anys on this line!">        try:</span>
-<span class="line-precise" title="No Anys on this line!">            sys.stdout.flush()</span>
-<span class="line-precise" title="No Anys on this line!">        except IOError:</span>
-<span class="line-empty" title="No Anys on this line!">            # Python flushes standard streams on exit; redirect remaining output</span>
-<span class="line-empty" title="No Anys on this line!">            # to devnull to avoid another broken pipe at shutdown</span>
-<span class="line-precise" title="No Anys on this line!">            devnull = os.open(os.devnull, os.O_WRONLY)</span>
-<span class="line-precise" title="No Anys on this line!">            os.dup2(devnull, sys.stdout.fileno())</span>
-<span class="line-empty" title="No Anys on this line!">        finally:</span>
-<span class="line-precise" title="No Anys on this line!">            self.__screen_lock.release()</span>
+<span class="line-precise" title="No Anys on this line!">        with self.__screen_lock:</span>
+<span class="line-precise" title="No Anys on this line!">            print(StringEncoder.decode(data))</span>
+<span class="line-empty" title="No Anys on this line!">            try:</span>
+<span class="line-precise" title="No Anys on this line!">                sys.stdout.flush()</span>
+<span class="line-precise" title="No Anys on this line!">            except IOError:</span>
+<span class="line-empty" title="No Anys on this line!">                # Python flushes standard streams on exit; redirect remaining output</span>
+<span class="line-empty" title="No Anys on this line!">                # to devnull to avoid another broken pipe at shutdown</span>
+<span class="line-precise" title="No Anys on this line!">                devnull = os.open(os.devnull, os.O_WRONLY)</span>
+<span class="line-precise" title="No Anys on this line!">                os.dup2(devnull, sys.stdout.fileno())</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">    def interrupt(self):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: () -&gt; None</span>
@@ -10177,7 +10172,7 @@ Explicit (x4)">        self.log.debug("Setting '%s' as executable", self.__opts.
 <span class="line-precise" title="No Anys on this line!">        env = os.environ.copy()</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x19)">            self.proc = Popen(</span>
+Explicit (x19)">            self.proc = Popen(  # pylint: disable=consider-using-with</span>
 <span class="line-precise" title="No Anys on this line!">                self.__opts.executable,</span>
 <span class="line-precise" title="No Anys on this line!">                stdin=PIPE,</span>
 <span class="line-precise" title="No Anys on this line!">                stdout=PIPE,</span>
@@ -10237,7 +10232,7 @@ Error (x2)">                    self.log.trace("COMMAND-QUIT signal ACK IOComman
 <span class="line-any" title="Any Types on this line: 
 Explicit (x4)">                self.log.error("COMMAND-EOF restarting: %s", self.__opts.executable)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x19)">                self.proc = Popen(</span>
+Explicit (x19)">                self.proc = Popen(  # pylint: disable=consider-using-with</span>
 <span class="line-precise" title="No Anys on this line!">                    self.__opts.executable,</span>
 <span class="line-precise" title="No Anys on this line!">                    stdin=PIPE,</span>
 <span class="line-precise" title="No Anys on this line!">                    stdout=PIPE,</span>
@@ -11829,9 +11824,8 @@ Explicit (x1)">        with open(lpath, "r") as fhandle:</span>
 <span class="line-precise" title="No Anys on this line!">        if not os.path.isfile(value):</span>
 <span class="line-precise" title="No Anys on this line!">            raise argparse.ArgumentTypeError("File not found: %s" % value)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">        fhandle = open(value, mode="r")</span>
-<span class="line-precise" title="No Anys on this line!">        script = fhandle.read()</span>
-<span class="line-precise" title="No Anys on this line!">        fhandle.close()</span>
+Explicit (x1)">        with open(value, mode="r") as fhandle:</span>
+<span class="line-precise" title="No Anys on this line!">            script = fhandle.read()</span>
 <span class="line-precise" title="No Anys on this line!">        return script</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    # --------------------------------------------------------------------------</span>

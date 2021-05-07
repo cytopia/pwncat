@@ -3366,17 +3366,15 @@ class IONetworkScanner(IO):
         # For issues with flush (when using tail -F or equal) see links below:
         # https://stackoverflow.com/questions/26692284
         # https://docs.python.org/3/library/signal.html#note-on-sigpipe
-        self.__screen_lock.acquire()
-        print(StringEncoder.decode(data))
-        try:
-            sys.stdout.flush()
-        except IOError:
-            # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another broken pipe at shutdown
-            devnull = os.open(os.devnull, os.O_WRONLY)
-            os.dup2(devnull, sys.stdout.fileno())
-        finally:
-            self.__screen_lock.release()
+        with self.__screen_lock:
+            print(StringEncoder.decode(data))
+            try:
+                sys.stdout.flush()
+            except IOError:
+                # Python flushes standard streams on exit; redirect remaining output
+                # to devnull to avoid another broken pipe at shutdown
+                devnull = os.open(os.devnull, os.O_WRONLY)
+                os.dup2(devnull, sys.stdout.fileno())
 
     def interrupt(self):
         # type: () -&gt; None
@@ -3605,7 +3603,7 @@ class IOCommand(IO):
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
-            self.proc = Popen(
+            self.proc = Popen(  # pylint: disable=consider-using-with
                 self.__opts.executable,
                 stdin=PIPE,
                 stdout=PIPE,
@@ -3656,7 +3654,7 @@ class IOCommand(IO):
                 # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;&#39;
                 # Afterwards the shell is corrupt and gone so we will restart it here.
                 self.log.error(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
-                self.proc = Popen(
+                self.proc = Popen(  # pylint: disable=consider-using-with
                     self.__opts.executable,
                     stdin=PIPE,
                     stdout=PIPE,
@@ -5180,9 +5178,8 @@ class ArgValidator(object):
         &#34;&#34;&#34;Check argument for valid file content (file must exist and be readable).&#34;&#34;&#34;
         if not os.path.isfile(value):
             raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
-        fhandle = open(value, mode=&#34;r&#34;)
-        script = fhandle.read()
-        fhandle.close()
+        with open(value, mode=&#34;r&#34;) as fhandle:
+            script = fhandle.read()
         return script
 
     # --------------------------------------------------------------------------
@@ -7539,9 +7536,8 @@ The default is to send a null byte sting: &#39;\\0&#39;.
         &#34;&#34;&#34;Check argument for valid file content (file must exist and be readable).&#34;&#34;&#34;
         if not os.path.isfile(value):
             raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
-        fhandle = open(value, mode=&#34;r&#34;)
-        script = fhandle.read()
-        fhandle.close()
+        with open(value, mode=&#34;r&#34;) as fhandle:
+            script = fhandle.read()
         return script
 
     # --------------------------------------------------------------------------
@@ -7733,9 +7729,8 @@ def type_file_content(value):
     &#34;&#34;&#34;Check argument for valid file content (file must exist and be readable).&#34;&#34;&#34;
     if not os.path.isfile(value):
         raise argparse.ArgumentTypeError(&#34;File not found: %s&#34; % value)
-    fhandle = open(value, mode=&#34;r&#34;)
-    script = fhandle.read()
-    fhandle.close()
+    with open(value, mode=&#34;r&#34;) as fhandle:
+        script = fhandle.read()
     return script</code></pre>
 </details>
 </dd>
@@ -11261,7 +11256,7 @@ def producer(self, *args, **kwargs):
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
-            self.proc = Popen(
+            self.proc = Popen(  # pylint: disable=consider-using-with
                 self.__opts.executable,
                 stdin=PIPE,
                 stdout=PIPE,
@@ -11312,7 +11307,7 @@ def producer(self, *args, **kwargs):
                 # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;&#39;
                 # Afterwards the shell is corrupt and gone so we will restart it here.
                 self.log.error(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
-                self.proc = Popen(
+                self.proc = Popen(  # pylint: disable=consider-using-with
                     self.__opts.executable,
                     stdin=PIPE,
                     stdout=PIPE,
@@ -11471,7 +11466,7 @@ def producer(self, *args, **kwargs):
             # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;&#39;
             # Afterwards the shell is corrupt and gone so we will restart it here.
             self.log.error(&#34;COMMAND-EOF restarting: %s&#34;, self.__opts.executable)
-            self.proc = Popen(
+            self.proc = Popen(  # pylint: disable=consider-using-with
                 self.__opts.executable,
                 stdin=PIPE,
                 stdout=PIPE,
@@ -12278,17 +12273,15 @@ def net(self):
         # For issues with flush (when using tail -F or equal) see links below:
         # https://stackoverflow.com/questions/26692284
         # https://docs.python.org/3/library/signal.html#note-on-sigpipe
-        self.__screen_lock.acquire()
-        print(StringEncoder.decode(data))
-        try:
-            sys.stdout.flush()
-        except IOError:
-            # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another broken pipe at shutdown
-            devnull = os.open(os.devnull, os.O_WRONLY)
-            os.dup2(devnull, sys.stdout.fileno())
-        finally:
-            self.__screen_lock.release()
+        with self.__screen_lock:
+            print(StringEncoder.decode(data))
+            try:
+                sys.stdout.flush()
+            except IOError:
+                # Python flushes standard streams on exit; redirect remaining output
+                # to devnull to avoid another broken pipe at shutdown
+                devnull = os.open(os.devnull, os.O_WRONLY)
+                os.dup2(devnull, sys.stdout.fileno())
 
     def interrupt(self):
         # type: () -&gt; None
@@ -12343,17 +12336,15 @@ def net(self):
     # For issues with flush (when using tail -F or equal) see links below:
     # https://stackoverflow.com/questions/26692284
     # https://docs.python.org/3/library/signal.html#note-on-sigpipe
-    self.__screen_lock.acquire()
-    print(StringEncoder.decode(data))
-    try:
-        sys.stdout.flush()
-    except IOError:
-        # Python flushes standard streams on exit; redirect remaining output
-        # to devnull to avoid another broken pipe at shutdown
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        os.dup2(devnull, sys.stdout.fileno())
-    finally:
-        self.__screen_lock.release()</code></pre>
+    with self.__screen_lock:
+        print(StringEncoder.decode(data))
+        try:
+            sys.stdout.flush()
+        except IOError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another broken pipe at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())</code></pre>
 </details>
 </dd>
 <dt id="pwncat.IONetworkScanner.interrupt"><code class="name flex">

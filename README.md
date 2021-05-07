@@ -1,8 +1,8 @@
+**[Docs](#closed_book-documentation)** |
 **[Install](#tada-install)** |
 **[TL;DR](#coffee-tldr)** |
 **[Features](#star-features)** |
 **[Behaviour](#cop-behaviour)** |
-**[Docs](#closed_book-documentation)** |
 **[Usage](#computer-usage)** |
 **[Examples](#bulb-examples)** |
 **[FAQ](#information_source-faq)** |
@@ -30,7 +30,7 @@
 
 
 > &nbsp;
-> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)).
+> #### Netcat on steroids with Firewall, IDS/IPS evasion, bind and reverse shell, self-injecting shell and port forwarding magic - and its fully scriptable with Python ([PSE](pse/)). - [docs.pwncat.org](https://docs.pwncat.org)
 > &nbsp;
 
 
@@ -137,7 +137,7 @@
  </tbody>
 </table>
 
-> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.97%)</strong></sup><br/>
+> <sup>[1] <a href="https://cytopia.github.io/pwncat/pwncat.type.html">mypy type coverage</a> <strong>(fully typed: 93.96%)</strong></sup><br/>
 > <sup>[2] <strong>Failing builds do not indicate broken functionality.</strong> Integration tests run for multiple hours and break sporadically for various different reasons (network timeouts, unknown cancellations of GitHub Actions, etc): <a href="https://github.com/actions/virtual-environments/issues/736">#735</a>, <a href="https://github.com/actions/virtual-environments/issues/841">#841</a></sup><br/>
 > <sup></sup>
 
@@ -152,6 +152,16 @@ Ever were in need of a quick port forwarding?<br/>
 Apart from that the current features of `nc`, `ncat` or `socat` just didn't feed my needs and I also wanted to have a single
 tool that works on older and newer machines (hence Python 2+3 compat). Most importantly I wanted to have it in a language that I can understand and provide my own features with.
 (Wait for it, binary releases for Linux, MacOS and Windows will come shortly).
+
+
+## :closed_book: Documentation
+
+| Pwncat docs     | Link |
+|:----------------|:-----|
+| Official documentation | [https://docs.pwncat.org](https://docs.pwncat.org) |
+| Official website | [https://pwncat.org](https://pwncat.org) |
+| API documentation | [https://pwncat.org/pwncat.api.html](https://pwncat.org/pwncat.api.html) |
+| Pwncat Scripting Engine | [PSE](https://github.com/cytopia/pwncat/tree/master/pse) |
 
 
 ## :tada: Install
@@ -440,16 +450,6 @@ pwncat -u localhost 4444 < input.txt
 
 There are many ways to alter this default behaviour. Have a look at the [usage](#computer-usage)
 section for more advanced settings.
-
-
-## :closed_book: Documentation
-
-Documentation will evolve over time.
-
-* API docs can be found here: [pwncat.api.html](https://cytopia.github.io/pwncat/pwncat.api.html)
-* Python type coverage can be found here: [pwncat.type.html](https://cytopia.github.io/pwncat/pwncat.type.html)
-* HTML man page can be found here: [pwncat.man.html](https://cytopia.github.io/pwncat/pwncat.man.html)
-* Raw man page can be found here: [pwncat.1](man/pwncat.1)
 
 
 ## :computer: Usage
@@ -1383,6 +1383,8 @@ sys     0m4.794s
 
 ## :information_source: FAQ
 
+**See complete FAQ here:** https://docs.pwncat.org/en/latest/faq.html
+
 **Q**: Is `pwncat` compatible with `netcat`?
 
 **A**: Yes, it is fully compatible in the way it behaves in connect, listen and zero-i/o mode.
@@ -1449,6 +1451,7 @@ Below is a list of sec tools and docs I am maintaining.
 | **[smtp-user-enum]** | Enumeration          | Python 2+3 | SMTP users enumerator |
 | **[urlbuster]**      | Enumeration          | Python 2+3 | Mutable web directory fuzzer |
 | **[pwncat]**         | Pivoting             | Python 2+3 | Cross-platform netcat on steroids |
+| **[kusanagi]**       | Payload Generator    | Python 3   | Bind- and Reverse shell payload generator |
 | **[badchars]**       | Reverse Engineering  | Python 2+3 | Badchar generator |
 | **[fuzza]**          | Reverse Engineering  | Python 2+3 | TCP fuzzing tool |
 | **[docker-dvwa]**    | Playground           | PHP        | DVWA with local priv esc challenges |
@@ -1458,6 +1461,7 @@ Below is a list of sec tools and docs I am maintaining.
 [smtp-user-enum]: https://github.com/cytopia/smtp-user-enum
 [urlbuster]: https://github.com/cytopia/urlbuster
 [pwncat]: https://github.com/cytopia/pwncat
+[kusanagi]: https://github.com/cytopia/kusanagi
 [badchars]: https://github.com/cytopia/badchars
 [fuzza]: https://github.com/cytopia/fuzza
 [docker-dvwa]: https://github.com/cytopia/docker-dvwa
