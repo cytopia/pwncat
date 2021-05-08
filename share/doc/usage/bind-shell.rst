@@ -3,6 +3,11 @@ Bind Shell
 **********
 
 
+.. note::
+
+   :ref:`what_is_a_bind_shell`
+
+
 TCP Bind shell
 ==============
 

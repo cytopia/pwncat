@@ -3,6 +3,11 @@ Reverse Shell
 *************
 
 
+.. note::
+
+   :ref:`what_is_a_reverse_shell`
+
+
 TCP Reverse shell
 =================
 
