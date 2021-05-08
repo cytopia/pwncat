@@ -48,11 +48,14 @@ What is netcat?
 ---------------
    netcat is a computer networking utility for reading from and writing to network connections using TCP or UDP. The command is designed to be a dependable back-end that can be used directly or easily driven by other programs and scripts. At the same time, it is a feature-rich network debugging and investigation tool, since it can produce almost any kind of connection its user could need and has a number of built-in capabilities. `[1] <https://en.wikipedia.org/wiki/Netcat>`_
 
+.. _what_is_a_reverse_shell:
 
 What is a reverse shell?
 ------------------------
    A reverse shell is a type of shell that is initiated from a victim's computer to connect with attacker's computer. Once the connection is established, it allows attacker to send over commands to execute on the victim's computer and to get results back. `[2] <https://triagingx.com/img/website_images/resource_images/776444019_detectreverseshell.pdf>`_
 
+
+.. _what_is_a_bind_shell:
 
 What is a bind shell?
 ---------------------

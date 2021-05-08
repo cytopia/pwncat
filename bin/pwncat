@@ -3337,17 +3337,15 @@ class IONetworkScanner(IO):
         # For issues with flush (when using tail -F or equal) see links below:
         # https://stackoverflow.com/questions/26692284
         # https://docs.python.org/3/library/signal.html#note-on-sigpipe
-        self.__screen_lock.acquire()
-        print(StringEncoder.decode(data))
-        try:
-            sys.stdout.flush()
-        except IOError:
-            # Python flushes standard streams on exit; redirect remaining output
-            # to devnull to avoid another broken pipe at shutdown
-            devnull = os.open(os.devnull, os.O_WRONLY)
-            os.dup2(devnull, sys.stdout.fileno())
-        finally:
-            self.__screen_lock.release()
+        with self.__screen_lock:
+            print(StringEncoder.decode(data))
+            try:
+                sys.stdout.flush()
+            except IOError:
+                # Python flushes standard streams on exit; redirect remaining output
+                # to devnull to avoid another broken pipe at shutdown
+                devnull = os.open(os.devnull, os.O_WRONLY)
+                os.dup2(devnull, sys.stdout.fileno())
 
     def interrupt(self):
         # type: () -> None
@@ -3576,7 +3574,7 @@ class IOCommand(IO):
         # Open executable to wait for commands
         env = os.environ.copy()
         try:
-            self.proc = Popen(
+            self.proc = Popen(  # pylint: disable=consider-using-with
                 self.__opts.executable,
                 stdin=PIPE,
                 stdout=PIPE,
@@ -3627,7 +3625,7 @@ class IOCommand(IO):
                 # which then responds with: /bin/sh: line 5: syntax error near unexpected token `;'
                 # Afterwards the shell is corrupt and gone so we will restart it here.
                 self.log.error("COMMAND-EOF restarting: %s", self.__opts.executable)
-                self.proc = Popen(
+                self.proc = Popen(  # pylint: disable=consider-using-with
                     self.__opts.executable,
                     stdin=PIPE,
                     stdout=PIPE,
@@ -5151,9 +5149,8 @@ class ArgValidator(object):
         """Check argument for valid file content (file must exist and be readable)."""
         if not os.path.isfile(value):
             raise argparse.ArgumentTypeError("File not found: %s" % value)
-        fhandle = open(value, mode="r")
-        script = fhandle.read()
-        fhandle.close()
+        with open(value, mode="r") as fhandle:
+            script = fhandle.read()
         return script
 
     # --------------------------------------------------------------------------

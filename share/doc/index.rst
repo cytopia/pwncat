@@ -32,6 +32,7 @@ Contents
    usage/local-port-forwarding
    usage/remote-port-forwarding
    usage/send-receive-files
+   usage/portscanning
 
 .. toctree::
    :caption: Features
@@ -51,3 +52,5 @@ Contents
    :maxdepth: 2
 
    faq
+   github
+   pypi

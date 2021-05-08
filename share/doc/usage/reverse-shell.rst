@@ -3,6 +3,14 @@ Reverse Shell
 *************
 
 
+.. note::
+
+   :ref:`what_is_a_reverse_shell`
+
+
+``pwncat`` will by default connect to both, IPv4 and IPv6 and initiate a successful connection to whatever protocol is available.
+
+
 TCP Reverse shell
 =================
 
