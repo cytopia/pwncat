@@ -19,4 +19,3 @@ You can find ``pwncat`` on the Python Packe Index here:
    * - PyPI
    * - |img_lnk_logo_pip|
    * - `pypi.org/project/pwncat <https://pypi.org/project/pwncat/>`_
-
