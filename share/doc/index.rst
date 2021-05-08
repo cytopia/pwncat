@@ -52,3 +52,5 @@ Contents
    :maxdepth: 2
 
    faq
+   github
+   pypi
