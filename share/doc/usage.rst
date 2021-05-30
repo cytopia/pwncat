@@ -211,7 +211,7 @@ Usage
    listen mode arguments:
      -k, --keep-open       Listen mode (TCP only):
                            Re-accept new clients in listen mode after a client has
-                           disconnected or the connection is unterrupted otherwise.
+                           disconnected or the connection is interrupted otherwise.
                            (default: server will quit after connection is gone)
 
      --rebind [x]          Listen mode (TCP and UDP):
