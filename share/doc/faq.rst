@@ -11,6 +11,11 @@ FAQ
 General
 =======
 
+What is pwncat?
+---------------
+   `pwncat <https://github.com/cytopia/pwncat>`_ is a fully compatible ``netcat`` fork written in Python with additional offensive network features on top.
+
+
 How to install pwncat?
 ----------------------
    `pwncat <https://github.com/cytopia/pwncat>`_ is available on most Linux distributions (e.g. Kali Linux), on MacOS via `homebrew <https://formulae.brew.sh/formula/pwncat>`_ and via `pip <https://pypi.org/project/pwncat/>`_.
