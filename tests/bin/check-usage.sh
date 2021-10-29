@@ -20,7 +20,7 @@ validate_readme() {
 	printf "[TEST] Checking README.md ... "
 	# shellcheck disable=SC2002
 	if diff --ignore-trailing-space \
-		<("${bin}" -h) \
+		<($(which python2) "${bin}" -h) \
 		<(cat "${readme}" | grep -E -A 10000 'usage:[[:space:]]' | grep -E -B 10000 '^[[:space:]]+\-V') \
 		; then
 		printf "%s\\n" "OK"
@@ -35,7 +35,7 @@ _diff_website() {
 	local next_arg="${2}"
 
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
-		<("${bin}" -h | grep "^${curr_arg}" -A 2000 | grep "^${next_arg}" -B 2000 | grep -v "^${next_arg}" ) \
+		<($(which python2) "${bin}" -h | grep "^${curr_arg}" -A 2000 | grep "^${next_arg}" -B 2000 | grep -v "^${next_arg}" ) \
 		<(grep "^${curr_arg}" -A 2000 "${website}"  | grep "^${next_arg}" -B 2000 | grep -v "^${next_arg}" | grep -v '<pre' | grep -v '</pre>') \
 		; then
 		printf "%s\\n" "ERROR - usage"
@@ -92,7 +92,7 @@ validate_website() {
 
 	# [6/5] Check misc arguments:
 	if ! diff --ignore-trailing-space --ignore-blank-lines \
-		<("${bin}" -h | grep 'misc arguments' -A 2000 | grep '\-\-version' -B 2000) \
+		<($(which python2) "${bin}" -h | grep 'misc arguments' -A 2000 | grep '\-\-version' -B 2000) \
 		<(grep 'misc arguments' -A 2000 "${website}" | grep '\-\-version' -B 2000) \
 		; then
 		printf "%s\\n" "ERROR - misc arguments"
