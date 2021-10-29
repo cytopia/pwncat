@@ -4,6 +4,12 @@
 ## Unreleased
 
 
+## Release 0.1.2
+
+### Fixes
+- Fixes: [#109](https://github.com/cytopia/pwncat/issues/109) when pasting in term I donot get full line echo
+
+
 ## Release 0.1.1
 
 ### Fixes
