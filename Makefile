@@ -151,6 +151,7 @@ _code-pycodestyle:
 	echo "# Check pycodestyle: $${V}"; \
 	echo "# -------------------------------------------------------------------- #"
 	@#
+	docker pull cytopia/pycodestyle
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pycodestyle sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
@@ -163,6 +164,7 @@ _code-pydocstyle:
 	echo "# Check pydocstyle: $${V}"; \
 	echo "# -------------------------------------------------------------------- #"
 	@#
+	docker pull cytopia/pydocstyle
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pydocstyle sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
@@ -175,6 +177,7 @@ _code-pylint:
 	echo "# Check pylint: $${V}"; \
 	echo "# -------------------------------------------------------------------- #"
 	@#
+	docker pull cytopia/pylint
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data --entrypoint= cytopia/pylint sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
@@ -187,6 +190,7 @@ _code-black:
 	echo "# Check Python Black: $${V}"; \
 	echo "# -------------------------------------------------------------------- #"
 	@#
+	docker pull cytopia/black
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data --entrypoint= cytopia/black sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
@@ -199,6 +203,7 @@ _code-mypy:
 	echo "# Check Mypy: $${V}"; \
 	echo "# -------------------------------------------------------------------- #"
 	@#
+	docker pull cytopia/mypy
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data --entrypoint= cytopia/mypy sh -c ' \
 		mkdir -p /tmp \
 		&& cp $(BINPATH)$(BINNAME) /tmp/$(BINNAME).py \
@@ -499,6 +504,7 @@ docs: _docs-version_readme
 
 .PHONY: _docs-man
 _docs-man: $(BINPATH)$(BINNAME)
+	docker pull python:3-alpine
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		apk add help2man \
 		&& help2man -n $(BINNAME) --no-info --source=https://github.com/cytopia/pwncat -s 1 -o $(MANPATH)$(BINNAME).1 $(BINPATH)$(BINNAME) \
@@ -520,6 +526,7 @@ _docs-man: $(BINPATH)$(BINNAME)
 .PHONY: _docs-api
 _docs-api:
 	@# Generate pdoc API page
+	docker pull python:3-alpine
 	docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data -w /data -e UID=$(UID) -e GID=${GID} python:3-alpine sh -c ' \
 		pip install pdoc3 \
 		&& mkdir -p /tmp \
@@ -531,6 +538,8 @@ _docs-api:
 .PHONY: _docs-mypy_type_coverage
 _docs-mypy_type_coverage:
 	@# Generate mypy code coverage page
+	docker pull cytopia/mypy
+	docker pull python:3-alpine
 	docker run --rm $$(tty -s && echo "-it" || echo) -v ${PWD}:/data -w /data -e UID=$(UID) -e GID=${GID} --entrypoint= cytopia/mypy sh -c ' \
 		mypy --config-file setup.cfg --html-report tmp $(BINPATH)$(BINNAME) \
 		&& cp -f tmp/mypy-html.css docs/css/mypy.css \
