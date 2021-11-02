@@ -16,13 +16,13 @@
 </tr></thead>
 <tfoot><tr class="summary summary-quality-1">
 <th class="summary summary-filename">Total</th>
-<th class="summary summary-precision">6.04% imprecise</th>
-<th class="summary summary-lines">6361 LOC</th>
+<th class="summary summary-precision">6.00% imprecise</th>
+<th class="summary summary-lines">6364 LOC</th>
 </tr></tfoot>
 <tbody><tr class="summary summary-quality-1">
 <td class="summary summary-filename">bin/pwncat</td>
-<td class="summary summary-precision">6.04% imprecise</td>
-<td class="summary summary-lines">6361 LOC</td>
+<td class="summary summary-precision">6.00% imprecise</td>
+<td class="summary summary-lines">6364 LOC</td>
 </tr></tbody>
 </table>
 
@@ -6391,6 +6391,9 @@
 <span id="L6359" class="lineno"><a class="lineno" href="#L6359">6359</a></span>
 <span id="L6360" class="lineno"><a class="lineno" href="#L6360">6360</a></span>
 <span id="L6361" class="lineno"><a class="lineno" href="#L6361">6361</a></span>
+<span id="L6362" class="lineno"><a class="lineno" href="#L6362">6362</a></span>
+<span id="L6363" class="lineno"><a class="lineno" href="#L6363">6363</a></span>
+<span id="L6364" class="lineno"><a class="lineno" href="#L6364">6364</a></span>
 </pre></td>
 <td class="table-code"><pre><span class="line-empty" title="No Anys on this line!">#!/usr/bin/env python3</span>
 <span class="line-empty" title="No Anys on this line!">"""pwncat."""</span>
@@ -6522,7 +6525,7 @@
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-precise" title="No Anys on this line!">APPNAME = "pwncat"</span>
 <span class="line-precise" title="No Anys on this line!">APPREPO = "https://github.com/cytopia/pwncat"</span>
-<span class="line-precise" title="No Anys on this line!">VERSION = "0.1.1"</span>
+<span class="line-precise" title="No Anys on this line!">VERSION = "0.1.2"</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># Default timeout for timeout-based sys.stdin and socket.recv</span>
 <span class="line-precise" title="No Anys on this line!">TIMEOUT_READ_STDIN = 0.05</span>
@@ -6558,7 +6561,7 @@
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
 <span class="line-empty" title="No Anys on this line!"># Abstract class with Python 2 + Python 3 support: https://stackoverflow.com/questions/35673474</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
+Explicit (x2)">ABC = ABCMeta("ABC", (object,), {"__slots__": ()})</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"># -------------------------------------------------------------------------------------------------</span>
@@ -6589,7 +6592,7 @@ Explicit (x2)">    def __call__(cls, *args, **kwargs):</span>
 <span class="line-empty" title="No Anys on this line!">            # is already initialized, the thread won't create a new object.</span>
 <span class="line-precise" title="No Anys on this line!">            if cls not in cls._instances:</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x4)">                cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)</span>
+Explicit (x5)">                cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)</span>
 <span class="line-precise" title="No Anys on this line!">        return cls._instances[cls]</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!"></span>
@@ -6773,9 +6776,9 @@ Explicit (x4)">    def __init__(</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(intvl) is int, type(intvl)</span>
+Explicit (x4)">        assert type(intvl) is int, type(intvl)</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x6)">        assert type(kwargs) is dict, type(kwargs)</span>
+Explicit (x8)">        assert type(kwargs) is dict, type(kwargs)</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x4)">        self.__action = action</span>
 <span class="line-precise" title="No Anys on this line!">        self.__ssig = ssig</span>
@@ -6852,11 +6855,11 @@ Explicit (x4)">    def __init__(</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(repeat) is int, type(repeat)</span>
+Explicit (x4)">        assert type(repeat) is int, type(repeat)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(pause) is float, type(pause)</span>
+Explicit (x4)">        assert type(pause) is float, type(pause)</span>
 <span class="line-imprecise" title="Any Types on this line: 
-Explicit (x6)">        assert type(kwargs) is dict, type(kwargs)</span>
+Explicit (x8)">        assert type(kwargs) is dict, type(kwargs)</span>
 <span class="line-precise" title="Any Types on this line: 
 Explicit (x4)">        self.__action = action</span>
 <span class="line-precise" title="No Anys on this line!">        self.__ssig = ssig</span>
@@ -6976,23 +6979,23 @@ Explicit (x2)">        self.__kwargs = kwargs</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(bufsize) is int, type(bufsize)</span>
+Explicit (x4)">        assert type(bufsize) is int, type(bufsize)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(backlog) is int, type(backlog)</span>
+Explicit (x4)">        assert type(backlog) is int, type(backlog)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(recv_timeout) is float, type(recv_timeout)</span>
+Explicit (x4)">        assert type(recv_timeout) is float, type(recv_timeout)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(nodns) is bool, type(nodns)</span>
+Explicit (x4)">        assert type(nodns) is bool, type(nodns)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(ipv4) is bool, type(ipv4)</span>
+Explicit (x4)">        assert type(ipv4) is bool, type(ipv4)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(ipv6) is bool, type(ipv6)</span>
+Explicit (x4)">        assert type(ipv6) is bool, type(ipv6)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(src_addr) is str or src_addr is None, type(src_addr)</span>
+Explicit (x4)">        assert type(src_addr) is str or src_addr is None, type(src_addr)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(src_port) is int or src_port is None, type(src_port)</span>
+Explicit (x4)">        assert type(src_port) is int or src_port is None, type(src_port)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
+Explicit (x4)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__bufsize = bufsize</span>
 <span class="line-precise" title="No Anys on this line!">        self.__backlog = backlog</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout = recv_timeout</span>
@@ -7045,7 +7048,7 @@ Explicit (x2)">        assert type(udp) is bool, type(udp)</span>
 <span class="line-empty" title="No Anys on this line!">    ):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (...) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(recv_timeout_retry) is int, type(recv_timeout_retry)</span>
+Explicit (x4)">        assert type(recv_timeout_retry) is int, type(recv_timeout_retry)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__recv_timeout_retry = recv_timeout_retry</span>
 <span class="line-precise" title="No Anys on this line!">        super(DsIONetworkSock, self).__init__(</span>
 <span class="line-precise" title="No Anys on this line!">            bufsize,</span>
@@ -7083,7 +7086,7 @@ Explicit (x2)">        assert type(recv_timeout_retry) is int, type(recv_timeout
 <span class="line-precise" title="No Anys on this line!">    def reconn(self, value):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (int) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(value) is int, type(value)</span>
+Explicit (x4)">        assert type(value) is int, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__reconn = value</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
@@ -7096,7 +7099,7 @@ Explicit (x2)">        assert type(value) is int, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">    def reconn_wait(self, value):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (float) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(value) is float, type(value)</span>
+Explicit (x4)">        assert type(value) is float, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__reconn_wait = value</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
@@ -7111,14 +7114,14 @@ Explicit (x2)">        assert type(value) is float, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">    def __init__(self, reconn, reconn_wait, reconn_robin):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (int, float, List[int]) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(reconn) is int, type(reconn)</span>
+Explicit (x4)">        assert type(reconn) is int, type(reconn)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(reconn_wait) is float, type(reconn_wait)</span>
+Explicit (x4)">        assert type(reconn_wait) is float, type(reconn_wait)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(reconn_robin) is list, type(reconn_robin)</span>
+Explicit (x4)">        assert type(reconn_robin) is list, type(reconn_robin)</span>
 <span class="line-precise" title="No Anys on this line!">        for i in reconn_robin:</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">            assert type(i) is int, type(i)</span>
+Explicit (x4)">            assert type(i) is int, type(i)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__reconn = reconn</span>
 <span class="line-precise" title="No Anys on this line!">        self.__reconn_wait = reconn_wait</span>
 <span class="line-precise" title="No Anys on this line!">        self.__reconn_robin = reconn_robin</span>
@@ -7144,7 +7147,7 @@ Explicit (x2)">            assert type(i) is int, type(i)</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (bool) -&gt; None</span>
 <span class="line-empty" title="No Anys on this line!">        """Change keep_open value."""</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(value) is bool, type(value)</span>
+Explicit (x4)">        assert type(value) is bool, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__keep_open = value</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
@@ -7157,7 +7160,7 @@ Explicit (x2)">        assert type(value) is bool, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">    def rebind(self, value):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (int) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(value) is int, type(value)</span>
+Explicit (x4)">        assert type(value) is int, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">        self.__rebind = value</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">    @property</span>
@@ -7178,16 +7181,16 @@ Explicit (x2)">        assert type(value) is int, type(value)</span>
 <span class="line-precise" title="No Anys on this line!">    def __init__(self, keep_open, rebind, rebind_wait, rebind_robin):</span>
 <span class="line-empty" title="No Anys on this line!">        # type: (bool, int, float, List[int]) -&gt; None</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(keep_open) is bool, type(keep_open)</span>
+Explicit (x4)">        assert type(keep_open) is bool, type(keep_open)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(rebind) is int, type(rebind)</span>
+Explicit (x4)">        assert type(rebind) is int, type(rebind)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(rebind_wait) is float, type(rebind_wait)</span>
+Explicit (x4)">        assert type(rebind_wait) is float, type(rebind_wait)</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">        assert type(rebind_robin) is list, type(rebind_robin)</span>
+Explicit (x4)">        assert type(rebind_robin) is list, type(rebind_robin)</span>
 <span class="line-precise" title="No Anys on this line!">        for i in rebind_robin:</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x2)">            assert type(i) is int, type(i)</span>
+Explicit (x4)">            assert type(i) is int, type(i)</span>
 <span class="line-precise" title="No Anys on this line!">        self.keep_open = keep_open</span>
 <span class="line-precise" title="No Anys on this line!">        self.__rebind = rebind</span>
 <span class="line-precise" title="No Anys on this line!">        self.__rebind_wait = rebind_wait</span>
@@ -7479,7 +7482,7 @@ Explicit (x2)">            self._log(self.LEVEL_NUM, msg, args, **kwargs)</span>
 <span class="line-empty" title="No Anys on this line!">        """Implementation of rstring which works on bytes or strings."""</span>
 <span class="line-empty" title="No Anys on this line!">        # We have a bytes object in Python3</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">        if sys.version_info &gt;= (3, 0) and type(data) is not str:</span>
+Explicit (x2)">        if sys.version_info &gt;= (3, 0) and type(data) is not str:</span>
 <span class="line-empty" title="No Anys on this line!">            # Strip whitespace</span>
 <span class="line-precise" title="No Anys on this line!">            if search is None:</span>
 <span class="line-precise" title="No Anys on this line!">                while True:</span>
@@ -7789,7 +7792,7 @@ Explicit (x4)">            self.__log.error(</span>
 <span class="line-precise" title="No Anys on this line!">                "Invalid key for address family: %s (type: %s) (valid: %s)",</span>
 <span class="line-precise" title="No Anys on this line!">                repr(family),</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">                repr(type(family)),</span>
+Explicit (x2)">                repr(type(family)),</span>
 <span class="line-precise" title="No Anys on this line!">                repr(self.__AF_HUMAN),</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">            return "unknown"</span>
@@ -7805,7 +7808,7 @@ Explicit (x4)">            self.__log.error(</span>
 <span class="line-precise" title="No Anys on this line!">                "Invalid key for address sock_type: %s (type: %s) (valid: %s)",</span>
 <span class="line-precise" title="No Anys on this line!">                repr(sock_type),</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">                repr(type(sock_type)),</span>
+Explicit (x2)">                repr(type(sock_type)),</span>
 <span class="line-precise" title="No Anys on this line!">                repr(self.__ST_HUMAN),</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-precise" title="No Anys on this line!">            return "unknown"</span>
@@ -8009,8 +8012,7 @@ Explicit (x4)">        self.__log.debug(</span>
 <span class="line-precise" title="No Anys on this line!">            port,</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-empty" title="No Anys on this line!">        try:</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Omitted Generics (x1)">            sock.bind((addr, port))</span>
+<span class="line-precise" title="No Anys on this line!">            sock.bind((addr, port))</span>
 <span class="line-precise" title="No Anys on this line!">        except (OverflowError, OSError, socket.gaierror, socket.error) as error:</span>
 <span class="line-precise" title="No Anys on this line!">            msg = "Binding (family {}/{}, {}) socket to {}:{} failed: {}".format(</span>
 <span class="line-precise" title="No Anys on this line!">                sock.family, sock_family_name, sock_type_name, addr, port, error</span>
@@ -8144,8 +8146,7 @@ Explicit (x4)">            self.__log.debug(</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # Ensure to use connect() protocol independent</span>
 <span class="line-precise" title="No Anys on this line!">            info = socket.getaddrinfo(addr, port, sock.family, sock.type, sock.proto)</span>
-<span class="line-imprecise" title="Any Types on this line: 
-Omitted Generics (x1)">            sock.connect(info[0][4])</span>
+<span class="line-precise" title="No Anys on this line!">            sock.connect(info[0][4])</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">            # UDP stateful connect</span>
 <span class="line-empty" title="No Anys on this line!">            # A UDP client doesn't know if the connect() was successful, so the trick</span>
@@ -8153,9 +8154,9 @@ Omitted Generics (x1)">            sock.connect(info[0][4])</span>
 <span class="line-empty" title="No Anys on this line!">            # receive or simply a timeout (which means success).</span>
 <span class="line-precise" title="No Anys on this line!">            if udp_sconnect and int(sock.type) == int(socket.SOCK_DGRAM):</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">                assert type(udp_send_payload) is bytes</span>
+Explicit (x2)">                assert type(udp_send_payload) is bytes</span>
 <span class="line-precise" title="Any Types on this line: 
-Explicit (x1)">                assert type(udp_recv_bufsize) is int</span>
+Explicit (x2)">                assert type(udp_recv_bufsize) is int</span>
 <span class="line-empty" title="No Anys on this line!">                # Some applications like netcat do not like to receive empty</span>
 <span class="line-empty" title="No Anys on this line!">                # data, as they treat it as an EOF and will quit upon receive,</span>
 <span class="line-empty" title="No Anys on this line!">                # so we're using a nullbyte character instead.</span>
@@ -8413,8 +8414,7 @@ Error (x2)">            self.__log.trace("Trying to send: %s", repr(data))  # ty
 <span class="line-empty" title="No Anys on this line!">                # Only UDP server has not made a connect() to the socket, all others</span>
 <span class="line-empty" title="No Anys on this line!">                # are already connected and need to use send() instead of sendto()</span>
 <span class="line-precise" title="No Anys on this line!">                if self.__udp_mode_server:</span>
-<span class="line-precise" title="Any Types on this line: 
-Omitted Generics (x2)">                    curr = self.__active["conn"].sendto(</span>
+<span class="line-precise" title="No Anys on this line!">                    curr = self.__active["conn"].sendto(</span>
 <span class="line-precise" title="No Anys on this line!">                        data, (self.__active["remote_addr"], self.__active["remote_port"])</span>
 <span class="line-empty" title="No Anys on this line!">                    )</span>
 <span class="line-precise" title="No Anys on this line!">                    send += curr</span>
@@ -10121,7 +10121,10 @@ Error (x2)">                msvcrt.setmode(  # type: ignore</span>
 <span class="line-empty" title="No Anys on this line!"></span>
 <span class="line-empty" title="No Anys on this line!">        # [2/3] (Linux/Mac) Raw mode</span>
 <span class="line-precise" title="No Anys on this line!">        if self.__stdin_israw():</span>
-<span class="line-precise" title="No Anys on this line!">            self.__set_input_timeout()</span>
+<span class="line-empty" title="No Anys on this line!">            # Issue #109</span>
+<span class="line-empty" title="No Anys on this line!">            # when pasting in term I donot get full line echo</span>
+<span class="line-empty" title="No Anys on this line!">            # To mitigate this, I'm disabling the select.select call on sys.stdin</span>
+<span class="line-empty" title="No Anys on this line!">            # self.__set_input_timeout()</span>
 <span class="line-precise" title="No Anys on this line!">            if self.__py3:</span>
 <span class="line-precise" title="No Anys on this line!">                return sys.stdin.buffer.read(1)</span>
 <span class="line-precise" title="No Anys on this line!">            return sys.stdin.read(1)  # type: ignore</span>
@@ -13167,13 +13170,13 @@ Explicit (x1)">                code_send,</span>
 <span class="line-empty" title="No Anys on this line!">            ),</span>
 <span class="line-empty" title="No Anys on this line!">        )</span>
 <span class="line-any" title="Any Types on this line: 
-Explicit (x5)">        if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:</span>
+Explicit (x3)">        if type(args.ping_intvl) is int and args.ping_intvl &gt; 0:</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">            payload = StringEncoder.encode(args.ping_word)</span>
 <span class="line-precise" title="No Anys on this line!">            run.add_timer(</span>
 <span class="line-precise" title="No Anys on this line!">                "PING-INT",</span>
-<span class="line-any" title="Any Types on this line: 
-Explicit (x5)">                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (payload,), {}),  # send data</span>
+<span class="line-imprecise" title="Any Types on this line: 
+Explicit (x4)">                DsRunnerTimer(net.consumer, ssig, args.ping_intvl, (payload,), {}),  # send data</span>
 <span class="line-empty" title="No Anys on this line!">            )</span>
 <span class="line-any" title="Any Types on this line: 
 Explicit (x1)">        if args.ping_init:</span>

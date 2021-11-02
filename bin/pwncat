@@ -128,7 +128,7 @@ if os.environ.get("MYPY_CHECK", False):
 
 APPNAME = "pwncat"
 APPREPO = "https://github.com/cytopia/pwncat"
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 # Default timeout for timeout-based sys.stdin and socket.recv
 TIMEOUT_READ_STDIN = 0.05
@@ -3525,7 +3525,10 @@ class IOStdinStdout(IO):
 
         # [2/3] (Linux/Mac) Raw mode
         if self.__stdin_israw():
-            self.__set_input_timeout()
+            # Issue #109
+            # when pasting in term I donot get full line echo
+            # To mitigate this, I'm disabling the select.select call on sys.stdin
+            # self.__set_input_timeout()
             if self.__py3:
                 return sys.stdin.buffer.read(1)
             return sys.stdin.read(1)  # type: ignore
