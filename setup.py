@@ -53,4 +53,5 @@ setup(
         # Where does it rnu
         "Operating System :: OS Independent",
     ],
+    packages=[],
 )
