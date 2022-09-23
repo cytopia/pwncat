@@ -4207,19 +4207,19 @@ class Runner(object):
                                 "Call INTERRUPT: %s.%s() for %s",
                                 getattr(interrupt, "__self__").__class__.__name__,
                                 interrupt.__name__,
-                                self.__threads[key].getName(),
+                                self.__threads[key].name,
                             )
                             interrupt()
                             # [2/3] All blocking events inside the threads are gone, now join them
                             try:
                                 self.log.trace(  # type: ignore
-                                    "Joining %s", self.__threads[key].getName()
+                                    "Joining %s", self.__threads[key].name
                                 )
                                 # NOTE: The thread.join() operating will also block the signal
                                 # handler if we try to join too many threads at once.
                                 self.__threads[key].join()
                                 self.log.trace(  # type: ignore
-                                    "Joined %s", self.__threads[key].getName()
+                                    "Joined %s", self.__threads[key].name
                                 )
                             except RuntimeError:
                                 pass
